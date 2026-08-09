@@ -1,0 +1,79 @@
+@implements IDisposable
+@inject SimulationState State
+
+<section class="simulation-toolbar" aria-label="Simulation playback controls">
+    <div class="playback-actions">
+        <button type="button"
+                @onclick="State.Resume"
+                disabled="@(!CanPlay)"
+                aria-label="Play simulation">
+            Play
+        </button>
+
+        <button type="button"
+                @onclick="State.Pause"
+                disabled="@(!CanPause)"
+                aria-label="Pause simulation">
+            Pause
+        </button>
+
+        <button type="button"
+                @onclick="State.Step"
+                disabled="@(!State.IsRunning)"
+                aria-label="Advance one simulation step">
+            Step
+        </button>
+
+        <button type="button"
+                @onclick="State.Reset"
+                aria-label="Reset simulation">
+            Reset
+        </button>
+    </div>
+
+    <label class="speed-control">
+        <span>Step delay: <strong>@State.StepDelayMs ms</strong></span>
+        <input type="range"
+               min="@SimulationState.MinDelayMs"
+               max="@SimulationState.MaxDelayMs"
+               step="50"
+               value="@State.StepDelayMs"
+               @oninput="ChangeDelay"
+               aria-label="Animation step delay in milliseconds" />
+        <span class="speed-hint" aria-hidden="true">Faster</span>
+        <span class="speed-hint speed-hint-right" aria-hidden="true">Slower</span>
+    </label>
+
+    <div class="current-step" aria-live="polite" aria-atomic="true">
+        <span class="current-step-label">Current operation</span>
+        <output>@State.CurrentStepText</output>
+    </div>
+</section>
+
+@code {
+    private bool CanPlay => State.IsRunning && State.IsPaused;
+    private bool CanPause => State.IsRunning && !State.IsPaused;
+
+    protected override void OnInitialized()
+    {
+        State.Changed += HandleStateChanged;
+    }
+
+    private void ChangeDelay(ChangeEventArgs args)
+    {
+        if (int.TryParse(args.Value?.ToString(), out var delay))
+        {
+            State.SetDelay(delay);
+        }
+    }
+
+    private void HandleStateChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        State.Changed -= HandleStateChanged;
+    }
+}
