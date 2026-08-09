@@ -1,0 +1,29 @@
+@inherits LayoutComponentBase
+
+<div class="app-shell">
+    <aside class="sidebar">
+        <a class="brand" href="/">Algorithm Visualizer</a>
+
+        <nav>
+            <strong>Data Structures</strong>
+            <NavLink href="/structures/bst">BST</NavLink>
+            <NavLink href="/structures/avl">AVL</NavLink>
+            <NavLink href="/structures/red-black">Red-Black</NavLink>
+            <NavLink href="/structures/heap">Heap</NavLink>
+            <NavLink href="/structures/graph">Graphs</NavLink>
+            <NavLink href="/structures/queue-stack">Queue &amp; Stack</NavLink>
+
+            <strong>Sorting</strong>
+            <NavLink href="/sorting/bubble">Bubble Sort</NavLink>
+            <NavLink href="/sorting/selection">Selection Sort</NavLink>
+            <NavLink href="/sorting/insertion">Insertion Sort</NavLink>
+            <NavLink href="/sorting/merge">Merge Sort</NavLink>
+            <NavLink href="/sorting/quick">Quick Sort</NavLink>
+            <NavLink href="/sorting/heap">Heap Sort</NavLink>
+        </nav>
+    </aside>
+
+    <main class="content">
+        @Body
+    </main>
+</div>

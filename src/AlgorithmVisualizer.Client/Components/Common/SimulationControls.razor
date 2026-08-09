@@ -1,0 +1,42 @@
+@implements IDisposable
+@inject SimulationState State
+
+<section class="simulation-controls" aria-label="Simulation controls">
+    <button type="button" @onclick="TogglePause" disabled="@(!State.IsRunning)">
+        @(State.IsPaused ? "Resume" : "Pause")
+    </button>
+
+    <label>
+        Speed
+        <input type="range"
+               min="@SimulationState.MinDelayMs"
+               max="@SimulationState.MaxDelayMs"
+               step="50"
+               value="@State.StepDelayMs"
+               @oninput="ChangeDelay" />
+    </label>
+
+    <span>Step @State.CurrentStep / @State.TotalSteps</span>
+</section>
+
+@code {
+    protected override void OnInitialized() => State.Changed += OnStateChanged;
+
+    private void TogglePause()
+    {
+        if (State.IsPaused)
+            State.Resume();
+        else
+            State.Pause();
+    }
+
+    private void ChangeDelay(ChangeEventArgs args)
+    {
+        if (int.TryParse(args.Value?.ToString(), out var delay))
+            State.SetDelay(delay);
+    }
+
+    private void OnStateChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => State.Changed -= OnStateChanged;
+}

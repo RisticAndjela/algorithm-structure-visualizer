@@ -1,0 +1,8 @@
+.viewport {
+    min-height: 420px;
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px dashed #b7b7b7;
+    border-radius: .75rem;
+    overflow: auto;
+}
