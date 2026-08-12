@@ -1,5 +1,11 @@
-<div class="linear-element @GetVisualStateClass()" aria-label="Value @Element.Value">
+<div class="linear-element @GetVisualStateClass()"
+     aria-label="Value @Element.Value, ID @Element.DisplayId, state @GetStateLabel()">
     <span class="element-value">@Element.Value</span>
+    <span class="element-id">#@Element.DisplayId</span>
+    @if (Element.VisualState is LinearElementVisualState.Checking or LinearElementVisualState.Visited or LinearElementVisualState.Matched)
+    {
+        <span class="element-state">@GetStateLabel()</span>
+    }
     <span class="state-ring" aria-hidden="true"></span>
 </div>
 
@@ -12,6 +18,20 @@
         LinearElementVisualState.Adding => "is-adding",
         LinearElementVisualState.Removing => "is-removing",
         LinearElementVisualState.PointerTarget => "is-pointer-target",
+        LinearElementVisualState.Checking => "is-checking",
+        LinearElementVisualState.Visited => "is-visited",
+        LinearElementVisualState.Matched => "is-matched",
         _ => string.Empty
+    };
+
+    private string GetStateLabel() => Element.VisualState switch
+    {
+        LinearElementVisualState.Adding => "adding",
+        LinearElementVisualState.Removing => "removing",
+        LinearElementVisualState.PointerTarget => "pointer target",
+        LinearElementVisualState.Checking => "checking",
+        LinearElementVisualState.Visited => "visited",
+        LinearElementVisualState.Matched => "match",
+        _ => "normal"
     };
 }

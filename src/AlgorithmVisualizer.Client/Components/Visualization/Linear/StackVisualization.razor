@@ -10,10 +10,6 @@
         <span class="element-count">@Elements.Count item@(Elements.Count == 1 ? string.Empty : "s")</span>
     </header>
 
-    <div class="structure-rule">
-        <span>Access point</span>
-        <strong>Top only</strong>
-    </div>
 
     <div class="stack-stage">
         @if (Elements.Count == 0)
@@ -21,7 +17,7 @@
             <div class="empty-state">
                 <span class="empty-glyph">+</span>
                 <strong>Your stack is empty.</strong>
-                <small>Enter a value and Push it to create the first top element.</small>
+                <small>Enter a value and click Push to create the first item.</small>
             </div>
         }
         else

@@ -5,33 +5,40 @@
     <div class="toolbar-section playback-section">
         <div class="toolbar-label">
             <span>PLAYBACK</span>
-            <small>Control one state change at a time</small>
+            <small>Move one learning step at a time</small>
         </div>
         <div class="playback-actions">
             <button class="play-button" type="button"
-                    @onclick="State.Resume"
+                    @onclick="PlayAsync"
                     disabled="@(!CanPlay)"
                     aria-label="Play simulation">
                 <span class="button-icon" aria-hidden="true">▶</span> Play
             </button>
 
             <button type="button"
-                    @onclick="State.Pause"
+                    @onclick="PauseAsync"
                     disabled="@(!CanPause)"
                     aria-label="Pause simulation">
                 <span class="button-icon" aria-hidden="true">Ⅱ</span> Pause
             </button>
 
             <button type="button"
-                    @onclick="State.Step"
-                    disabled="@(!State.IsRunning)"
+                    @onclick="StepBackAsync"
+                    disabled="@(!CanStepBack)"
+                    aria-label="Go back one displayed simulation step">
+                <span class="button-icon" aria-hidden="true">|←</span> Step back
+            </button>
+
+            <button type="button"
+                    @onclick="StepForwardAsync"
+                    disabled="@(!CanStepForward)"
                     aria-label="Advance one simulation step">
-                <span class="button-icon" aria-hidden="true">→|</span> Step
+                <span class="button-icon" aria-hidden="true">→|</span> Step forward
             </button>
 
             <button class="reset-button" type="button"
-                    @onclick="State.Reset"
-                    aria-label="Reset simulation">
+                    @onclick="ResetAsync"
+                    aria-label="Reset simulation playback">
                 <span class="button-icon" aria-hidden="true">↺</span> Reset
             </button>
         </div>
@@ -43,8 +50,12 @@
             @GetStatusText()
         </div>
         <div class="step-copy">
-            <span class="current-step-label">CURRENT OPERATION</span>
-            <output>@State.CurrentStepText</output>
+            <span class="current-step-label">CURRENT STEP</span>
+            <output>@DisplayedStepText</output>
+            @if (TimelineCount > 0)
+            {
+                <small class="timeline-position">Step @TimelinePosition of @TimelineCount</small>
+            }
         </div>
     </div>
 
@@ -52,7 +63,7 @@
         <span class="speed-heading">
             <span>
                 <span class="toolbar-label-text">STEP DELAY</span>
-                <small>Slow it down when the state change is new.</small>
+                <small>Slow down when a step is new.</small>
             </span>
             <strong>@State.StepDelayMs ms</strong>
         </span>
@@ -68,8 +79,23 @@
 </section>
 
 @code {
+    [Parameter] public EventCallback OnPlay { get; set; }
+    [Parameter] public EventCallback OnPause { get; set; }
+    [Parameter] public EventCallback OnStepBack { get; set; }
+    [Parameter] public EventCallback OnStepForward { get; set; }
+    [Parameter] public EventCallback OnReset { get; set; }
+    [Parameter] public bool CanStepBack { get; set; }
+    [Parameter] public bool? CanStepForwardOverride { get; set; }
+    [Parameter] public string? StepTextOverride { get; set; }
+    [Parameter] public int TimelinePosition { get; set; }
+    [Parameter] public int TimelineCount { get; set; }
+
     private bool CanPlay => State.IsRunning && State.IsPaused;
     private bool CanPause => State.IsRunning && !State.IsPaused;
+    private bool CanStepForward => CanStepForwardOverride ?? State.IsRunning;
+    private string DisplayedStepText => string.IsNullOrWhiteSpace(StepTextOverride)
+        ? State.CurrentStepText
+        : StepTextOverride;
 
     protected override void OnInitialized()
     {
@@ -78,11 +104,63 @@
 
     private string GetStatusText() => State.IsRunning
         ? State.IsPaused ? "Paused" : "Running"
-        : "Ready";
+        : TimelineCount > 0 ? "Review" : "Ready";
 
     private string GetStatusClass() => State.IsRunning
         ? State.IsPaused ? "is-paused" : "is-running"
         : "is-ready";
+
+    private async Task PlayAsync()
+    {
+        if (OnPlay.HasDelegate)
+        {
+            await OnPlay.InvokeAsync();
+            return;
+        }
+
+        State.Resume();
+    }
+
+    private async Task PauseAsync()
+    {
+        if (OnPause.HasDelegate)
+        {
+            await OnPause.InvokeAsync();
+            return;
+        }
+
+        State.Pause();
+    }
+
+    private async Task StepBackAsync()
+    {
+        if (OnStepBack.HasDelegate)
+        {
+            await OnStepBack.InvokeAsync();
+        }
+    }
+
+    private async Task StepForwardAsync()
+    {
+        if (OnStepForward.HasDelegate)
+        {
+            await OnStepForward.InvokeAsync();
+            return;
+        }
+
+        State.Step();
+    }
+
+    private async Task ResetAsync()
+    {
+        if (OnReset.HasDelegate)
+        {
+            await OnReset.InvokeAsync();
+            return;
+        }
+
+        State.Reset();
+    }
 
     private void ChangeDelay(ChangeEventArgs args)
     {

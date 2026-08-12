@@ -73,6 +73,58 @@ public sealed class QueueSimulation : LinearStructureSimulationBase
             return front.Value;
         }, cancellationToken);
 
+    public Task<LinearTraversalResult> FindByIdAsync(
+        string normalizedId,
+        CancellationToken cancellationToken = default) =>
+        ExecuteTraversalAsync(
+            "Queue",
+            "FRONT → rear",
+            reverse: false,
+            LinearTraversalOperation.Search,
+            LinearLookupCriterion.Id,
+            FormatIdTarget(normalizedId),
+            item => MatchesId(item, normalizedId),
+            cancellationToken);
+
+    public Task<LinearTraversalResult> FindByValueAsync(
+        int value,
+        CancellationToken cancellationToken = default) =>
+        ExecuteTraversalAsync(
+            "Queue",
+            "FRONT → rear",
+            reverse: false,
+            LinearTraversalOperation.Search,
+            LinearLookupCriterion.Value,
+            $"value {value}",
+            item => item.Value == value,
+            cancellationToken);
+
+    public Task<LinearTraversalResult> DeleteByIdAsync(
+        string normalizedId,
+        CancellationToken cancellationToken = default) =>
+        ExecuteTraversalAsync(
+            "Queue",
+            "FRONT → rear",
+            reverse: false,
+            LinearTraversalOperation.Delete,
+            LinearLookupCriterion.Id,
+            FormatIdTarget(normalizedId),
+            item => MatchesId(item, normalizedId),
+            cancellationToken);
+
+    public Task<LinearTraversalResult> DeleteByValueAsync(
+        int value,
+        CancellationToken cancellationToken = default) =>
+        ExecuteTraversalAsync(
+            "Queue",
+            "FRONT → rear",
+            reverse: false,
+            LinearTraversalOperation.Delete,
+            LinearLookupCriterion.Value,
+            $"value {value}",
+            item => item.Value == value,
+            cancellationToken);
+
     public Task ClearAsync(CancellationToken cancellationToken = default) =>
         ExecuteExclusiveAsync(async () =>
         {
@@ -98,4 +150,9 @@ public sealed class QueueSimulation : LinearStructureSimulationBase
 
             await NextStepAsync("The queue is empty.", cancellationToken);
         }, cancellationToken);
+
+    private static bool MatchesId(LinearElement item, string normalizedId) =>
+        item.Id.ToString("N").StartsWith(normalizedId, StringComparison.OrdinalIgnoreCase);
+
+    private static string FormatIdTarget(string normalizedId) => $"ID #{normalizedId}";
 }

@@ -1,0 +1,116 @@
+<section class="memory-visualization" aria-label="@Title memory view">
+    <header>
+        <div>
+            <span class="memory-kicker">MEMORY STATE</span>
+            <h3>@Title</h3>
+        </div>
+        <span class="memory-count">Count @Elements.Count · Capacity @Capacity</span>
+    </header>
+
+    <div class="memory-note">
+        <strong>Visual order and memory are two different views.</strong>
+        <span>The boxes below show a simplified model of this lab's C# <code>List&lt;LinearElement&gt;</code>. The labels such as <code>MEM-#A31F9C</code> are learning labels, not real RAM addresses.</span>
+    </div>
+
+    <div class="memory-layout">
+        <section class="memory-area" aria-label="Backing array slots">
+            <div class="area-heading">
+                <span>1 · LIST SLOTS</span>
+                <small>The List keeps references in indexed slots.</small>
+            </div>
+
+            <div class="slot-strip">
+                @if (Capacity == 0)
+                {
+                    <div class="memory-empty">No slots are reserved yet.</div>
+                }
+                else
+                {
+                    @for (var index = 0; index < VisibleCapacity; index++)
+                    {
+                        var hasItem = index < Elements.Count;
+                        var item = hasItem ? Elements[index] : null;
+                        <div class="memory-slot @(hasItem ? "used" : "free")">
+                            <span class="slot-index">[@index]</span>
+                            @if (item is not null)
+                            {
+                                <strong>ref → #@item.DisplayId</strong>
+                                <small>value @item.Value</small>
+                            }
+                            else
+                            {
+                                <strong>reserved</strong>
+                                <small>no item</small>
+                            }
+                        </div>
+                    }
+
+                    @if (Capacity > VisibleCapacity)
+                    {
+                        <div class="more-slots">+ @(Capacity - VisibleCapacity) more reserved slot(s)</div>
+                    }
+                }
+            </div>
+        </section>
+
+        <section class="memory-area" aria-label="Object instances">
+            <div class="area-heading">
+                <span>2 · OBJECTS</span>
+                <small>Each added element is a separate object.</small>
+            </div>
+
+            <div class="object-grid">
+                @if (Elements.Count == 0)
+                {
+                    <div class="memory-empty">No element objects are referenced by this structure.</div>
+                }
+                else
+                {
+                    @foreach (var element in Elements)
+                    {
+                        <article class="object-card" @key="element.Id">
+                            <span class="object-memory">MEM-#@element.DisplayId</span>
+                            <strong>value = @element.Value</strong>
+                            <small>ID #@element.DisplayId</small>
+                        </article>
+                    }
+                }
+            </div>
+        </section>
+    </div>
+
+    @if (HasDuplicateValues)
+    {
+        <div class="duplicate-explainer">
+            <span aria-hidden="true">↳</span>
+            <p><strong>Same value is allowed.</strong> Two elements can both store <code>@FirstDuplicateValue</code> because they are two separate objects. They have different IDs and separate object identities in memory. Searching by value can match either copy depending on order; searching by ID points to one exact copy.</p>
+        </div>
+    }
+
+    <footer>
+        <span><strong>@AccessLabel</strong> describes how the structure is used.</span>
+        <span>The List slot order describes how this teaching implementation stores references.</span>
+    </footer>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string AccessLabel { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<LinearElement> Elements { get; set; } = Array.Empty<LinearElement>();
+
+    [Parameter]
+    public int Capacity { get; set; }
+
+    private int VisibleCapacity => Math.Min(Capacity, 12);
+
+    private IEnumerable<IGrouping<int, LinearElement>> DuplicateGroups =>
+        Elements.GroupBy(item => item.Value).Where(group => group.Count() > 1);
+
+    private bool HasDuplicateValues => DuplicateGroups.Any();
+    private int FirstDuplicateValue => DuplicateGroups.First().Key;
+}

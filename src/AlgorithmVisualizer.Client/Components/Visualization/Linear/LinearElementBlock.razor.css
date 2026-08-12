@@ -1,10 +1,12 @@
 .linear-element {
     position: relative;
-    min-width: 4.8rem;
-    min-height: 3.35rem;
+    min-width: 5.2rem;
+    min-height: 4.15rem;
     display: grid;
     place-items: center;
-    padding: .65rem 1rem;
+    align-content: center;
+    gap: .12rem;
+    padding: .58rem .85rem;
     border: 1px solid #d6d9e3;
     border-radius: .72rem;
     color: #444a59;
@@ -15,9 +17,35 @@
     transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease, opacity 180ms ease, box-shadow 180ms ease;
 }
 
-.element-value {
+.element-value,
+.element-id,
+.element-state {
     position: relative;
     z-index: 2;
+}
+
+.element-value {
+    line-height: 1.05;
+}
+
+.element-id {
+    color: #8a8f9d;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: .48rem;
+    font-weight: 760;
+    letter-spacing: .045em;
+}
+
+.element-state {
+    margin-top: .14rem;
+    padding: .13rem .28rem;
+    border-radius: .3rem;
+    color: #665bc4;
+    background: #eeecff;
+    font-size: .43rem;
+    font-weight: 860;
+    letter-spacing: .06em;
+    text-transform: uppercase;
 }
 
 .state-ring {
@@ -45,7 +73,7 @@
     border-color: #e5aab3;
     color: #a03544;
     background: #fff2f4;
-    opacity: .72;
+    opacity: .78;
     transform: scale(.96);
 }
 
@@ -63,4 +91,78 @@
 
 .linear-element.is-pointer-target .state-ring {
     border-color: rgba(103, 87, 229, .18);
+}
+
+.linear-element.is-checking {
+    border-color: #9d93ed;
+    color: #5543c5;
+    background: #f8f7ff;
+    box-shadow: 0 8px 22px rgba(103, 87, 229, .14);
+    transform: translateY(-2px) scale(1.025);
+}
+
+.linear-element.is-checking .state-ring {
+    border-color: rgba(103, 87, 229, .28);
+}
+
+.linear-element.is-visited {
+    border-color: #e0e2e8;
+    color: #7d8290;
+    background: #f7f8fa;
+    opacity: .72;
+}
+
+.linear-element.is-visited .element-state {
+    color: #717683;
+    background: #e9ebef;
+}
+
+.linear-element.is-matched {
+    border-color: #5ebba9;
+    color: #126f65;
+    background: #e9faf6;
+    box-shadow: 0 8px 22px rgba(25, 140, 124, .16);
+    transform: translateY(-2px) scale(1.035);
+}
+
+.linear-element.is-matched .state-ring {
+    border-color: rgba(25, 140, 124, .28);
+}
+
+.linear-element.is-matched .element-state {
+    color: #126f65;
+    background: #d4f3ec;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .linear-element,
+    .state-ring {
+        transition: none;
+    }
+}
+
+
+/* Readability pass */
+.linear-element {
+    min-width: 6rem;
+    min-height: 4.8rem;
+    gap: .18rem;
+    padding: .72rem .95rem;
+    border-radius: .82rem;
+}
+
+.element-value {
+    font-size: 1.42rem;
+    line-height: 1;
+}
+
+.element-id {
+    font-size: .65rem;
+    letter-spacing: .05em;
+}
+
+.element-state {
+    margin-top: .18rem;
+    padding: .16rem .34rem;
+    font-size: .54rem;
 }

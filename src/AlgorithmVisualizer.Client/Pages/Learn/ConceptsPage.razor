@@ -1,0 +1,192 @@
+@page "/learn/concepts"
+
+<PageTitle>Learn the basics — Algorithm Visualizer</PageTitle>
+
+<div class="concepts-page">
+    <header class="concepts-hero">
+        <div>
+            <span class="page-kicker">LEARN THE BASICS</span>
+            <h1>Words and ideas used in every simulation</h1>
+            <p>Start with the simple version here. Open the outside links only when you want more detail.</p>
+        </div>
+        <a class="back-to-lab" href="/structures/queue-stack">Back to Queue &amp; Stack <span>→</span></a>
+    </header>
+
+    <nav class="concept-jump" aria-label="Concept shortcuts">
+        <a href="#lifo-fifo">LIFO &amp; FIFO</a>
+        <a href="#big-o">O(1), O(n), k</a>
+        <a href="#identity">Value vs ID</a>
+        <a href="#memory">Memory</a>
+        <a href="#visual-vs-memory">Visual vs memory</a>
+    </nav>
+
+    <section class="concepts-start" aria-label="Quick start concepts">
+        <a class="start-card purple" href="#lifo-fifo"><span>START HERE</span><strong>LIFO & FIFO</strong><small>Learn who leaves first.</small></a>
+        <a class="start-card blue" href="#big-o"><span>BIG-O</span><strong>O(1), O(n), k</strong><small>Learn how work grows.</small></a>
+        <a class="start-card gold" href="#identity"><span>ID</span><strong>Value vs ID</strong><small>Same number can be two items.</small></a>
+        <a class="start-card mint" href="#memory"><span>MEMORY</span><strong>References and slots</strong><small>Learn how the app stores items.</small></a>
+    </section>
+
+
+    <section id="lifo-fifo" class="concept-section">
+        <div class="section-heading">
+            <span>01</span>
+            <div><h2>LIFO and FIFO</h2><p>These words only describe which item is allowed to leave first.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class="concept-card">
+                <span class="term">LIFO</span>
+                <h3>Last In, First Out</h3>
+                <p>Imagine a stack of plates. The last plate placed on top is the first one you can take away.</p>
+                <div class="example"><strong>Stack:</strong> push 3, then 7, then 2 → pop removes 2 first.</div>
+                <a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.stack-1?view=net-10.0" target="_blank" rel="noreferrer">Microsoft: Stack&lt;T&gt; explanation ↗</a>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">FIFO</span>
+                <h3>First In, First Out</h3>
+                <p>Imagine a line at a checkout. The person who joined first is the first person served.</p>
+                <div class="example"><strong>Queue:</strong> enqueue 3, then 7, then 2 → dequeue removes 3 first.</div>
+                <a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.queue-1?view=net-10.0" target="_blank" rel="noreferrer">Microsoft: Queue&lt;T&gt; explanation ↗</a>
+            </article>
+        </div>
+    </section>
+
+    <section id="big-o" class="concept-section">
+        <div class="section-heading">
+            <span>02</span>
+            <div><h2>O(1), O(n), Θ(n) and k</h2><p>They describe how the amount of work grows. They are not a stopwatch.</p></div>
+        </div>
+        <div class="concept-grid four">
+            <article class="concept-card compact">
+                <span class="term">n</span>
+                <h3>How many items?</h3>
+                <p><code>n</code> usually means the total number of items in the structure.</p>
+                <div class="mini-example">5 items → n = 5</div>
+            </article>
+            <article class="concept-card compact">
+                <span class="term">k</span>
+                <h3>How far did we go?</h3>
+                <p><code>k</code> means some number smaller than or equal to n. If the target is the third item checked, k = 3.</p>
+                <div class="mini-example">3 checks out of 8 → k = 3</div>
+            </article>
+            <article class="concept-card compact">
+                <span class="term">O(1)</span>
+                <h3>Work stays about the same</h3>
+                <p>Adding more items does not make this operation walk through all of them.</p>
+                <div class="mini-example">Stack pop from the top</div>
+            </article>
+            <article class="concept-card compact">
+                <span class="term">O(n)</span>
+                <h3>Work can grow with the list</h3>
+                <p>If the structure doubles in size, the worst case can require about twice as many checks.</p>
+                <div class="mini-example">Find a missing value</div>
+            </article>
+        </div>
+        <div class="plain-note">
+            <strong>O(...) vs Θ(...)</strong>
+            <p>In this app, <b>O(n)</b> is often used for the general worst-case growth of an operation. <b>Θ(k)</b> or <b>Θ(n)</b> describes what kind of work this one run performed. You do not need the mathematical definition to use the simulator.</p>
+            <a href="https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/recitation-1-asymptotic-complexity-peak-finding/" target="_blank" rel="noreferrer">MIT OpenCourseWare: asymptotic complexity ↗</a>
+        </div>
+    </section>
+
+    <section id="identity" class="concept-section">
+        <div class="section-heading">
+            <span>03</span>
+            <div><h2>Value is not the same as identity</h2><p>This is why duplicate values are completely valid in this lab.</p></div>
+        </div>
+        <div class="identity-demo">
+            <div class="identity-object"><span>MEM-#A1B2C3</span><strong>value = 7</strong><small>ID #A1B2C3</small></div>
+            <div class="identity-symbol">≠</div>
+            <div class="identity-object"><span>MEM-#F4E5D6</span><strong>value = 7</strong><small>ID #F4E5D6</small></div>
+        </div>
+        <div class="plain-note">
+            <strong>Both values are 7, but these are two different elements.</strong>
+            <p>Think of two students who both scored 7 points. The score is the same, but the students are not the same person. In the simulator, the value is the data; the short ID identifies one exact element.</p>
+        </div>
+    </section>
+
+    <section id="memory" class="concept-section">
+        <div class="section-heading">
+            <span>04</span>
+            <div><h2>Memory, references, Count and Capacity</h2><p>A simple model for what the C# version of this lab is doing.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class="concept-card">
+                <span class="term">OBJECT</span>
+                <h3>The element itself</h3>
+                <p>Each <code>LinearElement</code> is a separate object. It stores its value and ID. In .NET, reference-type objects live on the managed heap.</p>
+                <a href="https://learn.microsoft.com/en-us/dotnet/standard/garbage-collection/fundamentals" target="_blank" rel="noreferrer">Microsoft: .NET garbage collection basics ↗</a>
+            </article>
+            <article class="concept-card">
+                <span class="term">REFERENCE</span>
+                <h3>A way to reach that object</h3>
+                <p>The internal <code>List&lt;LinearElement&gt;</code> stores references to the element objects. A slot is not the object itself; it points to the object.</p>
+                <a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1?view=net-10.0" target="_blank" rel="noreferrer">Microsoft: List&lt;T&gt; ↗</a>
+            </article>
+            <article class="concept-card">
+                <span class="term">COUNT</span>
+                <h3>How many items are in the List?</h3>
+                <p>If Count is 4, the structure currently contains four element references.</p>
+            </article>
+            <article class="concept-card">
+                <span class="term">CAPACITY</span>
+                <h3>How many slots are already reserved?</h3>
+                <p>Capacity can be larger than Count. That does not mean there are hidden elements; it means the List has room to grow before it needs a bigger backing array.</p>
+                <a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1.capacity?view=net-10.0" target="_blank" rel="noreferrer">Microsoft: List&lt;T&gt;.Capacity ↗</a>
+            </article>
+        </div>
+
+        <div class="plain-note">
+            <strong>What happens after RemoveAt?</strong>
+            <p>Later List entries move left to close the removed index. Count decreases. Capacity normally stays the same. The removed object is not manually “freed”; if nothing references it anymore, .NET can reclaim it later with garbage collection.</p>
+            <a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1.removeat?view=net-10.0" target="_blank" rel="noreferrer">Microsoft: List&lt;T&gt;.RemoveAt ↗</a>
+        </div>
+    </section>
+
+    <section class="concept-section">
+        <div class="section-heading">
+            <span>05</span>
+            <div><h2>Does delete work the same in every language?</h2><p>The idea is similar, but the details depend on the container and memory model.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class="concept-card"><span class="term">C# / JAVA</span><h3>Dynamic list</h3><p>Removing from the middle of a List/ArrayList moves later references left. The object itself is cleaned up later when it is no longer reachable.</p><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/ArrayList.html" target="_blank" rel="noreferrer">Oracle: Java ArrayList ↗</a></article>
+            <article class="concept-card"><span class="term">PYTHON</span><h3>Python list</h3><p>A list keeps object references. Removing an item closes the list position; object lifetime depends on whether other references still exist.</p><a href="https://docs.python.org/3/tutorial/datastructures.html" target="_blank" rel="noreferrer">Python docs: data structures ↗</a></article>
+            <article class="concept-card"><span class="term">JAVASCRIPT</span><h3>Array: splice vs delete</h3><p><code>splice</code> removes an array item and closes the gap. The <code>delete</code> operator is different: it can leave an empty slot.</p><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/splice" target="_blank" rel="noreferrer">MDN: Array.splice ↗</a></article>
+            <article class="concept-card"><span class="term">RUST / C++</span><h3>Vector-style storage</h3><p>Removing from a vector usually moves later values left. Rust also offers <code>swap_remove</code> when order does not matter.</p><a href="https://doc.rust-lang.org/std/vec/struct.Vec.html#method.remove" target="_blank" rel="noreferrer">Rust docs: Vec.remove ↗</a></article>
+        </div>
+        <div class="plain-note"><strong>C is more manual.</strong><p>A plain C array does not have a built-in “delete item” operation. Your code decides whether to shift values, keep a logical length, or manage separate nodes and call <code>free</code>. That is why the app always names the storage type instead of saying “delete always works this way”.</p></div>
+    </section>
+
+    <section id="visual-vs-memory" class="concept-section">
+        <div class="section-heading">
+            <span>06</span>
+            <div><h2>Visual state vs memory state</h2><p>The picture we draw for learning is not necessarily the shape of RAM.</p></div>
+        </div>
+        <div class="split-demo">
+            <article>
+                <span>VISUAL STATE</span>
+                <strong>What helps you understand the rule</strong>
+                <p>A Stack is drawn vertically because “top” is easy to understand. A graph may later be drawn as circles connected by lines.</p>
+            </article>
+            <div class="split-arrow">→</div>
+            <article>
+                <span>MEMORY STATE</span>
+                <strong>How the program stores data</strong>
+                <p>The same graph might be stored as objects, arrays, dictionaries, lists of neighbors, or indexes. The screen position of a node is not its memory address.</p>
+            </article>
+        </div>
+        <div class="plain-note warning">
+            <strong>Important for future graph simulations</strong>
+            <p>Two nodes can look far apart on screen but be next to each other in an array. Or they can look next to each other on screen while their objects live in unrelated places in managed memory. The app will keep these two views separate.</p>
+        </div>
+    </section>
+
+    <section class="source-strip">
+        <div><strong>Want to go deeper?</strong><span>Use these after the simple explanation makes sense.</span></div>
+        <a href="https://learn.microsoft.com/en-us/dotnet/standard/collections/" target="_blank" rel="noreferrer">.NET collections ↗</a>
+        <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/ArrayList.html" target="_blank" rel="noreferrer">Java ArrayList ↗</a>
+        <a href="https://docs.python.org/3/tutorial/datastructures.html" target="_blank" rel="noreferrer">Python data structures ↗</a>
+        <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array" target="_blank" rel="noreferrer">JavaScript Array ↗</a>
+        <a href="https://doc.rust-lang.org/std/vec/struct.Vec.html" target="_blank" rel="noreferrer">Rust Vec ↗</a>
+    </section>
+</div>

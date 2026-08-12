@@ -1,12 +1,46 @@
 @page "/structures/queue-stack"
 @implements IDisposable
+@using System.Text.Json
+@using Microsoft.JSInterop
 @inject SimulationState SimulationState
 @inject StackSimulation Stack
 @inject QueueSimulation Queue
+@inject IJSRuntime JS
 
 <PageTitle>Queue & Stack Lab — Algorithm Visualizer</PageTitle>
 
 <div class="sandbox-page">
+    <section class="learn-launchpad" aria-labelledby="learn-launchpad-title">
+        <div class="learn-launchpad-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="learn-launchpad-title">Start with the big idea, then practice it.</h2>
+            <p>Use this page like a lab: learn one simple rule, try it, then check the visual and memory views.</p>
+            <a class="learn-launchpad-link" href="/learn/concepts">Open the Concepts guide →</a>
+        </div>
+        <div class="learn-launchpad-grid">
+            <a class="launch-card lifo" href="/learn/concepts#lifo-fifo">
+                <span class="card-badge">STACK</span>
+                <strong>LIFO</strong>
+                <small>The last item added is the first one removed.</small>
+            </a>
+            <a class="launch-card fifo" href="/learn/concepts#lifo-fifo">
+                <span class="card-badge">QUEUE</span>
+                <strong>FIFO</strong>
+                <small>The first item added is the first one removed.</small>
+            </a>
+            <a class="launch-card identity" href="/learn/concepts#identity">
+                <span class="card-badge">ID + VALUE</span>
+                <strong>Same value, different item</strong>
+                <small>Two 7s can exist because they are two separate objects with different IDs.</small>
+            </a>
+            <a class="launch-card memory" href="/learn/concepts#memory">
+                <span class="card-badge">MEMORY</span>
+                <strong>See both views</strong>
+                <small>The drawing helps you learn. The memory tab shows how the app stores it.</small>
+            </a>
+        </div>
+    </section>
+
     <header class="module-header">
         <div class="header-copy">
             <div class="module-eyebrow">
@@ -15,31 +49,36 @@
                 <span class="live-status"><i></i> Interactive lab</span>
             </div>
             <h1>Queue &amp; Stack</h1>
-            <p>Learn how order changes behavior. Run real mutations, control the pace, and watch each pointer move before the next state is committed.</p>
+            <p>Build, search, delete, and compare what you see on screen with a simple memory view.</p>
         </div>
-        <div class="concept-summary">
-            <div><span>STACK</span><strong>LIFO</strong><small>Last in, first out</small></div>
-            <div><span>QUEUE</span><strong>FIFO</strong><small>First in, first out</small></div>
-            <div><span>CORE OPS</span><strong>O(1)</strong><small>Push / pop / enqueue / dequeue</small></div>
-        </div>
+        <a class="header-concepts-link" href="/learn/concepts">Open concepts guide →</a>
     </header>
 
     <section class="smart-tip" aria-label="Learning tip">
         <span class="smart-tip-icon">✦</span>
         <div>
-            <strong>Predict before you click.</strong>
-            <p>Choose a value and say where it will appear before running the operation. Then use <b>Step</b> to check your mental model one state change at a time.</p>
+            <strong>Quick tip:</strong>
+            <p>Before you press Play, guess which item will be checked first.</p>
         </div>
-        <div class="tip-question"><span>ASK YOURSELF</span><strong>Which end can this structure modify?</strong></div>
+        <a class="tip-link" href="/learn/concepts#big-o">Simple Big-O guide →</a>
     </section>
 
     <section class="lab-shell">
         <div class="lab-heading">
             <div>
                 <span class="section-kicker">PLAYGROUND</span>
-                <h2>Build a state, then inspect how it changes.</h2>
+                <h2>1. Add items, then watch every step.</h2>
             </div>
-            <span class="live-pill"><i></i> Runtime connected</span>
+            <div class="lab-options">
+                @if (_lastTraversalResult is not null)
+                {
+                    <button class="last-run-button" type="button" @onclick="OpenLastRunPopup">Last run explanation</button>
+                }
+                <label class="popup-toggle" title="Turn automatic result popups on or off">
+                    <input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopupsAsync" />
+                    <span>Result popups</span>
+                </label>
+            </div>
         </div>
 
         <section class="operation-panel" aria-label="Queue and stack operations">
@@ -48,84 +87,317 @@
                     <span class="control-label">VALUE</span>
                     <InputNumber TValue="int?" @bind-Value="_newValue" disabled="@IsBusy" placeholder="e.g. 8" />
                 </label>
-                <small>One integer can be sent to either structure.</small>
+                <small>You can add the same value more than once. Each item still gets its own ID. <a href="/learn/concepts#identity">Why?</a></small>
             </div>
 
             <div class="operation-group stack-operations">
                 <div class="operation-title">
                     <span class="operation-glyph stack-glyph" aria-hidden="true">S</span>
-                    <span><strong>Stack</strong><small>Operate only at the top</small></span>
+                    <span><strong>Stack</strong><small>Add and remove at the top</small></span>
                 </div>
                 <div class="operation-actions">
                     <button class="action-primary" type="button" @onclick="PushAsync" disabled="@(!CanAddValue)">Push <span>↑</span></button>
                     <button type="button" @onclick="PopAsync" disabled="@IsBusy">Pop <span>↓</span></button>
-                    <button class="action-quiet" type="button" @onclick="ClearStackAsync" disabled="@IsBusy">Clear</button>
+                    <button class="action-quiet" type="button" @onclick="ClearStackAsync" disabled="@IsBusy">Reset</button>
                 </div>
             </div>
 
             <div class="operation-group queue-operations">
                 <div class="operation-title">
                     <span class="operation-glyph queue-glyph" aria-hidden="true">Q</span>
-                    <span><strong>Queue</strong><small>Enter rear, leave front</small></span>
+                    <span><strong>Queue</strong><small>Add at rear, remove at front</small></span>
                 </div>
                 <div class="operation-actions">
                     <button class="action-primary" type="button" @onclick="EnqueueAsync" disabled="@(!CanAddValue)">Enqueue <span>→</span></button>
                     <button type="button" @onclick="DequeueAsync" disabled="@IsBusy">Dequeue <span>→</span></button>
-                    <button class="action-quiet" type="button" @onclick="ClearQueueAsync" disabled="@IsBusy">Clear</button>
+                    <button class="action-quiet" type="button" @onclick="ClearQueueAsync" disabled="@IsBusy">Reset</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="lookup-panel" aria-label="Find and delete operations">
+            <div class="lookup-intro">
+                <span class="section-kicker">FIND OR DELETE</span>
+                <h3>2. Choose what should match.</h3>
+                <p>The app checks one item at a time. If a value appears twice, the first match in that structure wins.</p>
+            </div>
+
+            <div class="criterion-card">
+                <div class="criterion-header">
+                    <span class="control-label">MATCH BY</span>
+                    <div class="criterion-tabs" role="group" aria-label="Lookup criterion">
+                        <button type="button" class="@GetCriterionButtonClass(LinearLookupCriterion.Value)" @onclick="() => SetLookupCriterion(LinearLookupCriterion.Value)" disabled="@IsBusy">Value</button>
+                        <button type="button" class="@GetCriterionButtonClass(LinearLookupCriterion.Id)" @onclick="() => SetLookupCriterion(LinearLookupCriterion.Id)" disabled="@IsBusy">ID</button>
+                    </div>
+                </div>
+
+                @if (_lookupCriterion == LinearLookupCriterion.Value)
+                {
+                    <label class="lookup-input">
+                        <span>Target value</span>
+                        <InputNumber TValue="int?" @bind-Value="_lookupValue" disabled="@IsBusy" placeholder="e.g. 7" />
+                    </label>
+                    <small>Use this when you know the number.</small>
+                }
+                else
+                {
+                    <label class="lookup-input">
+                        <span>Target element ID</span>
+                        <InputText @bind-Value="_lookupId" disabled="@IsBusy" placeholder="#A31F9C" />
+                    </label>
+                    <small>Use the short ID shown under an item. IDs are unique, even when values repeat.</small>
+                }
+            </div>
+
+            <div class="lookup-actions-card stack-lookup">
+                <div class="lookup-direction">
+                    <span class="operation-glyph stack-glyph" aria-hidden="true">S</span>
+                    <span><strong>Stack checks</strong><small>TOP → bottom</small></span>
+                </div>
+                <div class="lookup-buttons">
+                    <button type="button" @onclick="FindStackAsync" disabled="@(!CanRunLookup)">Find</button>
+                    <button class="delete-button" type="button" @onclick="DeleteStackAsync" disabled="@(!CanRunLookup)">Delete</button>
+                </div>
+            </div>
+
+            <div class="lookup-actions-card queue-lookup">
+                <div class="lookup-direction">
+                    <span class="operation-glyph queue-glyph" aria-hidden="true">Q</span>
+                    <span><strong>Queue checks</strong><small>FRONT → rear</small></span>
+                </div>
+                <div class="lookup-buttons">
+                    <button type="button" @onclick="FindQueueAsync" disabled="@(!CanRunLookup)">Find</button>
+                    <button class="delete-button" type="button" @onclick="DeleteQueueAsync" disabled="@(!CanRunLookup)">Delete</button>
                 </div>
             </div>
         </section>
 
         @if (!string.IsNullOrWhiteSpace(_errorMessage))
         {
-            <div class="error-message" role="alert">
-                <span>!</span>
-                <p>@_errorMessage</p>
+            <div class="error-message" role="alert"><span>!</span><p>@_errorMessage</p></div>
+        }
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync"
+                           OnPause="PauseTimelineAsync"
+                           OnStepBack="StepBackAsync"
+                           OnStepForward="StepForwardAsync"
+                           OnReset="ResetPlaybackAsync"
+                           CanStepBack="@CanStepBack"
+                           CanStepForwardOverride="@CanStepForward"
+                           StepTextOverride="@DisplayedStepText"
+                           TimelinePosition="@TimelinePosition"
+                           TimelineCount="@TimelineCount" />
+
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist" aria-label="Simulation view">
+                <button type="button" role="tab" aria-selected="@(_activeStateView == StateView.Visual)" class="@GetStateTabClass(StateView.Visual)" @onclick="() => SetStateView(StateView.Visual)">Visual state</button>
+                <button type="button" role="tab" aria-selected="@(_activeStateView == StateView.Memory)" class="@GetStateTabClass(StateView.Memory)" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
+            </div>
+            <p>@(_activeStateView == StateView.Visual
+                ? "Visual state shows what the structure looks like while the run is happening."
+                : "Memory state shows a simple model of how the app stores items and references.")</p>
+        </div>
+
+        @if (_activeStateView == StateView.Visual)
+        {
+            <SimulationViewport>
+                <div class="visualization-grid">
+                    <StackVisualization Elements="DisplayedStackItems" />
+                    <QueueVisualization Elements="DisplayedQueueItems" />
+                </div>
+            </SimulationViewport>
+        }
+        else
+        {
+            <div class="memory-grid">
+                <LinearMemoryVisualization Title="Stack memory" AccessLabel="LIFO / top first" Elements="DisplayedStackItems" Capacity="DisplayedStackCapacity" />
+                <LinearMemoryVisualization Title="Queue memory" AccessLabel="FIFO / front first" Elements="DisplayedQueueItems" Capacity="DisplayedQueueCapacity" />
+            </div>
+            <div class="memory-warning">
+                <strong>This is a learning model, not a real RAM address viewer.</strong>
+                <span>.NET can move managed objects during garbage collection, so the app uses stable learning labels such as <code>MEM-#A31F9C</code>. This lab currently stores both structures in a C# <code>List</code>; that storage choice is separate from the LIFO/FIFO rule itself. <a href="/learn/concepts#visual-vs-memory">Learn why visual and memory views can differ.</a></span>
+            </div>
+        }
+    </section>
+
+    <section class="practice-path" aria-labelledby="practice-heading">
+        <div class="practice-heading">
+            <div>
+                <span class="section-kicker">GUIDED PRACTICE</span>
+                <h2 id="practice-heading">4. Practice with small tasks.</h2>
+                <p>Press Start, do the steps, and the app marks the task complete when you finish it.</p>
+            </div>
+            <div class="practice-progress">
+                <strong>@_completedTaskIds.Count / @PracticeTasks.Count</strong>
+                <span>completed</span>
+            </div>
+        </div>
+
+        @if (_activeTaskId is not null)
+        {
+            var activeTask = PracticeTasks.First(task => task.Id == _activeTaskId);
+            <div class="active-task-banner">
+                <span>ACTIVE TASK @activeTask.Id.ToString("00")</span>
+                <strong>@activeTask.Title</strong>
+                <small>@GetActiveTaskProgressText(activeTask.Id)</small>
             </div>
         }
 
-        <SimulationToolbar />
-
-        <SimulationViewport>
-            <div class="visualization-grid">
-                <StackVisualization Elements="Stack.Items" />
-                <QueueVisualization Elements="Queue.Items" />
-            </div>
-        </SimulationViewport>
-    </section>
-
-    <section class="learn-below">
-        <div class="learn-heading">
-            <span class="section-kicker">MAKE IT STICK</span>
-            <h2>Same storage idea. Different access rule.</h2>
-            <p>The fastest way to distinguish these structures is to stop memorizing names and ask which element is legally accessible next.</p>
-        </div>
-        <div class="comparison-grid">
-            <article>
-                <div class="compare-top"><span>01</span><strong>Stack mental model</strong></div>
-                <p>Think of a stack of plates. You can add or remove only the plate currently exposed at the top.</p>
-                <div class="rule"><span>Rule</span><strong>Newest item leaves first.</strong></div>
-            </article>
-            <article>
-                <div class="compare-top"><span>02</span><strong>Queue mental model</strong></div>
-                <p>Think of a line of people. New arrivals join the rear; service always happens from the front.</p>
-                <div class="rule"><span>Rule</span><strong>Oldest item leaves first.</strong></div>
-            </article>
-            <article class="challenge-card">
-                <div class="compare-top"><span>✦</span><strong>Try this</strong></div>
-                <p>Add <b>3, 7, 2</b> to both structures. Before removing anything, predict the first value each structure will return.</p>
-                <div class="rule"><span>Goal</span><strong>Explain the difference without using LIFO/FIFO.</strong></div>
-            </article>
+        <div class="task-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                var completed = _completedTaskIds.Contains(task.Id);
+                var active = _activeTaskId == task.Id;
+                <article class="task-card @(completed ? "completed" : string.Empty) @(active ? "active" : string.Empty)">
+                    <div class="task-title">
+                        <span>TASK @task.Id.ToString("00")</span>
+                        @if (completed)
+                        {
+                            <span class="completed-badge">✓ Completed</span>
+                        }
+                    </div>
+                    <strong>@task.Title</strong>
+                    <ol>
+                        @foreach (var step in task.Steps)
+                        {
+                            <li>@step</li>
+                        }
+                    </ol>
+                    <div class="task-actions">
+                        <button type="button" @onclick="() => StartTask(task.Id)" disabled="@IsBusy">@(active ? "Restart task" : completed ? "Practice again" : "Start task")</button>
+                        <a href="@task.HelpHref">Need the concept?</a>
+                    </div>
+                </article>
+            }
         </div>
     </section>
 </div>
 
+@if (_lastRunPopupOpen && _lastTraversalResult is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRunPopup">
+        <section class="run-popup" role="dialog" aria-modal="true" aria-labelledby="run-popup-title" @onclick="IgnorePopupClick" @onclick:stopPropagation="true">
+            <header>
+                <div>
+                    <span class="section-kicker">LAST RUN</span>
+                    <h2 id="run-popup-title">@GetResultHeadline(_lastTraversalResult)</h2>
+                </div>
+                <button type="button" class="popup-close" @onclick="CloseLastRunPopup" aria-label="Close result explanation">×</button>
+            </header>
+
+            <div class="popup-tabs" role="tablist">
+                <button type="button" class="@(_popupTab == ResultPopupTab.Run ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Run">What happened</button>
+                <button type="button" class="@(_popupTab == ResultPopupTab.Memory ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Memory">Memory</button>
+            </div>
+
+            @if (_popupTab == ResultPopupTab.Run)
+            {
+                <div class="popup-body">
+                    <p class="plain-result">@GetResultExplanation(_lastTraversalResult)</p>
+                    <div class="popup-metrics">
+                        <div><span>Items checked</span><strong>@_lastTraversalResult.Comparisons / @_lastTraversalResult.InitialCount</strong></div>
+                        <div><span>This search path</span><strong>@_lastTraversalResult.CurrentRunComplexity</strong></div>
+                        <div><span>Whole operation</span><strong>@_lastTraversalResult.FullOperationComplexity</strong></div>
+                        <div><span>Worst case</span><strong>@_lastTraversalResult.WorstCaseComplexity</strong></div>
+                    </div>
+                    <div class="popup-explainer">
+                        <strong>In simple words</strong>
+                        <p>@GetPlainComplexityExplanation(_lastTraversalResult)</p>
+                    </div>
+                    <a class="popup-learn" href="/learn/concepts#big-o">Learn O(1), O(n), n and k →</a>
+                </div>
+            }
+            else
+            {
+                <div class="popup-body">
+                    @if (_lastTraversalResult.Operation == LinearTraversalOperation.Delete && _lastTraversalResult.Found)
+                    {
+                        <div class="popup-explainer success">
+                            <strong>No empty item is left inside the List.</strong>
+                            <p>The matched element was removed from List slot @(_lastTraversalResult.MatchedIndex ?? 0). @_lastTraversalResult.ShiftedElements later reference(s) moved one slot left. Count changed from @_lastTraversalResult.InitialCount to @_lastTraversalResult.CountAfter, while Capacity stayed @_lastTraversalResult.CapacityBefore → @_lastTraversalResult.CapacityAfter.</p>
+                        </div>
+                        <div class="memory-steps">
+                            <div><span>1</span><p><strong>Find:</strong> check elements until the target is reached.</p></div>
+                            <div><span>2</span><p><strong>Remove:</strong> the List stops keeping that reference.</p></div>
+                            <div><span>3</span><p><strong>Close the gap:</strong> later references move left.</p></div>
+                            <div><span>4</span><p><strong>Clean up later:</strong> if nothing else points to the removed object, .NET can reclaim it later.</p></div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="popup-explainer">
+                            <strong>This run did not remove an object.</strong>
+                            <p>A Find only reads and compares. A failed Delete also leaves the structure unchanged because no matching element was found.</p>
+                        </div>
+                    }
+                    <a class="popup-learn" href="/learn/concepts#memory">Open the simple memory guide →</a>
+                </div>
+            }
+
+            <footer>
+                <label class="popup-toggle inside"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopupsAsync" /><span>Show this popup automatically after future Find/Delete runs</span></label>
+            </footer>
+        </section>
+    </div>
+}
+
 @code {
+    private const string CompletedTasksStorageKey = "algorithm-visualizer.queue-stack.completed-tasks.v2";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.queue-stack.result-popups.v1";
+
     private int? _newValue;
+    private int? _lookupValue;
+    private string? _lookupId;
     private string? _errorMessage;
+    private LinearLookupCriterion _lookupCriterion = LinearLookupCriterion.Value;
+    private LinearTraversalResult? _lastTraversalResult;
+    private bool _showRunPopups = true;
+    private bool _lastRunPopupOpen;
+    private ResultPopupTab _popupTab = ResultPopupTab.Run;
+    private StateView _activeStateView = StateView.Visual;
+
+    private readonly List<RunFrame> _runFrames = [];
+    private int _frameIndex = -1;
+    private string? _lastCapturedStepText;
+
+    private readonly List<PracticeEvent> _practiceEvents = [];
+    private readonly HashSet<int> _completedTaskIds = [];
+    private int? _activeTaskId;
+    private bool _memoryOpenedDuringTask;
+    private bool _storageLoaded;
 
     private bool IsBusy => SimulationState.IsRunning;
     private bool CanAddValue => !IsBusy && _newValue.HasValue;
+    private bool CanRunLookup => !IsBusy && (_lookupCriterion == LinearLookupCriterion.Value
+        ? _lookupValue.HasValue
+        : !string.IsNullOrWhiteSpace(_lookupId));
+
+    private bool CanStepBack => _runFrames.Count > 1 && _frameIndex > 0;
+    private bool CanStepForward => (_runFrames.Count > 0 && _frameIndex < _runFrames.Count - 1) || SimulationState.IsRunning;
+    private int TimelineCount => _runFrames.Count;
+    private int TimelinePosition => _frameIndex >= 0 ? _frameIndex + 1 : 0;
+    private string DisplayedStepText => CurrentFrame?.StepText ?? SimulationState.CurrentStepText;
+    private RunFrame? CurrentFrame => _frameIndex >= 0 && _frameIndex < _runFrames.Count ? _runFrames[_frameIndex] : null;
+    private IReadOnlyList<LinearElement> DisplayedStackItems => CurrentFrame?.StackItems ?? Stack.Items;
+    private IReadOnlyList<LinearElement> DisplayedQueueItems => CurrentFrame?.QueueItems ?? Queue.Items;
+    private int DisplayedStackCapacity => CurrentFrame?.StackCapacity ?? Stack.StorageCapacity;
+    private int DisplayedQueueCapacity => CurrentFrame?.QueueCapacity ?? Queue.StorageCapacity;
+
+    private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
+    [
+        new(1, "Build both structures", ["Add 3, 7, 2, 7 to Stack in that order.", "Add 3, 7, 2, 7 to Queue in that order.", "Before running Pop/Dequeue, guess which value will leave first."], "/learn/concepts#lifo-fifo"),
+        new(2, "Find by ID, then by value", ["Choose either Stack or Queue.", "Find one visible element using its short ID.", "Then find a visible element by value."], "/learn/concepts#identity"),
+        new(3, "Delete by ID, then by value", ["Delete one existing element by ID.", "Delete one existing element by value.", "Open Memory state and notice what changed."], "/learn/concepts#memory"),
+        new(4, "Add the same value twice", ["Add the same number twice to one structure.", "Open Memory state.", "Confirm the values match but the two short IDs are different."], "/learn/concepts#identity"),
+        new(5, "Find something that exists and something that does not", ["Run one successful Find.", "Run one Find for a missing value or ID.", "Compare the number of checked items."], "/learn/concepts#big-o"),
+        new(6, "Delete existing vs missing", ["Run one successful Delete.", "Then try to delete something that is not there.", "Confirm the failed delete changes nothing."], "/learn/concepts#memory"),
+        new(7, "Delete a duplicate value twice", ["Create at least two copies of one value.", "Delete that value once.", "Delete the same value again.", "Watch which ID disappears each time."], "/learn/concepts#identity"),
+        new(8, "Use a missing ID", ["Enter a valid 6-character ID that is not displayed, for example #FFFFFF if it is absent.", "Find it.", "Try to delete it.", "Both runs should check the structure instead of failing before the simulation starts."], "/learn/concepts#identity"),
+        new(9, "Delete an ID, then search for that old ID", ["Delete an existing element by ID.", "Keep the same 6-character ID in the input.", "Find that ID again.", "It should now be missing."], "/learn/concepts#identity"),
+        new(10, "Empty and one-item cases", ["Clear one structure.", "Find or delete while it is empty.", "Add exactly one item.", "Delete that one item."], "/learn/concepts#big-o"),
+        new(11, "See how the List closes a gap", ["Build at least five items.", "Delete a middle item so later references must move.", "Open Memory state.", "Add one new item after the delete."], "/learn/concepts#memory"),
+        new(12, "Mixed challenge", ["In one structure add 4, 1, 4, 9, 2.", "Find value 4.", "Delete value 4.", "Find a surviving element by ID.", "Try to delete missing value 100."], "/learn/concepts#big-o")
+    ];
 
     protected override void OnInitialized()
     {
@@ -134,92 +406,469 @@
         Queue.Changed += HandleStructureChanged;
     }
 
-    private Task PushAsync() => RunValueOperationAsync(
-        "Starting stack push.",
-        (value, token) => Stack.PushAsync(value, token));
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _storageLoaded)
+        {
+            return;
+        }
 
-    private Task EnqueueAsync() => RunValueOperationAsync(
-        "Starting queue enqueue.",
-        (value, token) => Queue.EnqueueAsync(value, token));
+        _storageLoaded = true;
+        try
+        {
+            var completedJson = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { CompletedTasksStorageKey });
+            if (!string.IsNullOrWhiteSpace(completedJson))
+            {
+                var completed = JsonSerializer.Deserialize<int[]>(completedJson) ?? [];
+                foreach (var id in completed.Where(id => PracticeTasks.Any(task => task.Id == id)))
+                {
+                    _completedTaskIds.Add(id);
+                }
+            }
 
-    private Task PopAsync() => RunOperationAsync(
-        "Starting stack pop.",
-        token => Stack.PopAsync(token));
+            var popupSetting = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { PopupSettingStorageKey });
+            if (bool.TryParse(popupSetting, out var showPopups))
+            {
+                _showRunPopups = showPopups;
+            }
+        }
+        catch
+        {
+            // The learning features still work if browser storage is unavailable.
+        }
 
-    private Task DequeueAsync() => RunOperationAsync(
-        "Starting queue dequeue.",
-        token => Queue.DequeueAsync(token));
+        await InvokeAsync(StateHasChanged);
+    }
 
-    private Task ClearStackAsync() => RunOperationAsync(
-        "Starting stack clear.",
-        token => Stack.ClearAsync(token));
+    private Task PushAsync() => RunValueOperationAsync("Starting Stack Push.", "Stack", "Add", (value, token) => Stack.PushAsync(value, token));
+    private Task EnqueueAsync() => RunValueOperationAsync("Starting Queue Enqueue.", "Queue", "Add", (value, token) => Queue.EnqueueAsync(value, token));
+    private Task PopAsync() => RunSimpleOperationAsync("Starting Stack Pop.", "Stack", "Remove end", token => Stack.PopAsync(token));
+    private Task DequeueAsync() => RunSimpleOperationAsync("Starting Queue Dequeue.", "Queue", "Remove end", token => Queue.DequeueAsync(token));
+    private Task ClearStackAsync() => RunSimpleOperationAsync("Clearing Stack.", "Stack", "Clear", token => Stack.ClearAsync(token));
+    private Task ClearQueueAsync() => RunSimpleOperationAsync("Clearing Queue.", "Queue", "Clear", token => Queue.ClearAsync(token));
 
-    private Task ClearQueueAsync() => RunOperationAsync(
-        "Starting queue clear.",
-        token => Queue.ClearAsync(token));
+    private Task FindStackAsync() => RunLookupOperationAsync("Stack", LinearTraversalOperation.Search, (id, token) => Stack.FindByIdAsync(id, token), (value, token) => Stack.FindByValueAsync(value, token));
+    private Task DeleteStackAsync() => RunLookupOperationAsync("Stack", LinearTraversalOperation.Delete, (id, token) => Stack.DeleteByIdAsync(id, token), (value, token) => Stack.DeleteByValueAsync(value, token));
+    private Task FindQueueAsync() => RunLookupOperationAsync("Queue", LinearTraversalOperation.Search, (id, token) => Queue.FindByIdAsync(id, token), (value, token) => Queue.FindByValueAsync(value, token));
+    private Task DeleteQueueAsync() => RunLookupOperationAsync("Queue", LinearTraversalOperation.Delete, (id, token) => Queue.DeleteByIdAsync(id, token), (value, token) => Queue.DeleteByValueAsync(value, token));
 
-    private Task RunValueOperationAsync(
-        string initialStepText,
-        Func<int, CancellationToken, Task> operation)
+    private async Task RunValueOperationAsync(string initialStepText, string structureName, string kind, Func<int, CancellationToken, Task> operation)
     {
         if (!_newValue.HasValue)
         {
-            _errorMessage = "Enter an integer value before adding an element.";
-            return InvokeAsync(StateHasChanged);
+            _errorMessage = "Enter a number first.";
+            await InvokeAsync(StateHasChanged);
+            return;
         }
 
         var value = _newValue.Value;
         _newValue = null;
-        return RunOperationAsync(initialStepText, token => operation(value, token));
+        await RunOperationAsync(initialStepText, token => operation(value, token), () => RecordPracticeEvent(new(structureName, kind, value)));
     }
 
-    private async Task RunOperationAsync(
-        string initialStepText,
-        Func<CancellationToken, Task> operation)
+    private Task RunSimpleOperationAsync(string initialStepText, string structureName, string kind, Func<CancellationToken, Task> operation) =>
+        RunOperationAsync(initialStepText, operation, () => RecordPracticeEvent(new(structureName, kind)));
+
+    private async Task RunOperationAsync(string initialStepText, Func<CancellationToken, Task> operation, Action? afterCompleted = null)
     {
         if (SimulationState.IsRunning)
         {
             return;
         }
 
-        _errorMessage = null;
+        PrepareNewRun();
         var runToken = SimulationState.Start(initialStepText);
 
         try
         {
             await operation(runToken);
-
             if (IsCurrentRun(runToken))
             {
+                SimulationState.SetCurrentStep("Run complete.");
+                afterCompleted?.Invoke();
                 SimulationState.Complete();
             }
         }
         catch (OperationCanceledException) when (runToken.IsCancellationRequested)
         {
-            // Reset or a newer simulation owns the playback state now.
         }
         catch (Exception exception)
         {
-            _errorMessage = $"Operation failed: {exception.Message}";
-
-            if (IsCurrentRun(runToken))
-            {
-                SimulationState.Complete("The operation stopped because of an error.");
-            }
+            _errorMessage = $"Something went wrong: {exception.Message}";
+            if (IsCurrentRun(runToken)) SimulationState.Complete("The run stopped because of an error.");
         }
     }
 
-    private bool IsCurrentRun(CancellationToken runToken) =>
-        !runToken.IsCancellationRequested &&
-        SimulationState.SimulationCancellationToken == runToken;
-
-    private void HandleStateChanged() => RequestRender();
-    private void HandleStructureChanged() => RequestRender();
-
-    private void RequestRender()
+    private async Task RunLookupOperationAsync(
+        string structureName,
+        LinearTraversalOperation operation,
+        Func<string, CancellationToken, Task<LinearTraversalResult>> byId,
+        Func<int, CancellationToken, Task<LinearTraversalResult>> byValue)
     {
-        _ = InvokeAsync(StateHasChanged);
+        var verb = operation == LinearTraversalOperation.Search ? "Find" : "Delete";
+        if (_lookupCriterion == LinearLookupCriterion.Value)
+        {
+            if (!_lookupValue.HasValue)
+            {
+                _errorMessage = "Enter a value to find or delete.";
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            var requestedValue = _lookupValue.Value;
+            await RunResultOperationAsync(
+                $"Starting {structureName} {verb} by value {requestedValue}.",
+                token => byValue(requestedValue, token),
+                result => new PracticeEvent(structureName, operation == LinearTraversalOperation.Search ? "Find" : "Delete", RequestedValue: requestedValue, Criterion: LinearLookupCriterion.Value, Found: result.Found, InitialCount: result.InitialCount, ShiftedElements: result.ShiftedElements));
+            return;
+        }
+
+        if (!TryNormalizeShortId(_lookupId, out var idKey, out var error))
+        {
+            _errorMessage = error;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        await RunResultOperationAsync(
+            $"Starting {structureName} {verb} by ID #{idKey}.",
+            token => byId(idKey, token),
+            result => new PracticeEvent(structureName, operation == LinearTraversalOperation.Search ? "Find" : "Delete", RequestedId: idKey, Criterion: LinearLookupCriterion.Id, Found: result.Found, InitialCount: result.InitialCount, ShiftedElements: result.ShiftedElements));
     }
+
+    private async Task RunResultOperationAsync(string initialStepText, Func<CancellationToken, Task<LinearTraversalResult>> operation, Func<LinearTraversalResult, PracticeEvent> eventFactory)
+    {
+        if (SimulationState.IsRunning)
+        {
+            return;
+        }
+
+        PrepareNewRun();
+        var runToken = SimulationState.Start(initialStepText);
+
+        try
+        {
+            var result = await operation(runToken);
+            if (IsCurrentRun(runToken))
+            {
+                _lastTraversalResult = result;
+                SimulationState.SetCurrentStep("Run complete.");
+                RecordPracticeEvent(eventFactory(result));
+                SimulationState.Complete();
+                _popupTab = result.Operation == LinearTraversalOperation.Delete ? ResultPopupTab.Memory : ResultPopupTab.Run;
+                _lastRunPopupOpen = _showRunPopups;
+            }
+        }
+        catch (OperationCanceledException) when (runToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = $"Something went wrong: {exception.Message}";
+            if (IsCurrentRun(runToken)) SimulationState.Complete("The run stopped because of an error.");
+        }
+    }
+
+    private void PrepareNewRun()
+    {
+        _errorMessage = null;
+        _lastRunPopupOpen = false;
+        _runFrames.Clear();
+        _frameIndex = -1;
+        _lastCapturedStepText = null;
+    }
+
+    private void CaptureFrame()
+    {
+        var stepText = SimulationState.CurrentStepText;
+        if (string.Equals(stepText, _lastCapturedStepText, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var wasAtTail = _frameIndex < 0 || _frameIndex == _runFrames.Count - 1;
+        _runFrames.Add(new RunFrame(
+            stepText,
+            Stack.Items.Select(item => item.Snapshot()).ToArray(),
+            Stack.StorageCapacity,
+            Queue.Items.Select(item => item.Snapshot()).ToArray(),
+            Queue.StorageCapacity));
+        _lastCapturedStepText = stepText;
+        if (wasAtTail) _frameIndex = _runFrames.Count - 1;
+    }
+
+    private Task PlayTimelineAsync()
+    {
+        if (_runFrames.Count > 0) _frameIndex = _runFrames.Count - 1;
+        SimulationState.Resume();
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task PauseTimelineAsync()
+    {
+        SimulationState.Pause();
+        return Task.CompletedTask;
+    }
+
+    private Task StepBackAsync()
+    {
+        if (SimulationState.IsRunning && !SimulationState.IsPaused) SimulationState.Pause();
+        if (_frameIndex > 0) _frameIndex--;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task StepForwardAsync()
+    {
+        if (_frameIndex >= 0 && _frameIndex < _runFrames.Count - 1)
+        {
+            _frameIndex++;
+            return InvokeAsync(StateHasChanged);
+        }
+
+        if (SimulationState.IsRunning) SimulationState.Step();
+        return Task.CompletedTask;
+    }
+
+    private Task ResetPlaybackAsync()
+    {
+        SimulationState.Reset();
+        _runFrames.Clear();
+        _frameIndex = -1;
+        _lastCapturedStepText = null;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private void SetLookupCriterion(LinearLookupCriterion criterion)
+    {
+        if (IsBusy) return;
+        _lookupCriterion = criterion;
+        _errorMessage = null;
+    }
+
+    private string GetCriterionButtonClass(LinearLookupCriterion criterion) => _lookupCriterion == criterion ? "active" : string.Empty;
+
+    private static bool TryNormalizeShortId(string? rawId, out string normalizedId, out string error)
+    {
+        normalizedId = string.Empty;
+        error = string.Empty;
+        if (string.IsNullOrWhiteSpace(rawId))
+        {
+            error = "Enter the 6-character ID shown under an element.";
+            return false;
+        }
+
+        var compact = rawId.Trim().TrimStart('#').Replace("-", string.Empty, StringComparison.Ordinal);
+        if (compact.Length != 6)
+        {
+            error = "Use the 6-character ID shown in the app, for example #A31F9C.";
+            return false;
+        }
+
+        if (compact.Any(character => !Uri.IsHexDigit(character)))
+        {
+            error = "An ID uses 6 characters from 0-9 and A-F.";
+            return false;
+        }
+
+        normalizedId = compact.ToUpperInvariant();
+        return true;
+    }
+
+    private void SetStateView(StateView view)
+    {
+        _activeStateView = view;
+        if (view == StateView.Memory && _activeTaskId is not null)
+        {
+            _memoryOpenedDuringTask = true;
+            EvaluateActiveTask();
+        }
+    }
+
+    private string GetStateTabClass(StateView view) => _activeStateView == view ? "active" : string.Empty;
+
+    private void StartTask(int taskId)
+    {
+        _activeTaskId = taskId;
+        _practiceEvents.Clear();
+        _memoryOpenedDuringTask = false;
+    }
+
+    private void RecordPracticeEvent(PracticeEvent practiceEvent)
+    {
+        _practiceEvents.Add(practiceEvent with { Sequence = _practiceEvents.Count });
+        EvaluateActiveTask();
+    }
+
+    private void EvaluateActiveTask()
+    {
+        if (_activeTaskId is null) return;
+        var completed = _activeTaskId.Value switch
+        {
+            1 => HasAddedSequence("Stack", [3, 7, 2, 7]) && HasAddedSequence("Queue", [3, 7, 2, 7]),
+            2 => HasSameStructureSuccessfulFindByBothCriteria(),
+            3 => _practiceEvents.Any(e => e.Kind == "Delete" && e.Criterion == LinearLookupCriterion.Id && e.Found == true) && _practiceEvents.Any(e => e.Kind == "Delete" && e.Criterion == LinearLookupCriterion.Value && e.Found == true) && _memoryOpenedDuringTask,
+            4 => HasDuplicateAdd() && _memoryOpenedDuringTask,
+            5 => _practiceEvents.Any(e => e.Kind == "Find" && e.Found == true) && _practiceEvents.Any(e => e.Kind == "Find" && e.Found == false),
+            6 => _practiceEvents.Any(e => e.Kind == "Delete" && e.Found == true) && _practiceEvents.Any(e => e.Kind == "Delete" && e.Found == false),
+            7 => HasRepeatedSuccessfulValueDelete(),
+            8 => _practiceEvents.Any(e => e.Kind == "Find" && e.Criterion == LinearLookupCriterion.Id && e.Found == false) && _practiceEvents.Any(e => e.Kind == "Delete" && e.Criterion == LinearLookupCriterion.Id && e.Found == false),
+            9 => HasDeletedThenMissedSameId(),
+            10 => HasEmptyAndSingleElementFlow(),
+            11 => HasShiftThenAdd() && _memoryOpenedDuringTask,
+            12 => HasMixedChallenge(),
+            _ => false
+        };
+
+        if (!completed) return;
+        _completedTaskIds.Add(_activeTaskId.Value);
+        _activeTaskId = null;
+        _practiceEvents.Clear();
+        _memoryOpenedDuringTask = false;
+        _ = PersistCompletedTasksAsync();
+    }
+
+    private bool HasAddedSequence(string structure, int[] sequence)
+    {
+        var values = _practiceEvents.Where(e => e.Structure == structure && e.Kind == "Add" && e.Value.HasValue).Select(e => e.Value!.Value).ToArray();
+        if (values.Length < sequence.Length) return false;
+        for (var start = 0; start <= values.Length - sequence.Length; start++)
+        {
+            if (values.Skip(start).Take(sequence.Length).SequenceEqual(sequence)) return true;
+        }
+        return false;
+    }
+
+    private bool HasSameStructureSuccessfulFindByBothCriteria() =>
+        new[] { "Stack", "Queue" }.Any(structure =>
+            _practiceEvents.Any(e => e.Structure == structure && e.Kind == "Find" && e.Criterion == LinearLookupCriterion.Id && e.Found == true) &&
+            _practiceEvents.Any(e => e.Structure == structure && e.Kind == "Find" && e.Criterion == LinearLookupCriterion.Value && e.Found == true));
+
+    private bool HasDuplicateAdd() =>
+        _practiceEvents.Where(e => e.Kind == "Add" && e.Value.HasValue)
+            .GroupBy(e => (e.Structure, e.Value))
+            .Any(group => group.Count() >= 2);
+
+    private bool HasRepeatedSuccessfulValueDelete() =>
+        _practiceEvents.Where(e => e.Kind == "Delete" && e.Criterion == LinearLookupCriterion.Value && e.Found == true)
+            .GroupBy(e => (e.Structure, e.RequestedValue))
+            .Any(group => group.Count() >= 2);
+
+    private bool HasDeletedThenMissedSameId()
+    {
+        foreach (var deletion in _practiceEvents.Where(e => e.Kind == "Delete" && e.Criterion == LinearLookupCriterion.Id && e.Found == true && e.RequestedId is not null))
+        {
+            if (_practiceEvents.Any(e => e.Sequence > deletion.Sequence && e.Structure == deletion.Structure && e.Kind == "Find" && e.Criterion == LinearLookupCriterion.Id && e.Found == false && e.RequestedId == deletion.RequestedId)) return true;
+        }
+        return false;
+    }
+
+    private bool HasEmptyAndSingleElementFlow()
+    {
+        var clear = _practiceEvents.FirstOrDefault(e => e.Kind == "Clear");
+        if (clear is null) return false;
+        var emptyCheck = _practiceEvents.FirstOrDefault(e => e.Sequence > clear.Sequence && e.Structure == clear.Structure && (e.Kind == "Find" || e.Kind == "Delete") && e.InitialCount == 0);
+        if (emptyCheck is null) return false;
+        var add = _practiceEvents.FirstOrDefault(e => e.Sequence > emptyCheck.Sequence && e.Structure == clear.Structure && e.Kind == "Add");
+        if (add is null) return false;
+        return _practiceEvents.Any(e => e.Sequence > add.Sequence && e.Structure == clear.Structure && e.Kind == "Delete" && e.Found == true && e.InitialCount == 1);
+    }
+
+    private bool HasShiftThenAdd()
+    {
+        foreach (var deletion in _practiceEvents.Where(e => e.Kind == "Delete" && e.Found == true && e.ShiftedElements > 0))
+        {
+            if (_practiceEvents.Any(e => e.Sequence > deletion.Sequence && e.Structure == deletion.Structure && e.Kind == "Add")) return true;
+        }
+        return false;
+    }
+
+    private bool HasMixedChallenge() =>
+        (HasAddedSequence("Stack", [4, 1, 4, 9, 2]) || HasAddedSequence("Queue", [4, 1, 4, 9, 2])) &&
+        _practiceEvents.Any(e => e.Kind == "Find" && e.Criterion == LinearLookupCriterion.Value && e.RequestedValue == 4 && e.Found == true) &&
+        _practiceEvents.Any(e => e.Kind == "Delete" && e.Criterion == LinearLookupCriterion.Value && e.RequestedValue == 4 && e.Found == true) &&
+        _practiceEvents.Any(e => e.Kind == "Find" && e.Criterion == LinearLookupCriterion.Id && e.Found == true) &&
+        _practiceEvents.Any(e => e.Kind == "Delete" && e.Criterion == LinearLookupCriterion.Value && e.RequestedValue == 100 && e.Found == false);
+
+    private string GetActiveTaskProgressText(int taskId) => taskId switch
+    {
+        1 => "Add the requested values to both structures.",
+        2 => "Complete one successful ID Find and one successful value Find in the same structure.",
+        3 => _memoryOpenedDuringTask ? "Memory view opened — finish both successful Delete types." : "Complete both Delete types, then open Memory state.",
+        4 => _memoryOpenedDuringTask ? "Memory view opened — now make sure you added a duplicate." : "Add a duplicate, then open Memory state.",
+        5 => "You need one Find that succeeds and one that misses.",
+        6 => "You need one Delete that succeeds and one that misses.",
+        7 => "Delete the same duplicated value successfully twice.",
+        8 => "Run both Find by ID and Delete by ID with a missing short ID.",
+        9 => "Delete by ID, then Find that same old ID and get not found.",
+        10 => "Clear → empty check → add one → delete that one.",
+        11 => "Delete so at least one reference shifts, open Memory state, then add again.",
+        12 => "Build 4,1,4,9,2 and finish all four requested Find/Delete actions.",
+        _ => string.Empty
+    };
+
+    private async Task PersistCompletedTasksAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { CompletedTasksStorageKey, JsonSerializer.Serialize(_completedTaskIds.OrderBy(id => id).ToArray()) });
+        }
+        catch { }
+    }
+
+    private async Task ToggleRunPopupsAsync(ChangeEventArgs args)
+    {
+        _showRunPopups = args.Value is bool boolValue ? boolValue : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed;
+        try { await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { PopupSettingStorageKey, _showRunPopups.ToString() }); } catch { }
+    }
+
+    private void OpenLastRunPopup()
+    {
+        if (_lastTraversalResult is null) return;
+        _popupTab = _lastTraversalResult.Operation == LinearTraversalOperation.Delete ? ResultPopupTab.Memory : ResultPopupTab.Run;
+        _lastRunPopupOpen = true;
+    }
+
+    private void CloseLastRunPopup() => _lastRunPopupOpen = false;
+    private static void IgnorePopupClick() { }
+
+    private static string GetResultHeadline(LinearTraversalResult result)
+    {
+        var verb = result.Operation == LinearTraversalOperation.Search ? "Find" : "Delete";
+        if (!result.Found) return $"{verb}: target not found";
+        return result.Operation == LinearTraversalOperation.Search ? $"Found value {result.ElementValue}" : $"Deleted value {result.ElementValue}";
+    }
+
+    private static string GetResultExplanation(LinearTraversalResult result)
+    {
+        if (result.InitialCount == 0) return $"{result.StructureName} was empty, so there was nothing to check.";
+        var checkedItems = result.Comparisons == 1 ? "1 item" : $"{result.Comparisons} items";
+        if (result.Operation == LinearTraversalOperation.Delete && result.Found)
+        {
+            return $"The app checked {checkedItems} moving {result.TraversalDirection}. After the match, {result.ShiftedElements} later reference(s) moved left to close the removed List slot.";
+        }
+        return result.Found
+            ? $"The app checked {checkedItems} moving {result.TraversalDirection} and stopped as soon as it found the target."
+            : $"The app checked all {checkedItems} moving {result.TraversalDirection} and found no match.";
+    }
+
+    private static string GetPlainComplexityExplanation(LinearTraversalResult result)
+    {
+        if (result.InitialCount == 0) return "The structure was empty, so the app only needed one quick empty check.";
+        if (result.Comparisons == 1 && result.Found) return "The target was the first item checked. This run was very short, even though a Find can still take O(n) in the worst case.";
+        if (!result.Found) return "The target was missing, so the app had to check every item. That is the full O(n) case for this structure size.";
+        return $"The target was reached after {result.Comparisons} checks. We call that k checks, where k is smaller than or equal to n, the total number of items.";
+    }
+
+    private bool IsCurrentRun(CancellationToken runToken) => !runToken.IsCancellationRequested && SimulationState.SimulationCancellationToken == runToken;
+
+    private void HandleStateChanged()
+    {
+        if (SimulationState.IsRunning) CaptureFrame();
+        RequestRender();
+    }
+
+    private void HandleStructureChanged() => RequestRender();
+    private void RequestRender() => _ = InvokeAsync(StateHasChanged);
 
     public void Dispose()
     {
@@ -227,4 +876,10 @@
         Stack.Changed -= HandleStructureChanged;
         Queue.Changed -= HandleStructureChanged;
     }
+
+    private sealed record RunFrame(string StepText, IReadOnlyList<LinearElement> StackItems, int StackCapacity, IReadOnlyList<LinearElement> QueueItems, int QueueCapacity);
+    private sealed record PracticeTaskDefinition(int Id, string Title, IReadOnlyList<string> Steps, string HelpHref);
+    private sealed record PracticeEvent(string Structure, string Kind, int? Value = null, int Sequence = -1, int? RequestedValue = null, string? RequestedId = null, LinearLookupCriterion? Criterion = null, bool? Found = null, int? InitialCount = null, int ShiftedElements = 0);
+    private enum StateView { Visual, Memory }
+    private enum ResultPopupTab { Run, Memory }
 }

@@ -177,3 +177,23 @@ footer b {
     margin: 0 .2rem;
     color: var(--color-primary);
 }
+
+
+/* Readability pass */
+.structure-visualization {
+    grid-template-rows: auto 1fr auto;
+    gap: .95rem;
+    padding: 1.05rem;
+    border-radius: 1rem;
+}
+
+.structure-kicker { font-size: .68rem; }
+header h2 { font-size: 1.35rem; }
+.element-count { font-size: .72rem; padding: .35rem .55rem; }
+.stack-stage { min-height: 23rem; gap: .62rem; padding: 1.2rem .65rem .95rem; }
+.stack-row { grid-template-columns: 5rem auto; gap: .75rem; }
+.pointer-label { font-size: .78rem; }
+.empty-state strong { font-size: 1rem; }
+.empty-state small { font-size: .82rem; line-height: 1.6; }
+footer { gap: .45rem; padding-top: .75rem; font-size: .78rem; }
+footer span { font-size: .82rem; }
