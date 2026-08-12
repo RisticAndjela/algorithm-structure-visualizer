@@ -1,0 +1,32 @@
+.linear-element {
+    display: grid;
+    place-items: center;
+    min-width: 4.5rem;
+    min-height: 3.25rem;
+    padding: .65rem 1rem;
+    border: 2px solid #3f4a5a;
+    border-radius: .55rem;
+    background: #ffffff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease, opacity 160ms ease;
+}
+
+.linear-element.is-adding {
+    border-color: #18794e;
+    background: #e8f7ef;
+    transform: scale(1.06);
+}
+
+.linear-element.is-removing {
+    border-color: #b42318;
+    background: #ffebe9;
+    opacity: .72;
+    transform: scale(.96);
+}
+
+.linear-element.is-pointer-target {
+    border-color: #175cd3;
+    background: #eaf2ff;
+    transform: translateY(-2px);
+}

@@ -1,0 +1,53 @@
+.structure-visualization {
+    display: grid;
+    gap: 1rem;
+    min-height: 24rem;
+    padding: 1rem;
+    border: 1px solid #d9dee7;
+    border-radius: .8rem;
+    background: #fbfcfe;
+}
+
+header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+header h2 {
+    margin: 0;
+}
+
+header span {
+    color: #667085;
+    font-size: .9rem;
+}
+
+.queue-stage {
+    display: flex;
+    min-height: 18rem;
+    align-items: center;
+    gap: .6rem;
+    overflow-x: auto;
+    padding: 1rem .25rem;
+}
+
+.queue-column {
+    display: grid;
+    flex: 0 0 auto;
+    gap: .45rem;
+    justify-items: center;
+}
+
+.pointer-label {
+    min-height: 1.2rem;
+    color: #175cd3;
+    font-size: .8rem;
+    font-weight: 700;
+}
+
+.empty-state {
+    margin: auto;
+    color: #667085;
+}

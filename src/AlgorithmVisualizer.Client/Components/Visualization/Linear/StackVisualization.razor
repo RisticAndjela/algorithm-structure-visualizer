@@ -1,0 +1,31 @@
+<section class="structure-visualization" aria-label="Stack visualization">
+    <header>
+        <h2>Stack</h2>
+        <span>@Elements.Count element@(Elements.Count == 1 ? string.Empty : "s")</span>
+    </header>
+
+    <div class="stack-stage">
+        @if (Elements.Count == 0)
+        {
+            <div class="empty-state">Stack is empty.</div>
+        }
+        else
+        {
+            @for (var index = Elements.Count - 1; index >= 0; index--)
+            {
+                var element = Elements[index];
+                var isTop = index == Elements.Count - 1;
+
+                <div class="stack-row" @key="element.Id">
+                    <span class="pointer-label">@(isTop ? "Top →" : string.Empty)</span>
+                    <LinearElementBlock Element="element" />
+                </div>
+            }
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<LinearElement> Elements { get; set; } = Array.Empty<LinearElement>();
+}

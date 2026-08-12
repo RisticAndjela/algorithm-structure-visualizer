@@ -1,5 +1,7 @@
 using AlgorithmVisualizer.Client;
 using AlgorithmVisualizer.Client.State;
+using AlgorithmVisualizer.Core.DataStructures.Linear.Queue;
+using AlgorithmVisualizer.Core.DataStructures.Linear.Stack;
 using AlgorithmVisualizer.Core.Simulation.Contracts;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -13,5 +15,9 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddScoped<SimulationState>();
 builder.Services.AddScoped<ISimulationRuntime>(serviceProvider =>
     serviceProvider.GetRequiredService<SimulationState>());
+
+// Phase 3 simulation services own data-structure state, not rendering concerns.
+builder.Services.AddScoped<StackSimulation>();
+builder.Services.AddScoped<QueueSimulation>();
 
 await builder.Build().RunAsync();

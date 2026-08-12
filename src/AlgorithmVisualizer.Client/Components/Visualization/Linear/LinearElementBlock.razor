@@ -1,0 +1,16 @@
+<div class="linear-element @GetVisualStateClass()" aria-label="Value @Element.Value">
+    @Element.Value
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public LinearElement Element { get; set; } = default!;
+
+    private string GetVisualStateClass() => Element.VisualState switch
+    {
+        LinearElementVisualState.Adding => "is-adding",
+        LinearElementVisualState.Removing => "is-removing",
+        LinearElementVisualState.PointerTarget => "is-pointer-target",
+        _ => string.Empty
+    };
+}

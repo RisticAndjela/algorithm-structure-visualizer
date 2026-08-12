@@ -1,0 +1,160 @@
+@page "/structures/queue-stack"
+@implements IDisposable
+@inject SimulationState SimulationState
+@inject StackSimulation Stack
+@inject QueueSimulation Queue
+
+<PageTitle>Queue & Stack Sandbox</PageTitle>
+
+<div class="sandbox-page">
+    <header class="page-header">
+        <div>
+            <h1>Queue & Stack Sandbox</h1>
+            <p>Use the shared playback engine to inspect each mutation one step at a time.</p>
+        </div>
+    </header>
+
+    <SimulationToolbar />
+
+    <section class="operation-panel" aria-label="Queue and stack operations">
+        <label class="value-input">
+            <span>New value</span>
+            <InputNumber TValue="int?" @bind-Value="_newValue" disabled="@IsBusy" />
+        </label>
+
+        <div class="operation-group">
+            <span class="operation-group-title">Stack operations</span>
+            <button type="button" @onclick="PushAsync" disabled="@(!CanAddValue)">Push</button>
+            <button type="button" @onclick="PopAsync" disabled="@IsBusy">Pop</button>
+            <button type="button" @onclick="ClearStackAsync" disabled="@IsBusy">Clear Stack</button>
+        </div>
+
+        <div class="operation-group">
+            <span class="operation-group-title">Queue operations</span>
+            <button type="button" @onclick="EnqueueAsync" disabled="@(!CanAddValue)">Enqueue</button>
+            <button type="button" @onclick="DequeueAsync" disabled="@IsBusy">Dequeue</button>
+            <button type="button" @onclick="ClearQueueAsync" disabled="@IsBusy">Clear Queue</button>
+        </div>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <p class="error-message" role="alert">@_errorMessage</p>
+    }
+
+    <SimulationViewport>
+        <div class="visualization-grid">
+            <StackVisualization Elements="Stack.Items" />
+            <QueueVisualization Elements="Queue.Items" />
+        </div>
+    </SimulationViewport>
+</div>
+
+@code {
+    private int? _newValue;
+    private string? _errorMessage;
+
+    private bool IsBusy => SimulationState.IsRunning;
+    private bool CanAddValue => !IsBusy && _newValue.HasValue;
+
+    protected override void OnInitialized()
+    {
+        SimulationState.Changed += HandleStateChanged;
+        Stack.Changed += HandleStructureChanged;
+        Queue.Changed += HandleStructureChanged;
+    }
+
+    private Task PushAsync() => RunValueOperationAsync(
+        "Starting stack push.",
+        (value, token) => Stack.PushAsync(value, token));
+
+    private Task EnqueueAsync() => RunValueOperationAsync(
+        "Starting queue enqueue.",
+        (value, token) => Queue.EnqueueAsync(value, token));
+
+    private Task PopAsync() => RunOperationAsync(
+        "Starting stack pop.",
+        token => Stack.PopAsync(token));
+
+    private Task DequeueAsync() => RunOperationAsync(
+        "Starting queue dequeue.",
+        token => Queue.DequeueAsync(token));
+
+    private Task ClearStackAsync() => RunOperationAsync(
+        "Starting stack clear.",
+        token => Stack.ClearAsync(token));
+
+    private Task ClearQueueAsync() => RunOperationAsync(
+        "Starting queue clear.",
+        token => Queue.ClearAsync(token));
+
+    private Task RunValueOperationAsync(
+        string initialStepText,
+        Func<int, CancellationToken, Task> operation)
+    {
+        if (!_newValue.HasValue)
+        {
+            _errorMessage = "Enter an integer value before adding an element.";
+            return InvokeAsync(StateHasChanged);
+        }
+
+        var value = _newValue.Value;
+        _newValue = null;
+        return RunOperationAsync(initialStepText, token => operation(value, token));
+    }
+
+    private async Task RunOperationAsync(
+        string initialStepText,
+        Func<CancellationToken, Task> operation)
+    {
+        if (SimulationState.IsRunning)
+        {
+            return;
+        }
+
+        _errorMessage = null;
+        var runToken = SimulationState.Start(initialStepText);
+
+        try
+        {
+            await operation(runToken);
+
+            if (IsCurrentRun(runToken))
+            {
+                SimulationState.Complete();
+            }
+        }
+        catch (OperationCanceledException) when (runToken.IsCancellationRequested)
+        {
+            // Reset or a newer simulation owns the playback state now.
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = $"Operation failed: {exception.Message}";
+
+            if (IsCurrentRun(runToken))
+            {
+                SimulationState.Complete("The operation stopped because of an error.");
+            }
+        }
+    }
+
+    private bool IsCurrentRun(CancellationToken runToken) =>
+        !runToken.IsCancellationRequested &&
+        SimulationState.SimulationCancellationToken == runToken;
+
+    private void HandleStateChanged() => RequestRender();
+    private void HandleStructureChanged() => RequestRender();
+
+    private void RequestRender()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        SimulationState.Changed -= HandleStateChanged;
+        Stack.Changed -= HandleStructureChanged;
+        Queue.Changed -= HandleStructureChanged;
+    }
+}
