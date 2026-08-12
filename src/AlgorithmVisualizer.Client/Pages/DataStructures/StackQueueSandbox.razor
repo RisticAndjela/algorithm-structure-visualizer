@@ -215,7 +215,7 @@
             </div>
             <div class="memory-warning">
                 <strong>This is a learning model, not a real RAM address viewer.</strong>
-                <span>.NET can move managed objects during garbage collection, so the app uses stable learning labels such as <code>MEM-#A31F9C</code>. This lab currently stores both structures in a C# <code>List</code>; that storage choice is separate from the LIFO/FIFO rule itself. <a href="/learn/concepts#visual-vs-memory">Learn why visual and memory views can differ.</a></span>
+                <span>.NET can move managed objects during garbage collection, so the app uses stable learning labels such as <code>MEM-#A31F9C</code>. This lab stores both structures in a small dynamic array implemented manually for this project; that storage choice is separate from the LIFO/FIFO rule itself. <a href="/learn/concepts#visual-vs-memory">Learn why visual and memory views can differ.</a></span>
             </div>
         }
     </section>
@@ -313,12 +313,12 @@
                     @if (_lastTraversalResult.Operation == LinearTraversalOperation.Delete && _lastTraversalResult.Found)
                     {
                         <div class="popup-explainer success">
-                            <strong>No empty item is left inside the List.</strong>
-                            <p>The matched element was removed from List slot @(_lastTraversalResult.MatchedIndex ?? 0). @_lastTraversalResult.ShiftedElements later reference(s) moved one slot left. Count changed from @_lastTraversalResult.InitialCount to @_lastTraversalResult.CountAfter, while Capacity stayed @_lastTraversalResult.CapacityBefore → @_lastTraversalResult.CapacityAfter.</p>
+                            <strong>No empty item is left inside the used part of the array.</strong>
+                            <p>The matched element was removed from custom array slot @(_lastTraversalResult.MatchedIndex ?? 0). @_lastTraversalResult.ShiftedElements later reference(s) moved one slot left. Count changed from @_lastTraversalResult.InitialCount to @_lastTraversalResult.CountAfter, while Capacity stayed @_lastTraversalResult.CapacityBefore → @_lastTraversalResult.CapacityAfter.</p>
                         </div>
                         <div class="memory-steps">
                             <div><span>1</span><p><strong>Find:</strong> check elements until the target is reached.</p></div>
-                            <div><span>2</span><p><strong>Remove:</strong> the List stops keeping that reference.</p></div>
+                            <div><span>2</span><p><strong>Remove:</strong> our storage stops keeping that reference.</p></div>
                             <div><span>3</span><p><strong>Close the gap:</strong> later references move left.</p></div>
                             <div><span>4</span><p><strong>Clean up later:</strong> if nothing else points to the removed object, .NET can reclaim it later.</p></div>
                         </div>
@@ -395,7 +395,7 @@
         new(8, "Use a missing ID", ["Enter a valid 6-character ID that is not displayed, for example #FFFFFF if it is absent.", "Find it.", "Try to delete it.", "Both runs should check the structure instead of failing before the simulation starts."], "/learn/concepts#identity"),
         new(9, "Delete an ID, then search for that old ID", ["Delete an existing element by ID.", "Keep the same 6-character ID in the input.", "Find that ID again.", "It should now be missing."], "/learn/concepts#identity"),
         new(10, "Empty and one-item cases", ["Clear one structure.", "Find or delete while it is empty.", "Add exactly one item.", "Delete that one item."], "/learn/concepts#big-o"),
-        new(11, "See how the List closes a gap", ["Build at least five items.", "Delete a middle item so later references must move.", "Open Memory state.", "Add one new item after the delete."], "/learn/concepts#memory"),
+        new(11, "See how the array closes a gap", ["Build at least five items.", "Delete a middle item so later references must move.", "Open Memory state.", "Add one new item after the delete."], "/learn/concepts#memory"),
         new(12, "Mixed challenge", ["In one structure add 4, 1, 4, 9, 2.", "Find value 4.", "Delete value 4.", "Find a surviving element by ID.", "Try to delete missing value 100."], "/learn/concepts#big-o")
     ];
 
@@ -844,7 +844,7 @@
         var checkedItems = result.Comparisons == 1 ? "1 item" : $"{result.Comparisons} items";
         if (result.Operation == LinearTraversalOperation.Delete && result.Found)
         {
-            return $"The app checked {checkedItems} moving {result.TraversalDirection}. After the match, {result.ShiftedElements} later reference(s) moved left to close the removed List slot.";
+            return $"The app checked {checkedItems} moving {result.TraversalDirection}. After the match, {result.ShiftedElements} later reference(s) moved left to close the removed array slot.";
         }
         return result.Found
             ? $"The app checked {checkedItems} moving {result.TraversalDirection} and stopped as soon as it found the target."

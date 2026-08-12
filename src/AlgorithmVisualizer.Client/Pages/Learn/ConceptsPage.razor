@@ -120,26 +120,37 @@
             <article class="concept-card">
                 <span class="term">REFERENCE</span>
                 <h3>A way to reach that object</h3>
-                <p>The internal <code>List&lt;LinearElement&gt;</code> stores references to the element objects. A slot is not the object itself; it points to the object.</p>
-                <a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1?view=net-10.0" target="_blank" rel="noreferrer">Microsoft: List&lt;T&gt; ↗</a>
+                <p>Our own dynamic array stores references to the element objects. A slot is not the object itself; it points to the object.</p>
+                <a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/arrays" target="_blank" rel="noreferrer">Microsoft: C# arrays ↗</a>
             </article>
             <article class="concept-card">
                 <span class="term">COUNT</span>
-                <h3>How many items are in the List?</h3>
-                <p>If Count is 4, the structure currently contains four element references.</p>
+                <h3>How many items are being used?</h3>
+                <p>If Count is 4, the structure currently uses four element references.</p>
             </article>
             <article class="concept-card">
                 <span class="term">CAPACITY</span>
                 <h3>How many slots are already reserved?</h3>
-                <p>Capacity can be larger than Count. That does not mean there are hidden elements; it means the List has room to grow before it needs a bigger backing array.</p>
-                <a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1.capacity?view=net-10.0" target="_blank" rel="noreferrer">Microsoft: List&lt;T&gt;.Capacity ↗</a>
+                <p>Capacity can be larger than Count. That does not mean there are hidden elements; it means our custom array has reserved space before it must grow.</p>
+                <a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/arrays" target="_blank" rel="noreferrer">Microsoft: C# arrays ↗</a>
             </article>
         </div>
 
         <div class="plain-note">
-            <strong>What happens after RemoveAt?</strong>
-            <p>Later List entries move left to close the removed index. Count decreases. Capacity normally stays the same. The removed object is not manually “freed”; if nothing references it anymore, .NET can reclaim it later with garbage collection.</p>
-            <a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1.removeat?view=net-10.0" target="_blank" rel="noreferrer">Microsoft: List&lt;T&gt;.RemoveAt ↗</a>
+            <strong>What happens after our manual RemoveAt?</strong>
+            <p>Our code moves later references left with a loop to close the removed index. Count decreases. Capacity stays the same. The removed object is not manually “freed”; if nothing references it anymore, .NET can reclaim it later with garbage collection.</p>
+            <a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/arrays" target="_blank" rel="noreferrer">Microsoft: C# arrays ↗</a>
+        </div>
+    </section>
+
+    <section class="concept-section implementation-note">
+        <div class="section-heading">
+            <span>✓</span>
+            <div><h2>Implemented from scratch</h2><p>The learning structures do not call the ready-made C# Stack, Queue or List collections.</p></div>
+        </div>
+        <div class="plain-note">
+            <strong>What our code does itself</strong>
+            <p>It keeps a raw array, grows that array with a manual loop, searches item by item, shifts references after a middle delete with a manual loop, and clears used slots itself. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the data-structure algorithm for us.</p>
         </div>
     </section>
 

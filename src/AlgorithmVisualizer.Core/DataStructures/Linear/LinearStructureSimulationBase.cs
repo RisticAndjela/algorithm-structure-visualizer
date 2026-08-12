@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using AlgorithmVisualizer.Core.Simulation;
 using AlgorithmVisualizer.Core.Simulation.Contracts;
 
@@ -9,26 +8,24 @@ namespace AlgorithmVisualizer.Core.DataStructures.Linear;
 /// </summary>
 public abstract class LinearStructureSimulationBase : SimulationAlgorithmBase
 {
-    private readonly List<LinearElement> _items = [];
-    private readonly ReadOnlyCollection<LinearElement> _readOnlyItems;
+    private readonly ManualDynamicArray<LinearElement> _items = new();
     private readonly SemaphoreSlim _operationGate = new(1, 1);
 
     protected LinearStructureSimulationBase(ISimulationRuntime simulationRuntime)
         : base(simulationRuntime)
     {
-        _readOnlyItems = _items.AsReadOnly();
     }
 
-    public IReadOnlyList<LinearElement> Items => _readOnlyItems;
+    public IReadOnlyList<LinearElement> Items => _items;
     public int Count => _items.Count;
 
     /// <summary>
-    /// Number of slots currently reserved by the List backing store.
-    /// Exposed only so the learning UI can explain Count versus Capacity.
+    /// Number of slots currently reserved by the custom dynamic-array backing store.
+    /// Exposed so the learning UI can explain Count versus Capacity.
     /// </summary>
     public int StorageCapacity => _items.Capacity;
 
-    protected List<LinearElement> MutableItems => _items;
+    protected ManualDynamicArray<LinearElement> MutableItems => _items;
 
     public event Action? Changed;
 
@@ -199,21 +196,21 @@ public abstract class LinearStructureSimulationBase : SimulationAlgorithmBase
                     initialCount);
 
                 await NextStepAsync(
-                    $"Found it in List slot {matchedIndex}. Removing it makes {shiftedElements} later reference(s) move one slot left, so there is no blank item in the List. Count changes {initialCount} → {initialCount - 1}; Capacity stays {capacityBefore}.",
+                    $"Found it in custom array slot {matchedIndex}. Removing it makes {shiftedElements} later reference(s) move one slot left, so there is no blank item in the used part of the array. Count changes {initialCount} → {initialCount - 1}; Capacity stays {capacityBefore}.",
                     cancellationToken);
 
-                // We already know the exact index from traversal. RemoveAt avoids List.Remove(element),
-                // which would perform a second hidden linear search before deleting.
+                // We already know the exact index from traversal. Our own RemoveAt implementation
+                // shifts later references with an explicit loop and performs no hidden second search.
                 MutableItems.RemoveAt(matchedIndex);
                 capacityAfter = MutableItems.Capacity;
                 NotifyChanged();
 
                 await NextStepAsync(
-                    $"After delete: Count is {MutableItems.Count} and Capacity is {capacityAfter}. The List no longer keeps the removed reference. If nothing else points to that object, .NET can clean it up later.",
+                    $"After delete: Count is {MutableItems.Count} and Capacity is {capacityAfter}. The custom storage no longer keeps the removed reference in its used slots. If nothing else points to that object, .NET can clean it up later.",
                     cancellationToken);
 
                 await NextStepAsync(
-                    $"Delete complete: {comparisons} check(s) and {shiftedElements} reference move(s). Search part: {currentRunComplexity}. Whole List-backed delete: {fullOperationComplexity}.",
+                    $"Delete complete: {comparisons} check(s) and {shiftedElements} reference move(s). Search part: {currentRunComplexity}. Whole array-backed delete: {fullOperationComplexity}.",
                     cancellationToken);
             }
 

@@ -44,7 +44,7 @@ public sealed class StackSimulation : LinearStructureSimulationBase
                 return null;
             }
 
-            var top = MutableItems[^1];
+            var top = MutableItems[MutableItems.Count - 1];
             top.VisualState = LinearElementVisualState.Removing;
             NotifyChanged();
 
@@ -61,7 +61,7 @@ public sealed class StackSimulation : LinearStructureSimulationBase
             }
             else
             {
-                var newTop = MutableItems[^1];
+                var newTop = MutableItems[MutableItems.Count - 1];
                 newTop.VisualState = LinearElementVisualState.PointerTarget;
                 NotifyChanged();
 
