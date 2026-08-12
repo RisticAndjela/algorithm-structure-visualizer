@@ -1,8 +1,15 @@
 @page "/sorting/insertion"
 
-<PageTitle>Insertion Sort</PageTitle>
+<PageTitle>Insertion Sort — Algorithm Visualizer</PageTitle>
 
-<h1>Insertion Sort</h1>
-<p>Placeholder page for the Insertion Sort simulation. Implementation will be added in a later phase.</p>
-
-<SimulationControls />
+<LearningPlaceholder
+    Title="Insertion Sort"
+    Eyebrow="Sorting algorithm"
+    Description="Grow a sorted prefix one element at a time by shifting larger values out of the way and inserting the current key into the correct position."
+    Complexity="O(n²)"
+    ComplexityNote="Adaptive: nearly sorted input can approach O(n)."
+    Concepts="key · sorted prefix · shift · insertion point"
+    TipTitle="Think like sorting a hand of cards."
+    TipText="The prefix is already sorted. Your only job is to find where the new key belongs and create room for it without destroying that order."
+    FocusText="The planned lab should separate the held key from shifted array elements so the temporary gap in the array is explicit."
+    PromptText="How far must this key move before the prefix is sorted again?" />

@@ -1,13 +1,28 @@
 <section class="structure-visualization" aria-label="Queue visualization">
     <header>
-        <h2>Queue</h2>
-        <span>@Elements.Count element@(Elements.Count == 1 ? string.Empty : "s")</span>
+        <div class="structure-title">
+            <span class="structure-icon" aria-hidden="true">Q</span>
+            <div>
+                <span class="structure-kicker">FIFO STRUCTURE</span>
+                <h2>Queue</h2>
+            </div>
+        </div>
+        <span class="element-count">@Elements.Count item@(Elements.Count == 1 ? string.Empty : "s")</span>
     </header>
+
+    <div class="structure-rule">
+        <span>Flow</span>
+        <strong>Front ← items ← Rear</strong>
+    </div>
 
     <div class="queue-stage">
         @if (Elements.Count == 0)
         {
-            <div class="empty-state">Queue is empty.</div>
+            <div class="empty-state">
+                <span class="empty-glyph">+</span>
+                <strong>Your queue is empty.</strong>
+                <small>Enter a value and Enqueue it to establish the first front and rear.</small>
+            </div>
         }
         else
         {
@@ -17,12 +32,18 @@
                 var pointerText = GetPointerText(index);
 
                 <div class="queue-column" @key="element.Id">
-                    <span class="pointer-label">@pointerText</span>
+                    <span class="pointer-label @(string.IsNullOrWhiteSpace(pointerText) ? string.Empty : "visible")">@pointerText</span>
                     <LinearElementBlock Element="element" />
+                    @if (index < Elements.Count - 1)
+                    {
+                        <span class="flow-arrow" aria-hidden="true">→</span>
+                    }
                 </div>
             }
         }
     </div>
+
+    <footer><span>Dequeue</span><i>from front</i><b>←</b><span>Enqueue</span><i>at rear</i></footer>
 </section>
 
 @code {
@@ -36,9 +57,9 @@
 
         return (isFront, isRear) switch
         {
-            (true, true) => "Front / Rear",
-            (true, false) => "Front",
-            (false, true) => "Rear",
+            (true, true) => "FRONT / REAR",
+            (true, false) => "FRONT",
+            (false, true) => "REAR",
             _ => string.Empty
         };
     }

@@ -1,8 +1,15 @@
 @page "/sorting/heap"
 
-<PageTitle>Heap Sort</PageTitle>
+<PageTitle>Heap Sort — Algorithm Visualizer</PageTitle>
 
-<h1>Heap Sort</h1>
-<p>Placeholder page for the Heap Sort simulation. Implementation will be added in a later phase.</p>
-
-<SimulationControls />
+<LearningPlaceholder
+    Title="Heap Sort"
+    Eyebrow="Sorting algorithm"
+    Description="See how a heap turns repeated maximum selection into an efficient in-place sort: build the heap, move the root to the end, then repair the reduced heap."
+    Complexity="O(n log n)"
+    ComplexityNote="Heap construction is O(n); repeated extraction dominates."
+    Concepts="heapify · extract max · sorted suffix · sift down"
+    TipTitle="Keep the heap boundary visible."
+    TipText="The same array contains two logical regions: an active heap and a finished sorted suffix. The boundary moves after every extraction."
+    FocusText="The simulation should make the active heap size explicit so swaps in the sorted suffix can never be mistaken for heap members."
+    PromptText="Which region is still a heap, and which region is already final?" />

@@ -1,8 +1,15 @@
 @page "/structures/heap"
 
-<PageTitle>Heap</PageTitle>
+<PageTitle>Heap — Algorithm Visualizer</PageTitle>
 
-<h1>Heap</h1>
-<p>Placeholder page for the Min/Max Heap simulation. Implementation will be added in a later phase.</p>
-
-<SimulationControls />
+<LearningPlaceholder
+    Title="Binary Heap"
+    Eyebrow="Data structure"
+    Description="Connect the array representation to the complete binary tree it encodes, then watch values bubble up or sink down until the heap property is restored."
+    Complexity="O(log n)"
+    ComplexityNote="Insert and extract move along at most one root-to-leaf path."
+    Concepts="heap property · complete tree · parent / child index · sift"
+    TipTitle="Think in two views at once."
+    TipText="A heap is both a tree and an array. Practice translating between index relationships and parent-child relationships until the two representations feel identical."
+    FocusText="A min-heap keeps every parent less than or equal to its children; a max-heap reverses that relation. Completeness controls the shape."
+    PromptText="Which parent-child pair violates the heap property next?" />

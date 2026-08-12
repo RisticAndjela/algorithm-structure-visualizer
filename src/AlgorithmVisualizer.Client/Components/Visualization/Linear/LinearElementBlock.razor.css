@@ -1,32 +1,66 @@
 .linear-element {
+    position: relative;
+    min-width: 4.8rem;
+    min-height: 3.35rem;
     display: grid;
     place-items: center;
-    min-width: 4.5rem;
-    min-height: 3.25rem;
     padding: .65rem 1rem;
-    border: 2px solid #3f4a5a;
-    border-radius: .55rem;
+    border: 1px solid #d6d9e3;
+    border-radius: .72rem;
+    color: #444a59;
     background: #ffffff;
-    font-size: 1.05rem;
-    font-weight: 700;
-    transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease, opacity 160ms ease;
+    box-shadow: 0 4px 10px rgba(30, 33, 46, .04);
+    font-size: 1rem;
+    font-weight: 820;
+    transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease, opacity 180ms ease, box-shadow 180ms ease;
+}
+
+.element-value {
+    position: relative;
+    z-index: 2;
+}
+
+.state-ring {
+    position: absolute;
+    inset: -.28rem;
+    border: 1px solid transparent;
+    border-radius: .92rem;
+    pointer-events: none;
+    transition: border-color 180ms ease;
 }
 
 .linear-element.is-adding {
-    border-color: #18794e;
-    background: #e8f7ef;
-    transform: scale(1.06);
+    border-color: #75c8b9;
+    color: #16786c;
+    background: #ecfaf7;
+    box-shadow: 0 7px 18px rgba(28, 146, 129, .12);
+    transform: translateY(-3px) scale(1.035);
+}
+
+.linear-element.is-adding .state-ring {
+    border-color: rgba(32, 158, 141, .18);
 }
 
 .linear-element.is-removing {
-    border-color: #b42318;
-    background: #ffebe9;
+    border-color: #e5aab3;
+    color: #a03544;
+    background: #fff2f4;
     opacity: .72;
     transform: scale(.96);
 }
 
+.linear-element.is-removing .state-ring {
+    border-color: rgba(196, 61, 79, .16);
+}
+
 .linear-element.is-pointer-target {
-    border-color: #175cd3;
-    background: #eaf2ff;
+    border-color: #aca2f2;
+    color: #5543c5;
+    background: #f2f0ff;
+    box-shadow: 0 7px 18px rgba(103, 87, 229, .12);
     transform: translateY(-2px);
+}
+
+.linear-element.is-pointer-target .state-ring {
+    border-color: rgba(103, 87, 229, .18);
 }

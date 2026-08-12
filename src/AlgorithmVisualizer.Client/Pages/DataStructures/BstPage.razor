@@ -1,8 +1,15 @@
 @page "/structures/bst"
 
-<PageTitle>Binary Search Tree</PageTitle>
+<PageTitle>Binary Search Tree — Algorithm Visualizer</PageTitle>
 
-<h1>Binary Search Tree</h1>
-<p>Placeholder page for the BST simulation. Implementation will be added in a later phase.</p>
-
-<SimulationControls />
+<LearningPlaceholder
+    Title="Binary Search Tree"
+    Eyebrow="Data structure"
+    Description="Learn how ordering turns a tree into a search structure, and how insertion order changes the shape — and therefore the cost — of every future operation."
+    Complexity="O(h)"
+    ComplexityNote="Search, insert, and delete depend on tree height h."
+    Concepts="ordered tree · search path · predecessor / successor · height"
+    TipTitle="Read the path as a sequence of decisions."
+    TipText="At every node, ask one question: is the target smaller or larger? The entire search is just that rule repeated until the answer is found or the path ends."
+    FocusText="Every node must keep smaller keys in its left subtree and larger keys in its right subtree. A useful visualization should make violations impossible to miss."
+    PromptText="Which comparison determines the next branch?" />

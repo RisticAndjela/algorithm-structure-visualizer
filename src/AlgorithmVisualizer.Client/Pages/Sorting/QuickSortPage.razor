@@ -1,8 +1,15 @@
 @page "/sorting/quick"
 
-<PageTitle>Quick Sort</PageTitle>
+<PageTitle>Quick Sort — Algorithm Visualizer</PageTitle>
 
-<h1>Quick Sort</h1>
-<p>Placeholder page for the Quick Sort simulation. Implementation will be added in a later phase.</p>
-
-<SimulationControls />
+<LearningPlaceholder
+    Title="Quick Sort"
+    Eyebrow="Sorting algorithm"
+    Description="Follow a pivot as partitioning rearranges values into smaller and larger regions, then recurse only where work remains. Pivot quality controls the shape of the recursion."
+    Complexity="O(n log n) avg."
+    ComplexityNote="Worst case is O(n²) when partitions become highly unbalanced."
+    Concepts="pivot · partition · recursion · balanced split"
+    TipTitle="Partition first, recursion second."
+    TipText="A partition does not fully sort the array. It only guarantees that the pivot is in its final place and values are separated into the correct side regions."
+    FocusText="The future visualization should expose pivot position, scanning pointers, and the partition invariant throughout the pass."
+    PromptText="What is already guaranteed about values on each side of the pivot?" />

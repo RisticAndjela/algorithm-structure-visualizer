@@ -1,8 +1,15 @@
 @page "/structures/avl"
 
-<PageTitle>AVL Tree</PageTitle>
+<PageTitle>AVL Tree — Algorithm Visualizer</PageTitle>
 
-<h1>AVL Tree</h1>
-<p>Placeholder page for the AVL simulation. Implementation will be added in a later phase.</p>
-
-<SimulationControls />
+<LearningPlaceholder
+    Title="AVL Tree"
+    Eyebrow="Data structure"
+    Description="See how a binary search tree actively protects its height. Rotations may look mechanical at first; the goal is to understand exactly which imbalance forces each one."
+    Complexity="O(log n)"
+    ComplexityNote="Balance keeps search, insert, and delete logarithmic."
+    Concepts="balance factor · height · LL / RR · LR / RL rotations"
+    TipTitle="Name the imbalance before the rotation."
+    TipText="Do not memorize rotation pictures in isolation. First identify the first unbalanced ancestor and the direction of the heavy path; the required rotation follows from that diagnosis."
+    FocusText="For every node, the height difference between left and right subtrees must stay within one. Rotations restore that property without breaking BST ordering."
+    PromptText="Which ancestor became unbalanced, and in which direction?" />

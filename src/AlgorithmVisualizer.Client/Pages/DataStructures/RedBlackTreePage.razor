@@ -1,8 +1,15 @@
 @page "/structures/red-black"
 
-<PageTitle>Red-Black Tree</PageTitle>
+<PageTitle>Red-Black Tree — Algorithm Visualizer</PageTitle>
 
-<h1>Red-Black Tree</h1>
-<p>Placeholder page for the Red-Black Tree simulation. Implementation will be added in a later phase.</p>
-
-<SimulationControls />
+<LearningPlaceholder
+    Title="Red-Black Tree"
+    Eyebrow="Data structure"
+    Description="Study balanced search through color invariants, recoloring, and rotations. The key is understanding why local fixes preserve a global height guarantee."
+    Complexity="O(log n)"
+    ComplexityNote="Color invariants constrain the longest root-to-leaf path."
+    Concepts="color invariant · black height · recolor · rotation"
+    TipTitle="Track invariants, not colors alone."
+    TipText="A node being red is not a problem by itself. Ask which invariant is violated and how recoloring or rotation repairs that exact violation."
+    FocusText="The future lab should keep root color, red-parent rules, and equal black-height paths visible while every fix-up operation runs."
+    PromptText="Which red-black invariant is currently broken?" />

@@ -1,8 +1,15 @@
 @page "/structures/graph"
 
-<PageTitle>Graphs</PageTitle>
+<PageTitle>Graphs — Algorithm Visualizer</PageTitle>
 
-<h1>Graphs</h1>
-<p>Placeholder page for the Graph simulation. Implementation will be added in a later phase.</p>
-
-<SimulationControls />
+<LearningPlaceholder
+    Title="Graphs"
+    Eyebrow="Data structure"
+    Description="Build intuition for vertices, edges, neighborhoods, and traversal state before moving into BFS, DFS, shortest paths, and graph-specific algorithm design."
+    Complexity="O(V + E)"
+    ComplexityNote="A full traversal visits vertices and edges in the represented graph."
+    Concepts="vertex · edge · adjacency · visited state · traversal frontier"
+    TipTitle="Separate the graph from the traversal state."
+    TipText="The graph itself does not change when BFS or DFS runs. What changes is your knowledge: visited vertices, the frontier, parents, and distances."
+    FocusText="The planned lab should clearly distinguish structural edges from temporary algorithm state such as visited, queued, active, and completed vertices."
+    PromptText="What is in the frontier right now, and why?" />

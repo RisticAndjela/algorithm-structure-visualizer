@@ -2,28 +2,103 @@
 
 <div class="app-shell">
     <aside class="sidebar">
-        <a class="brand" href="/">Algorithm Visualizer</a>
+        <div class="sidebar-top">
+            <a class="brand" href="/" aria-label="Algorithm Visualizer home">
+                <span class="brand-mark" aria-hidden="true">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </span>
+                <span class="brand-copy">
+                    <strong>Algorithm Visualizer</strong>
+                    <small>Learn by seeing</small>
+                </span>
+            </a>
 
-        <nav>
-            <strong>Data Structures</strong>
-            <NavLink href="/structures/bst">BST</NavLink>
-            <NavLink href="/structures/avl">AVL</NavLink>
-            <NavLink href="/structures/red-black">Red-Black</NavLink>
-            <NavLink href="/structures/heap">Heap</NavLink>
-            <NavLink href="/structures/graph">Graphs</NavLink>
-            <NavLink href="/structures/queue-stack">Queue &amp; Stack</NavLink>
+            <nav class="navigation" aria-label="Learning modules">
+                <div class="nav-section">
+                    <div class="nav-section-heading">
+                        <span>Data Structures</span>
+                        <span class="nav-count">6</span>
+                    </div>
 
-            <strong>Sorting</strong>
-            <NavLink href="/sorting/bubble">Bubble Sort</NavLink>
-            <NavLink href="/sorting/selection">Selection Sort</NavLink>
-            <NavLink href="/sorting/insertion">Insertion Sort</NavLink>
-            <NavLink href="/sorting/merge">Merge Sort</NavLink>
-            <NavLink href="/sorting/quick">Quick Sort</NavLink>
-            <NavLink href="/sorting/heap">Heap Sort</NavLink>
-        </nav>
+                    <NavLink href="/structures/bst">
+                        <span class="nav-glyph">B</span>
+                        <span>Binary Search Tree</span>
+                        <span class="nav-status soon" title="Simulation planned"></span>
+                    </NavLink>
+                    <NavLink href="/structures/avl">
+                        <span class="nav-glyph">A</span>
+                        <span>AVL Tree</span>
+                        <span class="nav-status soon" title="Simulation planned"></span>
+                    </NavLink>
+                    <NavLink href="/structures/red-black">
+                        <span class="nav-glyph">R</span>
+                        <span>Red-Black Tree</span>
+                        <span class="nav-status soon" title="Simulation planned"></span>
+                    </NavLink>
+                    <NavLink href="/structures/heap">
+                        <span class="nav-glyph">H</span>
+                        <span>Heap</span>
+                        <span class="nav-status soon" title="Simulation planned"></span>
+                    </NavLink>
+                    <NavLink href="/structures/graph">
+                        <span class="nav-glyph">G</span>
+                        <span>Graphs</span>
+                        <span class="nav-status soon" title="Simulation planned"></span>
+                    </NavLink>
+                    <NavLink href="/structures/queue-stack">
+                        <span class="nav-glyph">Q</span>
+                        <span>Queue &amp; Stack</span>
+                        <span class="nav-status live" title="Interactive simulation available"></span>
+                    </NavLink>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-heading">
+                        <span>Sorting</span>
+                        <span class="nav-count">6</span>
+                    </div>
+
+                    <NavLink href="/sorting/bubble"><span class="nav-glyph">B</span><span>Bubble Sort</span><span class="nav-status soon"></span></NavLink>
+                    <NavLink href="/sorting/selection"><span class="nav-glyph">S</span><span>Selection Sort</span><span class="nav-status soon"></span></NavLink>
+                    <NavLink href="/sorting/insertion"><span class="nav-glyph">I</span><span>Insertion Sort</span><span class="nav-status soon"></span></NavLink>
+                    <NavLink href="/sorting/merge"><span class="nav-glyph">M</span><span>Merge Sort</span><span class="nav-status soon"></span></NavLink>
+                    <NavLink href="/sorting/quick"><span class="nav-glyph">Q</span><span>Quick Sort</span><span class="nav-status soon"></span></NavLink>
+                    <NavLink href="/sorting/heap"><span class="nav-glyph">H</span><span>Heap Sort</span><span class="nav-status soon"></span></NavLink>
+                </div>
+            </nav>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="learning-mode">
+                <span class="learning-mode-icon" aria-hidden="true">✦</span>
+                <span>
+                    <strong>Learning mode</strong>
+                    <small>Understand every step</small>
+                </span>
+            </div>
+            <div class="status-key" aria-label="Module status legend">
+                <span><i class="status-dot live"></i>Interactive</span>
+                <span><i class="status-dot soon"></i>Planned</span>
+            </div>
+        </div>
     </aside>
 
-    <main class="content">
-        @Body
-    </main>
+    <div class="main-column">
+        <header class="topbar">
+            <div class="topbar-context">
+                <span class="context-dot"></span>
+                Interactive computer science playground
+            </div>
+            <a class="topbar-action" href="/structures/queue-stack">
+                Open live lab
+                <span aria-hidden="true">→</span>
+            </a>
+        </header>
+
+        <main class="content">
+            @Body
+        </main>
+    </div>
 </div>

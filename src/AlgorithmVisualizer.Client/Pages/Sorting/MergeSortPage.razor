@@ -1,8 +1,15 @@
 @page "/sorting/merge"
 
-<PageTitle>Merge Sort</PageTitle>
+<PageTitle>Merge Sort — Algorithm Visualizer</PageTitle>
 
-<h1>Merge Sort</h1>
-<p>Placeholder page for the Merge Sort simulation. Implementation will be added in a later phase.</p>
-
-<SimulationControls />
+<LearningPlaceholder
+    Title="Merge Sort"
+    Eyebrow="Sorting algorithm"
+    Description="Understand divide-and-conquer by watching a problem split into trivial pieces and then rebuild through ordered merges. The merge step is where the real work happens."
+    Complexity="O(n log n)"
+    ComplexityNote="Each recursion level processes n elements across log n levels."
+    Concepts="divide · recursion tree · merge · stable ordering"
+    TipTitle="Measure work by recursion level."
+    TipText="Instead of counting recursive calls individually, notice that every level touches the full input once. Then ask how many levels are created by repeatedly halving n."
+    FocusText="The lab should keep subarray boundaries visible and make the two merge cursors explicit while the output segment is rebuilt."
+    PromptText="Which of the two front values must be copied next?" />

@@ -1,8 +1,15 @@
 @page "/sorting/selection"
 
-<PageTitle>Selection Sort</PageTitle>
+<PageTitle>Selection Sort — Algorithm Visualizer</PageTitle>
 
-<h1>Selection Sort</h1>
-<p>Placeholder page for the Selection Sort simulation. Implementation will be added in a later phase.</p>
-
-<SimulationControls />
+<LearningPlaceholder
+    Title="Selection Sort"
+    Eyebrow="Sorting algorithm"
+    Description="See how repeatedly selecting the smallest remaining value builds a sorted prefix. The interesting state is not the swap — it is the search for the next minimum."
+    Complexity="O(n²)"
+    ComplexityNote="It scans the unsorted region for every output position."
+    Concepts="minimum candidate · scan · sorted prefix · one swap per pass"
+    TipTitle="Keep two pointers in your head."
+    TipText="One position marks where the next minimum belongs; another scans for a better candidate. Tracking those roles makes the algorithm much easier to reason about."
+    FocusText="The simulation should distinguish the current output position, current scan position, and best candidate found so far."
+    PromptText="What evidence makes this value the current minimum candidate?" />

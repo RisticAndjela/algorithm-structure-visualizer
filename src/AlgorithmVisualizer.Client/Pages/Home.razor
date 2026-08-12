@@ -1,12 +1,124 @@
 @page "/"
 
-<PageTitle>Algorithm Visualizer</PageTitle>
+<PageTitle>Algorithm Visualizer — Learn algorithms visually</PageTitle>
 
-<h1>Algorithm Visualizer</h1>
-<p>Phase 1 establishes the project architecture. Algorithms and visualizations are intentionally not implemented yet.</p>
+<div class="home-page">
+    <section class="hero">
+        <div class="hero-copy">
+            <div class="eyebrow"><span>✦</span> Visual learning, built for understanding</div>
+            <h1>Algorithms make more sense when you can <em>see them think.</em></h1>
+            <p class="hero-lead">
+                Explore data structures and algorithms as interactive systems. Change the input, slow the process down,
+                move one step at a time, and connect every visual change to the idea behind it.
+            </p>
+            <div class="hero-actions">
+                <a class="primary-action" href="/structures/queue-stack">Start with Queue &amp; Stack <span>→</span></a>
+                <a class="secondary-action" href="#learning-path">Browse learning path</a>
+            </div>
+            <div class="hero-note">
+                <span class="note-icon">i</span>
+                <span><strong>Learning tip:</strong> predict the next state before pressing Step. Active recall makes the visualization far more useful.</span>
+            </div>
+        </div>
 
-<ul>
-    <li><code>AlgorithmVisualizer.Core</code> — pure C# logic with no Blazor dependency.</li>
-    <li><code>AlgorithmVisualizer.Client</code> — pages, SVG visualization, playback controls, and UI state.</li>
-    <li><code>tests</code> — reserved for focused data-structure and algorithm tests.</li>
-</ul>
+        <div class="hero-visual" aria-label="Algorithm learning preview">
+            <div class="visual-card">
+                <div class="visual-card-top">
+                    <div>
+                        <span class="mini-label">CONCEPT PREVIEW</span>
+                        <strong>Stack · PUSH(8)</strong>
+                    </div>
+                    <span class="live-pill"><i></i> Live lab available</span>
+                </div>
+
+                <div class="stack-preview">
+                    <div class="preview-pointer">TOP →</div>
+                    <div class="preview-block active">8</div>
+                    <div class="preview-block">5</div>
+                    <div class="preview-block">2</div>
+                </div>
+
+                <div class="preview-explanation">
+                    <span class="step-number">03</span>
+                    <div>
+                        <small>WHAT JUST HAPPENED?</small>
+                        <p><strong>8</strong> became the new top because a stack follows <strong>LIFO</strong>: last in, first out.</p>
+                    </div>
+                </div>
+            </div>
+            <span class="floating-chip chip-one">O(1)</span>
+            <span class="floating-chip chip-two">LIFO</span>
+        </div>
+    </section>
+
+    <section class="quick-stats" aria-label="Learning experience highlights">
+        <div><strong>12</strong><span>learning modules</span></div>
+        <div><strong>Step</strong><span>through every mutation</span></div>
+        <div><strong>Why?</strong><span>explanations, not just motion</span></div>
+        <div><strong>∞</strong><span>safe experiments</span></div>
+    </section>
+
+    <section class="learning-section" id="learning-path">
+        <div class="section-heading">
+            <div>
+                <span class="section-kicker">LEARNING PATH</span>
+                <h2>Build intuition in the right order.</h2>
+            </div>
+            <p>Start with linear structures, then move into trees, graphs, and sorting. Each module is designed to connect behavior, invariants, and complexity.</p>
+        </div>
+
+        <div class="path-grid">
+            <a class="path-card available" href="/structures/queue-stack">
+                <div class="card-topline"><span class="path-index">01</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="path-icon linear-icon"><i></i><i></i><i></i></div>
+                <h3>Linear foundations</h3>
+                <p>Understand order, pointers, LIFO, and FIFO through Queue &amp; Stack.</p>
+                <div class="concept-row"><span>Stack</span><span>Queue</span><span>O(1)</span></div>
+                <span class="card-link">Open lab <b>→</b></span>
+            </a>
+
+            <div class="path-card">
+                <div class="card-topline"><span class="path-index">02</span><span class="status-pill planned">TODO</span></div>
+                <div class="path-icon tree-icon"><i></i><i></i><i></i><i></i><i></i></div>
+                <h3>Trees &amp; balance</h3>
+                <p>Compare search paths, rotations, heap properties, and balancing strategies.</p>
+                <div class="concept-row"><span>BST</span><span>AVL</span><span>Heap</span></div>
+                <span class="card-link muted">Simulation planned</span>
+            </div>
+
+            <div class="path-card">
+                <div class="card-topline"><span class="path-index">03</span><span class="status-pill planned">TODO</span></div>
+                <div class="path-icon graph-icon"><i></i><i></i><i></i><i></i></div>
+                <h3>Graph thinking</h3>
+                <p>Build the mental model for nodes, edges, traversal, and shortest paths.</p>
+                <div class="concept-row"><span>BFS</span><span>DFS</span><span>Paths</span></div>
+                <span class="card-link muted">Simulation planned</span>
+            </div>
+
+            <div class="path-card">
+                <div class="card-topline"><span class="path-index">04</span><span class="status-pill planned">TODO</span></div>
+                <div class="path-icon sort-icon"><i></i><i></i><i></i><i></i><i></i></div>
+                <h3>Sorting strategies</h3>
+                <p>See how local decisions become globally sorted data — and what each strategy costs.</p>
+                <div class="concept-row"><span>Compare</span><span>Swap</span><span>Divide</span></div>
+                <span class="card-link muted">Simulation planned</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="principles-section">
+        <div class="section-heading compact">
+            <div>
+                <span class="section-kicker">HOW TO USE ALGOLAB</span>
+                <h2>Watch less. Think more.</h2>
+            </div>
+        </div>
+
+        <div class="principles-grid">
+            <article><span>01</span><h3>Predict</h3><p>Before each step, decide what you expect the structure to do.</p></article>
+            <article><span>02</span><h3>Step</h3><p>Advance once and focus on the exact state that changed.</p></article>
+            <article><span>03</span><h3>Explain</h3><p>Use the tip and operation log to connect the visual change to the rule.</p></article>
+            <article><span>04</span><h3>Experiment</h3><p>Try inputs that break your intuition: empty states, duplicates, boundaries.</p></article>
+        </div>
+    </section>
+</div>

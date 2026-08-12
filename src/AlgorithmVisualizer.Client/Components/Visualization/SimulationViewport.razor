@@ -1,6 +1,12 @@
-<div class="viewport">
-    @ChildContent
-</div>
+<section class="viewport" aria-label="Simulation visualization area">
+    <div class="viewport-topline">
+        <span><i></i> VISUAL STATE</span>
+        <small>Changes are highlighted while the current operation is running.</small>
+    </div>
+    <div class="viewport-canvas">
+        @ChildContent
+    </div>
+</section>
 
 @code {
     [Parameter]

@@ -4,50 +4,120 @@
 @inject StackSimulation Stack
 @inject QueueSimulation Queue
 
-<PageTitle>Queue & Stack Sandbox</PageTitle>
+<PageTitle>Queue & Stack Lab — Algorithm Visualizer</PageTitle>
 
 <div class="sandbox-page">
-    <header class="page-header">
-        <div>
-            <h1>Queue & Stack Sandbox</h1>
-            <p>Use the shared playback engine to inspect each mutation one step at a time.</p>
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow">
+                <span>DATA STRUCTURES</span>
+                <span class="separator">/</span>
+                <span class="live-status"><i></i> Interactive lab</span>
+            </div>
+            <h1>Queue &amp; Stack</h1>
+            <p>Learn how order changes behavior. Run real mutations, control the pace, and watch each pointer move before the next state is committed.</p>
+        </div>
+        <div class="concept-summary">
+            <div><span>STACK</span><strong>LIFO</strong><small>Last in, first out</small></div>
+            <div><span>QUEUE</span><strong>FIFO</strong><small>First in, first out</small></div>
+            <div><span>CORE OPS</span><strong>O(1)</strong><small>Push / pop / enqueue / dequeue</small></div>
         </div>
     </header>
 
-    <SimulationToolbar />
-
-    <section class="operation-panel" aria-label="Queue and stack operations">
-        <label class="value-input">
-            <span>New value</span>
-            <InputNumber TValue="int?" @bind-Value="_newValue" disabled="@IsBusy" />
-        </label>
-
-        <div class="operation-group">
-            <span class="operation-group-title">Stack operations</span>
-            <button type="button" @onclick="PushAsync" disabled="@(!CanAddValue)">Push</button>
-            <button type="button" @onclick="PopAsync" disabled="@IsBusy">Pop</button>
-            <button type="button" @onclick="ClearStackAsync" disabled="@IsBusy">Clear Stack</button>
+    <section class="smart-tip" aria-label="Learning tip">
+        <span class="smart-tip-icon">✦</span>
+        <div>
+            <strong>Predict before you click.</strong>
+            <p>Choose a value and say where it will appear before running the operation. Then use <b>Step</b> to check your mental model one state change at a time.</p>
         </div>
-
-        <div class="operation-group">
-            <span class="operation-group-title">Queue operations</span>
-            <button type="button" @onclick="EnqueueAsync" disabled="@(!CanAddValue)">Enqueue</button>
-            <button type="button" @onclick="DequeueAsync" disabled="@IsBusy">Dequeue</button>
-            <button type="button" @onclick="ClearQueueAsync" disabled="@IsBusy">Clear Queue</button>
-        </div>
+        <div class="tip-question"><span>ASK YOURSELF</span><strong>Which end can this structure modify?</strong></div>
     </section>
 
-    @if (!string.IsNullOrWhiteSpace(_errorMessage))
-    {
-        <p class="error-message" role="alert">@_errorMessage</p>
-    }
-
-    <SimulationViewport>
-        <div class="visualization-grid">
-            <StackVisualization Elements="Stack.Items" />
-            <QueueVisualization Elements="Queue.Items" />
+    <section class="lab-shell">
+        <div class="lab-heading">
+            <div>
+                <span class="section-kicker">PLAYGROUND</span>
+                <h2>Build a state, then inspect how it changes.</h2>
+            </div>
+            <span class="live-pill"><i></i> Runtime connected</span>
         </div>
-    </SimulationViewport>
+
+        <section class="operation-panel" aria-label="Queue and stack operations">
+            <div class="value-card">
+                <label class="value-input">
+                    <span class="control-label">VALUE</span>
+                    <InputNumber TValue="int?" @bind-Value="_newValue" disabled="@IsBusy" placeholder="e.g. 8" />
+                </label>
+                <small>One integer can be sent to either structure.</small>
+            </div>
+
+            <div class="operation-group stack-operations">
+                <div class="operation-title">
+                    <span class="operation-glyph stack-glyph" aria-hidden="true">S</span>
+                    <span><strong>Stack</strong><small>Operate only at the top</small></span>
+                </div>
+                <div class="operation-actions">
+                    <button class="action-primary" type="button" @onclick="PushAsync" disabled="@(!CanAddValue)">Push <span>↑</span></button>
+                    <button type="button" @onclick="PopAsync" disabled="@IsBusy">Pop <span>↓</span></button>
+                    <button class="action-quiet" type="button" @onclick="ClearStackAsync" disabled="@IsBusy">Clear</button>
+                </div>
+            </div>
+
+            <div class="operation-group queue-operations">
+                <div class="operation-title">
+                    <span class="operation-glyph queue-glyph" aria-hidden="true">Q</span>
+                    <span><strong>Queue</strong><small>Enter rear, leave front</small></span>
+                </div>
+                <div class="operation-actions">
+                    <button class="action-primary" type="button" @onclick="EnqueueAsync" disabled="@(!CanAddValue)">Enqueue <span>→</span></button>
+                    <button type="button" @onclick="DequeueAsync" disabled="@IsBusy">Dequeue <span>→</span></button>
+                    <button class="action-quiet" type="button" @onclick="ClearQueueAsync" disabled="@IsBusy">Clear</button>
+                </div>
+            </div>
+        </section>
+
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <div class="error-message" role="alert">
+                <span>!</span>
+                <p>@_errorMessage</p>
+            </div>
+        }
+
+        <SimulationToolbar />
+
+        <SimulationViewport>
+            <div class="visualization-grid">
+                <StackVisualization Elements="Stack.Items" />
+                <QueueVisualization Elements="Queue.Items" />
+            </div>
+        </SimulationViewport>
+    </section>
+
+    <section class="learn-below">
+        <div class="learn-heading">
+            <span class="section-kicker">MAKE IT STICK</span>
+            <h2>Same storage idea. Different access rule.</h2>
+            <p>The fastest way to distinguish these structures is to stop memorizing names and ask which element is legally accessible next.</p>
+        </div>
+        <div class="comparison-grid">
+            <article>
+                <div class="compare-top"><span>01</span><strong>Stack mental model</strong></div>
+                <p>Think of a stack of plates. You can add or remove only the plate currently exposed at the top.</p>
+                <div class="rule"><span>Rule</span><strong>Newest item leaves first.</strong></div>
+            </article>
+            <article>
+                <div class="compare-top"><span>02</span><strong>Queue mental model</strong></div>
+                <p>Think of a line of people. New arrivals join the rear; service always happens from the front.</p>
+                <div class="rule"><span>Rule</span><strong>Oldest item leaves first.</strong></div>
+            </article>
+            <article class="challenge-card">
+                <div class="compare-top"><span>✦</span><strong>Try this</strong></div>
+                <p>Add <b>3, 7, 2</b> to both structures. Before removing anything, predict the first value each structure will return.</p>
+                <div class="rule"><span>Goal</span><strong>Explain the difference without using LIFO/FIFO.</strong></div>
+            </article>
+        </div>
+    </section>
 </div>
 
 @code {

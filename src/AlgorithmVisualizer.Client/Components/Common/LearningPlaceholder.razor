@@ -1,0 +1,118 @@
+<section class="learning-module-page">
+    <header class="module-header">
+        <div class="module-header-copy">
+            <div class="module-eyebrow">
+                <span>@Eyebrow</span>
+                <span class="separator">/</span>
+                <span class="planned-status"><i></i> Simulation planned</span>
+            </div>
+            <h1>@Title</h1>
+            <p>@Description</p>
+        </div>
+
+        <div class="complexity-card" aria-label="Complexity summary">
+            <span>COMPLEXITY SNAPSHOT</span>
+            <strong>@Complexity</strong>
+            <small>@ComplexityNote</small>
+        </div>
+    </header>
+
+    <div class="concept-strip" aria-label="Key concepts">
+        @foreach (var concept in ParsedConcepts)
+        {
+            <span>@concept</span>
+        }
+    </div>
+
+    <div class="module-grid">
+        <section class="simulation-shell" aria-label="Planned interactive simulation">
+            <div class="simulation-shell-heading">
+                <div>
+                    <span class="shell-label">INTERACTIVE LAB</span>
+                    <h2>See the algorithm change state, step by step.</h2>
+                </div>
+                <span class="todo-badge">TODO</span>
+            </div>
+
+            <div class="todo-stage">
+                <div class="todo-orbit orbit-one"></div>
+                <div class="todo-orbit orbit-two"></div>
+                <div class="todo-center">
+                    <span class="todo-mark">+</span>
+                    <strong>Interactive simulation</strong>
+                    <p>TODO — implementation will plug into this learning workspace.</p>
+                </div>
+            </div>
+
+            <div class="future-controls" aria-hidden="true">
+                <span></span><span></span><span></span><span class="wide"></span>
+            </div>
+        </section>
+
+        <aside class="learning-sidebar">
+            <section class="tip-card">
+                <div class="tip-heading"><span>✦</span><strong>Learning tip</strong></div>
+                <h2>@TipTitle</h2>
+                <p>@TipText</p>
+            </section>
+
+            <section class="focus-card">
+                <span class="card-kicker">WHEN THE LAB IS BUILT</span>
+                <h2>Focus on the invariant.</h2>
+                <p>@FocusText</p>
+                <div class="focus-prompt">
+                    <span>Ask yourself</span>
+                    <strong>@PromptText</strong>
+                </div>
+            </section>
+        </aside>
+    </div>
+
+    <section class="learning-loop">
+        <div class="loop-heading">
+            <span class="card-kicker">LEARNING LOOP</span>
+            <h2>The simulation should teach, not just animate.</h2>
+        </div>
+        <div class="loop-steps">
+            <article><span>01</span><strong>Predict</strong><p>Decide what should happen before running the next step.</p></article>
+            <article><span>02</span><strong>Observe</strong><p>Watch only the state that changed and the elements involved.</p></article>
+            <article><span>03</span><strong>Explain</strong><p>Connect the visual mutation to the algorithm rule or invariant.</p></article>
+            <article><span>04</span><strong>Challenge</strong><p>Try an edge case and test whether your mental model still holds.</p></article>
+        </div>
+    </section>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Eyebrow { get; set; } = "Learning module";
+
+    [Parameter, EditorRequired]
+    public string Description { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Complexity { get; set; } = "—";
+
+    [Parameter]
+    public string ComplexityNote { get; set; } = "Depends on the operation and data shape.";
+
+    [Parameter]
+    public string Concepts { get; set; } = string.Empty;
+
+    [Parameter]
+    public string TipTitle { get; set; } = "Predict before you play.";
+
+    [Parameter]
+    public string TipText { get; set; } = "The visualization becomes much more useful when you commit to an expected next state first.";
+
+    [Parameter]
+    public string FocusText { get; set; } = "The future visualization should make the rule that must remain true easy to see after every mutation.";
+
+    [Parameter]
+    public string PromptText { get; set; } = "What must still be true after this step?";
+
+    private IEnumerable<string> ParsedConcepts =>
+        Concepts.Split('·', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+}

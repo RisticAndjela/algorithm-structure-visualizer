@@ -2,37 +2,60 @@
 @inject SimulationState State
 
 <section class="simulation-toolbar" aria-label="Simulation playback controls">
-    <div class="playback-actions">
-        <button type="button"
-                @onclick="State.Resume"
-                disabled="@(!CanPlay)"
-                aria-label="Play simulation">
-            Play
-        </button>
+    <div class="toolbar-section playback-section">
+        <div class="toolbar-label">
+            <span>PLAYBACK</span>
+            <small>Control one state change at a time</small>
+        </div>
+        <div class="playback-actions">
+            <button class="play-button" type="button"
+                    @onclick="State.Resume"
+                    disabled="@(!CanPlay)"
+                    aria-label="Play simulation">
+                <span class="button-icon" aria-hidden="true">▶</span> Play
+            </button>
 
-        <button type="button"
-                @onclick="State.Pause"
-                disabled="@(!CanPause)"
-                aria-label="Pause simulation">
-            Pause
-        </button>
+            <button type="button"
+                    @onclick="State.Pause"
+                    disabled="@(!CanPause)"
+                    aria-label="Pause simulation">
+                <span class="button-icon" aria-hidden="true">Ⅱ</span> Pause
+            </button>
 
-        <button type="button"
-                @onclick="State.Step"
-                disabled="@(!State.IsRunning)"
-                aria-label="Advance one simulation step">
-            Step
-        </button>
+            <button type="button"
+                    @onclick="State.Step"
+                    disabled="@(!State.IsRunning)"
+                    aria-label="Advance one simulation step">
+                <span class="button-icon" aria-hidden="true">→|</span> Step
+            </button>
 
-        <button type="button"
-                @onclick="State.Reset"
-                aria-label="Reset simulation">
-            Reset
-        </button>
+            <button class="reset-button" type="button"
+                    @onclick="State.Reset"
+                    aria-label="Reset simulation">
+                <span class="button-icon" aria-hidden="true">↺</span> Reset
+            </button>
+        </div>
+    </div>
+
+    <div class="current-step" aria-live="polite" aria-atomic="true">
+        <div class="step-status @GetStatusClass()">
+            <span></span>
+            @GetStatusText()
+        </div>
+        <div class="step-copy">
+            <span class="current-step-label">CURRENT OPERATION</span>
+            <output>@State.CurrentStepText</output>
+        </div>
     </div>
 
     <label class="speed-control">
-        <span>Step delay: <strong>@State.StepDelayMs ms</strong></span>
+        <span class="speed-heading">
+            <span>
+                <span class="toolbar-label-text">STEP DELAY</span>
+                <small>Slow it down when the state change is new.</small>
+            </span>
+            <strong>@State.StepDelayMs ms</strong>
+        </span>
         <input type="range"
                min="@SimulationState.MinDelayMs"
                max="@SimulationState.MaxDelayMs"
@@ -40,14 +63,8 @@
                value="@State.StepDelayMs"
                @oninput="ChangeDelay"
                aria-label="Animation step delay in milliseconds" />
-        <span class="speed-hint" aria-hidden="true">Faster</span>
-        <span class="speed-hint speed-hint-right" aria-hidden="true">Slower</span>
+        <span class="speed-scale" aria-hidden="true"><span>Faster</span><span>Slower</span></span>
     </label>
-
-    <div class="current-step" aria-live="polite" aria-atomic="true">
-        <span class="current-step-label">Current operation</span>
-        <output>@State.CurrentStepText</output>
-    </div>
 </section>
 
 @code {
@@ -58,6 +75,14 @@
     {
         State.Changed += HandleStateChanged;
     }
+
+    private string GetStatusText() => State.IsRunning
+        ? State.IsPaused ? "Paused" : "Running"
+        : "Ready";
+
+    private string GetStatusClass() => State.IsRunning
+        ? State.IsPaused ? "is-paused" : "is-running"
+        : "is-ready";
 
     private void ChangeDelay(ChangeEventArgs args)
     {

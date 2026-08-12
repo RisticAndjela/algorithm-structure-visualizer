@@ -1,8 +1,61 @@
 .viewport {
-    min-height: 420px;
-    margin-top: 1rem;
-    padding: 1rem;
-    border: 1px dashed #b7b7b7;
-    border-radius: .75rem;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    background: #fff;
+}
+
+.viewport-topline {
+    min-height: 2.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .65rem .9rem;
+    border-bottom: 1px solid var(--color-border);
+    background: #fcfcfe;
+}
+
+.viewport-topline > span {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    color: #686e7d;
+    font-size: .56rem;
+    font-weight: 850;
+    letter-spacing: .08em;
+}
+
+.viewport-topline i {
+    width: .4rem;
+    height: .4rem;
+    border-radius: 50%;
+    background: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(103, 87, 229, .08);
+}
+
+.viewport-topline small {
+    color: var(--color-text-muted);
+    font-size: .55rem;
+}
+
+.viewport-canvas {
+    min-height: 31rem;
+    padding: .75rem;
     overflow: auto;
+    background:
+        linear-gradient(rgba(251, 251, 253, .84), rgba(251, 251, 253, .84)),
+        radial-gradient(#d8dbe5 1px, transparent 1px);
+    background-size: auto, 20px 20px;
+}
+
+@media (max-width: 640px) {
+    .viewport-topline small {
+        display: none;
+    }
+
+    .viewport-canvas {
+        min-height: 26rem;
+        padding: .55rem;
+    }
 }

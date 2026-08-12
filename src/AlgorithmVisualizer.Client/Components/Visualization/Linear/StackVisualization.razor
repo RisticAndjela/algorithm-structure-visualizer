@@ -1,13 +1,28 @@
 <section class="structure-visualization" aria-label="Stack visualization">
     <header>
-        <h2>Stack</h2>
-        <span>@Elements.Count element@(Elements.Count == 1 ? string.Empty : "s")</span>
+        <div class="structure-title">
+            <span class="structure-icon" aria-hidden="true">S</span>
+            <div>
+                <span class="structure-kicker">LIFO STRUCTURE</span>
+                <h2>Stack</h2>
+            </div>
+        </div>
+        <span class="element-count">@Elements.Count item@(Elements.Count == 1 ? string.Empty : "s")</span>
     </header>
+
+    <div class="structure-rule">
+        <span>Access point</span>
+        <strong>Top only</strong>
+    </div>
 
     <div class="stack-stage">
         @if (Elements.Count == 0)
         {
-            <div class="empty-state">Stack is empty.</div>
+            <div class="empty-state">
+                <span class="empty-glyph">+</span>
+                <strong>Your stack is empty.</strong>
+                <small>Enter a value and Push it to create the first top element.</small>
+            </div>
         }
         else
         {
@@ -17,12 +32,14 @@
                 var isTop = index == Elements.Count - 1;
 
                 <div class="stack-row" @key="element.Id">
-                    <span class="pointer-label">@(isTop ? "Top →" : string.Empty)</span>
+                    <span class="pointer-label @(isTop ? "visible" : string.Empty)">@(isTop ? "TOP →" : string.Empty)</span>
                     <LinearElementBlock Element="element" />
                 </div>
             }
         }
     </div>
+
+    <footer><span>Push</span><i>adds here</i><b>↑</b><span>Pop</span><i>removes here</i></footer>
 </section>
 
 @code {

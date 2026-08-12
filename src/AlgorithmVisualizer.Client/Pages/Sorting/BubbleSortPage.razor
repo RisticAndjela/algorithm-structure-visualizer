@@ -1,8 +1,15 @@
 @page "/sorting/bubble"
 
-<PageTitle>Bubble Sort</PageTitle>
+<PageTitle>Bubble Sort — Algorithm Visualizer</PageTitle>
 
-<h1>Bubble Sort</h1>
-<p>Placeholder page for the Bubble Sort simulation. Implementation will be added in a later phase.</p>
-
-<SimulationControls />
+<LearningPlaceholder
+    Title="Bubble Sort"
+    Eyebrow="Sorting algorithm"
+    Description="Watch adjacent comparisons push larger values toward the end of the array. Simple mechanics make it a good first lens for understanding passes, swaps, and invariants."
+    Complexity="O(n²)"
+    ComplexityNote="Quadratic in the average and worst case; optimized best case can be linear."
+    Concepts="adjacent compare · swap · pass · sorted suffix"
+    TipTitle="Look for the growing sorted suffix."
+    TipText="After each complete pass, at least one largest remaining element is fixed in its final position. That invariant matters more than any individual swap."
+    FocusText="The visualization should make the active pair, swap decision, and already-settled suffix visually distinct at every step."
+    PromptText="Which element is guaranteed to be finished after this pass?" />
