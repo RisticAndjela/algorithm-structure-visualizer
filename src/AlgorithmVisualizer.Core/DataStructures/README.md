@@ -1,3 +1,13 @@
 # DataStructures
 
-Phase 1 placeholder. This folder belongs to the pure C# domain/algorithm layer and must not depend on Blazor UI components.
+Pure C# teaching implementations live here and must not depend on Blazor.
+
+Live modules currently include:
+
+- `Linear/` — custom-array Stack and Queue;
+- `Trees/Bst/` — manually linked Binary Search Tree plus explicit DSW balance;
+- `Trees/Avl/` — manually linked AVL with cached heights and rotations;
+- `Trees/RedBlack/` — manually linked Red-Black Tree with color fix-up;
+- `Heap/` — custom-array Min/Max Binary Heap with bubble-up and bubble-down.
+
+All taught mutation/search/balancing behavior is implemented explicitly rather than delegated to ready-made framework data structures.

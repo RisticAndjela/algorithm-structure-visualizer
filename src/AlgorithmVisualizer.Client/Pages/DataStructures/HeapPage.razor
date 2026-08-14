@@ -1,15 +1,516 @@
 @page "/structures/heap"
+@implements IDisposable
+@using System.Text.Json
+@using AlgorithmVisualizer.Client.Components.Visualization.Heap
+@using AlgorithmVisualizer.Core.DataStructures.Heap
+@using Microsoft.JSInterop
+@inject SimulationState SimulationState
+@inject HeapSimulation Heap
+@inject IJSRuntime JS
 
-<PageTitle>Heap — Algorithm Visualizer</PageTitle>
+<PageTitle>Binary Heap Lab — Algorithm Visualizer</PageTitle>
 
-<LearningPlaceholder
-    Title="Binary Heap"
-    Eyebrow="Data structure"
-    Description="Connect the array representation to the complete binary tree it encodes, then watch values bubble up or sink down until the heap property is restored."
-    Complexity="O(log n)"
-    ComplexityNote="Insert and extract move along at most one root-to-leaf path."
-    Concepts="heap property · complete tree · parent / child index · sift"
-    TipTitle="Think in two views at once."
-    TipText="A heap is both a tree and an array. Practice translating between index relationships and parent-child relationships until the two representations feel identical."
-    FocusText="A min-heap keeps every parent less than or equal to its children; a max-heap reverses that relation. Completeness controls the shape."
-    PromptText="Which parent-child pair violates the heap property next?" />
+<div class="heap-page">
+    <section class="learn-launchpad" aria-labelledby="heap-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="heap-learn-title">A heap is one structure with two equally important views.</h2>
+            <p>The complete binary tree explains parent/child priority. The array explains how that same tree is actually stored. Insert appends first, then bubble-up; extract-root moves the last element to index 0, then bubble-down.</p>
+            <a href="/learn/concepts#heap">Open heap property, indexes &amp; memory →</a>
+        </div>
+        <div class="learn-grid">
+            <article class="learn-card purple"><span>SHAPE</span><strong>Always complete</strong><small>Every level is full except possibly the last, which fills from left to right.</small></article>
+            <article class="learn-card mint"><span>MIN / MAX</span><strong>Parent priority</strong><small>Min Heap keeps parent ≤ children. Max Heap keeps parent ≥ children.</small></article>
+            <article class="learn-card blue"><span>INSERT</span><strong>Append → bubble up</strong><small>Shape first, then repeatedly compare the new element with its parent.</small></article>
+            <article class="learn-card gold"><span>EXTRACT</span><strong>Last → root → down</strong><small>Move the last element to the root, then swap with the higher-priority child.</small></article>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow">
+                <span>DATA STRUCTURES</span><span class="separator">/</span><span class="live-status"><i></i> Interactive lab</span>
+            </div>
+            <h1>Binary Heap</h1>
+            <p>Switch between Min Heap and Max Heap, then watch array indexes and the complete-tree shape stay synchronized through every swap.</p>
+        </div>
+        <div class="complexity-summary">
+            <div><span>ROOT</span><strong>O(1)</strong><small>always array index 0</small></div>
+            <div><span>INSERT / EXTRACT</span><strong>O(log n)</strong><small>one root-to-leaf path</small></div>
+            <div><span>VALUE SEARCH</span><strong>O(n)</strong><small>heap is not BST ordered</small></div>
+        </div>
+    </header>
+
+    <section class="smart-tip" aria-label="Heap learning tip">
+        <span class="tip-icon">✦</span>
+        <div>
+            <strong>Predict the next index before pressing Step forward.</strong>
+            <p>For element i, parent = (i − 1) / 2, left = 2i + 1, right = 2i + 2. Those formulas are the tree links.</p>
+        </div>
+        <a href="/learn/concepts#heap">Why search is still O(n) →</a>
+    </section>
+
+    <section class="lab-shell">
+        <div class="lab-heading">
+            <div><span class="section-kicker">PLAYGROUND</span><h2>Build the shape, then repair only the violated heap property.</h2></div>
+            <div class="lab-options">
+                @if (_lastResult is not null)
+                {
+                    <button class="last-run-button" type="button" @onclick="OpenLastRunPopup">Last run explanation</button>
+                }
+                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopupsAsync" /><span>Result popups</span></label>
+            </div>
+        </div>
+
+        <section class="kind-selector" aria-label="Heap type">
+            <div>
+                <span class="control-label">HEAP TYPE</span>
+                <strong>@(Heap.Kind == HeapKind.Min ? "Min Heap" : "Max Heap")</strong>
+                <small>Switching type is allowed only while the heap is empty; we do not silently rebuild a non-empty heap.</small>
+            </div>
+            <div class="kind-buttons">
+                <button type="button" class="@(Heap.Kind == HeapKind.Min ? "active" : string.Empty)" @onclick="() => SelectKind(HeapKind.Min)" disabled="@IsBusy">Min Heap <span>↓</span></button>
+                <button type="button" class="@(Heap.Kind == HeapKind.Max ? "active" : string.Empty)" @onclick="() => SelectKind(HeapKind.Max)" disabled="@IsBusy">Max Heap <span>↑</span></button>
+            </div>
+        </section>
+
+        <section class="operation-panel" aria-label="Heap operations">
+            <div class="value-card">
+                <label><span class="control-label">VALUE</span><InputNumber TValue="int?" @bind-Value="_value" disabled="@IsBusy" placeholder="e.g. 25" /></label>
+                <small>Duplicates are allowed. Equal values are different element objects with different IDs.</small>
+                <div class="sample-values">
+                    <span>Try:</span>
+                    @foreach (var sample in SampleValues)
+                    {
+                        <button type="button" @onclick="() => SetValue(sample)" disabled="@IsBusy">@sample</button>
+                    }
+                </div>
+            </div>
+
+            <div class="operation-card insert-card">
+                <div class="operation-heading"><span class="operation-glyph">+</span><span><strong>Insert</strong><small>append + bubble-up</small></span></div>
+                <button class="primary-action" type="button" @onclick="InsertAsync" disabled="@(!CanRunValueOperation)">Insert value <span>↑</span></button>
+            </div>
+
+            <div class="operation-card extract-card">
+                <div class="operation-heading"><span class="operation-glyph">◆</span><span><strong>Extract root</strong><small>@(Heap.Kind == HeapKind.Min ? "remove minimum" : "remove maximum")</small></span></div>
+                <button type="button" @onclick="ExtractRootAsync" disabled="@(!CanExtract)">Extract root <span>↓</span></button>
+            </div>
+
+            <div class="operation-card search-card">
+                <div class="operation-heading"><span class="operation-glyph">?</span><span><strong>Search</strong><small>linear array scan</small></span></div>
+                <button type="button" @onclick="SearchAsync" disabled="@(!CanRunValueOperation)">Search value <span>→</span></button>
+            </div>
+
+            <div class="operation-card delete-card">
+                <div class="operation-heading"><span class="operation-glyph">−</span><span><strong>Delete</strong><small>find + replace + repair</small></span></div>
+                <button class="delete-action" type="button" @onclick="DeleteAsync" disabled="@(!CanRunValueOperation)">Delete first match <span>×</span></button>
+            </div>
+
+            <div class="operation-card reset-card">
+                <div class="operation-heading"><span class="operation-glyph">↺</span><span><strong>Reset heap</strong><small>clear used references</small></span></div>
+                <button type="button" @onclick="ClearHeapAsync" disabled="@IsBusy">Clear heap</button>
+            </div>
+        </section>
+
+        <div class="sample-sequence">
+            <span class="section-kicker">BUBBLE RECIPES</span>
+            <p><strong>Min bubble-up:</strong> 40, 25, 10 · <strong>Min bubble-down:</strong> 10, 20, 30, 40, 50, 60, 70 then Extract root · <strong>Max:</strong> clear, switch type, then 10, 25, 40.</p>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <div class="error-message" role="alert"><span>!</span><p>@_errorMessage</p></div>
+        }
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync"
+                           CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist" aria-label="Heap simulation view">
+                <button type="button" role="tab" aria-selected="@(_activeStateView == StateView.Visual)" class="@GetStateTabClass(StateView.Visual)" @onclick="() => SetStateView(StateView.Visual)">Visual state</button>
+                <button type="button" role="tab" aria-selected="@(_activeStateView == StateView.Memory)" class="@GetStateTabClass(StateView.Memory)" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
+            </div>
+            <p>@(_activeStateView == StateView.Visual
+                ? "Visual state shows the same heap twice: complete-tree levels and the synchronized array indexes that encode those levels."
+                : "Memory state shows used versus reserved array slots, stable element IDs, capacity, and the index formulas that create parent/child relationships.")</p>
+        </div>
+
+        @if (_activeStateView == StateView.Visual)
+        {
+            <HeapVisualization Snapshot="@DisplayedSnapshot" />
+        }
+        else
+        {
+            <HeapMemoryVisualization Snapshot="@DisplayedSnapshot" />
+        }
+    </section>
+
+    <section class="practice-section" aria-labelledby="heap-practice-title">
+        <div class="practice-heading">
+            <div><span class="section-kicker">GUIDED PRACTICE</span><h2 id="heap-practice-title">Practice the index rule and the repair direction.</h2></div>
+            <div class="task-score"><strong>@_completedTaskIds.Count / @PracticeTasks.Count</strong><span>completed</span></div>
+        </div>
+
+        @if (_activeTaskId is not null)
+        {
+            var activeTask = PracticeTasks.First(task => task.Id == _activeTaskId);
+            <div class="active-task-banner"><span>ACTIVE TASK @activeTask.Id.ToString("00")</span><strong>@activeTask.Title</strong><small>@GetActiveTaskProgressText(activeTask.Id)</small></div>
+        }
+
+        <div class="task-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                var completed = _completedTaskIds.Contains(task.Id);
+                var active = _activeTaskId == task.Id;
+                <article class="task-card @(completed ? "completed" : string.Empty) @(active ? "active" : string.Empty)">
+                    <div class="task-topline"><span>@task.Id.ToString("00")</span><span>@(completed ? "Completed" : active ? "In progress" : "Practice")</span></div>
+                    <h3>@task.Title</h3>
+                    <ol>
+                        @foreach (var step in task.Steps)
+                        {
+                            <li>@step</li>
+                        }
+                    </ol>
+                    <div class="task-actions"><a href="@task.HelpHref">Need the concept? →</a><button type="button" @onclick="() => StartTask(task.Id)" disabled="@IsBusy">@(active ? "Restart task" : completed ? "Practice again" : "Start task")</button></div>
+                </article>
+            }
+        </div>
+    </section>
+</div>
+
+@if (_lastRunPopupOpen && _lastResult is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRunPopup">
+        <section class="run-popup" role="dialog" aria-modal="true" aria-labelledby="heap-run-popup-title" @onclick="IgnorePopupClick" @onclick:stopPropagation="true">
+            <header>
+                <div><span class="section-kicker">LAST RUN</span><h2 id="heap-run-popup-title">@GetResultHeadline(_lastResult)</h2></div>
+                <button class="popup-close" type="button" @onclick="CloseLastRunPopup" aria-label="Close result explanation">×</button>
+            </header>
+            <div class="popup-tabs" role="tablist">
+                <button type="button" class="@(_popupTab == ResultPopupTab.Run ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Run">What happened</button>
+                <button type="button" class="@(_popupTab == ResultPopupTab.Memory ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Memory">Array &amp; memory</button>
+            </div>
+            @if (_popupTab == ResultPopupTab.Run)
+            {
+                <div class="popup-body">
+                    <div class="popup-metrics"><div><span>Comparisons</span><strong>@_lastResult.Comparisons</strong></div><div><span>Swaps</span><strong>@_lastResult.Swaps</strong></div><div><span>Repair</span><strong>@RepairLabel(_lastResult.RepairDirection)</strong></div><div><span>Worst case</span><strong>@_lastResult.WorstCaseComplexity</strong></div></div>
+                    <h3>@GetPlainRunSummary(_lastResult)</h3>
+                    <p>@GetComplexityExplanation(_lastResult)</p>
+                </div>
+            }
+            else
+            {
+                <div class="popup-body">
+                    <div class="popup-metrics"><div><span>Count</span><strong>@_lastResult.InitialCount → @_lastResult.FinalCount</strong></div><div><span>Capacity</span><strong>@_lastResult.CapacityBefore → @_lastResult.CapacityAfter</strong></div><div><span>Start index</span><strong>@IndexLabel(_lastResult.StartIndex)</strong></div><div><span>End index</span><strong>@IndexLabel(_lastResult.EndIndex)</strong></div></div>
+                    <h3>Swaps move references between array slots.</h3>
+                    <p>@GetMemoryExplanation(_lastResult)</p>
+                </div>
+            }
+        </section>
+    </div>
+}
+
+@code {
+    private const string CompletedTasksStorageKey = "algorithm-visualizer.heap.completed-tasks.v1";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.heap.result-popups.v1";
+
+    private readonly List<RunFrame> _runFrames = [];
+    private readonly HashSet<int> _completedTaskIds = [];
+    private readonly List<PracticeEvent> _practiceEvents = [];
+
+    private static readonly int[] SampleValues = [10, 20, 25, 30, 40, 50, 70];
+    private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
+    [
+        new(1, "Force bubble-up", ["Use Min Heap and clear it.", "Insert 40, then 25, then 10.", "Predict each parent index before the swap."], "/learn/concepts#heap"),
+        new(2, "Force bubble-down", ["Build Min Heap with 10, 20, 30, 40, 50, 60, 70.", "Extract root.", "Watch the last element move to index 0, then sink."], "/learn/concepts#heap"),
+        new(3, "Mirror it as Max Heap", ["Clear the heap and switch to Max Heap.", "Insert 10, 25, 40.", "Confirm that the larger value rises instead of the smaller one."], "/learn/concepts#heap"),
+        new(4, "Prove search is linear", ["Build at least five elements.", "Search for a missing value.", "Watch every used array slot get checked."], "/learn/concepts#big-o"),
+        new(5, "Delete and choose repair direction", ["Build a heap with at least five values.", "Delete a non-root value.", "Observe whether the replacement bubbles up or down."], "/learn/concepts#heap"),
+        new(6, "Inspect real storage", ["Build enough values to grow capacity beyond four.", "Open Memory state.", "Compare used slots, reserved slots, and stable IDs."], "/learn/concepts#visual-vs-memory")
+    ];
+
+    private int? _value;
+    private string? _errorMessage;
+    private string? _lastCapturedStepText;
+    private int _frameIndex = -1;
+    private bool _showRunPopups = true;
+    private bool _lastRunPopupOpen;
+    private bool _storageLoaded;
+    private bool _memoryOpenedDuringTask;
+    private int? _activeTaskId;
+    private int _practiceSequence;
+    private StateView _activeStateView = StateView.Visual;
+    private ResultPopupTab _popupTab = ResultPopupTab.Run;
+    private HeapOperationResult? _lastResult;
+
+    private bool IsBusy => SimulationState.IsRunning;
+    private bool CanRunValueOperation => !IsBusy && _value.HasValue;
+    private bool CanExtract => !IsBusy && Heap.Count > 0;
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_runFrames.Count > 0 && _frameIndex < _runFrames.Count - 1) || SimulationState.IsRunning;
+    private int TimelineCount => _runFrames.Count;
+    private int TimelinePosition => _frameIndex >= 0 ? _frameIndex + 1 : 0;
+    private RunFrame? CurrentFrame => _frameIndex >= 0 && _frameIndex < _runFrames.Count ? _runFrames[_frameIndex] : null;
+    private string DisplayedStepText => CurrentFrame?.StepText ?? SimulationState.CurrentStepText;
+    private HeapSnapshot DisplayedSnapshot => CurrentFrame?.Snapshot ?? Heap.CreateSnapshot();
+
+    protected override void OnInitialized()
+    {
+        SimulationState.Changed += HandleStateChanged;
+        Heap.Changed += HandleHeapChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _storageLoaded) return;
+        _storageLoaded = true;
+        try
+        {
+            var completedJson = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { CompletedTasksStorageKey });
+            if (!string.IsNullOrWhiteSpace(completedJson))
+            {
+                var completed = JsonSerializer.Deserialize<int[]>(completedJson) ?? [];
+                foreach (var id in completed.Where(id => PracticeTasks.Any(task => task.Id == id))) _completedTaskIds.Add(id);
+            }
+
+            var popupSetting = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { PopupSettingStorageKey });
+            if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
+        }
+        catch { }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void SelectKind(HeapKind kind)
+    {
+        _errorMessage = null;
+        if (Heap.Kind == kind) return;
+        if (!Heap.TrySetKind(kind))
+        {
+            _errorMessage = "Clear the current heap before switching between Min Heap and Max Heap. A non-empty heap is not silently rebuilt.";
+            return;
+        }
+        _lastResult = null;
+        _runFrames.Clear();
+        _frameIndex = -1;
+        RecordPracticeEvent(new PracticeEvent(null, null, false, 0, HeapRepairDirection.None, Heap.Kind, Heap.Count, Heap.Capacity, IsKindSwitch: true));
+    }
+
+    private Task InsertAsync() => RunValueOperationAsync(HeapOperationKind.Insert, Heap.InsertAsync);
+    private Task SearchAsync() => RunValueOperationAsync(HeapOperationKind.Search, Heap.SearchAsync);
+    private Task DeleteAsync() => RunValueOperationAsync(HeapOperationKind.Delete, Heap.DeleteAsync);
+
+    private async Task RunValueOperationAsync(HeapOperationKind kind, Func<int, CancellationToken, Task<HeapOperationResult>> operation)
+    {
+        if (!_value.HasValue) { _errorMessage = "Enter a number first."; return; }
+        if (IsBusy) return;
+
+        var value = _value.Value;
+        PrepareNewRun();
+        var runToken = SimulationState.Start($"Starting {Heap.Kind.ToString().ToLowerInvariant()}-heap {kind.ToString().ToLowerInvariant()} for {value}.");
+        try
+        {
+            var result = await operation(value, runToken);
+            if (!IsCurrentRun(runToken)) return;
+            FinishRun(result);
+        }
+        catch (OperationCanceledException) when (runToken.IsCancellationRequested) { }
+        catch (Exception exception) { HandleRunException(exception, runToken); }
+    }
+
+    private async Task ExtractRootAsync()
+    {
+        if (IsBusy) return;
+        PrepareNewRun();
+        var runToken = SimulationState.Start($"Starting {Heap.Kind.ToString().ToLowerInvariant()}-heap extract-root.");
+        try
+        {
+            var result = await Heap.ExtractRootAsync(runToken);
+            if (!IsCurrentRun(runToken)) return;
+            FinishRun(result);
+        }
+        catch (OperationCanceledException) when (runToken.IsCancellationRequested) { }
+        catch (Exception exception) { HandleRunException(exception, runToken); }
+    }
+
+    private async Task ClearHeapAsync()
+    {
+        if (IsBusy) return;
+        PrepareNewRun();
+        var beforeCount = Heap.Count;
+        var beforeCapacity = Heap.Capacity;
+        var runToken = SimulationState.Start("Resetting the Heap lab.");
+        try
+        {
+            await Heap.ClearAsync(runToken);
+            if (!IsCurrentRun(runToken)) return;
+            SimulationState.SetCurrentStep("Heap reset complete.");
+            SimulationState.Complete();
+            RecordPracticeEvent(new PracticeEvent(null, null, true, 0, HeapRepairDirection.None, Heap.Kind, beforeCount, beforeCapacity, IsReset: true));
+        }
+        catch (OperationCanceledException) when (runToken.IsCancellationRequested) { }
+        catch (Exception exception) { HandleRunException(exception, runToken); }
+    }
+
+    private void FinishRun(HeapOperationResult result)
+    {
+        _lastResult = result;
+        RecordPracticeEvent(new PracticeEvent(result.Operation, result.RequestedValue, result.Succeeded, result.Swaps, result.RepairDirection, result.Kind, result.FinalCount, result.CapacityAfter, result.Comparisons));
+        SimulationState.SetCurrentStep("Run complete.");
+        SimulationState.Complete();
+        _popupTab = result.Operation is HeapOperationKind.ExtractRoot or HeapOperationKind.Delete ? ResultPopupTab.Memory : ResultPopupTab.Run;
+        _lastRunPopupOpen = _showRunPopups;
+    }
+
+    private void HandleRunException(Exception exception, CancellationToken runToken)
+    {
+        _errorMessage = $"Something went wrong: {exception.Message}";
+        if (IsCurrentRun(runToken)) SimulationState.Complete("The run stopped because of an error.");
+    }
+
+    private void PrepareNewRun()
+    {
+        _errorMessage = null;
+        _lastRunPopupOpen = false;
+        _runFrames.Clear();
+        _frameIndex = -1;
+        _lastCapturedStepText = null;
+    }
+
+    private void CaptureFrame()
+    {
+        var stepText = SimulationState.CurrentStepText;
+        if (string.Equals(stepText, _lastCapturedStepText, StringComparison.Ordinal)) return;
+        var wasAtTail = _frameIndex < 0 || _frameIndex == _runFrames.Count - 1;
+        _runFrames.Add(new RunFrame(stepText, Heap.CreateSnapshot()));
+        _lastCapturedStepText = stepText;
+        if (wasAtTail) _frameIndex = _runFrames.Count - 1;
+    }
+
+    private Task PlayTimelineAsync() { if (_runFrames.Count > 0) _frameIndex = _runFrames.Count - 1; SimulationState.Resume(); return InvokeAsync(StateHasChanged); }
+    private Task PauseTimelineAsync() { SimulationState.Pause(); return Task.CompletedTask; }
+    private Task StepBackAsync() { if (SimulationState.IsRunning && !SimulationState.IsPaused) SimulationState.Pause(); if (_frameIndex > 0) _frameIndex--; return InvokeAsync(StateHasChanged); }
+    private Task StepForwardAsync() { if (_frameIndex >= 0 && _frameIndex < _runFrames.Count - 1) { _frameIndex++; return InvokeAsync(StateHasChanged); } if (SimulationState.IsRunning) SimulationState.Step(); return Task.CompletedTask; }
+    private Task ResetPlaybackAsync() { SimulationState.Reset(); _runFrames.Clear(); _frameIndex = -1; _lastCapturedStepText = null; return InvokeAsync(StateHasChanged); }
+
+    private void SetValue(int value) { if (!IsBusy) { _value = value; _errorMessage = null; } }
+    private void SetStateView(StateView view) { _activeStateView = view; if (view == StateView.Memory && _activeTaskId is not null) { _memoryOpenedDuringTask = true; CheckActiveTaskCompletion(); } }
+    private string GetStateTabClass(StateView view) => _activeStateView == view ? "active" : string.Empty;
+
+    private void StartTask(int taskId)
+    {
+        if (IsBusy) return;
+        _activeTaskId = taskId;
+        _practiceEvents.Clear();
+        _practiceSequence = 0;
+        _memoryOpenedDuringTask = false;
+    }
+
+    private void RecordPracticeEvent(PracticeEvent practiceEvent)
+    {
+        if (_activeTaskId is null) return;
+        _practiceEvents.Add(practiceEvent with { Sequence = ++_practiceSequence });
+        CheckActiveTaskCompletion();
+    }
+
+    private void CheckActiveTaskCompletion()
+    {
+        if (_activeTaskId is null) return;
+        var completed = _activeTaskId.Value switch
+        {
+            1 => _practiceEvents.Any(e => e.Operation == HeapOperationKind.Insert && e.Kind == HeapKind.Min && e.Succeeded && e.Swaps > 0 && e.Value == 10),
+            2 => _practiceEvents.Any(e => e.Operation == HeapOperationKind.ExtractRoot && e.Kind == HeapKind.Min && e.Succeeded && e.RepairDirection == HeapRepairDirection.BubbleDown && e.Swaps > 0),
+            3 => _practiceEvents.Any(e => e.Operation == HeapOperationKind.Insert && e.Kind == HeapKind.Max && e.Succeeded && e.Swaps > 0),
+            4 => _practiceEvents.Any(e => e.Operation == HeapOperationKind.Search && !e.Succeeded && e.Comparisons >= 5),
+            5 => _practiceEvents.Any(e => e.Operation == HeapOperationKind.Delete && e.Succeeded && e.RepairDirection != HeapRepairDirection.None),
+            6 => _memoryOpenedDuringTask && _practiceEvents.Any(e => e.Count >= 5 && e.Capacity >= 8),
+            _ => false
+        };
+        if (!completed) return;
+        _completedTaskIds.Add(_activeTaskId.Value);
+        _activeTaskId = null;
+        _practiceEvents.Clear();
+        _memoryOpenedDuringTask = false;
+        _ = PersistCompletedTasksAsync();
+    }
+
+    private string GetActiveTaskProgressText(int taskId) => taskId switch
+    {
+        1 => "Min Heap: insert 40 → 25 → 10 and trigger at least one bubble-up swap.",
+        2 => "Build the seven-value Min Heap recipe, then Extract root and observe bubble-down.",
+        3 => "Clear, switch to Max Heap, then insert values until a larger child bubbles upward.",
+        4 => "Build five or more elements and search for a value that is not present.",
+        5 => "Delete a non-root value whose last-element replacement needs a repair.",
+        6 => _memoryOpenedDuringTask ? "Memory state opened — make sure Count ≥ 5 so capacity growth is visible." : "Build at least five elements, then open Memory state.",
+        _ => string.Empty
+    };
+
+    private async Task PersistCompletedTasksAsync() { try { await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { CompletedTasksStorageKey, JsonSerializer.Serialize(_completedTaskIds.OrderBy(id => id).ToArray()) }); } catch { } }
+    private async Task ToggleRunPopupsAsync(ChangeEventArgs args) { _showRunPopups = args.Value is bool b ? b : bool.TryParse(args.Value?.ToString(), out var p) && p; try { await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { PopupSettingStorageKey, _showRunPopups.ToString() }); } catch { } }
+
+    private void OpenLastRunPopup() { if (_lastResult is null) return; _popupTab = _lastResult.Operation is HeapOperationKind.ExtractRoot or HeapOperationKind.Delete ? ResultPopupTab.Memory : ResultPopupTab.Run; _lastRunPopupOpen = true; }
+    private void CloseLastRunPopup() => _lastRunPopupOpen = false;
+    private static void IgnorePopupClick() { }
+
+    private static string GetResultHeadline(HeapOperationResult result) => result.Operation switch
+    {
+        HeapOperationKind.Insert => $"Inserted {result.RequestedValue}",
+        HeapOperationKind.ExtractRoot when result.Succeeded => $"Extracted root {result.AffectedValue}",
+        HeapOperationKind.ExtractRoot => "Extract root: heap was empty",
+        HeapOperationKind.Search when result.Succeeded => $"Found {result.RequestedValue}",
+        HeapOperationKind.Search => $"Search: {result.RequestedValue} not found",
+        HeapOperationKind.Delete when result.Succeeded => $"Deleted {result.RequestedValue}",
+        HeapOperationKind.Delete => $"Delete: {result.RequestedValue} not found",
+        _ => "Heap run complete"
+    };
+
+    private static string GetPlainRunSummary(HeapOperationResult result)
+    {
+        if (!result.Succeeded) return result.Operation == HeapOperationKind.ExtractRoot ? "No element existed at index 0, so nothing changed." : "The requested value was not found, so the heap stayed unchanged.";
+        return result.Operation switch
+        {
+            HeapOperationKind.Insert when result.Swaps == 0 => "The new element was appended and already respected its parent relation, so no bubble-up swap was needed.",
+            HeapOperationKind.Insert => $"The new element was appended, then bubble-up used {result.Swaps} swap(s) to restore heap order.",
+            HeapOperationKind.ExtractRoot => $"The root was removed, the last element replaced it, then bubble-down used {result.Swaps} swap(s).",
+            HeapOperationKind.Search => "Search scanned array slots in order because heap parent/child priority does not provide BST-style left/right search decisions.",
+            HeapOperationKind.Delete => $"Delete located the first matching value, replaced its slot with the last element, then used {RepairLabel(result.RepairDirection)} to restore order.",
+            _ => "The operation completed."
+        };
+    }
+
+    private static string GetComplexityExplanation(HeapOperationResult result) => result.Operation switch
+    {
+        HeapOperationKind.Insert => $"Insert appends in constant time, then can move through at most the heap height. This run made {result.Comparisons} comparison(s) and {result.Swaps} swap(s); worst case is O(log n).",
+        HeapOperationKind.ExtractRoot => $"Root access is O(1), but restoring order after moving the last element can follow one downward path. This run used {result.Comparisons} comparison(s); worst case is O(log n).",
+        HeapOperationKind.Search => $"The heap property only compares parents with children. It does not tell us whether an arbitrary value is left or right, so this run checked {result.Comparisons} slot(s) and worst case is O(n).",
+        HeapOperationKind.Delete => $"Repair itself is O(log n), but locating an arbitrary value can require scanning all n slots. This run used {result.Comparisons} total comparison(s), so delete-by-value is O(n) overall.",
+        _ => string.Empty
+    };
+
+    private static string GetMemoryExplanation(HeapOperationResult result)
+    {
+        var resize = result.CapacityAfter != result.CapacityBefore
+            ? $" Capacity grew from {result.CapacityBefore} to {result.CapacityAfter} by allocating a larger T[] and copying used references with a manual loop."
+            : " Reserved capacity did not change during this run.";
+        var movement = result.Swaps > 0
+            ? $" {result.Swaps} swap(s) exchanged references between array indexes while each element kept the same ID."
+            : " No element-reference swap was required.";
+        return resize + movement + " Tree parent/child relationships change automatically when an element moves to a new index because those relationships are calculated from the index formulas.";
+    }
+
+    private static string RepairLabel(HeapRepairDirection direction) => direction switch { HeapRepairDirection.BubbleUp => "Bubble up", HeapRepairDirection.BubbleDown => "Bubble down", _ => "None" };
+    private static string IndexLabel(int? index) => index.HasValue ? index.Value.ToString() : "—";
+    private bool IsCurrentRun(CancellationToken runToken) => !runToken.IsCancellationRequested && SimulationState.SimulationCancellationToken == runToken;
+
+    private void HandleStateChanged() { if (SimulationState.IsRunning) CaptureFrame(); RequestRender(); }
+    private void HandleHeapChanged() => RequestRender();
+    private void RequestRender() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() { SimulationState.Changed -= HandleStateChanged; Heap.Changed -= HandleHeapChanged; }
+
+    private sealed record RunFrame(string StepText, HeapSnapshot Snapshot);
+    private sealed record PracticeTaskDefinition(int Id, string Title, IReadOnlyList<string> Steps, string HelpHref);
+    private sealed record PracticeEvent(HeapOperationKind? Operation, int? Value, bool Succeeded, int Swaps, HeapRepairDirection RepairDirection, HeapKind Kind, int Count, int Capacity, int Comparisons = 0, int Sequence = -1, bool IsReset = false, bool IsKindSwitch = false);
+    private enum StateView { Visual, Memory }
+    private enum ResultPopupTab { Run, Memory }
+}

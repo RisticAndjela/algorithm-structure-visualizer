@@ -11,7 +11,7 @@ The project is built with **Blazor WebAssembly and C#**. Its goal is not only to
 - what the time complexity means for the current run;
 - how the visual representation differs from the way the data is stored in memory.
 
-The application now has four fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **AVL Tree**, and **Red-Black Tree**. Queue & Stack established the reusable simulation pattern; BST extended it to linked nodes; AVL added strict height balancing; Red-Black now adds color invariants, black-height reasoning, recoloring, and insertion/deletion fix-up while reusing the same playback and Visual/Memory learning model.
+The application now has five fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **AVL Tree**, **Red-Black Tree**, and **Binary Heap (Min/Max)**. Queue & Stack established the reusable simulation pattern; BST extended it to linked nodes; AVL added strict height balancing; Red-Black added color-invariant repair; Heap now connects a complete binary-tree view to a manually maintained array representation with bubble-up and bubble-down.
 
 ---
 
@@ -24,6 +24,7 @@ The application now has four fully implemented learning modules: **Queue & Stack
 - Binary Search Tree (BST)
 - AVL Tree
 - Red-Black Tree
+- Binary Heap (Min/Max)
 - shared simulation runtime;
 - play, pause and adjustable simulation speed;
 - manual step forward;
@@ -57,7 +58,14 @@ The application now has four fully implemented learning modules: **Queue & Stack
 - deletion fix-up with sibling/near/far child color cases and mirror cases;
 - Red-Black node-identity-preserving rotations and successor transplant;
 - Red-Black Visual/Memory views with black-height, color, references, and transient fix-up states;
-- Red-Black guided practice and persistent progress.
+- Red-Black guided practice and persistent progress;
+- Min Heap / Max Heap mode selection while empty;
+- Heap insert with append + bubble-up;
+- Heap extract-root with last-element replacement + bubble-down;
+- Heap arbitrary value search with a truthful O(n) scan;
+- Heap delete-by-value with direction-aware repair;
+- Heap Visual/Memory views showing complete-tree indexes, stable IDs, used slots, capacity, and manual array growth;
+- Heap guided practice and persistent progress.
 
 ### Planned
 
@@ -65,7 +73,6 @@ The following modules currently have UI placeholders and are intentionally marke
 
 #### Data structures
 
-- Heap
 - Graphs
 
 #### Sorting algorithms
@@ -137,7 +144,7 @@ BST follows the same rule today: it uses explicit `BstNode` parent/left/right re
 
 AVL also follows the rule: `AvlNode` stores explicit parent/left/right references and a manually maintained cached height. Balance factors are computed from those heights, and LL/RR/LR/RL repairs explicitly rewire references with custom left/right rotations. No ready-made balanced-tree implementation performs the teaching algorithm.
 
-This rule also applies to the live Red-Black Tree and will continue to apply to future graphs, heaps, sorting algorithms and search algorithms.
+This rule also applies to the live Red-Black Tree and Binary Heap and will continue to apply to future graphs, sorting algorithms and search algorithms.
 
 Standard .NET infrastructure such as `Task`, `CancellationToken`, `Guid`, `SemaphoreSlim`, Blazor components and browser interop may still be used. These provide application infrastructure rather than the algorithm being taught.
 
@@ -501,6 +508,87 @@ The `LEARN FIRST` section intentionally follows the established Queue & Stack / 
 
 ---
 
+# Binary Heap (Min/Max)
+
+Binary Heap is the fifth live data-structure module. It deliberately teaches the same structure in two synchronized representations:
+
+- a **complete binary tree** for understanding parent/child priority;
+- a **custom dynamic array** for understanding the actual storage and index relationships.
+
+The learner can choose **Min Heap** or **Max Heap** while the heap is empty. A non-empty heap is never silently rebuilt when switching type.
+
+Implemented operations:
+
+- `Insert` by value;
+- `Extract root` (minimum in Min Heap, maximum in Max Heap);
+- `Search` by value;
+- `Delete` the first matching value;
+- `Clear`;
+- Min/Max mode selection while empty.
+
+Duplicates are allowed. Equal values remain separate `HeapElement` objects with different short IDs.
+
+## Heap storage and index model
+
+Core owns a custom `ManualHeapArray<HeapElement>` backed by a raw `T[]`. It does not use `PriorityQueue`, `List`, `SortedSet`, `Array.Sort`, or another ready-made heap implementation. Capacity growth allocates a larger raw array and copies used references with an explicit loop.
+
+The complete-tree relationships are calculated from indexes:
+
+```text
+parent(i) = (i - 1) / 2
+left(i)   = 2i + 1
+right(i)  = 2i + 2
+```
+
+Heap elements therefore do not need explicit parent/left/right fields. Moving an element reference to a different array index automatically changes its conceptual tree relationships while preserving the same object ID and value.
+
+## Insert and bubble-up
+
+Insert first appends the new element at the next array slot. That preserves the complete-tree shape. The algorithm then compares the new element with its parent and swaps upward while it has higher priority:
+
+- Min Heap: smaller value has higher priority;
+- Max Heap: larger value has higher priority.
+
+Each swap is implemented manually and exposed as a simulation step.
+
+## Extract-root and bubble-down
+
+The root is always array index `0`, so reading the min/max root is conceptually `O(1)`. Extract-root removes that element, moves the last element reference to index `0`, releases the last used slot, and then repairs heap order downward.
+
+When both children exist, bubble-down first chooses the child with higher heap priority, then compares that child with the current parent and swaps only when the heap property is violated.
+
+## Search and delete
+
+A heap is **not** ordered like a BST. Knowing that a parent has priority over its children does not tell us whether an arbitrary target value belongs in the left or right subtree. The live Search therefore checks used array slots linearly and has worst-case complexity `O(n)`.
+
+Delete-by-value first performs that same truthful linear search. The matched slot is replaced with the last element reference, and the algorithm determines whether repair must bubble upward or downward. Because locating an arbitrary value is linear, delete-by-value is `O(n)` overall even though the repair path is only `O(log n)`.
+
+## Heap complexity
+
+```text
+root access     O(1)
+insert          O(log n)
+extract root    O(log n)
+search value    O(n)
+delete value    O(n) overall
+```
+
+## Heap playback and learning UI
+
+The Heap lab supports:
+
+- Play / Pause / Step forward / Step back;
+- adjustable step delay;
+- Visual state showing complete-tree levels and the synchronized array representation;
+- Memory state showing used versus reserved array slots, stable IDs, Count, Capacity, and index relationships;
+- visible transient states for checking, candidate selection, swapping, insertion, removal, match, and repair path;
+- optional Last Run popups explaining comparisons, swaps, repair direction, capacity changes, and complexity;
+- guided practice for Min bubble-up, Min bubble-down, Max Heap behavior, linear search, delete repair, and capacity growth.
+
+The `LEARN FIRST` section follows the same established hierarchy as Queue & Stack, BST, AVL, and Red-Black.
+
+---
+
 # Element identity
 
 Every element is its own object.
@@ -689,7 +777,7 @@ These views are intentionally separate.
 
 A drawing used to explain an algorithm is **not necessarily the same as the program's memory layout**.
 
-BST demonstrates this distinction with ordered screen position versus the actual parent/left/right object-reference graph. AVL extends the same separation: its Visual state explains balance and rotations, while Memory state shows the real reference rewiring and cached heights. Red-Black extends that separation again by keeping persistent node color distinct from transient fix-up emphasis. The same separation will be important for future Graph and Heap modules.
+BST demonstrates this distinction with ordered screen position versus the actual parent/left/right object-reference graph. AVL extends the same separation: its Visual state explains balance and rotations, while Memory state shows the real reference rewiring and cached heights. Red-Black extends that separation again by keeping persistent node color distinct from transient fix-up emphasis. Heap now demonstrates the array/tree version of this distinction: the tree is conceptual, while Memory state shows the real custom backing-array slots. The same separation will be important for the future Graph module.
 
 ---
 
@@ -1123,7 +1211,7 @@ complexity explanation
 guided practice
 ```
 
-The next module can now reuse our custom Queue, Stack, BST, AVL, and Red-Black implementations wherever that is algorithmically appropriate. **Heap (Min/Max)** is the next data structure in the written specification and is also a useful dependency for later Heap Sort and Dijkstra work.
+The next module can now reuse our custom Queue, Stack, BST, AVL, Red-Black, and Heap implementations wherever that is algorithmically appropriate. **Graphs (adjacency list / matrix)** are the next data structure in the written specification; the live Heap is also now available as a future dependency for Heap Sort, priority-queue teaching, and Dijkstra work.
 
 ---
 
@@ -1137,4 +1225,6 @@ The next module can now reuse our custom Queue, Stack, BST, AVL, and Red-Black i
 
 **Red-Black Tree: implemented as the color-invariant balanced-tree extension, including explicit RED/BLACK nodes, conceptual black NIL leaves, insertion and deletion fix-up, recoloring, rotations, black-height teaching, Visual/Memory views, run explanations, and guided practice.**
 
-The project now has reusable manual linear structures and three reusable manual tree foundations for subsequent algorithms and data structures.
+**Binary Heap: implemented as a complete-tree / custom-array module with Min/Max modes, bubble-up, bubble-down, extract-root, linear search, arbitrary delete repair, Visual/Memory views, capacity teaching, run explanations, and guided practice.**
+
+The project now has reusable manual linear structures, three reusable manual tree foundations, and a reusable manual Binary Heap foundation for subsequent algorithms and data structures.

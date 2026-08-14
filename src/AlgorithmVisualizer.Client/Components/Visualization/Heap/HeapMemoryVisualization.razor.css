@@ -1,0 +1,37 @@
+.heap-memory { border:1px solid #e5e6eb; border-radius:22px; background:#fff; padding:24px; }
+.heap-memory > header { display:flex; justify-content:space-between; gap:24px; align-items:flex-start; }
+.memory-kicker, .section-title > span { display:block; font-size:.7rem; font-weight:800; letter-spacing:.11em; color:#7d818e; }
+.heap-memory h3 { margin:4px 0 0; font-size:1.25rem; }
+.heap-memory header p { margin:7px 0 0; max-width:690px; color:#676c79; font-size:.9rem; line-height:1.55; }
+.heap-memory code { padding:1px 5px; border-radius:5px; background:#f4f4f7; }
+.capacity-card { min-width:175px; padding:13px 15px; border-radius:16px; background:#f6f4ff; border:1px solid #ded8ff; }
+.capacity-card span { display:block; font-size:.62rem; font-weight:800; color:#7165cb; letter-spacing:.07em; }
+.capacity-card strong { display:block; margin:4px 0; font-size:1.35rem; }
+.capacity-card small { color:#717582; font-size:.68rem; }
+.slot-section, .reference-section { margin-top:24px; }
+.section-title { display:flex; justify-content:space-between; gap:16px; align-items:end; margin-bottom:10px; }
+.section-title small { color:#7a7e89; font-size:.7rem; text-align:right; }
+.memory-strip { display:flex; gap:8px; overflow-x:auto; padding:4px 2px 8px; }
+.memory-slot { width:88px; min-width:88px; min-height:84px; border:2px solid #dfe1e7; border-radius:13px; display:flex; flex-direction:column; justify-content:center; align-items:center; background:#fff; position:relative; }
+.slot-index { position:absolute; top:5px; left:7px; color:#90949f; font-size:.59rem; font-weight:800; }
+.memory-slot strong { font-size:1.05rem; }
+.memory-slot small { margin-top:4px; font-size:.6rem; color:#787c88; font-weight:700; }
+.memory-slot.unused { border-style:dashed; background:#fafafd; color:#aaaeba; }
+.memory-slot.unused strong { font-size:.76rem; color:#a2a6b1; }
+.no-capacity, .empty-table { width:100%; padding:18px; border:1px dashed #d8dae1; border-radius:13px; color:#777b87; background:#fbfbfd; text-align:center; font-size:.82rem; }
+.is-checking { background:#fff7e8; border-color:#d49b3d; }
+.is-candidate { background:#eef5ff; border-color:#4d78c7; }
+.is-swapping { background:#f0edff; border-color:#6757e5; }
+.is-added { background:#eaf9f5; border-color:#1b9989; }
+.is-matched { background:#e8f8ef; border-color:#2c9b61; }
+.is-removing { background:#fff0f1; border-color:#d85d69; }
+.is-repairing { background:#f7f0ff; border-color:#9b64d6; }
+.memory-table { border:1px solid #e6e7eb; border-radius:14px; overflow:hidden; }
+.table-row { display:grid; grid-template-columns:.7fr .8fr 1.2fr .9fr .9fr .9fr; gap:10px; align-items:center; padding:10px 13px; border-top:1px solid #eeeeF2; font-size:.78rem; }
+.table-row:first-child { border-top:0; }
+.table-head { background:#f7f7fa; color:#7c808d; text-transform:uppercase; font-size:.61rem; font-weight:800; letter-spacing:.07em; }
+.table-row > :nth-child(n+3) { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; }
+.memory-note { margin-top:20px; padding:15px 17px; border-radius:15px; background:#f7f5ff; border:1px solid #e1dcff; }
+.memory-note strong { display:block; font-size:.84rem; color:#51469c; }
+.memory-note p { margin:5px 0 0; font-size:.79rem; line-height:1.55; color:#676b78; }
+@media (max-width:760px) { .heap-memory { padding:16px; } .heap-memory > header { flex-direction:column; } .capacity-card { width:100%; } .section-title { flex-direction:column; align-items:flex-start; } .section-title small { text-align:left; } .memory-table { overflow-x:auto; } .table-row { min-width:620px; } }

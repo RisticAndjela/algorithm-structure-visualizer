@@ -1,0 +1,100 @@
+@using AlgorithmVisualizer.Core.DataStructures.Heap
+
+<div class="heap-memory">
+    <header>
+        <div>
+            <span class="memory-kicker">SIMULATED MEMORY MODEL</span>
+            <h3>One custom dynamic array owns the heap references.</h3>
+            <p>The tree drawing is conceptual. Core actually stores element references in contiguous logical slots of a manually grown <code>T[]</code>.</p>
+        </div>
+        <div class="capacity-card">
+            <span>USED / CAPACITY</span>
+            <strong>@Snapshot.Count / @Snapshot.Capacity</strong>
+            <small>@(Snapshot.Capacity == 0 ? "No backing array allocated yet" : $"{Snapshot.Capacity - Snapshot.Count} reserved slot(s) unused")</small>
+        </div>
+    </header>
+
+    <section class="slot-section">
+        <div class="section-title">
+            <span>BACKING ARRAY SLOTS</span>
+            <small>Indexes are real logical positions; labels such as #ABC123 are simulated object identities, not RAM addresses.</small>
+        </div>
+        <div class="memory-strip">
+            @for (var index = 0; index < Snapshot.Capacity; index++)
+            {
+                var item = index < Snapshot.Count ? Snapshot.Elements[index] : null;
+                <article class="memory-slot @(item is null ? "unused" : StateClass(item.VisualState))">
+                    <span class="slot-index">[@index]</span>
+                    @if (item is null)
+                    {
+                        <strong>empty</strong>
+                        <small>reserved</small>
+                    }
+                    else
+                    {
+                        <strong>@item.Value</strong>
+                        <small>#@item.DisplayId</small>
+                    }
+                </article>
+            }
+            @if (Snapshot.Capacity == 0)
+            {
+                <div class="no-capacity">Insert the first value to allocate the initial backing array.</div>
+            }
+        </div>
+    </section>
+
+    <section class="reference-section">
+        <div class="section-title">
+            <span>INDEX RELATIONSHIPS</span>
+            <small>Parent/child links are calculated from indexes; there are no parent/left/right fields on heap elements.</small>
+        </div>
+        @if (Snapshot.Count == 0)
+        {
+            <div class="empty-table">No used slots yet.</div>
+        }
+        else
+        {
+            <div class="memory-table" role="table" aria-label="Heap index relationships">
+                <div class="table-row table-head" role="row">
+                    <span>Index</span><span>Value</span><span>ID</span><span>Parent</span><span>Left</span><span>Right</span>
+                </div>
+                @foreach (var item in Snapshot.Elements)
+                {
+                    <div class="table-row" role="row">
+                        <span>@item.Index</span>
+                        <strong>@item.Value</strong>
+                        <span>#@item.DisplayId</span>
+                        <span>@IndexOrNull(item.ParentIndex)</span>
+                        <span>@IndexOrNull(item.LeftChildIndex < Snapshot.Count ? item.LeftChildIndex : null)</span>
+                        <span>@IndexOrNull(item.RightChildIndex < Snapshot.Count ? item.RightChildIndex : null)</span>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+
+    <div class="memory-note">
+        <strong>What a swap really changes</strong>
+        <p>If two heap values swap during bubble-up or bubble-down, their <em>element objects keep the same IDs</em>. Only the array slots holding their references exchange positions. That index change automatically changes their conceptual parent/child relationships.</p>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public HeapSnapshot Snapshot { get; set; } = new(HeapKind.Min, 0, 0, Array.Empty<HeapElementSnapshot>());
+
+    private static string IndexOrNull(int? index) => index.HasValue ? index.Value.ToString() : "null";
+
+    private static string StateClass(HeapElementVisualState state) => state switch
+    {
+        HeapElementVisualState.Checking => "is-checking",
+        HeapElementVisualState.Candidate => "is-candidate",
+        HeapElementVisualState.Swapping => "is-swapping",
+        HeapElementVisualState.Added => "is-added",
+        HeapElementVisualState.Removing => "is-removing",
+        HeapElementVisualState.Matched => "is-matched",
+        HeapElementVisualState.Repairing => "is-repairing",
+        _ => string.Empty
+    };
+}

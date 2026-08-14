@@ -39,3 +39,7 @@ The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctnes
 - delete fix-up across a known mutation sequence;
 - root-black, BST ordering, parent-link, no-red-red, and equal-black-height invariants after mutations;
 - clear/reset behavior.
+
+## Heap coverage
+
+`DataStructures/Heap/HeapSimulationTests.cs` verifies both Min Heap and Max Heap ordering, bubble-up, extract-root bubble-down, arbitrary search, delete repair, duplicate element identities, heap-kind switching rules, and manual backing-array capacity behavior.

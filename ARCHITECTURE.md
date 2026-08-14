@@ -14,10 +14,11 @@ algorithm-structure-visualizer/
 │  │  │  │  ├─ ManualDynamicArray.cs
 │  │  │  │  ├─ Stack/
 │  │  │  │  └─ Queue/
-│  │  │  └─ Trees/
-│  │  │     ├─ Bst/             # implemented
-│  │  │     ├─ Avl/             # implemented
-│  │  │     └─ RedBlack/        # live Red-Black Tree
+│  │  │  ├─ Trees/
+│  │  │  │  ├─ Bst/             # implemented
+│  │  │  │  ├─ Avl/             # implemented
+│  │  │  │  └─ RedBlack/        # implemented
+│  │  │  └─ Heap/               # live Min/Max Binary Heap
 │  │  ├─ Algorithms/Sorting/    # planned modules
 │  │  └─ Simulation/
 │  │     ├─ Contracts/
@@ -27,7 +28,8 @@ algorithm-structure-visualizer/
 │     │  ├─ Common/
 │     │  └─ Visualization/
 │     │     ├─ Linear/
-│     │     └─ Trees/
+│     │     ├─ Trees/
+│     │     └─ Heap/
 │     ├─ Pages/
 │     │  ├─ DataStructures/
 │     │  ├─ Learn/
@@ -88,6 +90,7 @@ Examples:
 - BST uses explicit `BstNode` parent/left/right references and manual comparison/transplant logic rather than a sorted collection or library tree. Its optional `Balance BST` action runs manual Day-Stout-Warren rotations over those same nodes; ordinary BST mutations remain non-self-balancing.
 - AVL uses explicit `AvlNode` references, manually maintained cached heights, balance-factor checks, and explicit left/right rotations rather than a library balancing structure.
 - Red-Black Tree uses explicit `RedBlackNode` references and a color field, treats null children as conceptual black NIL leaves, and implements recoloring plus insertion/deletion fix-up with manual rotations rather than a library balanced tree.
+- Binary Heap uses a custom raw-array-backed `ManualHeapArray<HeapElement>`, explicit index arithmetic, and manual swaps for bubble-up/bubble-down rather than `PriorityQueue`, `List`, sorting, or another library heap.
 
 Infrastructure types such as `Task`, `CancellationToken`, `SemaphoreSlim`, `Guid`, Blazor services, and browser storage interop are allowed because they do not implement the taught algorithm.
 
@@ -104,6 +107,7 @@ Current examples:
 - BST tree coordinates communicate key ordering, while Memory state shows the root reference and parent/left/right node references. During DSW balancing, timeline snapshots expose the same node IDs while those references are rewired by rotations.
 - AVL visual state adds cached height, balance factor, and rotation states; its Memory state shows the same node identities and the real reference rewiring performed by rotations.
 - Red-Black visual state separates persistent RED/BLACK node color from temporary fix-up emphasis; its Memory state shows color plus root/parent/left/right references and explains null child references as conceptual black NIL leaves.
+- Heap visual state shows the complete binary tree and synchronized array positions; its Memory state shows the actual used/reserved backing-array slots, stable element IDs, Count/Capacity, and calculated parent/child indexes.
 
 Learning labels such as `MEM-#A1B2C3` represent object identity only; they are not physical RAM addresses.
 
@@ -158,6 +162,23 @@ The third tree module keeps the same strict BST ordering and adds:
 - Memory state with color plus root/parent/left/right references;
 - black-height metrics, result explanations, and guided practice with persistent progress.
 
+
+### Binary Heap
+
+The first live priority/tree-array module adds:
+
+- Min Heap and Max Heap semantics;
+- complete-tree shape encoded by array indexes;
+- custom manual array growth;
+- stable `HeapElement` identity across index swaps;
+- insert through append + bubble-up;
+- extract-root through last-element replacement + bubble-down;
+- truthful O(n) arbitrary search;
+- delete-by-value with linear locate plus upward/downward repair;
+- Visual state with tree + array synchronization;
+- Memory state with used/reserved slots and capacity;
+- heap-specific guided practice and persistent progress.
+
 ## Planned extension path
 
-Heap, Graph, and sorting modules should reuse the same Core/runtime/Client separation rather than duplicating playback infrastructure. Future modules may reuse the established Stack/Queue/BST/AVL/Red-Black implementations when they are genuine algorithmic dependencies.
+Graph and sorting modules should reuse the same Core/runtime/Client separation rather than duplicating playback infrastructure. Future modules may reuse the established Stack/Queue/BST/AVL/Red-Black/Heap implementations when they are genuine algorithmic dependencies.
