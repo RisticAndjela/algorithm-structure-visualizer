@@ -18,7 +18,7 @@ algorithm-structure-visualizer/
 │  │  │  │  ├─ Bst/             # implemented
 │  │  │  │  ├─ Avl/             # implemented
 │  │  │  │  └─ RedBlack/        # implemented
-│  │  │  └─ Heap/               # live Min/Max Binary Heap
+│  │  │  └─ Heap/               # live generalized d-ary Heap + Binary Heap
 │  │  ├─ Algorithms/Sorting/    # planned modules
 │  │  └─ Simulation/
 │  │     ├─ Contracts/
@@ -90,7 +90,7 @@ Examples:
 - BST uses explicit `BstNode` parent/left/right references and manual comparison/transplant logic rather than a sorted collection or library tree. Its optional `Balance BST` action runs manual Day-Stout-Warren rotations over those same nodes; ordinary BST mutations remain non-self-balancing.
 - AVL uses explicit `AvlNode` references, manually maintained cached heights, balance-factor checks, and explicit left/right rotations rather than a library balancing structure.
 - Red-Black Tree uses explicit `RedBlackNode` references and a color field, treats null children as conceptual black NIL leaves, and implements recoloring plus insertion/deletion fix-up with manual rotations rather than a library balanced tree.
-- Binary Heap uses a custom raw-array-backed `ManualHeapArray<HeapElement>`, explicit index arithmetic, and manual swaps for bubble-up/bubble-down rather than `PriorityQueue`, `List`, sorting, or another library heap.
+- Heap family modules use a shared custom raw-array-backed `ManualHeapArray<HeapElement>`, explicit index arithmetic, and manual swaps rather than `PriorityQueue`, `List`, sorting, or another library heap. `HeapSimulation` is the Binary Heap (`d=2`) specialization; `DaryHeapSimulation` generalizes relationships to configurable `d`.
 
 Infrastructure types such as `Task`, `CancellationToken`, `SemaphoreSlim`, `Guid`, Blazor services, and browser storage interop are allowed because they do not implement the taught algorithm.
 
@@ -163,9 +163,24 @@ The third tree module keeps the same strict BST ordering and adds:
 - black-height metrics, result explanations, and guided practice with persistent progress.
 
 
+### Generalized d-ary Heap
+
+The broader Heap learning module makes the heap-family distinction concrete without inventing an inaccurate “ordinary heap” type:
+
+- configurable branching factor `d` (Core 2..8; UI presets 3/4/5);
+- Min/Max priority rule;
+- complete d-ary shape encoded in the same custom raw array;
+- `parent=(i-1)/d`, children `di+1..di+d`;
+- append + bubble-up insertion;
+- last-to-root + bubble-down extraction;
+- bubble-down child-candidate selection across up to `d` existing children;
+- linear arbitrary search and delete-by-value repair;
+- Visual and Memory views that compare directly with Binary Heap;
+- arity changes only while empty.
+
 ### Binary Heap
 
-The first live priority/tree-array module adds:
+The dedicated Binary Heap specialization adds:
 
 - Min Heap and Max Heap semantics;
 - complete-tree shape encoded by array indexes;
@@ -181,4 +196,4 @@ The first live priority/tree-array module adds:
 
 ## Planned extension path
 
-Graph and sorting modules should reuse the same Core/runtime/Client separation rather than duplicating playback infrastructure. Future modules may reuse the established Stack/Queue/BST/AVL/Red-Black/Heap implementations when they are genuine algorithmic dependencies.
+Graph and sorting modules should reuse the same Core/runtime/Client separation rather than duplicating playback infrastructure. Future modules may reuse the established Stack/Queue/BST/AVL/Red-Black/generalized-Heap/Binary-Heap implementations when they are genuine algorithmic dependencies.

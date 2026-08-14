@@ -1,0 +1,141 @@
+@using AlgorithmVisualizer.Core.DataStructures.Heap
+
+<div class="dary-visualization">
+    <div class="visualization-header">
+        <div>
+            <span class="view-kicker">GENERALIZED D-ARY HEAP</span>
+            <h3>@KindLabel · d = @Snapshot.Arity</h3>
+            <p>A heap is a family of priority-ordered trees. This concrete lab uses a complete d-ary heap so you can change how many children each parent may have. Binary Heap is exactly the d = 2 special case.</p>
+        </div>
+        <div class="heap-metrics">
+            <div><span>ROOT</span><strong>@(Snapshot.Root?.Value.ToString() ?? "—")</strong></div>
+            <div><span>COUNT</span><strong>@Snapshot.Count</strong></div>
+            <div><span>HEIGHT</span><strong>@Height</strong></div>
+            <div><span>ARITY</span><strong>@Snapshot.Arity</strong></div>
+        </div>
+    </div>
+
+    @if (Snapshot.Count == 0)
+    {
+        <div class="empty-heap">
+            <span>◇</span>
+            <strong>The d-ary heap is empty.</strong>
+            <p>Choose d, insert a value, and watch the parent formula use division by d instead of the binary-heap division by 2.</p>
+        </div>
+    }
+    else
+    {
+        <div class="tree-shell" aria-label="D-ary heap as a complete tree">
+            @foreach (var level in Levels)
+            {
+                <div class="heap-level" style="--level-count:@level.Length">
+                    @foreach (var index in level)
+                    {
+                        var item = Snapshot.Elements[index];
+                        <article class="heap-node @StateClass(item.VisualState)">
+                            <span class="node-index">i=@item.Index</span>
+                            <strong>@item.Value</strong>
+                            <small>#@item.DisplayId</small>
+                            @if (item.Index == 0)
+                            {
+                                <span class="parent-link root-label">ROOT</span>
+                            }
+                            else
+                            {
+                                <span class="parent-link">parent @item.ParentIndex(Snapshot.Arity)</span>
+                            }
+                        </article>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="array-bridge">
+            <div class="bridge-copy">
+                <span class="view-kicker">SAME OBJECTS, GENERAL INDEX RULE</span>
+                <strong>parent = (i − 1) / d · children = di + 1 … di + d</strong>
+                <small>Here d = @Snapshot.Arity, so index 0 may have children 1 through @Snapshot.Arity.</small>
+            </div>
+            <div class="heap-array" aria-label="D-ary heap array representation">
+                @foreach (var item in Snapshot.Elements)
+                {
+                    <div class="array-cell @StateClass(item.VisualState)">
+                        <span>@item.Index</span>
+                        <strong>@item.Value</strong>
+                        <small>#@item.DisplayId</small>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <div class="state-legend" aria-label="D-ary heap animation state legend">
+        <span><i class="normal"></i>Normal</span>
+        <span><i class="checking"></i>Checking</span>
+        <span><i class="candidate"></i>Candidate child</span>
+        <span><i class="swapping"></i>Swapping</span>
+        <span><i class="added"></i>New element</span>
+        <span><i class="matched"></i>Match</span>
+        <span><i class="removing"></i>Removing</span>
+        <span><i class="repairing"></i>Repair path</span>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public DaryHeapSnapshot Snapshot { get; set; } = new(HeapKind.Min, 3, 0, 0, Array.Empty<DaryHeapElementSnapshot>());
+
+    private int Height => CalculateHeight(Snapshot.Count, Snapshot.Arity);
+    private string KindLabel => Snapshot.Kind == HeapKind.Min ? "Min Heap" : "Max Heap";
+
+    private IReadOnlyList<int[]> Levels
+    {
+        get
+        {
+            var levels = new List<int[]>();
+            var start = 0;
+            var width = 1;
+
+            while (start < Snapshot.Count)
+            {
+                var length = Math.Min(width, Snapshot.Count - start);
+                var indexes = new int[length];
+                for (var offset = 0; offset < length; offset++)
+                {
+                    indexes[offset] = start + offset;
+                }
+                levels.Add(indexes);
+                start += length;
+                checked { width *= Snapshot.Arity; }
+            }
+
+            return levels;
+        }
+    }
+
+    private static int CalculateHeight(int count, int arity)
+    {
+        if (count == 0) return 0;
+        var height = 1;
+        var covered = 1;
+        var width = 1;
+        while (covered < count)
+        {
+            checked { width *= arity; covered += width; }
+            height++;
+        }
+        return height;
+    }
+
+    private static string StateClass(HeapElementVisualState state) => state switch
+    {
+        HeapElementVisualState.Checking => "is-checking",
+        HeapElementVisualState.Candidate => "is-candidate",
+        HeapElementVisualState.Swapping => "is-swapping",
+        HeapElementVisualState.Added => "is-added",
+        HeapElementVisualState.Removing => "is-removing",
+        HeapElementVisualState.Matched => "is-matched",
+        HeapElementVisualState.Repairing => "is-repairing",
+        _ => "is-normal"
+    };
+}

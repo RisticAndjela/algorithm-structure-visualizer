@@ -45,3 +45,8 @@
 .state-legend i.removing { background:#fff0f1; border-color:#d85d69; }
 .state-legend i.repairing { background:#f7f0ff; border-color:#9b64d6; }
 @media (max-width: 760px) { .heap-visualization { padding:16px; } .visualization-header { flex-direction:column; } .heap-metrics { width:100%; } .heap-metrics div { flex:1; min-width:0; } .heap-level { min-width:540px; } }
+
+/* Keep wide heap data scrollable inside the visualization, never at page level. */
+.heap-visualization { min-width:0; max-width:100%; overflow:hidden; }
+.tree-shell,
+.heap-array { max-width:100%; overscroll-behavior-inline:contain; }

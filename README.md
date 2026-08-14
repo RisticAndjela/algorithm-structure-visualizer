@@ -11,7 +11,7 @@ The project is built with **Blazor WebAssembly and C#**. Its goal is not only to
 - what the time complexity means for the current run;
 - how the visual representation differs from the way the data is stored in memory.
 
-The application now has five fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **AVL Tree**, **Red-Black Tree**, and **Binary Heap (Min/Max)**. Queue & Stack established the reusable simulation pattern; BST extended it to linked nodes; AVL added strict height balancing; Red-Black added color-invariant repair; Heap now connects a complete binary-tree view to a manually maintained array representation with bubble-up and bubble-down.
+The application now has six fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **AVL Tree**, **Red-Black Tree**, **Heap (generalized d-ary)**, and **Binary Heap (Min/Max)**. Queue & Stack established the reusable simulation pattern; BST extended it to linked nodes; AVL added strict height balancing; Red-Black added color-invariant repair; the two Heap labs now explicitly teach the difference between the heap family and the Binary Heap d = 2 specialization.
 
 ---
 
@@ -24,6 +24,7 @@ The application now has five fully implemented learning modules: **Queue & Stack
 - Binary Search Tree (BST)
 - AVL Tree
 - Red-Black Tree
+- Heap (generalized d-ary Min/Max)
 - Binary Heap (Min/Max)
 - shared simulation runtime;
 - play, pause and adjustable simulation speed;
@@ -59,6 +60,10 @@ The application now has five fully implemented learning modules: **Queue & Stack
 - Red-Black node-identity-preserving rotations and successor transplant;
 - Red-Black Visual/Memory views with black-height, color, references, and transient fix-up states;
 - Red-Black guided practice and persistent progress;
+- generalized d-ary Heap with configurable branching factor `d = 3/4/5` in the UI;
+- generalized parent/child formulas `parent=(i-1)/d`, children `di+1..di+d`;
+- d-ary bubble-down that explicitly compares all existing child candidates before choosing the highest-priority child;
+- Heap-family vs Binary-Heap learning copy and side-by-side navigation;
 - Min Heap / Max Heap mode selection while empty;
 - Heap insert with append + bubble-up;
 - Heap extract-root with last-element replacement + bubble-down;
@@ -508,9 +513,39 @@ The `LEARN FIRST` section intentionally follows the established Queue & Stack / 
 
 ---
 
+# Heap family and generalized d-ary Heap
+
+The project now makes a terminology distinction that is important for correctness:
+
+> **Heap** is a family / invariant concept. **Binary Heap** is one concrete heap implementation where each parent has at most two children.
+
+There is therefore no separate canonical data structure called an “ordinary heap” that should be implemented beside Binary Heap. To make the broader concept executable rather than merely theoretical, the `/structures/heap` lab implements a **generalized d-ary heap**. The existing Binary Heap remains available separately at `/structures/binary-heap`.
+
+The generalized implementation reuses the same custom `ManualHeapArray<HeapElement>` storage and stable element identities, but derives relationships with:
+
+```text
+parent(i)   = (i - 1) / d
+children(i) = di + 1 ... di + d
+```
+
+The UI currently exposes `d = 3`, `d = 4`, and `d = 5` so the learner can clearly see a non-binary shape. Core also supports `d = 2`, which is tested to demonstrate that Binary Heap is exactly the special case. Changing `d` or Min/Max mode is allowed only while the heap is empty; the app never silently reinterprets or rebuilds a non-empty heap.
+
+The generalized lab implements insert, extract-root, search, delete, clear, Visual state, Memory state, playback history, result explanations, and guided practice. Bubble-down differs pedagogically from the binary version because it may compare up to `d` children at a level before choosing the highest-priority child.
+
+## Heap layout and explanation fixes
+
+The Heap work also hardens the learning UI:
+
+- the main content column no longer centers itself inside a fixed `96rem` maximum, removing the large empty gap between the sidebar and page content on wide screens;
+- operation controls use bounded responsive grids so the page itself does not scroll horizontally; only visualization internals may scroll when the data genuinely needs extra width;
+- Binary Heap Learn First now explains **when and why** to use a heap (priority queues, schedulers, Dijkstra, Prim, Top-K) and the trade-off between O(1) root access and O(n) arbitrary search;
+- Concepts & Memory explicitly distinguishes Heap, d-ary Heap, and Binary Heap.
+
+---
+
 # Binary Heap (Min/Max)
 
-Binary Heap is the fifth live data-structure module. It deliberately teaches the same structure in two synchronized representations:
+Binary Heap remains the dedicated binary specialization and is now paired with the generalized d-ary Heap family lab. It deliberately teaches the same structure in two synchronized representations:
 
 - a **complete binary tree** for understanding parent/child priority;
 - a **custom dynamic array** for understanding the actual storage and index relationships.

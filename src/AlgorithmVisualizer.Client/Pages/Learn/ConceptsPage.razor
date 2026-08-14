@@ -227,42 +227,45 @@
     <section id="heap" class="concept-section">
         <div class="section-heading">
             <span>HEAP</span>
-            <div><h2>Heap property, complete shape, and array indexes</h2><p>A binary heap is easiest to understand when you keep the tree view and array view in your head at the same time.</p></div>
+            <div><h2>Heap vs Binary Heap: family versus one concrete implementation</h2><p>The word <strong>heap</strong> describes a family of priority-ordered data structures. <strong>Binary Heap</strong> is one specific heap whose complete tree allows at most two children per parent.</p></div>
         </div>
         <div class="concept-grid two">
             <article class="concept-card">
-                <span class="term">MIN HEAP</span>
-                <h3>Parents have smaller-or-equal priority</h3>
-                <p>For every used node, the parent value is less than or equal to each child. The smallest value is therefore always at index 0.</p>
-                <div class="example"><strong>Property:</strong> parent ≤ left child and parent ≤ right child.</div>
+                <span class="term">HEAP FAMILY</span>
+                <h3>The invariant is the important idea</h3>
+                <p>In a Min Heap, each parent has priority over its children; in a Max Heap, the rule is reversed. The family can be implemented with different branching factors and specialized structures.</p>
+                <div class="example"><strong>Min rule:</strong> parent ≤ every child. <strong>Max rule:</strong> parent ≥ every child.</div>
             </article>
             <article class="concept-card">
-                <span class="term queue">MAX HEAP</span>
-                <h3>Parents have larger-or-equal priority</h3>
-                <p>The rule is mirrored: every parent is greater than or equal to its children, so the maximum value stays at index 0.</p>
-                <div class="example"><strong>Property:</strong> parent ≥ left child and parent ≥ right child.</div>
+                <span class="term queue">BINARY HEAP</span>
+                <h3>d = 2: at most two children</h3>
+                <p>The classic Binary Heap is a complete binary tree stored compactly in an array. Its index formulas are <code>parent=(i-1)/2</code>, <code>left=2i+1</code>, and <code>right=2i+2</code>.</p>
+                <a href="/structures/binary-heap">Open Binary Heap lab →</a>
             </article>
             <article class="concept-card">
-                <span class="term">COMPLETE</span>
-                <h3>Shape is controlled before priority</h3>
-                <p>Every level is full except possibly the last, and the last level fills from left to right. Insert therefore appends at the next array index instead of searching for a free tree position.</p>
-                <div class="example"><strong>Insert:</strong> append first → then bubble-up.</div>
+                <span class="term">D-ARY HEAP</span>
+                <h3>Generalize the same idea to d children</h3>
+                <p>For a complete d-ary heap, <code>parent=(i-1)/d</code> and a node's possible children occupy <code>di+1</code> through <code>di+d</code>. Binary Heap is exactly the d=2 case.</p>
+                <a href="/structures/heap">Open generalized Heap lab →</a>
             </article>
             <article class="concept-card">
-                <span class="term queue">INDEX</span>
-                <h3>The array encodes every tree relationship</h3>
-                <p>For index <code>i</code>: <code>parent=(i-1)/2</code>, <code>left=2i+1</code>, and <code>right=2i+2</code>. Heap elements do not need explicit parent/left/right fields.</p>
-                <div class="example"><strong>Example:</strong> index 2 has children at indexes 5 and 6.</div>
+                <span class="term queue">WHY USE IT?</span>
+                <h3>When the next minimum or maximum matters repeatedly</h3>
+                <p>Heaps are useful for priority queues, schedulers, Dijkstra, Prim, Top-K, event simulation, and streaming problems. They avoid fully sorting the collection every time a new value arrives.</p>
+                <div class="example"><strong>Root:</strong> O(1) · <strong>insert/extract:</strong> logarithmic height · <strong>arbitrary search:</strong> O(n).</div>
             </article>
         </div>
         <div class="plain-note">
-            <strong>Why bubble-up and bubble-down are O(log n), but value search is O(n)</strong>
-            <p>Bubble-up and bubble-down move along one parent/child path, whose length is the heap height. But the heap property only tells you which value has priority over its children; it does not give BST-style left-versus-right ordering for an arbitrary target. A missing value may therefore require checking every used slot.</p>
-            <a href="/structures/heap">Open the Binary Heap lab →</a>
+            <strong>Why “ordinary Heap” is not a second structure beside Binary Heap</strong>
+            <p>“Heap” is the umbrella concept, so implementing a second lab called ordinary Heap without choosing a concrete representation would be misleading. This project therefore makes the distinction executable with a generalized <strong>d-ary heap</strong>, while keeping the existing Binary Heap as the familiar <strong>d = 2</strong> specialization.</p>
+        </div>
+        <div class="plain-note">
+            <strong>Branching factor changes the trade-off</strong>
+            <p>A larger d usually reduces tree height, so bubble-up crosses fewer levels. Bubble-down, however, may need to compare more children at each level before choosing the best candidate. The generalized lab exposes those comparisons step by step.</p>
         </div>
         <div class="plain-note">
             <strong>What a heap swap means in memory</strong>
-            <p>Our implementation stores stable <code>HeapElement</code> objects inside a manually grown raw array. A swap exchanges the two array references. The element IDs and values stay attached to the same objects; only their indexes change. Capacity can grow independently from Count.</p>
+            <p>Both heap labs reuse stable <code>HeapElement</code> objects inside our manually grown raw array. A swap exchanges references between array indexes. IDs and values remain attached to the same objects; only their indexes — and therefore their derived parent/child relationships — change.</p>
         </div>
     </section>
 

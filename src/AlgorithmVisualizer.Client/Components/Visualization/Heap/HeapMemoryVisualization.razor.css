@@ -35,3 +35,8 @@
 .memory-note strong { display:block; font-size:.84rem; color:#51469c; }
 .memory-note p { margin:5px 0 0; font-size:.79rem; line-height:1.55; color:#676b78; }
 @media (max-width:760px) { .heap-memory { padding:16px; } .heap-memory > header { flex-direction:column; } .capacity-card { width:100%; } .section-title { flex-direction:column; align-items:flex-start; } .section-title small { text-align:left; } .memory-table { overflow-x:auto; } .table-row { min-width:620px; } }
+
+/* Keep array/table overflow local to Memory state. */
+.heap-memory { min-width:0; max-width:100%; overflow:hidden; }
+.memory-strip,
+.memory-table { max-width:100%; }

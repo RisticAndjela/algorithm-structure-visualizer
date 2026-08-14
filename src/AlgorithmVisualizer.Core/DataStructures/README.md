@@ -8,6 +8,6 @@ Live modules currently include:
 - `Trees/Bst/` — manually linked Binary Search Tree plus explicit DSW balance;
 - `Trees/Avl/` — manually linked AVL with cached heights and rotations;
 - `Trees/RedBlack/` — manually linked Red-Black Tree with color fix-up;
-- `Heap/` — custom-array Min/Max Binary Heap with bubble-up and bubble-down.
+- `Heap/` — shared custom-array Heap family: generalized d-ary Min/Max Heap plus the dedicated Binary Heap (`d = 2`) specialization.
 
 All taught mutation/search/balancing behavior is implemented explicitly rather than delegated to ready-made framework data structures.

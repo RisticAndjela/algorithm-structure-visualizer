@@ -285,9 +285,9 @@
 
 .content {
     width: 100%;
-    max-width: 96rem;
-    margin: 0 auto;
-    padding: clamp(1.5rem, 3.2vw, 3.2rem);
+    max-width: none;
+    margin: 0;
+    padding: clamp(1.25rem, 2vw, 2rem);
 }
 
 @media (max-width: 980px) {

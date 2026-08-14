@@ -27,5 +27,6 @@ builder.Services.AddScoped<BstSimulation>();
 builder.Services.AddScoped<AvlSimulation>();
 builder.Services.AddScoped<RedBlackSimulation>();
 builder.Services.AddScoped<HeapSimulation>();
+builder.Services.AddScoped<DaryHeapSimulation>();
 
 await builder.Build().RunAsync();

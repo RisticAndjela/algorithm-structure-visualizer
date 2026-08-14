@@ -1,0 +1,76 @@
+@using AlgorithmVisualizer.Core.DataStructures.Heap
+
+<div class="memory-view">
+    <div class="memory-header">
+        <div>
+            <span class="view-kicker">MEMORY STATE</span>
+            <h3>Raw array storage for d = @Snapshot.Arity</h3>
+            <p>The data objects are still stored as references in one manually grown array. Changing d changes how indexes are interpreted as parent/child relationships; it does not add pointer fields to the elements.</p>
+        </div>
+        <div class="memory-metrics">
+            <div><span>COUNT</span><strong>@Snapshot.Count</strong></div>
+            <div><span>CAPACITY</span><strong>@Snapshot.Capacity</strong></div>
+            <div><span>FREE</span><strong>@Math.Max(0, Snapshot.Capacity - Snapshot.Count)</strong></div>
+        </div>
+    </div>
+
+    <div class="formula-card">
+        <strong>Index formulas</strong>
+        <code>parent(i) = (i − 1) / @Snapshot.Arity</code>
+        <code>children(i) = @Snapshot.Arity × i + 1 … @Snapshot.Arity × i + @Snapshot.Arity</code>
+        <p>Binary Heap is simply the same idea with d = 2, which produces left = 2i + 1 and right = 2i + 2.</p>
+    </div>
+
+    <div class="slot-grid" aria-label="D-ary heap backing array slots">
+        @for (var index = 0; index < Snapshot.Capacity; index++)
+        {
+            var used = index < Snapshot.Count;
+            var item = used ? Snapshot.Elements[index] : null;
+            <article class="slot @(used ? StateClass(item!.VisualState) : "free")">
+                <header><span>SLOT @index</span><strong>@(used ? "USED" : "RESERVED")</strong></header>
+                @if (used)
+                {
+                    <div class="slot-value"><strong>@item!.Value</strong><span>#@item.DisplayId</span></div>
+                    <div class="slot-links">
+                        <span>parent <b>@(item.Index == 0 ? "—" : item.ParentIndex(Snapshot.Arity)?.ToString())</b></span>
+                        <span>children <b>@ChildRange(item.Index)</b></span>
+                    </div>
+                }
+                else
+                {
+                    <div class="free-copy">No element reference stored here.</div>
+                }
+            </article>
+        }
+    </div>
+
+    <div class="memory-note">
+        <strong>What actually moves?</strong>
+        <p>Bubble-up and bubble-down swap array references. The <code>HeapElement</code> object keeps the same value and ID. Its parent/children change only because its array index changed.</p>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public DaryHeapSnapshot Snapshot { get; set; } = new(HeapKind.Min, 3, 0, 0, Array.Empty<DaryHeapElementSnapshot>());
+
+    private string ChildRange(int index)
+    {
+        var first = (Snapshot.Arity * index) + 1;
+        if (first >= Snapshot.Count) return "—";
+        var last = Math.Min(first + Snapshot.Arity - 1, Snapshot.Count - 1);
+        return first == last ? first.ToString() : $"{first}–{last}";
+    }
+
+    private static string StateClass(HeapElementVisualState state) => state switch
+    {
+        HeapElementVisualState.Checking => "checking",
+        HeapElementVisualState.Candidate => "candidate",
+        HeapElementVisualState.Swapping => "swapping",
+        HeapElementVisualState.Added => "added",
+        HeapElementVisualState.Removing => "removing",
+        HeapElementVisualState.Matched => "matched",
+        HeapElementVisualState.Repairing => "repairing",
+        _ => "normal"
+    };
+}
