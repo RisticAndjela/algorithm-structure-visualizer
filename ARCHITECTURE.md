@@ -17,7 +17,7 @@ algorithm-structure-visualizer/
 │  │  │  └─ Trees/
 │  │  │     ├─ Bst/             # implemented
 │  │  │     ├─ Avl/             # implemented
-│  │  │     └─ RedBlack/        # planned
+│  │  │     └─ RedBlack/        # live Red-Black Tree
 │  │  ├─ Algorithms/Sorting/    # planned modules
 │  │  └─ Simulation/
 │  │     ├─ Contracts/
@@ -87,6 +87,7 @@ Examples:
 - Queue/Stack use the custom `ManualDynamicArray<T>` rather than `Queue<T>`, `Stack<T>`, `List<T>`, or `Array.Copy` for the taught storage operations.
 - BST uses explicit `BstNode` parent/left/right references and manual comparison/transplant logic rather than a sorted collection or library tree. Its optional `Balance BST` action runs manual Day-Stout-Warren rotations over those same nodes; ordinary BST mutations remain non-self-balancing.
 - AVL uses explicit `AvlNode` references, manually maintained cached heights, balance-factor checks, and explicit left/right rotations rather than a library balancing structure.
+- Red-Black Tree uses explicit `RedBlackNode` references and a color field, treats null children as conceptual black NIL leaves, and implements recoloring plus insertion/deletion fix-up with manual rotations rather than a library balanced tree.
 
 Infrastructure types such as `Task`, `CancellationToken`, `SemaphoreSlim`, `Guid`, Blazor services, and browser storage interop are allowed because they do not implement the taught algorithm.
 
@@ -102,6 +103,7 @@ Current examples:
 - Stack/Queue visual order differs from the custom backing-array slot view.
 - BST tree coordinates communicate key ordering, while Memory state shows the root reference and parent/left/right node references. During DSW balancing, timeline snapshots expose the same node IDs while those references are rewired by rotations.
 - AVL visual state adds cached height, balance factor, and rotation states; its Memory state shows the same node identities and the real reference rewiring performed by rotations.
+- Red-Black visual state separates persistent RED/BLACK node color from temporary fix-up emphasis; its Memory state shows color plus root/parent/left/right references and explains null child references as conceptual black NIL leaves.
 
 Learning labels such as `MEM-#A1B2C3` represent object identity only; they are not physical RAM addresses.
 
@@ -142,6 +144,20 @@ The second tree module builds on the BST ordering model and adds:
 - Memory state with node identity, links, height, and balance factor;
 - rotation-focused guided practice and persistent progress.
 
+### Red-Black Tree
+
+The third tree module keeps the same strict BST ordering and adds:
+
+- explicit red/black node color and conceptual black NIL semantics for null children;
+- root-black, no-red-red, and equal-black-height invariants;
+- insertion fix-up through red-uncle recoloring, triangle repair, and line repair;
+- BST structural deletion plus color-aware delete fix-up using sibling/near/far child cases;
+- real successor-node transplant for two-child deletion;
+- explicit identity-preserving left/right pointer rotations;
+- Visual state that separates persistent node color from temporary fix-up states;
+- Memory state with color plus root/parent/left/right references;
+- black-height metrics, result explanations, and guided practice with persistent progress.
+
 ## Planned extension path
 
-Red-Black Tree, Heap, Graph, and sorting modules should reuse the same Core/runtime/Client separation rather than duplicating playback infrastructure. Future tree modules may reuse the established BST/AVL ordering, reference, layout, and playback concepts where appropriate.
+Heap, Graph, and sorting modules should reuse the same Core/runtime/Client separation rather than duplicating playback infrastructure. Future modules may reuse the established Stack/Queue/BST/AVL/Red-Black implementations when they are genuine algorithmic dependencies.

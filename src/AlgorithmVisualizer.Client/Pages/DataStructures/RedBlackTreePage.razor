@@ -1,15 +1,812 @@
 @page "/structures/red-black"
+@implements IDisposable
+@using System.Text.Json
+@using AlgorithmVisualizer.Client.Components.Visualization.Trees
+@using AlgorithmVisualizer.Core.DataStructures.Trees.RedBlack
+@using Microsoft.JSInterop
+@inject SimulationState SimulationState
+@inject RedBlackSimulation Tree
+@inject IJSRuntime JS
 
-<PageTitle>Red-Black Tree — Algorithm Visualizer</PageTitle>
+<PageTitle>Red-Black Tree Lab — Algorithm Visualizer</PageTitle>
 
-<LearningPlaceholder
-    Title="Red-Black Tree"
-    Eyebrow="Data structure"
-    Description="Study balanced search through color invariants, recoloring, and rotations. The key is understanding why local fixes preserve a global height guarantee."
-    Complexity="O(log n)"
-    ComplexityNote="Color invariants constrain the longest root-to-leaf path."
-    Concepts="color invariant · black height · recolor · rotation"
-    TipTitle="Track invariants, not colors alone."
-    TipText="A node being red is not a problem by itself. Ask which invariant is violated and how recoloring or rotation repairs that exact violation."
-    FocusText="The future lab should keep root color, red-parent rules, and equal black-height paths visible while every fix-up operation runs."
-    PromptText="Which red-black invariant is currently broken?" />
+<div class="redblack-page">
+    <section class="learn-launchpad" aria-labelledby="redblack-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="redblack-learn-title">BST ordering stays. Color rules keep paths short.</h2>
+            <p>A Red-Black Tree is still a BST: smaller goes left, larger goes right. The extra color rules prevent one root-to-leaf path from becoming arbitrarily longer than another.</p>
+            <a href="/learn/concepts#red-black">Open Red-Black invariants &amp; black-height →</a>
+        </div>
+        <div class="learn-grid">
+            <article class="learn-card purple"><span>ROOT</span><strong>Root is always black</strong><small>New nodes start red, but the final root may never remain red.</small></article>
+            <article class="learn-card mint"><span>RED RULE</span><strong>No red-red edge</strong><small>A red node cannot have a red parent or red child.</small></article>
+            <article class="learn-card blue"><span>BLACK-HEIGHT</span><strong>Equal on every path</strong><small>Every path from one node to a NIL leaf must contain the same number of black nodes.</small></article>
+            <article class="learn-card gold"><span>REPAIR</span><strong>Recolor + rotate</strong><small>Local fix-up preserves BST order while restoring the global color invariants.</small></article>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow">
+                <span>DATA STRUCTURES</span>
+                <span class="separator">/</span>
+                <span class="live-status"><i></i> Interactive lab</span>
+            </div>
+            <h1>Red-Black Tree</h1>
+            <p>Place values with the BST rule, then watch recoloring and pointer rotations restore the root, red-parent, and equal black-height invariants.</p>
+        </div>
+        <div class="complexity-summary">
+            <div><span>SEARCH</span><strong>O(log n)</strong><small>balanced root-to-node path</small></div>
+            <div><span>INSERT</span><strong>O(log n)</strong><small>BST insert + upward repair</small></div>
+            <div><span>DELETE</span><strong>O(log n)</strong><small>BST delete + upward repair</small></div>
+        </div>
+    </header>
+
+    <section class="smart-tip" aria-label="Red-Black learning tip">
+        <span class="tip-icon">✦</span>
+        <div>
+            <strong>Do not memorize colors as decoration.</strong>
+            <p>Ask which invariant is broken: red parent + red child, or unequal black-height after deletion. The parent/uncle/sibling colors tell you whether to recolor, rotate, or move the problem upward.</p>
+        </div>
+        <a href="/learn/concepts#red-black">See the invariants →</a>
+    </section>
+
+    <section class="lab-shell">
+        <div class="lab-heading">
+            <div>
+                <span class="section-kicker">PLAYGROUND</span>
+                <h2>Break a color invariant, then watch the exact fix-up case repair it.</h2>
+            </div>
+            <div class="lab-options">
+                @if (_lastResult is not null)
+                {
+                    <button class="last-run-button" type="button" @onclick="OpenLastRunPopup">Last run explanation</button>
+                }
+                <label class="popup-toggle">
+                    <input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopupsAsync" />
+                    <span>Result popups</span>
+                </label>
+            </div>
+        </div>
+
+        <section class="operation-panel" aria-label="Red-Black Tree operations">
+            <div class="value-card">
+                <label>
+                    <span class="control-label">VALUE / KEY</span>
+                    <InputNumber TValue="int?" @bind-Value="_value" disabled="@IsBusy" placeholder="e.g. 50" />
+                </label>
+                <small>Keys are unique. New nodes start red; the algorithm then repairs only the invariants that were actually disturbed.</small>
+                <div class="sample-values" aria-label="Suggested Red-Black values">
+                    <span>Try:</span>
+                    @foreach (var sample in SampleValues)
+                    {
+                        <button type="button" @onclick="() => SetValue(sample)" disabled="@IsBusy">@sample</button>
+                    }
+                </div>
+            </div>
+
+            <div class="operation-card insert-card">
+                <div class="operation-heading"><span class="operation-glyph">+</span><span><strong>Insert</strong><small>BST placement + color fix-up</small></span></div>
+                <button class="primary-action" type="button" @onclick="InsertAsync" disabled="@(!CanRunValueOperation)">Insert value <span>↘</span></button>
+            </div>
+
+            <div class="operation-card search-card">
+                <div class="operation-heading"><span class="operation-glyph">?</span><span><strong>Search</strong><small>Follow one comparison path</small></span></div>
+                <button type="button" @onclick="SearchAsync" disabled="@(!CanRunValueOperation)">Search value <span>→</span></button>
+            </div>
+
+            <div class="operation-card delete-card">
+                <div class="operation-heading"><span class="operation-glyph">−</span><span><strong>Delete</strong><small>BST delete + black-height fix-up</small></span></div>
+                <button class="delete-action" type="button" @onclick="DeleteAsync" disabled="@(!CanRunValueOperation)">Delete value <span>×</span></button>
+            </div>
+
+            <div class="operation-card reset-card">
+                <div class="operation-heading"><span class="operation-glyph">↺</span><span><strong>Reset tree</strong><small>Start another shape</small></span></div>
+                <button type="button" @onclick="ClearTreeAsync" disabled="@IsBusy">Clear Red-Black</button>
+            </div>
+        </section>
+
+        <div class="sample-sequence">
+            <span class="section-kicker">FIX-UP RECIPES</span>
+            <p><strong>Line rotation:</strong> 10, 20, 30 · <strong>Triangle rotation:</strong> 10, 30, 20 · <strong>Red uncle recolor:</strong> 10, 5, 15, 1 · <strong>Delete fix-up:</strong> build 11, 2, 14, 1, 7, 15, 5, 8, 4 then delete 1.</p>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <div class="error-message" role="alert"><span>!</span><p>@_errorMessage</p></div>
+        }
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync"
+                           OnPause="PauseTimelineAsync"
+                           OnStepBack="StepBackAsync"
+                           OnStepForward="StepForwardAsync"
+                           OnReset="ResetPlaybackAsync"
+                           CanStepBack="@CanStepBack"
+                           CanStepForwardOverride="@CanStepForward"
+                           StepTextOverride="@DisplayedStepText"
+                           TimelinePosition="@TimelinePosition"
+                           TimelineCount="@TimelineCount" />
+
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist" aria-label="Red-Black simulation view">
+                <button type="button" role="tab" aria-selected="@(_activeStateView == StateView.Visual)" class="@GetStateTabClass(StateView.Visual)" @onclick="() => SetStateView(StateView.Visual)">Visual state</button>
+                <button type="button" role="tab" aria-selected="@(_activeStateView == StateView.Memory)" class="@GetStateTabClass(StateView.Memory)" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
+            </div>
+            <p>@(_activeStateView == StateView.Visual
+                ? "Visual state separates each node's real RED/BLACK color from temporary algorithm states such as checking, violation, recoloring, and rotation."
+                : "Memory state shows root, parent/left/right references, node identity, and color. Null child references are the conceptual black NIL leaves used by the algorithm.")</p>
+        </div>
+
+        @if (_activeStateView == StateView.Visual)
+        {
+            <RedBlackVisualization Root="@DisplayedRoot" Count="@DisplayedCount" Height="@DisplayedHeight" BlackHeight="@DisplayedBlackHeight" />
+        }
+        else
+        {
+            <RedBlackMemoryVisualization Root="@DisplayedRoot" Count="@DisplayedCount" Height="@DisplayedHeight" BlackHeight="@DisplayedBlackHeight" />
+        }
+    </section>
+
+    <section class="practice-section" aria-labelledby="practice-title">
+        <div class="practice-heading">
+            <div>
+                <span class="section-kicker">GUIDED PRACTICE</span>
+                <h2 id="practice-title">Prove you understand the structure, not just the animation.</h2>
+            </div>
+            <div class="task-score"><strong>@_completedTaskIds.Count / @PracticeTasks.Count</strong><span>completed</span></div>
+        </div>
+
+        @if (_activeTaskId is not null)
+        {
+            var activeTask = PracticeTasks.First(task => task.Id == _activeTaskId);
+            <div class="active-task-banner">
+                <span>ACTIVE TASK @activeTask.Id.ToString("00")</span>
+                <strong>@activeTask.Title</strong>
+                <small>@GetActiveTaskProgressText(activeTask.Id)</small>
+            </div>
+        }
+
+        <div class="task-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                var completed = _completedTaskIds.Contains(task.Id);
+                var active = _activeTaskId == task.Id;
+                <article class="task-card @(completed ? "completed" : string.Empty) @(active ? "active" : string.Empty)">
+                    <div class="task-topline"><span>@task.Id.ToString("00")</span><span>@(completed ? "Completed" : active ? "In progress" : "Practice")</span></div>
+                    <h3>@task.Title</h3>
+                    <ol>
+                        @foreach (var step in task.Steps)
+                        {
+                            <li>@step</li>
+                        }
+                    </ol>
+                    <div class="task-actions">
+                        <a href="@task.HelpHref">Need the concept? →</a>
+                        <button type="button" @onclick="() => StartTask(task.Id)" disabled="@IsBusy">@(active ? "Restart task" : completed ? "Practice again" : "Start task")</button>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+</div>
+
+@if (_lastRunPopupOpen && _lastResult is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRunPopup">
+        <section class="run-popup" role="dialog" aria-modal="true" aria-labelledby="redblack-run-popup-title" @onclick="IgnorePopupClick" @onclick:stopPropagation="true">
+            <header>
+                <div>
+                    <span class="section-kicker">LAST RUN</span>
+                    <h2 id="redblack-run-popup-title">@GetResultHeadline(_lastResult)</h2>
+                </div>
+                <button class="popup-close" type="button" @onclick="CloseLastRunPopup" aria-label="Close result explanation">×</button>
+            </header>
+
+            <div class="popup-tabs" role="tablist">
+                <button type="button" class="@(_popupTab == ResultPopupTab.Run ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Run">What happened</button>
+                <button type="button" class="@(_popupTab == ResultPopupTab.Memory ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Memory">Tree shape &amp; memory</button>
+            </div>
+
+            @if (_popupTab == ResultPopupTab.Run)
+            {
+                <div class="popup-body">
+                    <div class="popup-metrics">
+                        <div><span>Key comparisons</span><strong>@_lastResult.Comparisons</strong></div>
+                        <div><span>Successor checks</span><strong>@_lastResult.SuccessorChecks</strong></div>
+                        <div><span>Fix-up checks</span><strong>@_lastResult.FixupChecks</strong></div>
+                        <div><span>Recolors</span><strong>@_lastResult.RecolorCount</strong></div>
+                        <div><span>Rotations</span><strong>@_lastResult.RotationCount</strong></div>
+                        <div><span>First repair case</span><strong>@GetRepairCaseLabel(_lastResult.FirstRepairCase)</strong></div>
+                        <div><span>This run</span><strong>@_lastResult.CurrentRunComplexity</strong></div>
+                        <div><span>Worst-case rule</span><strong>@_lastResult.WorstCaseComplexity</strong></div>
+                    </div>
+                    <div class="popup-explainer @(_lastResult.Succeeded ? "success" : string.Empty)">
+                        <strong>@GetPlainRunSummary(_lastResult)</strong>
+                        <p>@GetComplexityExplanation(_lastResult)</p>
+                    </div>
+                    <a class="popup-learn" href="/learn/concepts#red-black">Learn how Red-Black keeps h logarithmic →</a>
+                </div>
+            }
+            else
+            {
+                <div class="popup-body">
+                    <div class="popup-metrics shape">
+                        <div><span>Count</span><strong>@_lastResult.InitialCount → @_lastResult.FinalCount</strong></div>
+                        <div><span>Height</span><strong>@_lastResult.HeightBefore → @_lastResult.HeightAfter</strong></div>
+                        <div><span>Black-height</span><strong>@_lastResult.BlackHeightBefore → @_lastResult.BlackHeightAfter</strong></div>
+                        <div><span>Delete case</span><strong>@GetDeleteCaseLabel(_lastResult.DeleteCase)</strong></div>
+                        <div><span>First repair</span><strong>@GetRepairCaseLabel(_lastResult.FirstRepairCase)</strong></div>
+                    </div>
+                    <div class="popup-explainer">
+                        <strong>@GetMemoryHeadline(_lastResult)</strong>
+                        <p>@GetMemoryExplanation(_lastResult)</p>
+                    </div>
+                    <a class="popup-learn" href="/learn/concepts#visual-vs-memory">Visual state vs Memory state →</a>
+                </div>
+            }
+
+            <footer>
+                <label class="popup-toggle inside"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopupsAsync" /><span>Show automatically after future Red-Black runs</span></label>
+            </footer>
+        </section>
+    </div>
+}
+
+@code {
+    private const string CompletedTasksStorageKey = "algorithm-visualizer.redblack.completed-tasks.v1";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.redblack.result-popups.v1";
+
+    private readonly List<RunFrame> _runFrames = [];
+    private readonly HashSet<int> _completedTaskIds = [];
+    private readonly List<PracticeEvent> _practiceEvents = [];
+
+    private static readonly int[] SampleValues = [10, 20, 30, 5, 15, 1, 14];
+    private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
+    [
+        new(1, "Root must finish black", ["Clear the tree.", "Insert one value.", "Step through the run and verify that the new red node is recolored black because it is the root."], "/learn/concepts#red-black"),
+        new(2, "Repair a red uncle", ["Clear the tree.", "Insert 10, 5, 15, then 1.", "Predict recoloring before any rotation: parent and uncle become black while grandparent becomes red."], "/learn/concepts#red-black"),
+        new(3, "Repair a triangle", ["Clear the tree.", "Insert 10, 30, then 20.", "Watch the first rotation straighten the triangle before the line repair."], "/learn/concepts#red-black"),
+        new(4, "Repair a line", ["Clear the tree.", "Insert 10, 20, then 30.", "Predict that recoloring plus one left rotation makes 20 the root."], "/learn/concepts#red-black"),
+        new(5, "Delete a black node", ["Build 11, 2, 14, 1, 7, 15, 5, 8, 4.", "Delete 1 and inspect the sibling-based fix-up.", "Open Memory state to verify colors and rewired references."], "/learn/concepts#red-black"),
+        new(6, "Search ignores color", ["Build any Red-Black Tree that has recolored or rotated.", "Search for one present value.", "Search for one missing value and verify that both follow only BST key comparisons."], "/learn/concepts#big-o")
+    ];
+
+    private int? _value;
+    private string? _errorMessage;
+    private string? _lastCapturedStepText;
+    private int _frameIndex = -1;
+    private bool _showRunPopups = true;
+    private bool _lastRunPopupOpen;
+    private bool _storageLoaded;
+    private bool _memoryOpenedDuringTask;
+    private int? _activeTaskId;
+    private int _practiceSequence;
+    private StateView _activeStateView = StateView.Visual;
+    private ResultPopupTab _popupTab = ResultPopupTab.Run;
+    private RedBlackOperationResult? _lastResult;
+
+    private bool IsBusy => SimulationState.IsRunning;
+    private bool CanRunValueOperation => !IsBusy && _value.HasValue;
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_runFrames.Count > 0 && _frameIndex < _runFrames.Count - 1) || SimulationState.IsRunning;
+    private int TimelineCount => _runFrames.Count;
+    private int TimelinePosition => _frameIndex >= 0 ? _frameIndex + 1 : 0;
+    private RunFrame? CurrentFrame => _frameIndex >= 0 && _frameIndex < _runFrames.Count ? _runFrames[_frameIndex] : null;
+    private string DisplayedStepText => CurrentFrame?.StepText ?? SimulationState.CurrentStepText;
+    private RedBlackNodeSnapshot? DisplayedRoot => CurrentFrame is not null ? CurrentFrame.Root : Tree.CreateSnapshot();
+    private int DisplayedCount => CurrentFrame?.Count ?? Tree.Count;
+    private int DisplayedHeight => CurrentFrame?.Height ?? Tree.Height;
+    private int DisplayedBlackHeight => CurrentFrame?.BlackHeight ?? Tree.BlackHeight;
+
+    protected override void OnInitialized()
+    {
+        SimulationState.Changed += HandleStateChanged;
+        Tree.Changed += HandleTreeChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _storageLoaded)
+        {
+            return;
+        }
+
+        _storageLoaded = true;
+        try
+        {
+            var completedJson = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { CompletedTasksStorageKey });
+            if (!string.IsNullOrWhiteSpace(completedJson))
+            {
+                var completed = JsonSerializer.Deserialize<int[]>(completedJson) ?? [];
+                foreach (var id in completed.Where(id => PracticeTasks.Any(task => task.Id == id)))
+                {
+                    _completedTaskIds.Add(id);
+                }
+            }
+
+            var popupSetting = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { PopupSettingStorageKey });
+            if (bool.TryParse(popupSetting, out var showPopups))
+            {
+                _showRunPopups = showPopups;
+            }
+        }
+        catch
+        {
+            // The Red-Black lab remains fully usable when browser storage is unavailable.
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private Task InsertAsync() => RunValueResultOperationAsync(RedBlackOperationKind.Insert, Tree.InsertAsync);
+    private Task SearchAsync() => RunValueResultOperationAsync(RedBlackOperationKind.Search, Tree.SearchAsync);
+    private Task DeleteAsync() => RunValueResultOperationAsync(RedBlackOperationKind.Delete, Tree.DeleteAsync);
+
+    private async Task RunValueResultOperationAsync(
+        RedBlackOperationKind operationKind,
+        Func<int, CancellationToken, Task<RedBlackOperationResult>> operation)
+    {
+        if (!_value.HasValue)
+        {
+            _errorMessage = "Enter a number first.";
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        if (SimulationState.IsRunning)
+        {
+            return;
+        }
+
+        var value = _value.Value;
+        PrepareNewRun();
+        var runToken = SimulationState.Start($"Starting Red-Black {operationKind.ToString().ToLowerInvariant()} for {value}.");
+
+        try
+        {
+            var result = await operation(value, runToken);
+            if (!IsCurrentRun(runToken))
+            {
+                return;
+            }
+
+            _lastResult = result;
+            RecordPracticeEvent(new PracticeEvent(operationKind, value, result.Succeeded, result.DuplicateRejected, result.DeleteCase, result.FirstRepairCase, result.FixupChecks, result.RecolorCount, result.RotationCount, result.InitialCount, result.FinalCount));
+            SimulationState.SetCurrentStep("Run complete.");
+            SimulationState.Complete();
+            _popupTab = operationKind == RedBlackOperationKind.Delete ? ResultPopupTab.Memory : ResultPopupTab.Run;
+            _lastRunPopupOpen = _showRunPopups;
+        }
+        catch (OperationCanceledException) when (runToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = $"Something went wrong: {exception.Message}";
+            if (IsCurrentRun(runToken))
+            {
+                SimulationState.Complete("The run stopped because of an error.");
+            }
+        }
+    }
+
+    private async Task ClearTreeAsync()
+    {
+        if (SimulationState.IsRunning)
+        {
+            return;
+        }
+
+        PrepareNewRun();
+        var runToken = SimulationState.Start("Resetting the Red-Black lab.");
+
+        try
+        {
+            await Tree.ClearAsync(runToken);
+            if (IsCurrentRun(runToken))
+            {
+                SimulationState.SetCurrentStep("Tree reset complete.");
+                SimulationState.Complete();
+                RecordPracticeEvent(new PracticeEvent(null, null, false, false, RedBlackDeleteCase.None, RedBlackRepairCase.None, 0, 0, 0, 0, 0, IsReset: true));
+            }
+        }
+        catch (OperationCanceledException) when (runToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = $"Something went wrong: {exception.Message}";
+            if (IsCurrentRun(runToken)) SimulationState.Complete("The reset stopped because of an error.");
+        }
+    }
+
+    private void PrepareNewRun()
+    {
+        _errorMessage = null;
+        _lastRunPopupOpen = false;
+        _runFrames.Clear();
+        _frameIndex = -1;
+        _lastCapturedStepText = null;
+    }
+
+    private void CaptureFrame()
+    {
+        var stepText = SimulationState.CurrentStepText;
+        if (string.Equals(stepText, _lastCapturedStepText, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var wasAtTail = _frameIndex < 0 || _frameIndex == _runFrames.Count - 1;
+        _runFrames.Add(new RunFrame(stepText, Tree.CreateSnapshot(), Tree.Count, Tree.Height, Tree.BlackHeight));
+        _lastCapturedStepText = stepText;
+        if (wasAtTail)
+        {
+            _frameIndex = _runFrames.Count - 1;
+        }
+    }
+
+    private Task PlayTimelineAsync()
+    {
+        if (_runFrames.Count > 0)
+        {
+            _frameIndex = _runFrames.Count - 1;
+        }
+
+        SimulationState.Resume();
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task PauseTimelineAsync()
+    {
+        SimulationState.Pause();
+        return Task.CompletedTask;
+    }
+
+    private Task StepBackAsync()
+    {
+        if (SimulationState.IsRunning && !SimulationState.IsPaused)
+        {
+            SimulationState.Pause();
+        }
+
+        if (_frameIndex > 0)
+        {
+            _frameIndex--;
+        }
+
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task StepForwardAsync()
+    {
+        if (_frameIndex >= 0 && _frameIndex < _runFrames.Count - 1)
+        {
+            _frameIndex++;
+            return InvokeAsync(StateHasChanged);
+        }
+
+        if (SimulationState.IsRunning)
+        {
+            SimulationState.Step();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task ResetPlaybackAsync()
+    {
+        SimulationState.Reset();
+        _runFrames.Clear();
+        _frameIndex = -1;
+        _lastCapturedStepText = null;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private void SetValue(int value)
+    {
+        if (!IsBusy)
+        {
+            _value = value;
+            _errorMessage = null;
+        }
+    }
+
+    private void SetStateView(StateView view)
+    {
+        _activeStateView = view;
+        if (view == StateView.Memory && _activeTaskId is not null)
+        {
+            _memoryOpenedDuringTask = true;
+            CheckActiveTaskCompletion();
+        }
+    }
+
+    private string GetStateTabClass(StateView view) => _activeStateView == view ? "active" : string.Empty;
+
+    private void StartTask(int taskId)
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        _activeTaskId = taskId;
+        _practiceEvents.Clear();
+        _practiceSequence = 0;
+        _memoryOpenedDuringTask = false;
+    }
+
+    private void RecordPracticeEvent(PracticeEvent practiceEvent)
+    {
+        if (_activeTaskId is null)
+        {
+            return;
+        }
+
+        _practiceEvents.Add(practiceEvent with { Sequence = ++_practiceSequence });
+        CheckActiveTaskCompletion();
+    }
+
+    private void CheckActiveTaskCompletion()
+    {
+        if (_activeTaskId is null)
+        {
+            return;
+        }
+
+        var completed = _activeTaskId.Value switch
+        {
+            1 => _practiceEvents.Any(e => e.Operation == RedBlackOperationKind.Insert && e.Succeeded && e.FirstRepairCase == RedBlackRepairCase.InsertRootBlack),
+            2 => _practiceEvents.Any(e => e.Operation == RedBlackOperationKind.Insert && e.Succeeded && e.FirstRepairCase == RedBlackRepairCase.InsertUncleRed),
+            3 => _practiceEvents.Any(e => e.Operation == RedBlackOperationKind.Insert && e.Succeeded && e.FirstRepairCase == RedBlackRepairCase.InsertTriangle),
+            4 => _practiceEvents.Any(e => e.Operation == RedBlackOperationKind.Insert && e.Succeeded && e.FirstRepairCase == RedBlackRepairCase.InsertLine),
+            5 => _memoryOpenedDuringTask && _practiceEvents.Any(e => e.Operation == RedBlackOperationKind.Delete && e.Succeeded && e.FixupChecks > 0),
+            6 => _practiceEvents.Any(e => e.Operation == RedBlackOperationKind.Search && e.Succeeded) &&
+                 _practiceEvents.Any(e => e.Operation == RedBlackOperationKind.Search && !e.Succeeded),
+            _ => false
+        };
+
+        if (!completed)
+        {
+            return;
+        }
+
+        _completedTaskIds.Add(_activeTaskId.Value);
+        _activeTaskId = null;
+        _practiceEvents.Clear();
+        _memoryOpenedDuringTask = false;
+        _ = PersistCompletedTasksAsync();
+    }
+
+    private string GetActiveTaskProgressText(int taskId) => taskId switch
+    {
+        1 => "Clear, then insert one value and finish with the root recolored black.",
+        2 => "Clear, then insert 10 → 5 → 15 → 1 until the run reports a red-uncle repair.",
+        3 => "Clear, then insert 10 → 30 → 20 until the run reports the triangle case.",
+        4 => "Clear, then insert 10 → 20 → 30 until the run reports the line case.",
+        5 => _memoryOpenedDuringTask ? "Memory state opened — finish a Delete that performs black-height fix-up." : "Trigger a black-node Delete fix-up, then open Memory state.",
+        6 => "Complete one successful Search and one Search that reaches a NIL child link.",
+        _ => string.Empty
+    };
+
+    private async Task PersistCompletedTasksAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { CompletedTasksStorageKey, JsonSerializer.Serialize(_completedTaskIds.OrderBy(id => id).ToArray()) });
+        }
+        catch
+        {
+        }
+    }
+
+    private async Task ToggleRunPopupsAsync(ChangeEventArgs args)
+    {
+        _showRunPopups = args.Value is bool boolValue
+            ? boolValue
+            : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed;
+
+        try
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { PopupSettingStorageKey, _showRunPopups.ToString() });
+        }
+        catch
+        {
+        }
+    }
+
+    private void OpenLastRunPopup()
+    {
+        if (_lastResult is null)
+        {
+            return;
+        }
+
+        _popupTab = _lastResult.Operation == RedBlackOperationKind.Delete ? ResultPopupTab.Memory : ResultPopupTab.Run;
+        _lastRunPopupOpen = true;
+    }
+
+    private static void IgnorePopupClick()
+    {
+    }
+
+    private void CloseLastRunPopup() => _lastRunPopupOpen = false;
+
+    private static string GetResultHeadline(RedBlackOperationResult result) => result.Operation switch
+    {
+        RedBlackOperationKind.Insert when result.DuplicateRejected => $"Insert: {result.RequestedValue} already exists",
+        RedBlackOperationKind.Insert => $"Inserted {result.RequestedValue}",
+        RedBlackOperationKind.Search when result.Succeeded => $"Found {result.RequestedValue}",
+        RedBlackOperationKind.Search => $"Search: {result.RequestedValue} not found",
+        RedBlackOperationKind.Delete when result.Succeeded => $"Deleted {result.RequestedValue}",
+        RedBlackOperationKind.Delete => $"Delete: {result.RequestedValue} not found",
+        _ => "Red-Black run complete"
+    };
+
+    private static string GetPlainRunSummary(RedBlackOperationResult result)
+    {
+        if (result.DuplicateRejected)
+        {
+            return "The BST comparison path reached an equal key, so this strict Red-Black Tree rejected the duplicate before creating a new red node or running fix-up.";
+        }
+
+        if (!result.Succeeded)
+        {
+            return "The required child link became NIL before a matching key was found. The tree stayed unchanged.";
+        }
+
+        if (result.Operation == RedBlackOperationKind.Search)
+        {
+            return "Search used the same ordering rule as BST and did not rotate the tree.";
+        }
+
+        if (result.RotationCount == 0)
+        {
+            return result.Operation == RedBlackOperationKind.Insert
+                ? $"The node was inserted red, then the fix-up restored the color invariants with {result.RecolorCount} recolor(s) and no rotation."
+                : $"The target was removed with the {GetDeleteCaseLabel(result.DeleteCase).ToLowerInvariant()} BST delete case. Any required black-height repair used recoloring without a rotation.";
+        }
+
+        return result.Operation == RedBlackOperationKind.Insert
+            ? $"The node was inserted red, then fix-up first used {GetRepairCaseLabel(result.FirstRepairCase)} with {result.RecolorCount} recolor(s) and {result.RotationCount} rotation(s)."
+            : $"The target was removed with the {GetDeleteCaseLabel(result.DeleteCase).ToLowerInvariant()} BST delete case, then delete fix-up used {result.RecolorCount} recolor(s) and {result.RotationCount} rotation(s).";
+    }
+
+    private static string GetComplexityExplanation(RedBlackOperationResult result)
+    {
+        if (result.InitialCount == 0)
+        {
+            return "An empty tree needs only a root check, so this particular run is constant work.";
+        }
+
+        var successorPart = result.SuccessorChecks > 0
+            ? $" A two-child delete also used {result.SuccessorChecks} successor check(s)."
+            : string.Empty;
+        var fixupPart = result.FixupChecks > 0
+            ? $" The mutation then performed {result.FixupChecks} fix-up check(s), {result.RecolorCount} recolor(s), and {result.RotationCount} rotation(s)."
+            : result.RecolorCount > 0 ? $" The mutation used {result.RecolorCount} recolor(s) without entering a repeated fix-up loop." : string.Empty;
+
+        return $"This run used {result.Comparisons} key comparison(s). Here k = {result.TotalChecks} total observed check(s), so the concrete run is {result.CurrentRunComplexity}. Red-Black keeps height O(log n), so search, insert, and delete remain O(log n) in the worst case.{successorPart}{fixupPart}";
+    }
+
+    private static string GetMemoryHeadline(RedBlackOperationResult result)
+    {
+        if (result.RotationCount > 0)
+        {
+            return "The rotation changed parent/left/right references while preserving every participating node object's identity and BST order.";
+        }
+
+        if (result.Operation == RedBlackOperationKind.Delete && result.Succeeded)
+        {
+            return result.DeleteCase switch
+            {
+                RedBlackDeleteCase.Leaf => "A parent-to-leaf reference became null; no rotation was necessary.",
+                RedBlackDeleteCase.OneChild => "The surrounding reference was redirected to the removed node's child; no rotation was necessary.",
+                RedBlackDeleteCase.TwoChildren => "The successor node object was rewired into the removed node's position; no further rotation was necessary.",
+                _ => "The tree references were updated."
+            };
+        }
+
+        return "The visual layout and the object-reference layout describe the same Red-Black tree from two different angles.";
+    }
+
+    private static string GetMemoryExplanation(RedBlackOperationResult result)
+    {
+        if (result.Operation == RedBlackOperationKind.Search)
+        {
+            return "Search only followed existing left/right references. It did not change node colors, move node objects, or rotate any links.";
+        }
+
+        if (result.DuplicateRejected)
+        {
+            return "No new node object was connected, so Count, node colors, black-height, and the reference graph stayed unchanged.";
+        }
+
+        if (!result.Succeeded)
+        {
+            return "The requested key was not found, so the reference graph, colors, and black-height stayed unchanged.";
+        }
+
+        var rotationExplanation = result.RotationCount > 0
+            ? $" Fix-up rewired links using {result.RotationCount} rotation(s); the first recorded case was {GetRepairCaseLabel(result.FirstRepairCase)}."
+            : " No rotation rewired the tree; any repair was recoloring only.";
+
+        if (result.Operation == RedBlackOperationKind.Insert)
+        {
+            return $"A new custom node object was attached at the empty BST child link as RED. Fix-up used {result.RecolorCount} recolor(s) while preserving that node's identity." + rotationExplanation;
+        }
+
+        return result.DeleteCase switch
+        {
+            RedBlackDeleteCase.Leaf => "The leaf was disconnected from its parent. If it was black, fix-up repaired the missing black contribution." + rotationExplanation,
+            RedBlackDeleteCase.OneChild => "The removed node was bypassed so its existing child object kept its identity. Color fix-up ran only if the removed path lost a black node." + rotationExplanation,
+            RedBlackDeleteCase.TwoChildren => "This implementation transplants the real in-order-successor node object instead of copying its value. Its color is adjusted exactly as required by the Red-Black delete algorithm." + rotationExplanation,
+            _ => "The reference graph changed through explicit custom-node rewiring." + rotationExplanation
+        };
+    }
+
+    private static string GetDeleteCaseLabel(RedBlackDeleteCase deleteCase) => deleteCase switch
+    {
+        RedBlackDeleteCase.Leaf => "Leaf",
+        RedBlackDeleteCase.OneChild => "One child",
+        RedBlackDeleteCase.TwoChildren => "Two children",
+        _ => "—"
+    };
+
+    private static string GetRepairCaseLabel(RedBlackRepairCase repairCase) => repairCase switch
+    {
+        RedBlackRepairCase.InsertRootBlack => "Root → black",
+        RedBlackRepairCase.InsertUncleRed => "Insert: red uncle",
+        RedBlackRepairCase.InsertTriangle => "Insert: triangle",
+        RedBlackRepairCase.InsertLine => "Insert: line",
+        RedBlackRepairCase.DeleteSiblingRed => "Delete: red sibling",
+        RedBlackRepairCase.DeleteSiblingBlackChildrenBlack => "Delete: black sibling + black children",
+        RedBlackRepairCase.DeleteNearRed => "Delete: near red child",
+        RedBlackRepairCase.DeleteFarRed => "Delete: far red child",
+        _ => "None"
+    };
+
+    private bool IsCurrentRun(CancellationToken runToken) =>
+        !runToken.IsCancellationRequested && SimulationState.SimulationCancellationToken == runToken;
+
+    private void HandleStateChanged()
+    {
+        if (SimulationState.IsRunning)
+        {
+            CaptureFrame();
+        }
+
+        RequestRender();
+    }
+
+    private void HandleTreeChanged() => RequestRender();
+    private void RequestRender() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        SimulationState.Changed -= HandleStateChanged;
+        Tree.Changed -= HandleTreeChanged;
+    }
+
+    private sealed record RunFrame(string StepText, RedBlackNodeSnapshot? Root, int Count, int Height, int BlackHeight);
+    private sealed record PracticeTaskDefinition(int Id, string Title, IReadOnlyList<string> Steps, string HelpHref);
+    private sealed record PracticeEvent(
+        RedBlackOperationKind? Operation,
+        int? Value,
+        bool Succeeded,
+        bool DuplicateRejected,
+        RedBlackDeleteCase DeleteCase,
+        RedBlackRepairCase FirstRepairCase,
+        int FixupChecks,
+        int RecolorCount,
+        int RotationCount,
+        int InitialCount,
+        int FinalCount,
+        int Sequence = -1,
+        bool IsReset = false);
+
+    private enum StateView { Visual, Memory }
+    private enum ResultPopupTab { Run, Memory }
+}

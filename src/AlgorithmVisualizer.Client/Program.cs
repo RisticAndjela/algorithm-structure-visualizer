@@ -4,6 +4,7 @@ using AlgorithmVisualizer.Core.DataStructures.Linear.Queue;
 using AlgorithmVisualizer.Core.DataStructures.Linear.Stack;
 using AlgorithmVisualizer.Core.DataStructures.Trees.Bst;
 using AlgorithmVisualizer.Core.DataStructures.Trees.Avl;
+using AlgorithmVisualizer.Core.DataStructures.Trees.RedBlack;
 using AlgorithmVisualizer.Core.Simulation.Contracts;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -23,5 +24,6 @@ builder.Services.AddScoped<StackSimulation>();
 builder.Services.AddScoped<QueueSimulation>();
 builder.Services.AddScoped<BstSimulation>();
 builder.Services.AddScoped<AvlSimulation>();
+builder.Services.AddScoped<RedBlackSimulation>();
 
 await builder.Build().RunAsync();

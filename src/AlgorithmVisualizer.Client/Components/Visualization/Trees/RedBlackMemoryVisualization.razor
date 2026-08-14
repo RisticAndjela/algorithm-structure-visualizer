@@ -1,0 +1,126 @@
+@using AlgorithmVisualizer.Core.DataStructures.Trees.RedBlack
+
+<section class="rb-memory" aria-label="Red-Black Tree memory state">
+    <header class="memory-header">
+        <div>
+            <span class="memory-kicker">MEMORY STATE</span>
+            <h3>Node objects, references, and color</h3>
+        </div>
+        <div class="memory-metrics">
+            <span>Count <strong>@Count</strong></span>
+            <span>Height <strong>@Height</strong></span>
+            <span>Black-height <strong>@BlackHeight</strong></span>
+        </div>
+    </header>
+
+    <div class="memory-note">
+        <strong>Recoloring changes a field; rotation changes references.</strong>
+        <span>Each custom node object keeps its stable ID and value. <code>Color</code> may change, while rotations rewire <code>parent</code>, <code>left</code>, and <code>right</code>. <code>MEM-#...</code> is a learning label, not a physical RAM address.</span>
+    </div>
+
+    <section class="root-reference" aria-label="Root reference">
+        <span>ROOT REFERENCE</span>
+        @if (Root is null)
+        {
+            <strong>null</strong>
+            <small>The tree cannot reach any node.</small>
+        }
+        else
+        {
+            <strong>ref → MEM-#@Root.DisplayId</strong>
+            <small>value @Root.Value · @Root.Color.ToString().ToUpperInvariant() · root must be BLACK</small>
+        }
+    </section>
+
+    @if (Root is null)
+    {
+        <div class="memory-empty">No Red-Black node objects are reachable from the root.</div>
+    }
+    else
+    {
+        <div class="object-grid">
+            @foreach (var node in FlatNodes)
+            {
+                <article class="node-object @GetColorClass(node.Color) @GetStateClass(node.VisualState)" @key="node.Id">
+                    <div class="object-heading">
+                        <span>MEM-#@node.DisplayId</span>
+                        <strong>value = @node.Value</strong>
+                        <small>color = @node.Color.ToString().ToUpperInvariant()</small>
+                    </div>
+                    <dl>
+                        <div><dt>parent</dt><dd>@FormatReference(node.ParentDisplayId)</dd></div>
+                        <div><dt>left</dt><dd>@FormatChildReference(node.Left)</dd></div>
+                        <div><dt>right</dt><dd>@FormatChildReference(node.Right)</dd></div>
+                    </dl>
+                </article>
+            }
+        </div>
+    }
+
+    <footer class="memory-footer">
+        <span><strong>NIL:</strong> every null child is treated as a conceptual BLACK leaf by the Red-Black algorithm.</span>
+        <span><strong>Black-height:</strong> @BlackHeight black real node(s) on each root-to-NIL path in the completed state.</span>
+    </footer>
+</section>
+
+@code {
+    [Parameter]
+    public RedBlackNodeSnapshot? Root { get; set; }
+
+    [Parameter]
+    public int Count { get; set; }
+
+    [Parameter]
+    public int Height { get; set; }
+
+    [Parameter]
+    public int BlackHeight { get; set; }
+
+    private readonly List<RedBlackNodeSnapshot> _flatNodes = [];
+    private IReadOnlyList<RedBlackNodeSnapshot> FlatNodes => _flatNodes;
+
+    protected override void OnParametersSet()
+    {
+        _flatNodes.Clear();
+        AddPreOrder(Root);
+    }
+
+    private void AddPreOrder(RedBlackNodeSnapshot? node)
+    {
+        if (node is null)
+        {
+            return;
+        }
+
+        _flatNodes.Add(node);
+        AddPreOrder(node.Left);
+        AddPreOrder(node.Right);
+    }
+
+    private static string FormatReference(string? displayId) =>
+        string.IsNullOrWhiteSpace(displayId) ? "null" : $"ref → MEM-#{displayId}";
+
+    private static string FormatChildReference(RedBlackNodeSnapshot? child) =>
+        child is null ? "null → NIL(B)" : $"ref → MEM-#{child.DisplayId}";
+
+    private static string GetColorClass(RedBlackColor color) => color == RedBlackColor.Red
+        ? "color-red"
+        : "color-black";
+
+    private static string GetStateClass(RedBlackNodeVisualState state) => state switch
+    {
+        RedBlackNodeVisualState.Checking => "is-checking",
+        RedBlackNodeVisualState.Matched => "is-matched",
+        RedBlackNodeVisualState.Adding => "is-adding",
+        RedBlackNodeVisualState.Removing => "is-removing",
+        RedBlackNodeVisualState.Replacement => "is-replacement",
+        RedBlackNodeVisualState.PointerTarget => "is-pointer",
+        RedBlackNodeVisualState.Violation => "is-violation",
+        RedBlackNodeVisualState.RelativeFocus => "is-relative",
+        RedBlackNodeVisualState.RotationPivot => "is-pivot",
+        RedBlackNodeVisualState.Rotating => "is-rotating",
+        RedBlackNodeVisualState.Recolored => "is-recolored",
+        RedBlackNodeVisualState.Fixed => "is-fixed",
+        _ => string.Empty
+    };
+}

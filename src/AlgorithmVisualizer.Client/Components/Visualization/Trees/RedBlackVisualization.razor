@@ -1,0 +1,234 @@
+@using AlgorithmVisualizer.Core.DataStructures.Trees.RedBlack
+
+<section class="rb-visualization" aria-label="Red-Black Tree visual state">
+    <header class="visual-header">
+        <div>
+            <span class="visual-kicker">VISUAL STATE</span>
+            <h3>Red-Black Tree</h3>
+        </div>
+        <div class="tree-metrics">
+            <span>Nodes <strong>@Count</strong></span>
+            <span>Height <strong>@Height</strong></span>
+            <span>Black-height <strong>@BlackHeight</strong></span>
+            <span>Root <strong>@(Root is null ? "—" : Root.Value)</strong></span>
+        </div>
+    </header>
+
+    <div class="visual-note">
+        <strong>Node color is algorithmic state, not decoration.</strong>
+        <span>RED/BLACK belongs to the tree itself. The outline and state badge show what the simulator is doing right now. Missing children are conceptual black NIL leaves.</span>
+    </div>
+
+    @if (Root is null)
+    {
+        <div class="tree-empty">
+            <span class="empty-tree-icon" aria-hidden="true">RB</span>
+            <strong>The Red-Black Tree is empty.</strong>
+            <small>Insert a value: the new node begins red, then the root rule is checked.</small>
+        </div>
+    }
+    else
+    {
+        <div class="tree-scroll">
+            <svg class="tree-canvas"
+                 width="@CanvasWidth"
+                 height="@CanvasHeight"
+                 viewBox="0 0 @CanvasWidth @CanvasHeight"
+                 role="img"
+                 aria-label="Red-Black Tree with @Count nodes">
+                @foreach (var edge in Edges)
+                {
+                    <g class="tree-edge">
+                        <line x1="@edge.ParentX" y1="@edge.ParentY" x2="@edge.ChildX" y2="@edge.ChildY" />
+                        <foreignObject x="@(edge.LabelX - 12)" y="@(edge.LabelY - 9)" width="24" height="18">
+                            <div class="edge-label">@edge.Label</div>
+                        </foreignObject>
+                    </g>
+                }
+
+                @foreach (var node in Nodes)
+                {
+                    <g class="tree-node @GetColorClass(node.Node.Color) @GetStateClass(node.Node.VisualState)">
+                        <foreignObject x="@(node.X - 56)" y="@(node.Y - 42)" width="112" height="84">
+                            <div class="node-card">
+                                @if (node.Depth == 0)
+                                {
+                                    <span class="root-label">ROOT</span>
+                                }
+                                <strong class="node-value">@node.Node.Value</strong>
+                                <span class="node-color-label">@node.Node.Color.ToString().ToUpperInvariant()</span>
+                                <span class="node-id">#@node.Node.DisplayId</span>
+                                @if (node.Node.VisualState != RedBlackNodeVisualState.Normal)
+                                {
+                                    <span class="node-state">@GetStateLabel(node.Node.VisualState)</span>
+                                }
+                            </div>
+                        </foreignObject>
+                    </g>
+                }
+            </svg>
+        </div>
+    }
+
+    <footer class="state-legend" aria-label="Red-Black Tree legend">
+        <div class="legend-group">
+            <strong>Tree color</strong>
+            <span><i class="legend-swatch color-black"></i>Black node</span>
+            <span><i class="legend-swatch color-red"></i>Red node</span>
+            <span><i class="legend-swatch nil"></i>NIL leaf = black</span>
+        </div>
+        <div class="legend-group">
+            <strong>Current step</strong>
+            <span><i class="legend-swatch checking"></i>Checking</span>
+            <span><i class="legend-swatch violation"></i>Violation</span>
+            <span><i class="legend-swatch relative"></i>Parent / uncle / sibling</span>
+            <span><i class="legend-swatch recolored"></i>Recolored</span>
+            <span><i class="legend-swatch rotating"></i>Rotating</span>
+            <span><i class="legend-swatch matched"></i>Match</span>
+            <span><i class="legend-swatch adding"></i>New node</span>
+            <span><i class="legend-swatch removing"></i>Removing</span>
+            <span><i class="legend-swatch replacement"></i>Replacement</span>
+        </div>
+    </footer>
+</section>
+
+@code {
+    [Parameter]
+    public RedBlackNodeSnapshot? Root { get; set; }
+
+    [Parameter]
+    public int Count { get; set; }
+
+    [Parameter]
+    public int Height { get; set; }
+
+    [Parameter]
+    public int BlackHeight { get; set; }
+
+    private readonly List<NodeLayout> _nodes = [];
+    private readonly List<EdgeLayout> _edges = [];
+
+    private IReadOnlyList<NodeLayout> Nodes => _nodes;
+    private IReadOnlyList<EdgeLayout> Edges => _edges;
+    private int CanvasWidth { get; set; } = 780;
+    private int CanvasHeight { get; set; } = 320;
+
+    protected override void OnParametersSet() => BuildLayout();
+
+    private void BuildLayout()
+    {
+        _nodes.Clear();
+        _edges.Clear();
+
+        if (Root is null)
+        {
+            CanvasWidth = 780;
+            CanvasHeight = 320;
+            return;
+        }
+
+        var cursor = 0;
+        AddNodesInOrder(Root, depth: 0, ref cursor);
+
+        CanvasWidth = Math.Max(780, 148 + Math.Max(1, _nodes.Count - 1) * 130);
+        CanvasHeight = Math.Max(320, 150 + Math.Max(0, Height - 1) * 128);
+
+        foreach (var parent in _nodes)
+        {
+            AddEdge(parent, parent.Node.Left, "L");
+            AddEdge(parent, parent.Node.Right, "R");
+        }
+    }
+
+    private void AddNodesInOrder(RedBlackNodeSnapshot? node, int depth, ref int cursor)
+    {
+        if (node is null)
+        {
+            return;
+        }
+
+        AddNodesInOrder(node.Left, depth + 1, ref cursor);
+        var x = 82 + cursor * 130;
+        var y = 78 + depth * 128;
+        _nodes.Add(new NodeLayout(node, x, y, depth));
+        cursor++;
+        AddNodesInOrder(node.Right, depth + 1, ref cursor);
+    }
+
+    private void AddEdge(NodeLayout parent, RedBlackNodeSnapshot? child, string label)
+    {
+        if (child is null)
+        {
+            return;
+        }
+
+        NodeLayout? childLayout = null;
+        foreach (var candidate in _nodes)
+        {
+            if (candidate.Node.Id == child.Id)
+            {
+                childLayout = candidate;
+                break;
+            }
+        }
+
+        if (childLayout is null)
+        {
+            return;
+        }
+
+        var parentY = parent.Y + 42;
+        var childY = childLayout.Y - 42;
+        _edges.Add(new EdgeLayout(
+            parent.X,
+            parentY,
+            childLayout.X,
+            childY,
+            (parent.X + childLayout.X) / 2,
+            (parentY + childY) / 2,
+            label));
+    }
+
+    private static string GetColorClass(RedBlackColor color) => color == RedBlackColor.Red
+        ? "node-color-red"
+        : "node-color-black";
+
+    private static string GetStateLabel(RedBlackNodeVisualState state) => state switch
+    {
+        RedBlackNodeVisualState.Checking => "CHECKING",
+        RedBlackNodeVisualState.Visited => "VISITED",
+        RedBlackNodeVisualState.Matched => "MATCH",
+        RedBlackNodeVisualState.Adding => "NEW",
+        RedBlackNodeVisualState.Removing => "REMOVING",
+        RedBlackNodeVisualState.Replacement => "REPLACEMENT",
+        RedBlackNodeVisualState.PointerTarget => "INSERT PARENT",
+        RedBlackNodeVisualState.Violation => "VIOLATION",
+        RedBlackNodeVisualState.RelativeFocus => "RELATIVE",
+        RedBlackNodeVisualState.RotationPivot => "PIVOT",
+        RedBlackNodeVisualState.Rotating => "ROTATING",
+        RedBlackNodeVisualState.Recolored => "RECOLORED",
+        RedBlackNodeVisualState.Fixed => "FIXED",
+        _ => string.Empty
+    };
+
+    private static string GetStateClass(RedBlackNodeVisualState state) => state switch
+    {
+        RedBlackNodeVisualState.Checking => "is-checking",
+        RedBlackNodeVisualState.Visited => "is-visited",
+        RedBlackNodeVisualState.Matched => "is-matched",
+        RedBlackNodeVisualState.Adding => "is-adding",
+        RedBlackNodeVisualState.Removing => "is-removing",
+        RedBlackNodeVisualState.Replacement => "is-replacement",
+        RedBlackNodeVisualState.PointerTarget => "is-pointer",
+        RedBlackNodeVisualState.Violation => "is-violation",
+        RedBlackNodeVisualState.RelativeFocus => "is-relative",
+        RedBlackNodeVisualState.RotationPivot => "is-pivot",
+        RedBlackNodeVisualState.Rotating => "is-rotating",
+        RedBlackNodeVisualState.Recolored => "is-recolored",
+        RedBlackNodeVisualState.Fixed => "is-fixed",
+        _ => "is-normal"
+    };
+
+    private sealed record NodeLayout(RedBlackNodeSnapshot Node, int X, int Y, int Depth);
+    private sealed record EdgeLayout(int ParentX, int ParentY, int ChildX, int ChildY, int LabelX, int LabelY, string Label);
+}

@@ -1,0 +1,54 @@
+.rb-memory { display: grid; gap: 1rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: 1rem; background: #fff; }
+.memory-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.memory-header > div:first-child { display: grid; gap: .18rem; }
+.memory-kicker { color: #8d3741; font-size: .68rem; font-weight: 900; letter-spacing: .09em; }
+.memory-header h3 { margin: 0; font-size: 1.08rem; }
+.memory-metrics { display: flex; flex-wrap: wrap; gap: .45rem; }
+.memory-metrics span { padding: .42rem .55rem; border-radius: .6rem; color: #67707d; background: #f7f2f3; font-size: .75rem; }
+.memory-metrics strong { color: #8d3741; }
+
+.memory-note { display: flex; flex-wrap: wrap; gap: .28rem .5rem; padding: .8rem .9rem; border: 1px solid #eadcdf; border-radius: .85rem; color: #6d6264; background: #fdf9fa; font-size: .8rem; line-height: 1.55; }
+.memory-note strong { color: #594447; }
+.memory-note code { color: #8d3741; font-weight: 750; }
+
+.root-reference { display: grid; grid-template-columns: minmax(8rem,.55fr) minmax(10rem,1fr) minmax(12rem,1fr); align-items: center; gap: .65rem; padding: .75rem .85rem; border: 1px solid #e1e4eb; border-radius: .8rem; background: #f8f9fb; }
+.root-reference span { color: var(--color-text-muted); font-size: .66rem; font-weight: 900; letter-spacing: .08em; }
+.root-reference strong { color: #4b5160; font-size: .88rem; }
+.root-reference small { color: var(--color-text-muted); font-size: .75rem; }
+
+.object-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: .7rem; }
+.node-object { display: grid; gap: .7rem; padding: .85rem; border: 2px solid #dfe2e9; border-radius: .85rem; background: #fcfcfe; transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease; }
+.node-object.color-red { border-left: .34rem solid #d76772; }
+.node-object.color-black { border-left: .34rem solid #333641; }
+.object-heading { display: grid; gap: .18rem; }
+.object-heading span { color: #8d3741; font-size: .75rem; font-weight: 850; }
+.object-heading strong { font-size: 1rem; }
+.object-heading small { color: #6c7380; font-size: .75rem; font-weight: 780; }
+.node-object.color-red .object-heading small { color: #a13f49; }
+.node-object.color-black .object-heading small { color: #444955; }
+.node-object dl { display: grid; gap: .32rem; margin: 0; }
+.node-object dl div { display: grid; grid-template-columns: 3.6rem minmax(0, 1fr); gap: .5rem; padding-top: .32rem; border-top: 1px solid #eef0f4; }
+.node-object dt { color: var(--color-text-muted); font-size: .74rem; font-weight: 750; }
+.node-object dd { margin: 0; overflow-wrap: anywhere; color: #555c69; font-size: .76rem; font-weight: 700; }
+
+.node-object.is-checking { border-color: #e1bb74; background: #fffaf0; }
+.node-object.is-matched { border-color: #8dd0c5; background: #f1fbf8; }
+.node-object.is-adding { border-color: #bdb5f6; background: #f8f6ff; }
+.node-object.is-removing { border-color: #e6a0a7; background: #fff6f6; }
+.node-object.is-replacement { border-color: #a9bfe5; background: #f4f8ff; }
+.node-object.is-pointer { border-style: dashed; border-color: #a99ef0; }
+.node-object.is-violation { border-color: #e0796a; background: #fff4f1; }
+.node-object.is-relative { border-color: #8baddd; background: #f5f8fd; }
+.node-object.is-pivot { border-color: #e0ab62; background: #fff8eb; }
+.node-object.is-rotating { border-color: #9e91ea; background: #f6f3ff; transform: translateY(-1px); }
+.node-object.is-recolored { border-color: #bd8bd5; background: #fbf6fd; }
+.node-object.is-fixed { border-color: #91cdb5; background: #f2fbf7; }
+
+.memory-empty { min-height: 13rem; display: grid; place-items: center; border: 1px dashed #d5d9e2; border-radius: .9rem; color: var(--color-text-muted); background: #fafbfc; font-size: .82rem; }
+.memory-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem 1rem; padding-top: .75rem; border-top: 1px solid var(--color-border); color: var(--color-text-muted); font-size: .74rem; }
+.memory-footer strong { color: #555c69; }
+
+@media (max-width: 720px) {
+    .memory-header { align-items: flex-start; flex-direction: column; }
+    .root-reference { grid-template-columns: 1fr; }
+}

@@ -27,3 +27,15 @@ Focused tests for pure Core algorithms and data structures live here. Rendering 
 - BST ordering, parent-link, cached-height, balance-factor, and AVL-balance invariants after mutations.
 
 The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctness is independent from Blazor playback timing.
+
+`DataStructures/Trees/RedBlack/RedBlackSimulationTests.cs` verifies:
+
+- line-case insertion rotation and root-black restoration;
+- red-uncle recoloring;
+- strict duplicate rejection;
+- logarithmic Red-Black height bound under increasing insertion order;
+- search without color mutation;
+- two-child delete using the actual successor node identity;
+- delete fix-up across a known mutation sequence;
+- root-black, BST ordering, parent-link, no-red-red, and equal-black-height invariants after mutations;
+- clear/reset behavior.

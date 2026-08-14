@@ -11,7 +11,7 @@ The project is built with **Blazor WebAssembly and C#**. Its goal is not only to
 - what the time complexity means for the current run;
 - how the visual representation differs from the way the data is stored in memory.
 
-The application now has three fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, and **AVL Tree**. Queue & Stack established the reusable simulation pattern; BST extended it to linked node structures; AVL now adds cached heights, balance factors, and explicit rotations while reusing the same playback and Visual/Memory learning model.
+The application now has four fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **AVL Tree**, and **Red-Black Tree**. Queue & Stack established the reusable simulation pattern; BST extended it to linked nodes; AVL added strict height balancing; Red-Black now adds color invariants, black-height reasoning, recoloring, and insertion/deletion fix-up while reusing the same playback and Visual/Memory learning model.
 
 ---
 
@@ -23,6 +23,7 @@ The application now has three fully implemented learning modules: **Queue & Stac
 - Stack
 - Binary Search Tree (BST)
 - AVL Tree
+- Red-Black Tree
 - shared simulation runtime;
 - play, pause and adjustable simulation speed;
 - manual step forward;
@@ -49,7 +50,14 @@ The application now has three fully implemented learning modules: **Queue & Stac
 - LL / RR single rotations and LR / RL double rotations;
 - upward rebalancing after insert and delete;
 - AVL visual-state and node-reference memory-state views;
-- AVL rotation-focused guided practice and persistent progress.
+- AVL rotation-focused guided practice and persistent progress;
+- Red-Black insert, search, delete, and reset;
+- explicit red/black node colors with conceptual black NIL leaves;
+- insertion fix-up with red-uncle recoloring, triangle repair, and line repair;
+- deletion fix-up with sibling/near/far child color cases and mirror cases;
+- Red-Black node-identity-preserving rotations and successor transplant;
+- Red-Black Visual/Memory views with black-height, color, references, and transient fix-up states;
+- Red-Black guided practice and persistent progress.
 
 ### Planned
 
@@ -57,7 +65,6 @@ The following modules currently have UI placeholders and are intentionally marke
 
 #### Data structures
 
-- Red-Black Tree
 - Heap
 - Graphs
 
@@ -130,7 +137,7 @@ BST follows the same rule today: it uses explicit `BstNode` parent/left/right re
 
 AVL also follows the rule: `AvlNode` stores explicit parent/left/right references and a manually maintained cached height. Balance factors are computed from those heights, and LL/RR/LR/RL repairs explicitly rewire references with custom left/right rotations. No ready-made balanced-tree implementation performs the teaching algorithm.
 
-This rule will also apply to future Red-Black trees, graphs, heaps, sorting algorithms and search algorithms.
+This rule also applies to the live Red-Black Tree and will continue to apply to future graphs, heaps, sorting algorithms and search algorithms.
 
 Standard .NET infrastructure such as `Task`, `CancellationToken`, `Guid`, `SemaphoreSlim`, Blazor components and browser interop may still be used. These provide application infrastructure rather than the algorithm being taught.
 
@@ -395,6 +402,105 @@ The Learn First section includes compact LL/RR/LR/RL recipes so a learner can pr
 
 ---
 
+# Red-Black Tree
+
+Red-Black Tree is the fourth live data-structure module and the third live tree module. It preserves the same strict BST ordering rule:
+
+```text
+left subtree values < node value < right subtree values
+```
+
+but controls tree height through color invariants rather than AVL's exact balance factor. Null child references are treated as conceptual black `NIL` leaves by the algorithm.
+
+Implemented operations:
+
+- `Insert` by key;
+- `Search` by key;
+- `Delete` by key;
+- `Reset` lab state.
+
+Duplicate keys are rejected only after the real BST comparison path reaches the equal node.
+
+Each `RedBlackNode` stores:
+
+- value;
+- short learner-facing ID derived from an internal `Guid`;
+- parent, left-child, and right-child references;
+- explicit `Red` or `Black` color;
+- transient renderer-neutral simulation state.
+
+## Red-Black invariants
+
+The learning UI keeps the balancing rules visible:
+
+- the root finishes black;
+- every node is red or black;
+- null/NIL leaves are black conceptually;
+- a red node cannot have a red parent or red child;
+- every path from one node to a descendant NIL leaf has the same black-height.
+
+These rules imply that the longest root-to-leaf path is at most about twice the shortest, so tree height remains `O(log n)`.
+
+## Red-Black insert
+
+Insertion first follows the ordinary BST search path and creates the new node as **red**. Starting red avoids immediately increasing black-height on only one path. If the parent is also red, insertion fix-up inspects the uncle and grandparent.
+
+The implementation manually handles:
+
+- **red uncle** — recolor parent and uncle black, grandparent red, then continue upward;
+- **triangle** — rotate the parent to turn the bend into a line;
+- **line** — recolor parent/grandparent and rotate the grandparent;
+- mirrored left/right forms of the same cases;
+- final root recoloring when required.
+
+## Red-Black delete
+
+Deletion begins with the same three structural BST cases:
+
+1. leaf;
+2. one child;
+3. two children using the in-order successor.
+
+The two-child case transplants the real successor node object instead of copying its value. The algorithm tracks the color actually removed from the affected root-to-NIL path. If that removed color was red, black-height is unchanged and no delete fix-up is needed. If it was black, delete fix-up repairs the missing black contribution.
+
+The implementation manually covers the standard sibling cases and their mirrors:
+
+- red sibling;
+- black sibling with two black children;
+- black sibling with a red near child and black far child;
+- black sibling with a red far child.
+
+Recoloring changes node color fields. Rotations rewire the same `parent`, `left`, `right`, and root references while preserving node IDs, values, and BST ordering.
+
+## Red-Black complexity
+
+Because the color invariants keep height logarithmic, search, insert, and delete are:
+
+```text
+O(log n)
+```
+
+Run explanations report key comparisons, successor checks when relevant, fix-up checks, recolor count, rotation count, first repair case, height before/after, and black-height before/after.
+
+## Red-Black playback and learning UI
+
+The Red-Black lab supports:
+
+- Play;
+- Pause;
+- Step forward;
+- Step back through captured snapshots;
+- adjustable delay;
+- Visual state with actual RED/BLACK node color separated from temporary checking/violation/recolor/rotation states;
+- Memory state with node identity, color, root/parent/left/right references, and explicit `null → NIL(B)` child explanations;
+- optional Last Run popups;
+- guided practice for root-black, red-uncle, triangle, line, delete-fix-up, and search behavior;
+- persistent task completion in browser storage.
+
+The `LEARN FIRST` section intentionally follows the established Queue & Stack / BST / AVL visual hierarchy instead of introducing a separate design language.
+
+---
+
 # Element identity
 
 Every element is its own object.
@@ -583,7 +689,7 @@ These views are intentionally separate.
 
 A drawing used to explain an algorithm is **not necessarily the same as the program's memory layout**.
 
-BST demonstrates this distinction with ordered screen position versus the actual parent/left/right object-reference graph. AVL extends the same separation: its Visual state explains balance and rotations, while Memory state shows the real reference rewiring and cached heights. The same separation will be important for future Graph, Red-Black, and Heap modules.
+BST demonstrates this distinction with ordered screen position versus the actual parent/left/right object-reference graph. AVL extends the same separation: its Visual state explains balance and rotations, while Memory state shows the real reference rewiring and cached heights. Red-Black extends that separation again by keeping persistent node color distinct from transient fix-up emphasis. The same separation will be important for future Graph and Heap modules.
 
 ---
 
@@ -999,7 +1105,7 @@ Do not replace an implementation with a framework collection or library algorith
 
 # Next implementation direction
 
-Queue & Stack established the linear foundation; BST validated linked non-linear structures; AVL now validates mutation-driven balancing and multi-step pointer rewiring on top of the same learning architecture:
+Queue & Stack established the linear foundation; BST validated linked non-linear structures; AVL validated strict height-based balancing; Red-Black now validates invariant-driven recoloring plus insertion/deletion fix-up on top of the same learning architecture:
 
 ```text
 algorithm
@@ -1017,7 +1123,7 @@ complexity explanation
 guided practice
 ```
 
-The next module can now reuse our custom Queue, Stack, BST, and AVL implementations wherever that is algorithmically appropriate. Red-Black Tree is the next tree in the written specification, while Heap is also a reasonable next dependency for later Heap Sort and Dijkstra work.
+The next module can now reuse our custom Queue, Stack, BST, AVL, and Red-Black implementations wherever that is algorithmically appropriate. **Heap (Min/Max)** is the next data structure in the written specification and is also a useful dependency for later Heap Sort and Dijkstra work.
 
 ---
 
@@ -1027,6 +1133,8 @@ The next module can now reuse our custom Queue, Stack, BST, and AVL implementati
 
 **Binary Search Tree: implemented as the first complete tree module, including structural deletion, explicit Day-Stout-Warren balancing, Visual/Memory views, playback history, result explanations, and guided practice.**
 
-**AVL Tree: implemented as the balanced-tree extension, including cached heights, balance factors, all four rotation cases, insert/delete rebalancing, Visual/Memory views, run explanations, and rotation-focused guided practice.**
+**AVL Tree: implemented as the strict height-balanced extension, including cached heights, balance factors, all four rotation cases, insert/delete rebalancing, Visual/Memory views, run explanations, and rotation-focused guided practice.**
 
-The project now has reusable manual linear structures and two reusable manual tree foundations for subsequent algorithms and data structures.
+**Red-Black Tree: implemented as the color-invariant balanced-tree extension, including explicit RED/BLACK nodes, conceptual black NIL leaves, insertion and deletion fix-up, recoloring, rotations, black-height teaching, Visual/Memory views, run explanations, and guided practice.**
+
+The project now has reusable manual linear structures and three reusable manual tree foundations for subsequent algorithms and data structures.
