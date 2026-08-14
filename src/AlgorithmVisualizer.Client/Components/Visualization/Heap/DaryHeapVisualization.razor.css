@@ -46,3 +46,22 @@
 .state-legend i.removing { background:#fff0f1; border-color:#d85d69; }
 .state-legend i.repairing { background:#f7f0ff; border-color:#9b64d6; }
 @media (max-width:760px) { .dary-visualization { padding:16px; } .visualization-header { flex-direction:column; } .heap-metrics { width:100%; justify-content:flex-start; } .heap-metrics div { flex:1 1 70px; min-width:0; } }
+
+/* Keep heap tree/index labels readable; overflow belongs inside this visualization, not the page. */
+.heap-visualization { max-width: 100%; overflow-x: auto; }
+.heap-visualization small,
+.heap-visualization .node-meta,
+.heap-visualization .array-index { font-size: .8rem; }
+
+/* Readability floor requested for heap learning views. */
+.dary-visualization .view-kicker { font-size:.8rem; }
+.dary-visualization .heap-metrics span { font-size:.72rem; }
+.dary-visualization .node-index { font-size:.76rem; }
+.dary-visualization .heap-node small { font-size:.8rem; }
+.dary-visualization .parent-link { font-size:.72rem; }
+.dary-visualization .bridge-copy strong { font-size:.94rem; }
+.dary-visualization .bridge-copy small { font-size:.84rem; }
+.dary-visualization .array-cell > span { font-size:.74rem; }
+.dary-visualization .array-cell small { font-size:.78rem; }
+.dary-visualization .state-legend { font-size:.84rem; }
+.heap-level:not(:last-child)::after { font-size:.7rem; }

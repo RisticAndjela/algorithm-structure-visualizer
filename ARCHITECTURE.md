@@ -167,7 +167,7 @@ The third tree module keeps the same strict BST ordering and adds:
 
 The broader Heap learning module makes the heap-family distinction concrete without inventing an inaccurate “ordinary heap” type:
 
-- configurable branching factor `d` (Core 2..8; UI presets 3/4/5);
+- configurable branching factor `d` (Core 2..8; UI presets 2/3/4/5);
 - Min/Max priority rule;
 - complete d-ary shape encoded in the same custom raw array;
 - `parent=(i-1)/d`, children `di+1..di+d`;
@@ -197,3 +197,17 @@ The dedicated Binary Heap specialization adds:
 ## Planned extension path
 
 Graph and sorting modules should reuse the same Core/runtime/Client separation rather than duplicating playback infrastructure. Future modules may reuse the established Stack/Queue/BST/AVL/Red-Black/generalized-Heap/Binary-Heap implementations when they are genuine algorithmic dependencies.
+
+
+## Matrix module
+
+The Matrix lab is a Core/runtime/Client implementation inserted before Graphs because adjacency matrices are a planned graph representation. The Client exposes two equivalent data-entry paths for A and B: direct cell editing and validated bulk row input; bulk input auto-resizes the existing Core matrix and then delegates all computation to the same `MatrixSimulation` algorithms.
+
+- `Core/DataStructures/Matrix/ManualMatrix.cs` owns row-major `double[]` storage, indexing, resize and elementary row primitives.
+- `MatrixSimulation` owns A, B and derived-result workspaces plus semantic cell states.
+- arithmetic, multiplication, transpose, powers, determinant, minors/cofactors, REF/RREF/rank, inverse and `A·X=B` solving are manual algorithms; no numerical library is used.
+- Client matrix editors mutate only A/B between runs; algorithmic operations publish intermediate frames through the shared `SimulationState` playback runtime.
+- Visual state presents mathematical grids and active cells; Memory state exposes contiguous row-major slots and the flat-index formula.
+- Graphs should reuse this Matrix implementation for adjacency-matrix storage/education instead of implementing a duplicate matrix engine.
+
+The Matrix page also establishes a readability floor for new modules: normal explanatory copy is approximately 0.9rem or larger, and tiny labels are avoided.

@@ -50,3 +50,18 @@
 .heap-visualization { min-width:0; max-width:100%; overflow:hidden; }
 .tree-shell,
 .heap-array { max-width:100%; overscroll-behavior-inline:contain; }
+
+.heap-visualization { max-width: 100%; overflow-x: auto; }
+.heap-visualization small,
+.heap-visualization .node-meta,
+.heap-visualization .array-index { font-size: .8rem; }
+
+.heap-visualization .view-kicker { font-size:.8rem; }
+.heap-visualization .heap-metrics span { font-size:.72rem; }
+.heap-visualization .node-index { font-size:.76rem; }
+.heap-visualization .heap-node small { font-size:.8rem; }
+.heap-visualization .parent-link { font-size:.72rem; }
+.heap-visualization .bridge-copy strong { font-size:.94rem; }
+.heap-visualization .array-cell > span { font-size:.74rem; }
+.heap-visualization .array-cell small { font-size:.78rem; }
+.heap-visualization .state-legend { font-size:.84rem; }

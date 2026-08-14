@@ -11,7 +11,7 @@ The project is built with **Blazor WebAssembly and C#**. Its goal is not only to
 - what the time complexity means for the current run;
 - how the visual representation differs from the way the data is stored in memory.
 
-The application now has six fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **AVL Tree**, **Red-Black Tree**, **Heap (generalized d-ary)**, and **Binary Heap (Min/Max)**. Queue & Stack established the reusable simulation pattern; BST extended it to linked nodes; AVL added strict height balancing; Red-Black added color-invariant repair; the two Heap labs now explicitly teach the difference between the heap family and the Binary Heap d = 2 specialization.
+The application now has seven fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **AVL Tree**, **Red-Black Tree**, **Heap (generalized d-ary)**, **Binary Heap (Min/Max)**, and **Matrix**. Queue & Stack established the reusable simulation pattern; BST extended it to linked nodes; AVL added strict height balancing; Red-Black added color-invariant repair; the two Heap labs explicitly teach the difference between the heap family and the Binary Heap d = 2 specialization; Matrix now provides the row-major, arithmetic, elimination, and adjacency-matrix foundation needed before Graphs.
 
 ---
 
@@ -26,6 +26,7 @@ The application now has six fully implemented learning modules: **Queue & Stack*
 - Red-Black Tree
 - Heap (generalized d-ary Min/Max)
 - Binary Heap (Min/Max)
+- Matrix
 - shared simulation runtime;
 - play, pause and adjustable simulation speed;
 - manual step forward;
@@ -60,7 +61,7 @@ The application now has six fully implemented learning modules: **Queue & Stack*
 - Red-Black node-identity-preserving rotations and successor transplant;
 - Red-Black Visual/Memory views with black-height, color, references, and transient fix-up states;
 - Red-Black guided practice and persistent progress;
-- generalized d-ary Heap with configurable branching factor `d = 3/4/5` in the UI;
+- generalized d-ary Heap with configurable branching factor `d = 2/3/4/5` in the UI, making Binary Heap visibly the `d = 2` special case;
 - generalized parent/child formulas `parent=(i-1)/d`, children `di+1..di+d`;
 - d-ary bubble-down that explicitly compares all existing child candidates before choosing the highest-priority child;
 - Heap-family vs Binary-Heap learning copy and side-by-side navigation;
@@ -70,7 +71,28 @@ The application now has six fully implemented learning modules: **Queue & Stack*
 - Heap arbitrary value search with a truthful O(n) scan;
 - Heap delete-by-value with direction-aware repair;
 - Heap Visual/Memory views showing complete-tree indexes, stable IDs, used slots, capacity, and manual array growth;
-- Heap guided practice and persistent progress.
+- Heap guided practice and persistent progress;
+- comprehensive Matrix workspace with editable A/B matrices and a two-level Memory State: row-list mental model first, actual row-major raw-array storage second;
+- Matrix values can be entered cell-by-cell or pasted as complete rows; bulk input validates rectangular shape, accepts up to 8×8, and resizes the target matrix automatically;
+- matrix resize, zero/identity/sequence/diagonal/symmetric/graph-adjacency presets, copy and swap helpers;
+- matrix addition, subtraction, Hadamard product, scalar multiplication and matrix multiplication;
+- transpose, integer powers, trace, determinant, minor and cofactor;
+- elementary row swap/scale/replacement operations;
+- REF, RREF, rank, inverse through Gauss-Jordan elimination, and `A·X=B` solving;
+- matrix property analysis (square, zero, identity, diagonal, triangular, symmetric);
+- Matrix Visual/Memory views showing cell states, a list-of-row-lists memory explanation, and an expandable actual backing-array view with `index = row * columns + column`;
+- matrix guided practice and persistent progress;
+- Heap readability pass: instructional text and labels enlarged, with overflow kept inside visualization regions.
+
+### Matrix module details
+
+Matrix is now a live pre-Graph foundation. `ManualMatrix` stores values in one row-major `double[]`. The Memory State deliberately teaches this in two layers: it first groups values as an outer list of row lists so row/column membership is easy to read, then exposes the actual flat backing array and its index formula.
+
+Implemented capabilities include direct editing/resizing, presets (zero, identity, sequence, diagonal, symmetric, random and graph adjacency), copy/swap/result chaining, addition/subtraction/Hadamard/scalar operations, matrix multiplication, transpose, powers, trace, determinant, minor/cofactor, elementary row operations, REF/RREF/rank, inverse, and solving `A·X=B`.
+
+No numerical or linear-algebra library performs these taught operations. The upcoming Graph module should reuse this Matrix implementation for adjacency-matrix representation.
+
+The Client imports `Microsoft.JSInterop` globally because interactive learning pages use `IJSRuntime` for browser-side task progress persistence. This keeps Razor pages compile-safe without repeating JS interop imports in every module.
 
 ### Planned
 
@@ -1246,7 +1268,7 @@ complexity explanation
 guided practice
 ```
 
-The next module can now reuse our custom Queue, Stack, BST, AVL, Red-Black, and Heap implementations wherever that is algorithmically appropriate. **Graphs (adjacency list / matrix)** are the next data structure in the written specification; the live Heap is also now available as a future dependency for Heap Sort, priority-queue teaching, and Dijkstra work.
+The next module can now reuse our custom Queue, Stack, BST, AVL, Red-Black, Heap, Binary Heap, and Matrix implementations wherever that is algorithmically appropriate. **Graphs (adjacency list / matrix)** are the next data structure in the written specification, and the adjacency-matrix side should reuse the Matrix module rather than duplicate it. The Heap implementations are also available as future dependencies for Heap Sort, priority-queue teaching, Dijkstra, and Prim.
 
 ---
 
@@ -1260,6 +1282,14 @@ The next module can now reuse our custom Queue, Stack, BST, AVL, Red-Black, and 
 
 **Red-Black Tree: implemented as the color-invariant balanced-tree extension, including explicit RED/BLACK nodes, conceptual black NIL leaves, insertion and deletion fix-up, recoloring, rotations, black-height teaching, Visual/Memory views, run explanations, and guided practice.**
 
-**Binary Heap: implemented as a complete-tree / custom-array module with Min/Max modes, bubble-up, bubble-down, extract-root, linear search, arbitrary delete repair, Visual/Memory views, capacity teaching, run explanations, and guided practice.**
+**Generalized Heap: implemented as the d-ary family lab with d = 2/3/4/5 comparison, Min/Max modes, generalized index formulas, and explicit child-candidate selection.**
 
-The project now has reusable manual linear structures, three reusable manual tree foundations, and a reusable manual Binary Heap foundation for subsequent algorithms and data structures.
+**Binary Heap: implemented as the focused d = 2 complete-tree / custom-array module with Min/Max modes, bubble-up, bubble-down, extract-root, linear search, arbitrary delete repair, Visual/Memory views, capacity teaching, run explanations, and guided practice.**
+
+**Matrix: implemented as the pre-Graph row-major module with direct cell editing, bulk custom-value input with automatic dimension detection, arithmetic, multiplication, transpose, powers, determinant, minors/cofactors, elementary row operations, REF/RREF/rank, inverse, equation solving, graph-adjacency presets, Visual/Memory views, a row-list-first memory explanation with expandable real `double[]` backing storage, and guided practice.**
+
+The project now has reusable manual linear structures, three reusable manual tree foundations, two reusable heap views of the same family, and a reusable Matrix foundation for subsequent graph and numerical-algorithm modules.
+
+### Matrix memory visualization
+
+The Matrix Memory State now presents the conceptual structure as a compact list of row lists (`A[0]`, `A[1]`, ...) with values aligned by column. The real contiguous row-major `double[]` remains available as an expandable implementation detail rather than dominating the learning view.

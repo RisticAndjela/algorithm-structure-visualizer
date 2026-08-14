@@ -1,0 +1,16 @@
+.matrix-editor-shell { display:flex; align-items:stretch; justify-content:center; min-width:0; }
+.matrix-editor-grid { display:grid; grid-template-columns:repeat(var(--matrix-columns), minmax(4.25rem, 1fr)); gap:.48rem; min-width:0; }
+.matrix-bracket { width:.7rem; border-top:2px solid #727887; border-bottom:2px solid #727887; flex:0 0 .7rem; }
+.matrix-bracket.left { border-left:2px solid #727887; margin-right:.5rem; }
+.matrix-bracket.right { border-right:2px solid #727887; margin-left:.5rem; }
+.matrix-edit-cell { display:grid; gap:.2rem; min-width:0; }
+.matrix-edit-cell input { width:100%; min-height:3rem; padding:.55rem .5rem; border:1px solid #dfe2ea; border-radius:.72rem; background:#fff; color:#252936; text-align:center; font:750 1rem/1.2 inherit; box-sizing:border-box; }
+.matrix-edit-cell input:focus { outline:3px solid rgba(103,87,229,.14); border-color:#7768e6; }
+.matrix-edit-cell small { color:#737988; font-size:.76rem; font-weight:720; text-align:center; }
+@media (max-width:760px) { .matrix-editor-grid { grid-template-columns:repeat(var(--matrix-columns), minmax(3.65rem,1fr)); gap:.35rem; } .matrix-edit-cell input { min-height:2.75rem; font-size:.94rem; } }
+
+/* Editable cells must look editable at normal laptop zoom. */
+.matrix-edit-cell input { border-color:#c9ced9; background:#ffffff; font-size:1.05rem; }
+.matrix-edit-cell input:hover:not(:disabled) { border-color:#9e95e8; background:#fcfbff; }
+.matrix-edit-cell input:disabled { background:#f5f6f8; color:#676d7b; }
+.matrix-edit-cell small { font-size:.8rem; }

@@ -1,0 +1,55 @@
+@using System.Globalization
+@using AlgorithmVisualizer.Core.DataStructures.Matrix
+
+<section class="matrix-visual" aria-label="@Title matrix">
+    <header>
+        <div><strong>@Title</strong><span>@Snapshot.Rows × @Snapshot.Columns</span></div>
+        @if (!string.IsNullOrWhiteSpace(Subtitle)) { <small>@Subtitle</small> }
+    </header>
+    <div class="matrix-shell">
+        <div class="matrix-bracket left" aria-hidden="true"></div>
+        <div class="matrix-grid" style="--matrix-columns:@Snapshot.Columns">
+            @for (var row = 0; row < Snapshot.Rows; row++)
+            {
+                @for (var column = 0; column < Snapshot.Columns; column++)
+                {
+                    var state = Snapshot.GetState(row, column);
+                    <div class="matrix-cell @StateClass(state)">
+                        <strong>@Format(Snapshot.GetValue(row, column))</strong>
+                        <small>r@(row + 1)c@(column + 1)</small>
+                        @if (state != MatrixCellVisualState.Normal) { <span>@StateLabel(state)</span> }
+                    </div>
+                }
+            }
+        </div>
+        <div class="matrix-bracket right" aria-hidden="true"></div>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public MatrixGridSnapshot Snapshot { get; set; } = default!;
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Subtitle { get; set; }
+
+    private static string Format(double value) => Math.Abs(value) < 1e-9 ? "0" : Math.Round(value, 5).ToString("0.#####", CultureInfo.InvariantCulture);
+    private static string StateClass(MatrixCellVisualState state) => state switch
+    {
+        MatrixCellVisualState.Reading => "is-reading",
+        MatrixCellVisualState.Writing => "is-writing",
+        MatrixCellVisualState.Pivot => "is-pivot",
+        MatrixCellVisualState.Candidate => "is-candidate",
+        MatrixCellVisualState.Matched => "is-matched",
+        MatrixCellVisualState.Eliminated => "is-eliminated",
+        _ => string.Empty
+    };
+    private static string StateLabel(MatrixCellVisualState state) => state switch
+    {
+        MatrixCellVisualState.Reading => "READ",
+        MatrixCellVisualState.Writing => "WRITE",
+        MatrixCellVisualState.Pivot => "PIVOT",
+        MatrixCellVisualState.Candidate => "ROW",
+        MatrixCellVisualState.Matched => "DONE",
+        MatrixCellVisualState.Eliminated => "ELIM",
+        _ => string.Empty
+    };
+}

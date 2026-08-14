@@ -46,3 +46,7 @@ The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctnes
 
 
 `DataStructures/Heap/DaryHeapSimulationTests.cs` verifies generalized d-ary Min/Max ordering for multiple branching factors, extract-root repair across all child candidates, the mathematical `d = 2` equivalence with Binary Heap indexing, arity-change safety, O(n) missing search, and stable surviving element identities after delete.
+
+## Matrix coverage
+
+`DataStructures/Matrix/MatrixSimulationTests.cs` covers row-major storage/resizing, element-wise arithmetic, matrix multiplication, determinant, inverse/singular handling, RREF/rank, solving `A·X=B`, elementary row operations, and the graph-adjacency preset.

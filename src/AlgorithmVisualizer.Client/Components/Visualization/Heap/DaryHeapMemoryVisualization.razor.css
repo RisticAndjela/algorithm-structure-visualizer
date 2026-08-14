@@ -35,3 +35,23 @@
 .memory-note strong { font-size:.82rem; }
 .memory-note p { margin:5px 0 0; color:#636a76; font-size:.76rem; line-height:1.5; }
 @media (max-width:760px) { .memory-view { padding:16px; } .memory-header { flex-direction:column; } .memory-metrics { width:100%; } .memory-metrics div { flex:1; min-width:0; } }
+
+.heap-memory { max-width: 100%; overflow-x: auto; }
+.heap-memory small,
+.heap-memory .slot-index,
+.heap-memory .memory-meta { font-size: .8rem; }
+
+/* Readability floor requested for heap memory explanations. */
+.memory-view .view-kicker { font-size:.8rem; }
+.memory-view .memory-header p { font-size:.94rem; }
+.memory-view .memory-metrics span { font-size:.72rem; }
+.memory-view .formula-card > strong { font-size:.92rem; }
+.memory-view .formula-card code { font-size:.86rem; }
+.memory-view .formula-card p { font-size:.86rem; }
+.memory-view .slot > header { font-size:.74rem; }
+.memory-view .slot > header strong { font-size:.72rem; }
+.memory-view .slot-value span,
+.memory-view .slot-links { font-size:.8rem; }
+.memory-view .free-copy { font-size:.8rem; }
+.memory-view .memory-note strong { font-size:.9rem; }
+.memory-view .memory-note p { font-size:.86rem; }

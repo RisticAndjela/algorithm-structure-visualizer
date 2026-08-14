@@ -1,0 +1,40 @@
+@using System.Globalization
+@using AlgorithmVisualizer.Core.DataStructures.Matrix
+
+<div class="matrix-editor-shell">
+    <div class="matrix-bracket left" aria-hidden="true"></div>
+    <div class="matrix-editor-grid" style="--matrix-columns:@Snapshot.Columns">
+        @for (var row = 0; row < Snapshot.Rows; row++)
+        {
+            var currentRow = row;
+            @for (var column = 0; column < Snapshot.Columns; column++)
+            {
+                var currentColumn = column;
+                <label class="matrix-edit-cell">
+                    <span class="sr-only">Row @(currentRow + 1), column @(currentColumn + 1)</span>
+                    <input type="number" step="any" value="@Format(Snapshot.GetValue(currentRow, currentColumn))"
+                           disabled="@Disabled" @onchange="args => ChangeCellAsync(currentRow, currentColumn, args)" />
+                    <small>r@(currentRow + 1)c@(currentColumn + 1)</small>
+                </label>
+            }
+        }
+    </div>
+    <div class="matrix-bracket right" aria-hidden="true"></div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public MatrixGridSnapshot Snapshot { get; set; } = default!;
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public EventCallback<MatrixCellEditRequest> OnCellChanged { get; set; }
+
+    private async Task ChangeCellAsync(int row, int column, ChangeEventArgs args)
+    {
+        if (double.TryParse(args.Value?.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var value) ||
+            double.TryParse(args.Value?.ToString(), NumberStyles.Float, CultureInfo.CurrentCulture, out value))
+        {
+            await OnCellChanged.InvokeAsync(new MatrixCellEditRequest(row, column, value));
+        }
+    }
+
+    private static string Format(double value) => Math.Abs(value) < 1e-9 ? "0" : Math.Round(value, 6).ToString("0.######", CultureInfo.InvariantCulture);
+}

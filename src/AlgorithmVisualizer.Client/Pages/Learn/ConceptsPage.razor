@@ -20,6 +20,7 @@
         <a href="#avl-balance">AVL balance &amp; rotations</a>
         <a href="#red-black">Red-Black invariants</a>
         <a href="#heap">Heap property &amp; indexes</a>
+        <a href="#matrices">Matrix</a>
         <a href="#identity">Value vs ID</a>
         <a href="#memory">Memory</a>
         <a href="#visual-vs-memory">Visual vs memory</a>
@@ -264,11 +265,65 @@
             <p>A larger d usually reduces tree height, so bubble-up crosses fewer levels. Bubble-down, however, may need to compare more children at each level before choosing the best candidate. The generalized lab exposes those comparisons step by step.</p>
         </div>
         <div class="plain-note">
+            <strong>Why the practical lab starts at d = 2</strong>
+            <p>A unary <code>d = 1</code> heap is a degenerate chain: every node has at most one child, so height grows toward <code>n</code> and bubble-up/down can become linear. Practical d-ary heaps therefore use <code>d ≥ 2</code>. The generalized lab now includes d = 2, 3, 4 and 5 so you can see the Binary Heap case directly.</p>
+        </div>
+        <div class="plain-note">
             <strong>What a heap swap means in memory</strong>
             <p>Both heap labs reuse stable <code>HeapElement</code> objects inside our manually grown raw array. A swap exchanges references between array indexes. IDs and values remain attached to the same objects; only their indexes — and therefore their derived parent/child relationships — change.</p>
         </div>
     </section>
 
+
+
+    <section id="matrices" class="concept-section">
+        <div class="section-heading">
+            <span>M×N</span>
+            <div><h2>Matrix: dimensions, memory and why it matters</h2><p>A matrix is a rectangular grid of values. The shape is part of the data, and many operations are legal only when dimensions are compatible.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class="concept-card">
+                <span class="term">ROWS × COLS</span>
+                <h3>Dimensions describe the shape</h3>
+                <p>A <code>2×3</code> matrix has 2 rows and 3 columns. Transpose swaps those dimensions: a <code>2×3</code> matrix becomes <code>3×2</code>.</p>
+                <div class="example"><strong>Think first:</strong> dimensions usually tell you whether an operation is even possible before you calculate any number.</div>
+            </article>
+            <article id="matrix-compatibility" class="concept-card">
+                <span class="term queue">COMPATIBILITY</span>
+                <h3>Different operations have different shape rules</h3>
+                <p>Addition, subtraction and Hadamard multiplication require the same dimensions. For <code>A×B</code>, the number of columns in A must equal the number of rows in B.</p>
+                <div class="example"><strong>Example:</strong> <code>(2×3) · (3×4) → 2×4</code>.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term">ROW-MAJOR</span>
+                <h3>The 2D picture can live in one 1D array</h3>
+                <p>Our implementation stores matrix cells in one raw <code>double[]</code>. For zero-based indexes, <code>flatIndex = row × columns + column</code>.</p>
+                <div class="example"><strong>3 columns:</strong> cell [row 2, col 1] uses flat index <code>2×3+1 = 7</code>.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">GRAPH BRIDGE</span>
+                <h3>An adjacency matrix can store a graph</h3>
+                <p>Rows and columns can represent the same set of graph nodes. Cell <code>[i,j]</code> can store 1/0 for an edge, or a weight for a weighted edge.</p>
+                <div class="example"><strong>Undirected graph:</strong> its simple adjacency matrix is symmetric because edge i↔j appears in both mirrored cells.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term">ROW OPS</span>
+                <h3>Gaussian elimination is repeated row rewiring</h3>
+                <p>Three elementary moves are enough: swap two rows, multiply a row by a non-zero scalar, or add a scalar multiple of one row to another.</p>
+                <div class="example"><strong>These power:</strong> REF, RREF, rank, determinant workflows, inverse and solving <code>A·X=B</code>.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">PIVOT</span>
+                <h3>Pivots reveal independent information</h3>
+                <p>During row reduction, each pivot establishes a new independent row/column direction. The number of pivot rows in RREF is the matrix rank.</p>
+                <div class="example"><strong>Missing pivot:</strong> for square A, that can mean <code>det(A)=0</code> and no inverse exists.</div>
+            </article>
+        </div>
+        <div class="plain-note">
+            <strong>Why this module comes before Graphs</strong>
+            <p>The project plans both adjacency-list and adjacency-matrix graph representations. Learning matrices first means the graph module can focus on graph behavior instead of introducing two unrelated ideas at once.</p>
+        </div>
+    </section>
     <section id="identity" class="concept-section">
         <div class="section-heading">
             <span>03</span>
@@ -338,11 +393,11 @@
     <section class="concept-section implementation-note">
         <div class="section-heading">
             <span>✓</span>
-            <div><h2>Implemented from scratch</h2><p>The learning structures do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, or balancing algorithms to ready-made framework collections.</p></div>
+            <div><h2>Implemented from scratch</h2><p>The learning structures do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, Matrix, or balancing algorithms to ready-made framework collections.</p></div>
         </div>
         <div class="plain-note">
             <strong>What our code does itself</strong>
-            <p>Linear structures keep and grow their own raw array and move references with manual loops. BST, AVL, and Red-Black Tree keep explicit node links and perform their own comparisons, transplants, recoloring, and rotations. BST Balance uses our own Day-Stout-Warren vine/compression logic over those same node references. Heap uses its own growable raw array and manual index swaps for bubble-up/bubble-down instead of PriorityQueue or a library heap. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the taught data-structure algorithms for us.</p>
+            <p>Linear structures keep and grow their own raw array and move references with manual loops. BST, AVL, and Red-Black Tree keep explicit node links and perform their own comparisons, transplants, recoloring, and rotations. BST Balance uses our own Day-Stout-Warren vine/compression logic over those same node references. Heap uses its own growable raw array and manual index swaps for bubble-up/bubble-down instead of PriorityQueue or a library heap. Matrix uses its own row-major <code>double[]</code>, manual cell/index loops, row operations, multiplication and elimination instead of a numerical or linear-algebra library. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the taught data-structure algorithms for us.</p>
         </div>
     </section>
 

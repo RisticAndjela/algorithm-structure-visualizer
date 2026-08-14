@@ -1,0 +1,572 @@
+@page "/structures/matrix"
+@using System.Text.Json
+@using System.Globalization
+@using AlgorithmVisualizer.Core.DataStructures.Matrix
+@using AlgorithmVisualizer.Client.Components.Visualization.Matrix
+@implements IDisposable
+@inject SimulationState SimulationState
+@inject IJSRuntime JS
+
+<PageTitle>Matrix — Algorithm Visualizer</PageTitle>
+
+<div class="matrix-page">
+    <section class="learn-launchpad" aria-labelledby="matrix-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="matrix-learn-title">A matrix is a rectangular grid of values arranged in rows and columns.</h2>
+            <p>
+                A 2 × 3 matrix has two rows and three columns. Each cell has a position, such as row 2 / column 3, and the shape decides which operations are legal.
+                In this lab you enter the values yourself, then watch what addition, multiplication, row reduction, inverse and the other operations actually do to those values.
+            </p>
+            <a href="/learn/concepts#matrices">Open Matrix concepts &amp; memory →</a>
+        </div>
+        <div class="learn-grid">
+            <article class="learn-card purple"><span>01 · BUILD IT</span><strong>Enter your own values</strong><small>Click individual cells, or paste a whole matrix row by row. The bulk input automatically detects the matrix dimensions.</small></article>
+            <article class="learn-card mint"><span>02 · UNDERSTAND IT</span><strong>Rows × columns define the shape</strong><small><code>2 × 3</code> means two rows and three columns. Addition needs equal shapes; A×B needs A.columns = B.rows.</small></article>
+            <article class="learn-card blue"><span>03 · USE IT</span><strong>Graphics, graphs, ML and equations</strong><small>Matrices encode transformations, adjacency relationships, image values, datasets and systems such as <code>A·X=B</code>.</small></article>
+            <article class="learn-card gold"><span>04 · SEE MEMORY</span><strong>Rows first, backing array second</strong><small>Memory State first groups the values as a list of row lists so the shape is obvious. You can then expand the real row-major <code>double[]</code> used by our implementation.</small></article>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow"><span>DATA STRUCTURES</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <h1>Matrix</h1>
+            <p>Type your own values into A and B — cell by cell or as a whole pasted matrix — then run every operation on the data you chose.</p>
+        </div>
+        <div class="complexity-summary" aria-label="Matrix complexity examples">
+            <div><span>CELL ACCESS</span><strong>O(1)</strong><small>row-major index arithmetic</small></div>
+            <div><span>A + B</span><strong>O(r·c)</strong><small>visit every paired cell</small></div>
+            <div><span>A × B</span><strong>O(r·c·k)</strong><small>row-column dot products</small></div>
+            <div><span>ELIMINATION</span><strong>O(n³)</strong><small>det / inverse / solve</small></div>
+        </div>
+    </header>
+
+    <section class="smart-tip">
+        <span class="tip-icon">i</span>
+        <div><strong>Best mental model:</strong><p>dimensions are part of the data. Before pressing an operation, predict the result dimensions — or whether the operation is invalid.</p></div>
+        <a href="/learn/concepts#matrix-compatibility">Compatibility rules →</a>
+    </section>
+
+    <section class="matrix-editors" aria-label="Editable matrices">
+        <article class="editor-card">
+            <header><div><span class="section-kicker">MATRIX A</span><h2>@CurrentSnapshot.A.Rows × @CurrentSnapshot.A.Columns</h2></div><div class="dimension-controls"><InputNumber TValue="int" @bind-Value="_rowsA" min="1" max="8" disabled="@IsBusy" /><span>×</span><InputNumber TValue="int" @bind-Value="_colsA" min="1" max="8" disabled="@IsBusy" /><button @onclick="() => Resize(MatrixSlot.A)" disabled="@IsBusy">Resize</button></div></header>
+            <div class="direct-entry-tip"><strong>Enter A yourself</strong><span>Click any cell and type a number. Press Enter or click outside the cell to apply it.</span></div>
+            <div class="editor-scroll"><MatrixEditor Snapshot="@CurrentSnapshot.A" Disabled="@IsBusy" OnCellChanged="UpdateA" /></div>
+            <div class="bulk-entry">
+                <div><strong>Paste / type the whole matrix</strong><small>One row per line; separate values with spaces (recommended) or commas. Applying values resizes A automatically.</small></div>
+                <textarea @bind="_matrixAText" @bind:event="oninput" disabled="@IsBusy" aria-label="Matrix A bulk values" placeholder="1 2 3&#10;4 5 6"></textarea>
+                <div class="bulk-entry-actions">
+                    <button class="primary" @onclick="() => ApplyMatrixText(MatrixSlot.A)" disabled="@IsBusy">Apply values to A</button>
+                    <button @onclick="() => LoadCurrentIntoText(MatrixSlot.A)" disabled="@IsBusy">Load current A</button>
+                </div>
+            </div>
+            <div class="preset-row">
+                <button @onclick="() => LoadPreset(MatrixSlot.A, MatrixPreset.Zero)" disabled="@IsBusy">Zero</button>
+                <button @onclick="() => LoadPreset(MatrixSlot.A, MatrixPreset.Identity)" disabled="@IsBusy">Identity</button>
+                <button @onclick="() => LoadPreset(MatrixSlot.A, MatrixPreset.Sequence)" disabled="@IsBusy">Sequence</button>
+                <button @onclick="() => LoadPreset(MatrixSlot.A, MatrixPreset.Diagonal)" disabled="@IsBusy">Diagonal</button>
+                <button @onclick="() => LoadPreset(MatrixSlot.A, MatrixPreset.Symmetric)" disabled="@IsBusy">Symmetric</button>
+                <button @onclick="() => LoadPreset(MatrixSlot.A, MatrixPreset.GraphAdjacency)" disabled="@IsBusy">Graph adjacency</button>
+                <button @onclick="() => LoadPreset(MatrixSlot.A, MatrixPreset.RandomSmall)" disabled="@IsBusy">Random</button>
+            </div>
+            <div class="property-strip">@foreach (var label in PropertyLabels(_propertiesA)) { <span>@label</span> }</div>
+        </article>
+
+        <article class="editor-card">
+            <header><div><span class="section-kicker">MATRIX B</span><h2>@CurrentSnapshot.B.Rows × @CurrentSnapshot.B.Columns</h2></div><div class="dimension-controls"><InputNumber TValue="int" @bind-Value="_rowsB" min="1" max="8" disabled="@IsBusy" /><span>×</span><InputNumber TValue="int" @bind-Value="_colsB" min="1" max="8" disabled="@IsBusy" /><button @onclick="() => Resize(MatrixSlot.B)" disabled="@IsBusy">Resize</button></div></header>
+            <div class="direct-entry-tip"><strong>Enter B yourself</strong><span>Click any cell and type a number. Press Enter or click outside the cell to apply it.</span></div>
+            <div class="editor-scroll"><MatrixEditor Snapshot="@CurrentSnapshot.B" Disabled="@IsBusy" OnCellChanged="UpdateB" /></div>
+            <div class="bulk-entry">
+                <div><strong>Paste / type the whole matrix</strong><small>One row per line; separate values with spaces (recommended) or commas. Applying values resizes B automatically.</small></div>
+                <textarea @bind="_matrixBText" @bind:event="oninput" disabled="@IsBusy" aria-label="Matrix B bulk values" placeholder="7 8 9&#10;10 11 12"></textarea>
+                <div class="bulk-entry-actions">
+                    <button class="primary" @onclick="() => ApplyMatrixText(MatrixSlot.B)" disabled="@IsBusy">Apply values to B</button>
+                    <button @onclick="() => LoadCurrentIntoText(MatrixSlot.B)" disabled="@IsBusy">Load current B</button>
+                </div>
+            </div>
+            <div class="preset-row">
+                <button @onclick="() => LoadPreset(MatrixSlot.B, MatrixPreset.Zero)" disabled="@IsBusy">Zero</button>
+                <button @onclick="() => LoadPreset(MatrixSlot.B, MatrixPreset.Identity)" disabled="@IsBusy">Identity</button>
+                <button @onclick="() => LoadPreset(MatrixSlot.B, MatrixPreset.Sequence)" disabled="@IsBusy">Sequence</button>
+                <button @onclick="() => LoadPreset(MatrixSlot.B, MatrixPreset.Diagonal)" disabled="@IsBusy">Diagonal</button>
+                <button @onclick="() => LoadPreset(MatrixSlot.B, MatrixPreset.Symmetric)" disabled="@IsBusy">Symmetric</button>
+                <button @onclick="() => LoadPreset(MatrixSlot.B, MatrixPreset.GraphAdjacency)" disabled="@IsBusy">Graph adjacency</button>
+                <button @onclick="() => LoadPreset(MatrixSlot.B, MatrixPreset.RandomSmall)" disabled="@IsBusy">Random</button>
+            </div>
+            <div class="property-strip">@foreach (var label in PropertyLabels(_propertiesB)) { <span>@label</span> }</div>
+        </article>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(_manualInputError))
+    {
+        <div class="error-message manual-input-error" role="alert"><strong>Input:</strong><span>@_manualInputError</span></div>
+    }
+
+    <section class="how-to-use" aria-label="How to use the Matrix lab">
+        <div><span class="section-kicker">HOW TO USE THIS LAB</span><h2>Your numbers drive every simulation.</h2></div>
+        <ol>
+            <li><strong>Build A and B.</strong><span>Type directly into cells, paste complete rows, resize manually, or start from a preset.</span></li>
+            <li><strong>Choose an operation.</strong><span>The lab checks whether the dimensions make that operation mathematically valid.</span></li>
+            <li><strong>Step through it.</strong><span>Visual State highlights reads, writes, pivots and elimination; Memory State first shows a list of row lists, with the real row-major double[] available underneath.</span></li>
+            <li><strong>Reuse the result.</strong><span>Send Result back to A or B and continue experimenting instead of starting over.</span></li>
+        </ol>
+    </section>
+
+    <div class="workspace-shortcuts">
+        <button @onclick="CopyAToB" disabled="@IsBusy">Copy A → B</button>
+        <button @onclick="SwapAB" disabled="@IsBusy">Swap A ↔ B</button>
+        <button @onclick="() => CopyResultTo(MatrixSlot.A)" disabled="@IsBusy">Result → A</button>
+        <button @onclick="() => CopyResultTo(MatrixSlot.B)" disabled="@IsBusy">Result → B</button>
+        <span>These are workspace helpers; the mathematical operations below remain fully simulated.</span>
+    </div>
+
+    <section class="lab-shell">
+        <div class="lab-heading">
+            <div><span class="section-kicker">INTERACTIVE LAB</span><h2>Choose what the matrix should do.</h2></div>
+            @if (_lastResult is not null) { <div class="last-run"><span>LAST RUN</span><strong>@_lastResult.Summary</strong><small>@_lastResult.Complexity · @_lastResult.ArithmeticOperations arithmetic ops · @_lastResult.RowOperations row ops</small></div> }
+        </div>
+
+        <div class="operation-groups">
+            <article class="operation-group">
+                <header><span>01</span><div><h3>Arithmetic</h3><p>Cell-wise operations and row-column multiplication.</p></div></header>
+                <div class="operation-buttons">
+                    <button @onclick='() => RunAsync("addition", Matrix.AddAsync)' disabled="@IsBusy">A + B</button>
+                    <button @onclick='() => RunAsync("subtraction", Matrix.SubtractAsync)' disabled="@IsBusy">A − B</button>
+                    <button @onclick='() => RunAsync("Hadamard product", Matrix.HadamardAsync)' disabled="@IsBusy">A ⊙ B</button>
+                    <button class="primary" @onclick='() => RunAsync("matrix multiplication", Matrix.MultiplyAsync)' disabled="@IsBusy">A × B</button>
+                </div>
+                <div class="inline-input"><label>Scalar <InputNumber TValue="double" @bind-Value="_scalar" disabled="@IsBusy" /></label><button @onclick="ScalarMultiplyAsync" disabled="@IsBusy">scalar × A</button><label>Power k <InputNumber TValue="int" @bind-Value="_power" min="0" max="8" disabled="@IsBusy" /></label><button @onclick="PowerAsync" disabled="@IsBusy">Aᵏ</button></div>
+            </article>
+
+            <article class="operation-group">
+                <header><span>02</span><div><h3>Transform &amp; inspect</h3><p>Change orientation or compute scalar properties.</p></div></header>
+                <div class="operation-buttons">
+                    <button @onclick='() => RunAsync("transpose A", token => Matrix.TransposeAsync(MatrixSlot.A, token))' disabled="@IsBusy">Aᵀ</button>
+                    <button @onclick='() => RunAsync("transpose B", token => Matrix.TransposeAsync(MatrixSlot.B, token))' disabled="@IsBusy">Bᵀ</button>
+                    <button @onclick='() => RunAsync("trace", Matrix.TraceAsync)' disabled="@IsBusy">trace(A)</button>
+                    <button @onclick='() => RunAsync("determinant", Matrix.DeterminantAsync)' disabled="@IsBusy">det(A)</button>
+                    <button @onclick='() => RunAsync("inverse", Matrix.InverseAsync)' disabled="@IsBusy">A⁻¹</button>
+                    <button @onclick='() => RunAsync("rank", Matrix.RankAsync)' disabled="@IsBusy">rank(A)</button>
+                </div>
+                <div class="inline-input"><label>Cell row <InputNumber TValue="int" @bind-Value="_minorRow" min="1" max="8" disabled="@IsBusy" /></label><label>column <InputNumber TValue="int" @bind-Value="_minorColumn" min="1" max="8" disabled="@IsBusy" /></label><button @onclick="MinorAsync" disabled="@IsBusy">Minor</button><button @onclick="CofactorAsync" disabled="@IsBusy">Cofactor</button></div>
+            </article>
+
+            <article class="operation-group wide">
+                <header><span>03</span><div><h3>Row reduction</h3><p>Elementary row operations are the machinery behind Gaussian elimination.</p></div></header>
+                <div class="operation-buttons">
+                    <button @onclick='() => RunAsync("row echelon form", Matrix.RefAsync)' disabled="@IsBusy">REF(A)</button>
+                    <button class="primary" @onclick='() => RunAsync("reduced row echelon form", Matrix.RrefAsync)' disabled="@IsBusy">RREF(A)</button>
+                    <button @onclick='() => RunAsync("solve A X = B", Matrix.SolveAsync)' disabled="@IsBusy">Solve A·X = B</button>
+                </div>
+                <div class="row-operation-grid">
+                    <label>Row 1 <InputNumber TValue="int" @bind-Value="_rowOne" min="1" max="8" disabled="@IsBusy" /></label>
+                    <label>Row 2 <InputNumber TValue="int" @bind-Value="_rowTwo" min="1" max="8" disabled="@IsBusy" /></label>
+                    <label>Factor <InputNumber TValue="double" @bind-Value="_rowFactor" disabled="@IsBusy" /></label>
+                    <button @onclick="SwapRowsAsync" disabled="@IsBusy">Swap R1 ↔ R2</button>
+                    <button @onclick="ScaleRowAsync" disabled="@IsBusy">R1 ← factor·R1</button>
+                    <button @onclick="AddScaledRowAsync" disabled="@IsBusy">R1 ← R1 + factor·R2</button>
+                </div>
+            </article>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_errorMessage)) { <div class="error-message" role="alert"><strong>Could not run that operation.</strong><span>@_errorMessage</span></div> }
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync"
+                           CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist"><button class="@(_activeView == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetView(StateView.Visual)">Visual state</button><button class="@(_activeView == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetView(StateView.Memory)">Memory state</button></div>
+            <p>@DisplayedSnapshot.FocusText</p>
+        </div>
+
+        @if (_activeView == StateView.Visual)
+        {
+            <div class="visual-workspace">
+                <MatrixVisualization Snapshot="@DisplayedSnapshot.A" Title="A" Subtitle="editable input" />
+                <MatrixVisualization Snapshot="@DisplayedSnapshot.B" Title="B" Subtitle="editable input" />
+                <MatrixVisualization Snapshot="@DisplayedSnapshot.Result" Title="@DisplayedSnapshot.ResultLabel" Subtitle="derived output / algorithm workspace" />
+            </div>
+        }
+        else
+        {
+            <div class="memory-workspace">
+                <MatrixMemoryVisualization Snapshot="@DisplayedSnapshot.A" Title="A" />
+                <MatrixMemoryVisualization Snapshot="@DisplayedSnapshot.B" Title="B" />
+                <MatrixMemoryVisualization Snapshot="@DisplayedSnapshot.Result" Title="@DisplayedSnapshot.ResultLabel" />
+            </div>
+        }
+    </section>
+
+    <section class="why-section">
+        <div><span class="section-kicker">WHEN WOULD I USE THIS?</span><h2>A Matrix is useful whenever rows and columns encode data or relationships.</h2></div>
+        <div class="why-grid">
+            <article><span>GRAPH</span><h3>Adjacency matrix</h3><p>Cell [i,j] can say whether node i connects to node j, or store an edge weight. Our next Graph module can reuse this implementation.</p></article>
+            <article><span>IMAGES</span><h3>Pixels and filters</h3><p>A grayscale image is naturally a matrix of intensities. Convolution filters repeatedly combine neighborhoods of matrix values.</p></article>
+            <article><span>3D / GRAPHICS</span><h3>Transforms</h3><p>Rotation, scale and projection are expressed with matrix multiplication — one reason row-column multiplication matters.</p></article>
+            <article><span>ML / DATA</span><h3>Batches of numbers</h3><p>Features, weights and activations are commonly organized as matrices so many related calculations can be expressed together.</p></article>
+            <article><span>SYSTEMS</span><h3>Solve equations</h3><p>Gaussian elimination turns a system of linear equations into row operations. RREF exposes the solution structure.</p></article>
+            <article><span>RELATIONSHIPS</span><h3>Transition and cost tables</h3><p>Matrices compactly encode pairwise relationships, probabilities, distances and state transitions.</p></article>
+        </div>
+    </section>
+
+    <section class="practice-section">
+        <div class="practice-heading"><div><span class="section-kicker">GUIDED PRACTICE</span><h2>Use dimensions, pivots and memory — not memorized buttons.</h2></div><div class="task-score"><strong>@_completedTasks.Count / @PracticeTasks.Length</strong><span>completed</span></div></div>
+        <div class="task-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                var completed = _completedTasks.Contains(task.Id);
+                <article class="task-card @(completed ? "completed" : string.Empty)"><div class="task-topline"><span>@task.Id.ToString("00")</span><span>@(completed ? "Completed automatically" : "Practice")</span></div><h3>@task.Title</h3><p>@task.Description</p><small>@(completed ? "✓ The lab observed this condition." : "Complete it in the lab above — progress is detected automatically.")</small></article>
+            }
+        </div>
+    </section>
+</div>
+
+@code {
+    private const string CompletedTasksStorageKey = "algovis.matrix.tasks.v1";
+    private MatrixSimulation Matrix = default!;
+    private readonly List<RunFrame> _runFrames = new();
+    private readonly HashSet<int> _completedTasks = new();
+    private MatrixProperties _propertiesA = default!;
+    private MatrixProperties _propertiesB = default!;
+    private MatrixOperationResult? _lastResult;
+    private string? _errorMessage;
+    private string? _lastCapturedStepText;
+    private int _frameIndex = -1;
+    private int _rowsA = 3, _colsA = 3, _rowsB = 3, _colsB = 3;
+    private double _scalar = 2;
+    private int _power = 2;
+    private int _minorRow = 1, _minorColumn = 1;
+    private int _rowOne = 1, _rowTwo = 2;
+    private double _rowFactor = -1;
+    private string _matrixAText = string.Empty;
+    private string _matrixBText = string.Empty;
+    private string? _manualInputError;
+    private StateView _activeView = StateView.Visual;
+
+    private static readonly PracticeTask[] PracticeTasks =
+    [
+        new(1, "Predict dimensions", "Make A 2×3 and B 3×4. Predict the A×B result shape before running multiplication."),
+        new(2, "Trigger an invalid operation", "Make A and B different shapes and run A+B. Explain why the simulator refuses."),
+        new(3, "Watch one dot product", "Use 2×2 matrices and Step through A×B. Explain how result[1,1] is built."),
+        new(4, "Reduce to RREF", "Load a 3×3 sequence-like matrix, change one value, then follow pivots and elimination to RREF."),
+        new(5, "Invert a matrix", "Create a non-singular 2×2 or 3×3 A and watch [A|I] become [I|A⁻¹]."),
+        new(6, "Find a singular matrix", "Use dependent rows so det(A)=0, then try inverse and explain the missing pivot."),
+        new(7, "Connect matrices to graphs", "Load Graph adjacency and inspect why the matrix is symmetric for this undirected example."),
+        new(8, "Inspect memory", "Open Memory state, follow the outer row list into at least three values, then expand the backing array and match those values to their flat slots."),
+        new(9, "Enter your own matrix", "Type or paste a custom matrix into A or B, apply it, then run an operation on your values.")
+    ];
+
+    private bool IsBusy => SimulationState.IsRunning;
+    private MatrixWorkspaceSnapshot CurrentSnapshot => Matrix.CreateSnapshot();
+    private MatrixWorkspaceSnapshot DisplayedSnapshot => _frameIndex >= 0 && _frameIndex < _runFrames.Count ? _runFrames[_frameIndex].Snapshot : CurrentSnapshot;
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_runFrames.Count > 0 && _frameIndex < _runFrames.Count - 1) || SimulationState.IsRunning;
+    private int TimelineCount => _runFrames.Count;
+    private int TimelinePosition => _frameIndex >= 0 ? _frameIndex + 1 : 0;
+    private string DisplayedStepText => _frameIndex >= 0 && _frameIndex < _runFrames.Count ? _runFrames[_frameIndex].StepText : SimulationState.CurrentStepText;
+
+    protected override void OnInitialized()
+    {
+        Matrix = new MatrixSimulation(SimulationState);
+        SimulationState.Changed += HandleStateChanged;
+        Matrix.Changed += HandleMatrixChanged;
+        SyncDimensions();
+        RefreshProperties();
+        SyncBulkTextFromCurrent();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            var json = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { CompletedTasksStorageKey });
+            if (!string.IsNullOrWhiteSpace(json))
+                foreach (var id in JsonSerializer.Deserialize<int[]>(json) ?? []) _completedTasks.Add(id);
+        }
+        catch { }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdateA(MatrixCellEditRequest edit) => UpdateCell(MatrixSlot.A, edit);
+    private void UpdateB(MatrixCellEditRequest edit) => UpdateCell(MatrixSlot.B, edit);
+
+    private void UpdateCell(MatrixSlot slot, MatrixCellEditRequest edit)
+    {
+        if (IsBusy) return;
+        Matrix.SetCell(slot, edit.Row, edit.Column, edit.Value);
+        _manualInputError = null;
+        _errorMessage = null;
+        _lastResult = null;
+        RefreshProperties();
+        ClearTimeline();
+        SyncBulkTextFromCurrent(slot);
+        CompleteTask(9);
+    }
+
+    private void ApplyMatrixText(MatrixSlot slot)
+    {
+        if (IsBusy) return;
+
+        var text = slot == MatrixSlot.A ? _matrixAText : _matrixBText;
+        if (!TryParseMatrixText(text, out var rows, out var columns, out var values, out var error))
+        {
+            _manualInputError = $"Matrix {slot}: {error}";
+            return;
+        }
+
+        Matrix.Resize(slot, rows, columns);
+        var index = 0;
+        for (var row = 0; row < rows; row++)
+        {
+            for (var column = 0; column < columns; column++)
+            {
+                Matrix.SetCell(slot, row, column, values[index++]);
+            }
+        }
+
+        SyncDimensions();
+        RefreshProperties();
+        ClearTimeline();
+        _lastResult = null;
+        _errorMessage = null;
+        _manualInputError = null;
+        SyncBulkTextFromCurrent(slot);
+        CompleteTask(9);
+    }
+
+    private void LoadCurrentIntoText(MatrixSlot slot)
+    {
+        if (IsBusy) return;
+        SyncBulkTextFromCurrent(slot);
+        _manualInputError = null;
+    }
+
+    private void SyncBulkTextFromCurrent(MatrixSlot? slot = null)
+    {
+        var snapshot = Matrix.CreateSnapshot();
+        if (slot is null or MatrixSlot.A) _matrixAText = FormatMatrixText(snapshot.A);
+        if (slot is null or MatrixSlot.B) _matrixBText = FormatMatrixText(snapshot.B);
+    }
+
+    private static bool TryParseMatrixText(string? text, out int rows, out int columns, out double[] values, out string error)
+    {
+        rows = 0;
+        columns = 0;
+        values = Array.Empty<double>();
+        error = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            error = "Enter at least one row of values.";
+            return false;
+        }
+
+        var rawRows = text.Replace("[", string.Empty).Replace("]", string.Empty)
+            .Split(new[] { '\r', '\n', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (rawRows.Length is < 1 or > 8)
+        {
+            error = "Use between 1 and 8 rows.";
+            return false;
+        }
+
+        var parsedRows = new double[rawRows.Length][];
+        for (var row = 0; row < rawRows.Length; row++)
+        {
+            var tokens = TokenizeMatrixRow(rawRows[row]);
+            if (tokens.Length is < 1 or > 8)
+            {
+                error = $"Row {row + 1} must contain between 1 and 8 values.";
+                return false;
+            }
+
+            if (row == 0) columns = tokens.Length;
+            else if (tokens.Length != columns)
+            {
+                error = $"Every row must have {columns} values; row {row + 1} has {tokens.Length}.";
+                return false;
+            }
+
+            parsedRows[row] = new double[columns];
+            for (var column = 0; column < columns; column++)
+            {
+                if (!TryParseFiniteNumber(tokens[column], out var value))
+                {
+                    error = $"'{tokens[column]}' at row {row + 1}, column {column + 1} is not a valid number.";
+                    return false;
+                }
+
+                parsedRows[row][column] = value;
+            }
+        }
+
+        rows = parsedRows.Length;
+        values = new double[rows * columns];
+        var target = 0;
+        for (var row = 0; row < rows; row++)
+        {
+            for (var column = 0; column < columns; column++) values[target++] = parsedRows[row][column];
+        }
+
+        return true;
+    }
+
+    private static string[] TokenizeMatrixRow(string row)
+    {
+        var whitespaceTokens = row.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (whitespaceTokens.Length > 1)
+        {
+            for (var i = 0; i < whitespaceTokens.Length; i++) whitespaceTokens[i] = whitespaceTokens[i].Trim().Trim(',');
+            return whitespaceTokens;
+        }
+
+        return row.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    }
+
+    private static bool TryParseFiniteNumber(string token, out double value)
+    {
+        var parsed = double.TryParse(token, NumberStyles.Float, CultureInfo.CurrentCulture, out value) ||
+                     double.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, out value);
+        if (!parsed && token.Contains(',') && !token.Contains('.'))
+            parsed = double.TryParse(token.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out value);
+        return parsed && !double.IsNaN(value) && !double.IsInfinity(value);
+    }
+
+    private static string FormatMatrixText(MatrixGridSnapshot grid)
+    {
+        var lines = new string[grid.Rows];
+        for (var row = 0; row < grid.Rows; row++)
+        {
+            var cells = new string[grid.Columns];
+            for (var column = 0; column < grid.Columns; column++)
+                cells[column] = Math.Round(grid.GetValue(row, column), 6).ToString("0.######", CultureInfo.InvariantCulture);
+            lines[row] = string.Join(" ", cells);
+        }
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private void Resize(MatrixSlot slot)
+    {
+        if (IsBusy) return;
+        var rows = Math.Clamp(slot == MatrixSlot.A ? _rowsA : _rowsB, 1, 8);
+        var columns = Math.Clamp(slot == MatrixSlot.A ? _colsA : _colsB, 1, 8);
+        Matrix.Resize(slot, rows, columns);
+        if (slot == MatrixSlot.A) { _rowsA = rows; _colsA = columns; } else { _rowsB = rows; _colsB = columns; }
+        RefreshProperties();
+        ClearTimeline();
+        SyncBulkTextFromCurrent(slot);
+        _lastResult = null;
+        _errorMessage = null;
+        _manualInputError = null;
+    }
+
+    private void LoadPreset(MatrixSlot slot, MatrixPreset preset) { if (IsBusy) return; Matrix.LoadPreset(slot, preset); SyncDimensions(); RefreshProperties(); ClearTimeline(); SyncBulkTextFromCurrent(slot); _lastResult = null; _errorMessage = null; _manualInputError = null; if (preset == MatrixPreset.GraphAdjacency) CompleteTask(7); }
+    private void CopyAToB() { if (IsBusy) return; Matrix.CopyAToB(); SyncDimensions(); RefreshProperties(); ClearTimeline(); SyncBulkTextFromCurrent(MatrixSlot.B); _lastResult = null; _errorMessage = null; _manualInputError = null; }
+    private void SwapAB() { if (IsBusy) return; Matrix.SwapAB(); SyncDimensions(); RefreshProperties(); ClearTimeline(); SyncBulkTextFromCurrent(); _lastResult = null; _errorMessage = null; _manualInputError = null; }
+    private void CopyResultTo(MatrixSlot slot) { if (IsBusy) return; Matrix.CopyResultTo(slot); SyncDimensions(); RefreshProperties(); ClearTimeline(); SyncBulkTextFromCurrent(slot); _lastResult = null; _errorMessage = null; _manualInputError = null; }
+
+    private Task ScalarMultiplyAsync() => RunAsync("scalar multiplication", token => Matrix.ScalarMultiplyAsync(_scalar, token));
+    private Task PowerAsync() => RunAsync("matrix power", token => Matrix.PowerAsync(_power, token));
+    private Task MinorAsync() => RunAsync("minor", token => Matrix.MinorAsync(_minorRow - 1, _minorColumn - 1, token));
+    private Task CofactorAsync() => RunAsync("cofactor", token => Matrix.CofactorAsync(_minorRow - 1, _minorColumn - 1, token));
+    private Task SwapRowsAsync() => RunAsync("row swap", token => Matrix.SwapRowsAsync(_rowOne - 1, _rowTwo - 1, token), mutatesInput: true);
+    private Task ScaleRowAsync() => RunAsync("row scaling", token => Matrix.ScaleRowAsync(_rowOne - 1, _rowFactor, token), mutatesInput: true);
+    private Task AddScaledRowAsync() => RunAsync("row replacement", token => Matrix.AddScaledRowAsync(_rowOne - 1, _rowTwo - 1, _rowFactor, token), mutatesInput: true);
+
+    private async Task RunAsync(string name, Func<CancellationToken, Task<MatrixOperationResult>> operation, bool mutatesInput = false)
+    {
+        if (IsBusy) return;
+        _errorMessage = null;
+        _lastResult = null;
+        ClearTimeline();
+        var token = SimulationState.Start($"Starting matrix {name}.");
+        try
+        {
+            var result = await operation(token);
+            if (!IsCurrentRun(token)) return;
+            _lastResult = result;
+            if (!result.Succeeded) _errorMessage = result.Summary;
+            if (mutatesInput)
+            {
+                RefreshProperties();
+                SyncBulkTextFromCurrent(MatrixSlot.A);
+            }
+            EvaluatePractice(result);
+            SimulationState.SetCurrentStep(result.Summary);
+            SimulationState.Complete();
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+            if (IsCurrentRun(token)) SimulationState.Complete("The matrix run stopped because of an error.");
+        }
+    }
+
+    private void CaptureFrame()
+    {
+        var text = SimulationState.CurrentStepText;
+        if (string.Equals(text, _lastCapturedStepText, StringComparison.Ordinal)) return;
+        var atTail = _frameIndex < 0 || _frameIndex == _runFrames.Count - 1;
+        _runFrames.Add(new RunFrame(text, Matrix.CreateSnapshot()));
+        _lastCapturedStepText = text;
+        if (atTail) _frameIndex = _runFrames.Count - 1;
+    }
+
+    private Task PlayTimelineAsync() { if (_runFrames.Count > 0) _frameIndex = _runFrames.Count - 1; SimulationState.Resume(); return InvokeAsync(StateHasChanged); }
+    private Task PauseTimelineAsync() { SimulationState.Pause(); return Task.CompletedTask; }
+    private Task StepBackAsync() { if (SimulationState.IsRunning && !SimulationState.IsPaused) SimulationState.Pause(); if (_frameIndex > 0) _frameIndex--; return InvokeAsync(StateHasChanged); }
+    private Task StepForwardAsync() { if (_frameIndex >= 0 && _frameIndex < _runFrames.Count - 1) { _frameIndex++; return InvokeAsync(StateHasChanged); } if (SimulationState.IsRunning) SimulationState.Step(); return Task.CompletedTask; }
+    private Task ResetPlaybackAsync() { SimulationState.Reset(); ClearTimeline(); return InvokeAsync(StateHasChanged); }
+    private void SetView(StateView view) { _activeView = view; if (view == StateView.Memory) CompleteTask(8); }
+
+    private void RefreshProperties() { _propertiesA = Matrix.Analyze(MatrixSlot.A); _propertiesB = Matrix.Analyze(MatrixSlot.B); }
+    private void SyncDimensions() { var s = Matrix.CreateSnapshot(); _rowsA = s.A.Rows; _colsA = s.A.Columns; _rowsB = s.B.Rows; _colsB = s.B.Columns; }
+    private void ClearTimeline() { _runFrames.Clear(); _frameIndex = -1; _lastCapturedStepText = null; }
+    private bool IsCurrentRun(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;
+
+    private static string[] PropertyLabels(MatrixProperties p)
+    {
+        var values = new List<string>();
+        values.Add(p.IsSquare ? "Square" : "Rectangular");
+        if (p.IsZero) values.Add("Zero");
+        if (p.IsIdentity) values.Add("Identity");
+        if (p.IsDiagonal) values.Add("Diagonal");
+        if (p.IsUpperTriangular) values.Add("Upper triangular");
+        if (p.IsLowerTriangular) values.Add("Lower triangular");
+        if (p.IsSymmetric) values.Add("Symmetric");
+        if (p.Trace.HasValue) values.Add($"trace={Math.Round(p.Trace.Value, 4)}");
+        return values.ToArray();
+    }
+
+    private void EvaluatePractice(MatrixOperationResult result)
+    {
+        if (result.Operation == MatrixOperationKind.Multiply && result.Succeeded && Matrix.RowsA == 2 && Matrix.ColumnsA == 3 && Matrix.RowsB == 3 && Matrix.ColumnsB == 4) CompleteTask(1);
+        if (!result.Succeeded && result.Operation is (MatrixOperationKind.Add or MatrixOperationKind.Subtract or MatrixOperationKind.Hadamard)) CompleteTask(2);
+        if (result.Operation == MatrixOperationKind.Multiply && result.Succeeded && Matrix.RowsA == 2 && Matrix.ColumnsA == 2 && Matrix.RowsB == 2 && Matrix.ColumnsB == 2) CompleteTask(3);
+        if (result.Operation == MatrixOperationKind.Rref && result.Succeeded) CompleteTask(4);
+        if (result.Operation == MatrixOperationKind.Inverse && result.Succeeded) CompleteTask(5);
+        if ((result.Operation == MatrixOperationKind.Determinant && Math.Abs(result.ScalarResult ?? 1d) < 1e-9) || (result.Operation == MatrixOperationKind.Inverse && !result.Succeeded)) CompleteTask(6);
+    }
+
+    private void CompleteTask(int id)
+    {
+        if (!_completedTasks.Add(id)) return;
+        _ = PersistTasksAsync();
+    }
+
+    private async Task PersistTasksAsync()
+    {
+        try { await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { CompletedTasksStorageKey, JsonSerializer.Serialize(_completedTasks.OrderBy(x => x).ToArray()) }); } catch { }
+    }
+
+    private void HandleStateChanged() { if (SimulationState.IsRunning) CaptureFrame(); RequestRender(); }
+    private void HandleMatrixChanged() => RequestRender();
+    private void RequestRender() => _ = InvokeAsync(StateHasChanged);
+    public void Dispose() { SimulationState.Changed -= HandleStateChanged; Matrix.Changed -= HandleMatrixChanged; }
+
+    private sealed record RunFrame(string StepText, MatrixWorkspaceSnapshot Snapshot);
+    private sealed record PracticeTask(int Id, string Title, string Description);
+    private enum StateView { Visual, Memory }
+}

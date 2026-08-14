@@ -40,3 +40,20 @@
 .heap-memory { min-width:0; max-width:100%; overflow:hidden; }
 .memory-strip,
 .memory-table { max-width:100%; }
+
+.heap-memory { max-width: 100%; overflow-x: auto; }
+.heap-memory small,
+.heap-memory .slot-index,
+.heap-memory .memory-meta { font-size: .8rem; }
+
+.heap-memory .memory-kicker,
+.heap-memory .section-title > span { font-size:.8rem; }
+.heap-memory .capacity-card span { font-size:.72rem; }
+.heap-memory .capacity-card small,
+.heap-memory .section-title small { font-size:.8rem; }
+.heap-memory .slot-index { font-size:.72rem; }
+.heap-memory .memory-slot small { font-size:.78rem; }
+.heap-memory .table-row { font-size:.84rem; }
+.heap-memory .table-head { font-size:.72rem; }
+.heap-memory .memory-note strong { font-size:.92rem; }
+.heap-memory .memory-note p { font-size:.86rem; }

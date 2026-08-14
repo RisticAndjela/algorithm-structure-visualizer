@@ -786,3 +786,28 @@
     .use-case-strip { grid-template-columns: 1fr !important; }
     .value-card { grid-column: auto !important; }
 }
+
+/* Readability pass: generalized Heap must not shrink explanatory copy below a comfortable size. */
+.heap-page .section-kicker,
+.heap-page .control-label,
+.heap-page .module-eyebrow { font-size: .8rem; }
+.heap-page .learn-copy p,
+.heap-page .module-header p { font-size: 1rem; }
+.heap-page .learn-card small,
+.heap-page .complexity-summary small,
+.heap-page .smart-tip p,
+.heap-page .operation-card small,
+.heap-page .value-card small,
+.heap-page .arity-selector small,
+.heap-page .use-case-strip small,
+.heap-page .state-tabs-row p,
+.heap-page .task-card li,
+.heap-page .task-card small,
+.heap-page .sample-sequence p { font-size: .88rem; line-height: 1.5; }
+.heap-page .complexity-summary span,
+.heap-page .learn-card span,
+.heap-page .use-case-strip span { font-size: .74rem; }
+.heap-page .smart-tip strong,
+.heap-page button,
+.heap-page input,
+.heap-page select { font-size: .9rem; }
