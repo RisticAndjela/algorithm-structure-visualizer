@@ -9,12 +9,13 @@
             <h1>Words and ideas used in every simulation</h1>
             <p>Start with the simple version here. Open the outside links only when you want more detail.</p>
         </div>
-        <a class="back-to-lab" href="/structures/queue-stack">Back to Queue &amp; Stack <span>→</span></a>
+        <a class="back-to-lab" href="/structures/queue-stack">Open Queue &amp; Stack lab <span>→</span></a>
     </header>
 
     <nav class="concept-jump" aria-label="Concept shortcuts">
         <a href="#lifo-fifo">LIFO &amp; FIFO</a>
         <a href="#big-o">O(1), O(n), k</a>
+        <a href="#tree-height">Tree height h</a>
         <a href="#identity">Value vs ID</a>
         <a href="#memory">Memory</a>
         <a href="#visual-vs-memory">Visual vs memory</a>
@@ -86,6 +87,31 @@
             <strong>O(...) vs Θ(...)</strong>
             <p>In this app, <b>O(n)</b> is often used for the general worst-case growth of an operation. <b>Θ(k)</b> or <b>Θ(n)</b> describes what kind of work this one run performed. You do not need the mathematical definition to use the simulator.</p>
             <a href="https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/recitation-1-asymptotic-complexity-peak-finding/" target="_blank" rel="noreferrer">MIT OpenCourseWare: asymptotic complexity ↗</a>
+        </div>
+    </section>
+
+    <section id="tree-height" class="concept-section">
+        <div class="section-heading">
+            <span>BST</span>
+            <div><h2>Tree height h</h2><p>For a Binary Search Tree, the length of the path matters more than the total node count by itself.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class="concept-card">
+                <span class="term">h</span>
+                <h3>How many levels can one path cross?</h3>
+                <p><code>h</code> is the height of the tree. Search, insert, and delete follow a root-to-node path, so their work is <code>O(h)</code>.</p>
+                <div class="example"><strong>Short tree:</strong> fewer decisions from root to target.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">SHAPE</span>
+                <h3>Insertion order changes the cost</h3>
+                <p>A roughly balanced BST keeps its height near <code>log n</code>. A highly skewed BST can have height <code>n</code>, so its search can behave like a linear scan.</p>
+                <div class="example"><strong>Try it:</strong> compare 4,2,6,1,3 with 1,2,3,4,5.</div>
+            </article>
+        </div>
+        <div class="plain-note">
+            <strong>Why does the simulator show both n and h?</strong>
+            <p><code>n</code> tells you how many nodes exist. <code>h</code> tells you how long the worst root-to-leaf path is. Two BSTs can contain the same values and still have very different heights because the insertion order created different shapes.</p>
         </div>
     </section>
 

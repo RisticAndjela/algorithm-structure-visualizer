@@ -11,7 +11,7 @@ The project is built with **Blazor WebAssembly and C#**. Its goal is not only to
 - what the time complexity means for the current run;
 - how the visual representation differs from the way the data is stored in memory.
 
-The first fully implemented learning module is **Queue & Stack**. It serves as the reference architecture and UX pattern for all future algorithms and data structures.
+The application now has two fully implemented learning modules: **Queue & Stack** and **Binary Search Tree (BST)**. Queue & Stack established the reusable simulation pattern; BST extends it to linked node structures, tree paths, structural deletion cases, and a reference-based memory view.
 
 ---
 
@@ -21,6 +21,7 @@ The first fully implemented learning module is **Queue & Stack**. It serves as t
 
 - Queue
 - Stack
+- Binary Search Tree (BST)
 - shared simulation runtime;
 - play, pause and adjustable simulation speed;
 - manual step forward;
@@ -35,7 +36,12 @@ The first fully implemented learning module is **Queue & Stack**. It serves as t
 - guided practice tasks with automatic completion;
 - persistent learning progress in browser storage;
 - optional result explanation popups;
-- Concepts & Memory learning page.
+- Concepts & Memory learning page;
+- BST insert, search, delete, and reset;
+- BST leaf / one-child / two-child deletion simulation;
+- in-order-successor visualization;
+- BST visual-state and node-reference memory-state views;
+- BST guided practice and persistent progress.
 
 ### Planned
 
@@ -43,7 +49,6 @@ The following modules currently have UI placeholders and are intentionally marke
 
 #### Data structures
 
-- Binary Search Tree
 - AVL Tree
 - Red-Black Tree
 - Heap
@@ -114,7 +119,9 @@ The project manually implements:
 - `Count`;
 - `Capacity`.
 
-This rule will also apply to future trees, graphs, heaps, sorting algorithms and search algorithms.
+BST follows the same rule today: it uses explicit `BstNode` parent/left/right references and manual comparison/link-rewiring logic. It does not use `SortedSet<T>`, `SortedDictionary<TKey,TValue>`, `Dictionary<TKey,TValue>`, a built-in tree, or a library binary-search operation to implement the taught structure.
+
+This rule will also apply to future AVL/Red-Black trees, graphs, heaps, sorting algorithms and search algorithms.
 
 Standard .NET infrastructure such as `Task`, `CancellationToken`, `Guid`, `SemaphoreSlim`, Blazor components and browser interop may still be used. These provide application infrastructure rather than the algorithm being taught.
 
@@ -180,6 +187,84 @@ FRONT → rear
 ```
 
 The simulator does not secretly locate the result before the animation starts. The algorithm itself checks each element until a match is found or the complete Queue has been inspected.
+
+---
+
+# Binary Search Tree (BST)
+
+BST is the second live data-structure module and the first non-linear structure in the project.
+
+Implemented operations:
+
+- `Insert` by key;
+- `Search` by key;
+- `Delete` by key;
+- `Reset` lab state.
+
+This implementation uses a strict ordering invariant:
+
+```text
+left subtree values < node value < right subtree values
+```
+
+Duplicate keys are therefore rejected. The simulator still follows the real comparison path until it reaches the equal node; it does not reject a duplicate before the algorithm runs.
+
+Each node is a manually linked `BstNode` object with:
+
+- a value;
+- a learner-facing short ID derived from an internal `Guid`;
+- a parent reference;
+- a left-child reference;
+- a right-child reference;
+- transient renderer-neutral visual state.
+
+## BST search and insert
+
+Search and insert compare the target key with one node at a time.
+
+```text
+target < node  -> follow left
+target > node  -> follow right
+target = node  -> match
+```
+
+Insert stops when the required child reference is `null`, creates one new node object, and connects that node through the empty left/right reference.
+
+## BST delete
+
+Deletion explicitly simulates the three structural cases:
+
+1. **Leaf** — disconnect the parent reference.
+2. **One child** — redirect the surrounding reference directly to the child.
+3. **Two children** — find the in-order successor, the leftmost node of the right subtree, and rewire that node into the removed node's position.
+
+The two-child implementation does not hide the operation by calling a collection remove method. It also does not merely copy the successor's value into the target node. The successor node object itself is transplanted by updating parent/left/right references, which lets the Memory state teach object identity truthfully.
+
+## BST complexity
+
+BST search, insert, and delete are:
+
+```text
+O(h)
+```
+
+where `h` is tree height. A roughly balanced tree keeps `h` near `log n`; a highly skewed tree can have `h = n`. The run explanation reports comparison count, successor checks when relevant, and height before/after the operation.
+
+## BST playback and learning UI
+
+The BST lab reuses the shared asynchronous simulation runtime and supports:
+
+- Play;
+- Pause;
+- Step forward;
+- Step back through captured snapshots;
+- adjustable delay;
+- Visual state;
+- Memory state;
+- optional Last Run popups;
+- guided practice with local completion persistence.
+
+The Visual state uses an SVG tree layout ordered by key. The Memory state shows the root reference plus each node object's parent/left/right references. Screen coordinates are never described as memory addresses.
 
 ---
 
@@ -348,7 +433,8 @@ For example:
 - Stack is displayed vertically;
 - its top element is marked;
 - Queue shows its front and rear;
-- active elements are highlighted during traversal.
+- BST is laid out as an ordered tree with smaller keys left and larger keys right;
+- active elements/nodes are highlighted during traversal.
 
 ## Memory state
 
@@ -356,19 +442,19 @@ The same data is shown from the point of view of its storage implementation.
 
 The memory view explains:
 
-- backing-array slots;
-- occupied vs reserved capacity;
-- references;
-- individual element objects;
-- IDs;
-- values;
-- shifts caused by deletion.
+- backing-array slots for the linear module;
+- occupied vs reserved capacity for the custom dynamic array;
+- node parent/left/right references for BST;
+- root references;
+- individual element/node objects;
+- IDs and values;
+- shifts or reference rewiring caused by deletion.
 
 These views are intentionally separate.
 
 A drawing used to explain an algorithm is **not necessarily the same as the program's memory layout**.
 
-This distinction is especially important for future Graph and Tree modules, where nodes may be positioned visually for readability while the underlying data is stored using arrays, indexes, references or other structures.
+BST now demonstrates this distinction directly: the SVG position explains ordering, while the Memory state shows the actual parent/left/right object-reference graph. The same separation will be important for future Graph, AVL, Red-Black, and Heap modules.
 
 ---
 
@@ -405,7 +491,11 @@ The current run inspected only part of the structure.
 
 ### `Θ(n)`
 
-The current run inspected the complete structure.
+The current run inspected the complete linear structure.
+
+### `h`
+
+BST height: the length, in levels, of the longest root-to-leaf path. BST search, insert, and delete are `O(h)` because they follow tree links rather than scanning every node in storage order.
 
 Example:
 
@@ -471,7 +561,7 @@ This preserves correct algorithm state while still allowing the learner to revie
 
 # Result explanations
 
-After Find and Delete operations, the application can show a **Last Run** explanation.
+After Queue/Stack Find/Delete operations and after BST Insert/Search/Delete operations, the application can show a **Last Run** explanation.
 
 The explanation contains two views:
 
@@ -533,7 +623,19 @@ Current exercises cover scenarios such as:
 - observing memory shifts;
 - mixed final exercises.
 
-Completed task progress is stored locally in the browser.
+Completed Queue & Stack task progress is stored locally in the browser.
+
+The BST lab has its own guided tasks for:
+
+- building a branching BST;
+- successful and missing searches;
+- leaf deletion;
+- one-child deletion;
+- two-child deletion with successor search;
+- opening Memory state after structural rewiring;
+- duplicate-key rejection.
+
+BST task completion is also stored locally in the browser.
 
 ---
 
@@ -560,7 +662,8 @@ It provides simple explanations for concepts reused across the simulations, incl
 - `Capacity`;
 - memory allocation;
 - garbage collection;
-- Visual state vs Memory state.
+- Visual state vs Memory state;
+- BST tree height `h` and why shape changes `O(h)` cost.
 
 The page starts with short beginner-friendly explanations and provides links to deeper external documentation for learners who want more detail.
 
@@ -593,19 +696,22 @@ Responsibilities include:
 
 Core code does not render UI.
 
-Relevant Queue/Stack files include:
+Relevant Core files include:
 
 ```text
 DataStructures/
-└── Linear/
-    ├── LinearElement.cs
-    ├── LinearStructureSimulationBase.cs
-    ├── LinearTraversalResult.cs
-    ├── ManualDynamicArray.cs
-    ├── Stack/
-    │   └── StackSimulation.cs
-    └── Queue/
-        └── QueueSimulation.cs
+├── Linear/
+│   ├── LinearElement.cs
+│   ├── LinearStructureSimulationBase.cs
+│   ├── LinearTraversalResult.cs
+│   ├── ManualDynamicArray.cs
+│   ├── Stack/StackSimulation.cs
+│   └── Queue/QueueSimulation.cs
+└── Trees/Bst/
+    ├── BstNode.cs
+    ├── BstNodeSnapshot.cs
+    ├── BstOperationResult.cs
+    └── BstSimulation.cs
 ```
 
 ## `AlgorithmVisualizer.Client`
@@ -648,6 +754,7 @@ This keeps algorithms independent from rendering concerns.
 - CSS isolation
 - WebAssembly
 - minimal browser JS interop for local browser storage
+- xUnit + Microsoft.NET.Test.Sdk for Core unit tests
 
 The algorithmic and simulation logic is implemented in C#.
 
@@ -687,11 +794,27 @@ The development server will print the local application URL.
 dotnet build AlgorithmVisualizer.sln
 ```
 
+# Tests
+
+Focused Core tests are included in:
+
+```text
+tests/AlgorithmVisualizer.Core.Tests
+```
+
+Run them with:
+
+```bash
+dotnet test tests/AlgorithmVisualizer.Core.Tests/AlgorithmVisualizer.Core.Tests.csproj
+```
+
+The initial BST test suite covers insertion shape, duplicate rejection, search success/miss, all three delete cases, successor-node identity, and skewed-tree height.
+
 ---
 
 # Learning design principles
 
-Every future module should follow the same principles established by Queue & Stack.
+Every future module should follow the same principles established by Queue & Stack and extended by BST.
 
 ## 1. Show the algorithm, do not hide it
 
@@ -725,7 +848,7 @@ Do not replace an implementation with a framework collection or library algorith
 
 # Next implementation direction
 
-Queue & Stack establishes the reusable foundation for future modules:
+Queue & Stack established the linear foundation and BST now validates the same learning architecture for linked non-linear structures:
 
 ```text
 algorithm
@@ -743,12 +866,14 @@ complexity explanation
 guided practice
 ```
 
-Future Tree, Graph, Sorting and Search modules should reuse this learning model while providing their own manually implemented algorithms and data structures.
+AVL is now the most natural next tree module because it can reuse the BST ordering/search foundation while adding height tracking and rotations. Graph, Heap, Sorting and Search modules should reuse the same learning model while providing their own manually implemented algorithms and data structures.
 
 ---
 
 ## Current milestone
 
-**Queue & Stack: implemented and expanded into the first complete learning module.**
+**Queue & Stack: implemented as the complete linear-structure learning module.**
 
-The project is now ready to use this module as the reference pattern for the next algorithm or data structure.
+**Binary Search Tree: implemented as the first complete tree module, including structural deletion, Visual/Memory views, playback history, result explanations, and guided practice.**
+
+The project is ready to build AVL on top of the validated BST/tree visualization foundation.

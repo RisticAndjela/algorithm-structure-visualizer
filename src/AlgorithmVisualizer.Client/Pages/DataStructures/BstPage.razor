@@ -1,15 +1,784 @@
 @page "/structures/bst"
+@implements IDisposable
+@using System.Text.Json
+@using AlgorithmVisualizer.Client.Components.Visualization.Trees
+@using AlgorithmVisualizer.Core.DataStructures.Trees.Bst
+@using Microsoft.JSInterop
+@inject SimulationState SimulationState
+@inject BstSimulation Tree
+@inject IJSRuntime JS
 
-<PageTitle>Binary Search Tree — Algorithm Visualizer</PageTitle>
+<PageTitle>Binary Search Tree Lab — Algorithm Visualizer</PageTitle>
 
-<LearningPlaceholder
-    Title="Binary Search Tree"
-    Eyebrow="Data structure"
-    Description="Learn how ordering turns a tree into a search structure, and how insertion order changes the shape — and therefore the cost — of every future operation."
-    Complexity="O(h)"
-    ComplexityNote="Search, insert, and delete depend on tree height h."
-    Concepts="ordered tree · search path · predecessor / successor · height"
-    TipTitle="Read the path as a sequence of decisions."
-    TipText="At every node, ask one question: is the target smaller or larger? The entire search is just that rule repeated until the answer is found or the path ends."
-    FocusText="Every node must keep smaller keys in its left subtree and larger keys in its right subtree. A useful visualization should make violations impossible to miss."
-    PromptText="Which comparison determines the next branch?" />
+<div class="bst-page">
+    <section class="learn-launchpad" aria-labelledby="bst-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="bst-learn-title">One comparison decides the next branch.</h2>
+            <p>A BST repeats one rule: smaller goes left, larger goes right. Search, insert, and delete all depend on that ordering.</p>
+            <a href="/learn/concepts#tree-height">Open tree height &amp; complexity →</a>
+        </div>
+        <div class="learn-grid">
+            <article class="learn-card purple"><span>ORDER</span><strong>left &lt; node &lt; right</strong><small>This lab rejects duplicate keys so the invariant stays strict.</small></article>
+            <article class="learn-card mint"><span>SEARCH</span><strong>Discard a whole side</strong><small>Each comparison chooses only one child link to follow.</small></article>
+            <article class="learn-card blue"><span>DELETE</span><strong>3 structural cases</strong><small>Leaf, one child, or two children with an in-order successor.</small></article>
+            <article class="learn-card gold"><span>HEIGHT</span><strong>O(h)</strong><small>A short tree gives short paths. A skewed tree can behave like a list.</small></article>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow">
+                <span>DATA STRUCTURES</span>
+                <span class="separator">/</span>
+                <span class="live-status"><i></i> Interactive lab</span>
+            </div>
+            <h1>Binary Search Tree</h1>
+            <p>Build the tree yourself, inspect each comparison, then switch to Memory state to see the node references behind the drawing.</p>
+        </div>
+        <div class="complexity-summary">
+            <div><span>SEARCH</span><strong>O(h)</strong><small>follow one root-to-node path</small></div>
+            <div><span>INSERT</span><strong>O(h)</strong><small>find one empty child link</small></div>
+            <div><span>DELETE</span><strong>O(h)</strong><small>search + local rewiring</small></div>
+        </div>
+    </header>
+
+    <section class="smart-tip" aria-label="BST learning tip">
+        <span class="tip-icon">✦</span>
+        <div>
+            <strong>Before every step:</strong>
+            <p>compare the target with the highlighted node and predict whether the next link will be left or right.</p>
+        </div>
+        <a href="/learn/concepts#big-o">Why height changes the cost →</a>
+    </section>
+
+    <section class="lab-shell">
+        <div class="lab-heading">
+            <div>
+                <span class="section-kicker">PLAYGROUND</span>
+                <h2>Build a shape, then test its paths.</h2>
+            </div>
+            <div class="lab-options">
+                @if (_lastResult is not null)
+                {
+                    <button class="last-run-button" type="button" @onclick="OpenLastRunPopup">Last run explanation</button>
+                }
+                <label class="popup-toggle">
+                    <input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopupsAsync" />
+                    <span>Result popups</span>
+                </label>
+            </div>
+        </div>
+
+        <section class="operation-panel" aria-label="Binary Search Tree operations">
+            <div class="value-card">
+                <label>
+                    <span class="control-label">VALUE / KEY</span>
+                    <InputNumber TValue="int?" @bind-Value="_value" disabled="@IsBusy" placeholder="e.g. 50" />
+                </label>
+                <small>The same number cannot be inserted twice in this BST.</small>
+                <div class="sample-values" aria-label="Suggested BST values">
+                    <span>Try:</span>
+                    @foreach (var sample in SampleValues)
+                    {
+                        <button type="button" @onclick="() => SetValue(sample)" disabled="@IsBusy">@sample</button>
+                    }
+                </div>
+            </div>
+
+            <div class="operation-card insert-card">
+                <div class="operation-heading"><span class="operation-glyph">+</span><span><strong>Insert</strong><small>Find an empty ordered link</small></span></div>
+                <button class="primary-action" type="button" @onclick="InsertAsync" disabled="@(!CanRunValueOperation)">Insert value <span>↘</span></button>
+            </div>
+
+            <div class="operation-card search-card">
+                <div class="operation-heading"><span class="operation-glyph">?</span><span><strong>Search</strong><small>Follow one comparison path</small></span></div>
+                <button type="button" @onclick="SearchAsync" disabled="@(!CanRunValueOperation)">Search value <span>→</span></button>
+            </div>
+
+            <div class="operation-card delete-card">
+                <div class="operation-heading"><span class="operation-glyph">−</span><span><strong>Delete</strong><small>Handle the node's child case</small></span></div>
+                <button class="delete-action" type="button" @onclick="DeleteAsync" disabled="@(!CanRunValueOperation)">Delete value <span>×</span></button>
+            </div>
+
+            <div class="operation-card reset-card">
+                <div class="operation-heading"><span class="operation-glyph">↺</span><span><strong>Reset tree</strong><small>Start another shape</small></span></div>
+                <button type="button" @onclick="ClearTreeAsync" disabled="@IsBusy">Clear BST</button>
+            </div>
+        </section>
+
+        <div class="sample-sequence">
+            <span class="section-kicker">GOOD FIRST TREE</span>
+            <p>Insert <strong>50, 30, 70, 20, 40, 60, 80</strong>. Then delete <strong>20</strong> (leaf), <strong>30</strong> (one child after 20 is gone), and <strong>50</strong> (two children).</p>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <div class="error-message" role="alert"><span>!</span><p>@_errorMessage</p></div>
+        }
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync"
+                           OnPause="PauseTimelineAsync"
+                           OnStepBack="StepBackAsync"
+                           OnStepForward="StepForwardAsync"
+                           OnReset="ResetPlaybackAsync"
+                           CanStepBack="@CanStepBack"
+                           CanStepForwardOverride="@CanStepForward"
+                           StepTextOverride="@DisplayedStepText"
+                           TimelinePosition="@TimelinePosition"
+                           TimelineCount="@TimelineCount" />
+
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist" aria-label="BST simulation view">
+                <button type="button" role="tab" aria-selected="@(_activeStateView == StateView.Visual)" class="@GetStateTabClass(StateView.Visual)" @onclick="() => SetStateView(StateView.Visual)">Visual state</button>
+                <button type="button" role="tab" aria-selected="@(_activeStateView == StateView.Memory)" class="@GetStateTabClass(StateView.Memory)" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
+            </div>
+            <p>@(_activeStateView == StateView.Visual
+                ? "Visual state places smaller values left and larger values right so the search path is easy to read."
+                : "Memory state shows the root reference and each node object's parent, left, and right references.")</p>
+        </div>
+
+        @if (_activeStateView == StateView.Visual)
+        {
+            <BstVisualization Root="@DisplayedRoot" Count="@DisplayedCount" Height="@DisplayedHeight" />
+        }
+        else
+        {
+            <BstMemoryVisualization Root="@DisplayedRoot" Count="@DisplayedCount" Height="@DisplayedHeight" />
+        }
+    </section>
+
+    <section class="practice-section" aria-labelledby="practice-title">
+        <div class="practice-heading">
+            <div>
+                <span class="section-kicker">GUIDED PRACTICE</span>
+                <h2 id="practice-title">Prove you understand the structure, not just the animation.</h2>
+            </div>
+            <div class="task-score"><strong>@_completedTaskIds.Count / @PracticeTasks.Count</strong><span>completed</span></div>
+        </div>
+
+        @if (_activeTaskId is not null)
+        {
+            var activeTask = PracticeTasks.First(task => task.Id == _activeTaskId);
+            <div class="active-task-banner">
+                <span>ACTIVE TASK @activeTask.Id.ToString("00")</span>
+                <strong>@activeTask.Title</strong>
+                <small>@GetActiveTaskProgressText(activeTask.Id)</small>
+            </div>
+        }
+
+        <div class="task-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                var completed = _completedTaskIds.Contains(task.Id);
+                var active = _activeTaskId == task.Id;
+                <article class="task-card @(completed ? "completed" : string.Empty) @(active ? "active" : string.Empty)">
+                    <div class="task-topline"><span>@task.Id.ToString("00")</span><span>@(completed ? "Completed" : active ? "In progress" : "Practice")</span></div>
+                    <h3>@task.Title</h3>
+                    <ol>
+                        @foreach (var step in task.Steps)
+                        {
+                            <li>@step</li>
+                        }
+                    </ol>
+                    <div class="task-actions">
+                        <a href="@task.HelpHref">Need the concept? →</a>
+                        <button type="button" @onclick="() => StartTask(task.Id)" disabled="@IsBusy">@(active ? "Restart task" : completed ? "Practice again" : "Start task")</button>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+</div>
+
+@if (_lastRunPopupOpen && _lastResult is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRunPopup">
+        <section class="run-popup" role="dialog" aria-modal="true" aria-labelledby="bst-run-popup-title" @onclick="IgnorePopupClick" @onclick:stopPropagation="true">
+            <header>
+                <div>
+                    <span class="section-kicker">LAST RUN</span>
+                    <h2 id="bst-run-popup-title">@GetResultHeadline(_lastResult)</h2>
+                </div>
+                <button class="popup-close" type="button" @onclick="CloseLastRunPopup" aria-label="Close result explanation">×</button>
+            </header>
+
+            <div class="popup-tabs" role="tablist">
+                <button type="button" class="@(_popupTab == ResultPopupTab.Run ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Run">What happened</button>
+                <button type="button" class="@(_popupTab == ResultPopupTab.Memory ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Memory">Tree shape &amp; memory</button>
+            </div>
+
+            @if (_popupTab == ResultPopupTab.Run)
+            {
+                <div class="popup-body">
+                    <div class="popup-metrics">
+                        <div><span>Node comparisons</span><strong>@_lastResult.Comparisons</strong></div>
+                        <div><span>Successor checks</span><strong>@_lastResult.SuccessorChecks</strong></div>
+                        <div><span>This run</span><strong>@_lastResult.CurrentRunComplexity</strong></div>
+                        <div><span>Worst-case rule</span><strong>@_lastResult.WorstCaseComplexity</strong></div>
+                    </div>
+                    <div class="popup-explainer @(_lastResult.Succeeded ? "success" : string.Empty)">
+                        <strong>@GetPlainRunSummary(_lastResult)</strong>
+                        <p>@GetComplexityExplanation(_lastResult)</p>
+                    </div>
+                    <a class="popup-learn" href="/learn/concepts#tree-height">Learn why BST operations depend on h →</a>
+                </div>
+            }
+            else
+            {
+                <div class="popup-body">
+                    <div class="popup-metrics shape">
+                        <div><span>Count</span><strong>@_lastResult.InitialCount → @_lastResult.FinalCount</strong></div>
+                        <div><span>Height</span><strong>@_lastResult.HeightBefore → @_lastResult.HeightAfter</strong></div>
+                        <div><span>Delete case</span><strong>@GetDeleteCaseLabel(_lastResult.DeleteCase)</strong></div>
+                    </div>
+                    <div class="popup-explainer">
+                        <strong>@GetMemoryHeadline(_lastResult)</strong>
+                        <p>@GetMemoryExplanation(_lastResult)</p>
+                    </div>
+                    <a class="popup-learn" href="/learn/concepts#visual-vs-memory">Visual state vs Memory state →</a>
+                </div>
+            }
+
+            <footer>
+                <label class="popup-toggle inside"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopupsAsync" /><span>Show automatically after future BST runs</span></label>
+            </footer>
+        </section>
+    </div>
+}
+
+@code {
+    private const string CompletedTasksStorageKey = "algorithm-visualizer.bst.completed-tasks.v1";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.bst.result-popups.v1";
+
+    private readonly List<RunFrame> _runFrames = [];
+    private readonly HashSet<int> _completedTaskIds = [];
+    private readonly List<PracticeEvent> _practiceEvents = [];
+
+    private static readonly int[] SampleValues = [50, 30, 70, 20, 40, 60, 80];
+    private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
+    [
+        new(1, "Build a real BST", ["Insert at least five different values.", "Use both a left and a right branch.", "Notice that the drawing follows the comparison rule."], "/learn/concepts#tree-height"),
+        new(2, "Search: found and missing", ["Search for one value that exists.", "Search for one value that does not exist.", "Compare where each path stops."], "/learn/concepts#big-o"),
+        new(3, "Delete a leaf", ["Build a tree with at least one leaf.", "Delete a node with no children.", "Confirm only its parent link becomes empty."], "/learn/concepts#memory"),
+        new(4, "Delete a node with one child", ["Create a node that has exactly one child.", "Delete that parent node.", "Watch its child move into the old position."], "/learn/concepts#memory"),
+        new(5, "Delete a node with two children", ["Delete a node that has both left and right children.", "Watch the simulator find the in-order successor.", "Open Memory state after the delete."], "/learn/concepts#visual-vs-memory"),
+        new(6, "Try a duplicate key", ["Insert any value once.", "Insert the same value again.", "Confirm the second insert is rejected and Count does not change."], "/learn/concepts#tree-height")
+    ];
+
+    private int? _value;
+    private string? _errorMessage;
+    private string? _lastCapturedStepText;
+    private int _frameIndex = -1;
+    private bool _showRunPopups = true;
+    private bool _lastRunPopupOpen;
+    private bool _storageLoaded;
+    private bool _memoryOpenedDuringTask;
+    private int? _activeTaskId;
+    private int _practiceSequence;
+    private StateView _activeStateView = StateView.Visual;
+    private ResultPopupTab _popupTab = ResultPopupTab.Run;
+    private BstOperationResult? _lastResult;
+
+    private bool IsBusy => SimulationState.IsRunning;
+    private bool CanRunValueOperation => !IsBusy && _value.HasValue;
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_runFrames.Count > 0 && _frameIndex < _runFrames.Count - 1) || SimulationState.IsRunning;
+    private int TimelineCount => _runFrames.Count;
+    private int TimelinePosition => _frameIndex >= 0 ? _frameIndex + 1 : 0;
+    private RunFrame? CurrentFrame => _frameIndex >= 0 && _frameIndex < _runFrames.Count ? _runFrames[_frameIndex] : null;
+    private string DisplayedStepText => CurrentFrame?.StepText ?? SimulationState.CurrentStepText;
+    private BstNodeSnapshot? DisplayedRoot => CurrentFrame is not null ? CurrentFrame.Root : Tree.CreateSnapshot();
+    private int DisplayedCount => CurrentFrame?.Count ?? Tree.Count;
+    private int DisplayedHeight => CurrentFrame?.Height ?? Tree.Height;
+
+    protected override void OnInitialized()
+    {
+        SimulationState.Changed += HandleStateChanged;
+        Tree.Changed += HandleTreeChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _storageLoaded)
+        {
+            return;
+        }
+
+        _storageLoaded = true;
+        try
+        {
+            var completedJson = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { CompletedTasksStorageKey });
+            if (!string.IsNullOrWhiteSpace(completedJson))
+            {
+                var completed = JsonSerializer.Deserialize<int[]>(completedJson) ?? [];
+                foreach (var id in completed.Where(id => PracticeTasks.Any(task => task.Id == id)))
+                {
+                    _completedTaskIds.Add(id);
+                }
+            }
+
+            var popupSetting = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { PopupSettingStorageKey });
+            if (bool.TryParse(popupSetting, out var showPopups))
+            {
+                _showRunPopups = showPopups;
+            }
+        }
+        catch
+        {
+            // The BST lab remains fully usable when browser storage is unavailable.
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private Task InsertAsync() => RunValueResultOperationAsync(BstOperationKind.Insert, Tree.InsertAsync);
+    private Task SearchAsync() => RunValueResultOperationAsync(BstOperationKind.Search, Tree.SearchAsync);
+    private Task DeleteAsync() => RunValueResultOperationAsync(BstOperationKind.Delete, Tree.DeleteAsync);
+
+    private async Task RunValueResultOperationAsync(
+        BstOperationKind operationKind,
+        Func<int, CancellationToken, Task<BstOperationResult>> operation)
+    {
+        if (!_value.HasValue)
+        {
+            _errorMessage = "Enter a number first.";
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        if (SimulationState.IsRunning)
+        {
+            return;
+        }
+
+        var value = _value.Value;
+        PrepareNewRun();
+        var runToken = SimulationState.Start($"Starting BST {operationKind.ToString().ToLowerInvariant()} for {value}.");
+
+        try
+        {
+            var result = await operation(value, runToken);
+            if (!IsCurrentRun(runToken))
+            {
+                return;
+            }
+
+            _lastResult = result;
+            RecordPracticeEvent(new PracticeEvent(operationKind, value, result.Succeeded, result.DuplicateRejected, result.DeleteCase, result.InitialCount, result.FinalCount));
+            SimulationState.SetCurrentStep("Run complete.");
+            SimulationState.Complete();
+            _popupTab = operationKind == BstOperationKind.Delete ? ResultPopupTab.Memory : ResultPopupTab.Run;
+            _lastRunPopupOpen = _showRunPopups;
+        }
+        catch (OperationCanceledException) when (runToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = $"Something went wrong: {exception.Message}";
+            if (IsCurrentRun(runToken))
+            {
+                SimulationState.Complete("The run stopped because of an error.");
+            }
+        }
+    }
+
+    private async Task ClearTreeAsync()
+    {
+        if (SimulationState.IsRunning)
+        {
+            return;
+        }
+
+        PrepareNewRun();
+        var runToken = SimulationState.Start("Resetting the BST lab.");
+
+        try
+        {
+            await Tree.ClearAsync(runToken);
+            if (IsCurrentRun(runToken))
+            {
+                SimulationState.SetCurrentStep("Tree reset complete.");
+                SimulationState.Complete();
+                RecordPracticeEvent(new PracticeEvent(null, null, false, false, BstDeleteCase.None, 0, 0, IsReset: true));
+            }
+        }
+        catch (OperationCanceledException) when (runToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = $"Something went wrong: {exception.Message}";
+            if (IsCurrentRun(runToken)) SimulationState.Complete("The reset stopped because of an error.");
+        }
+    }
+
+    private void PrepareNewRun()
+    {
+        _errorMessage = null;
+        _lastRunPopupOpen = false;
+        _runFrames.Clear();
+        _frameIndex = -1;
+        _lastCapturedStepText = null;
+    }
+
+    private void CaptureFrame()
+    {
+        var stepText = SimulationState.CurrentStepText;
+        if (string.Equals(stepText, _lastCapturedStepText, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var wasAtTail = _frameIndex < 0 || _frameIndex == _runFrames.Count - 1;
+        _runFrames.Add(new RunFrame(stepText, Tree.CreateSnapshot(), Tree.Count, Tree.Height));
+        _lastCapturedStepText = stepText;
+        if (wasAtTail)
+        {
+            _frameIndex = _runFrames.Count - 1;
+        }
+    }
+
+    private Task PlayTimelineAsync()
+    {
+        if (_runFrames.Count > 0)
+        {
+            _frameIndex = _runFrames.Count - 1;
+        }
+
+        SimulationState.Resume();
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task PauseTimelineAsync()
+    {
+        SimulationState.Pause();
+        return Task.CompletedTask;
+    }
+
+    private Task StepBackAsync()
+    {
+        if (SimulationState.IsRunning && !SimulationState.IsPaused)
+        {
+            SimulationState.Pause();
+        }
+
+        if (_frameIndex > 0)
+        {
+            _frameIndex--;
+        }
+
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task StepForwardAsync()
+    {
+        if (_frameIndex >= 0 && _frameIndex < _runFrames.Count - 1)
+        {
+            _frameIndex++;
+            return InvokeAsync(StateHasChanged);
+        }
+
+        if (SimulationState.IsRunning)
+        {
+            SimulationState.Step();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task ResetPlaybackAsync()
+    {
+        SimulationState.Reset();
+        _runFrames.Clear();
+        _frameIndex = -1;
+        _lastCapturedStepText = null;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private void SetValue(int value)
+    {
+        if (!IsBusy)
+        {
+            _value = value;
+            _errorMessage = null;
+        }
+    }
+
+    private void SetStateView(StateView view)
+    {
+        _activeStateView = view;
+        if (view == StateView.Memory && _activeTaskId is not null)
+        {
+            _memoryOpenedDuringTask = true;
+            CheckActiveTaskCompletion();
+        }
+    }
+
+    private string GetStateTabClass(StateView view) => _activeStateView == view ? "active" : string.Empty;
+
+    private void StartTask(int taskId)
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        _activeTaskId = taskId;
+        _practiceEvents.Clear();
+        _practiceSequence = 0;
+        _memoryOpenedDuringTask = false;
+    }
+
+    private void RecordPracticeEvent(PracticeEvent practiceEvent)
+    {
+        if (_activeTaskId is null)
+        {
+            return;
+        }
+
+        _practiceEvents.Add(practiceEvent with { Sequence = ++_practiceSequence });
+        CheckActiveTaskCompletion();
+    }
+
+    private void CheckActiveTaskCompletion()
+    {
+        if (_activeTaskId is null)
+        {
+            return;
+        }
+
+        var completed = _activeTaskId.Value switch
+        {
+            1 => HasBuiltBranchingTree(),
+            2 => _practiceEvents.Any(e => e.Operation == BstOperationKind.Search && e.Succeeded) &&
+                 _practiceEvents.Any(e => e.Operation == BstOperationKind.Search && !e.Succeeded),
+            3 => _practiceEvents.Any(e => e.Operation == BstOperationKind.Delete && e.Succeeded && e.DeleteCase == BstDeleteCase.Leaf),
+            4 => _practiceEvents.Any(e => e.Operation == BstOperationKind.Delete && e.Succeeded && e.DeleteCase == BstDeleteCase.OneChild),
+            5 => _memoryOpenedDuringTask && _practiceEvents.Any(e => e.Operation == BstOperationKind.Delete && e.Succeeded && e.DeleteCase == BstDeleteCase.TwoChildren),
+            6 => _practiceEvents.Any(e => e.Operation == BstOperationKind.Insert && e.DuplicateRejected),
+            _ => false
+        };
+
+        if (!completed)
+        {
+            return;
+        }
+
+        _completedTaskIds.Add(_activeTaskId.Value);
+        _activeTaskId = null;
+        _practiceEvents.Clear();
+        _memoryOpenedDuringTask = false;
+        _ = PersistCompletedTasksAsync();
+    }
+
+    private bool HasBuiltBranchingTree()
+    {
+        var successfulInserts = _practiceEvents
+            .Where(e => e.Operation == BstOperationKind.Insert && e.Succeeded && e.Value.HasValue)
+            .Select(e => e.Value!.Value)
+            .ToArray();
+
+        if (successfulInserts.Length < 5)
+        {
+            return false;
+        }
+
+        var first = successfulInserts[0];
+        return successfulInserts.Any(value => value < first) && successfulInserts.Any(value => value > first);
+    }
+
+    private string GetActiveTaskProgressText(int taskId) => taskId switch
+    {
+        1 => "Insert five unique values and make sure at least one goes left and one goes right of the first value.",
+        2 => "Complete one successful Search and one Search that reaches an empty link.",
+        3 => "You need one successful Delete whose result says Leaf.",
+        4 => "You need one successful Delete whose result says One child.",
+        5 => _memoryOpenedDuringTask ? "Memory state opened — finish a successful two-child Delete." : "Finish a two-child Delete, then open Memory state.",
+        6 => "Insert a value, then insert that exact value again.",
+        _ => string.Empty
+    };
+
+    private async Task PersistCompletedTasksAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { CompletedTasksStorageKey, JsonSerializer.Serialize(_completedTaskIds.OrderBy(id => id).ToArray()) });
+        }
+        catch
+        {
+        }
+    }
+
+    private async Task ToggleRunPopupsAsync(ChangeEventArgs args)
+    {
+        _showRunPopups = args.Value is bool boolValue
+            ? boolValue
+            : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed;
+
+        try
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { PopupSettingStorageKey, _showRunPopups.ToString() });
+        }
+        catch
+        {
+        }
+    }
+
+    private void OpenLastRunPopup()
+    {
+        if (_lastResult is null)
+        {
+            return;
+        }
+
+        _popupTab = _lastResult.Operation == BstOperationKind.Delete ? ResultPopupTab.Memory : ResultPopupTab.Run;
+        _lastRunPopupOpen = true;
+    }
+
+    private static void IgnorePopupClick()
+    {
+    }
+
+    private void CloseLastRunPopup() => _lastRunPopupOpen = false;
+
+    private static string GetResultHeadline(BstOperationResult result) => result.Operation switch
+    {
+        BstOperationKind.Insert when result.DuplicateRejected => $"Insert: {result.RequestedValue} already exists",
+        BstOperationKind.Insert => $"Inserted {result.RequestedValue}",
+        BstOperationKind.Search when result.Succeeded => $"Found {result.RequestedValue}",
+        BstOperationKind.Search => $"Search: {result.RequestedValue} not found",
+        BstOperationKind.Delete when result.Succeeded => $"Deleted {result.RequestedValue}",
+        BstOperationKind.Delete => $"Delete: {result.RequestedValue} not found",
+        _ => "BST run complete"
+    };
+
+    private static string GetPlainRunSummary(BstOperationResult result)
+    {
+        if (result.DuplicateRejected)
+        {
+            return "The comparison path reached an equal key, so this strict BST rejected the duplicate.";
+        }
+
+        if (!result.Succeeded)
+        {
+            return "The required child link became null before a matching key was found.";
+        }
+
+        return result.Operation switch
+        {
+            BstOperationKind.Insert => "The new node was connected exactly where the comparison path reached an empty child link.",
+            BstOperationKind.Search => "The search stopped as soon as the highlighted node matched the target.",
+            BstOperationKind.Delete => $"The target was removed using the {GetDeleteCaseLabel(result.DeleteCase).ToLowerInvariant()} delete case.",
+            _ => "The operation completed."
+        };
+    }
+
+    private static string GetComplexityExplanation(BstOperationResult result)
+    {
+        if (result.InitialCount == 0)
+        {
+            return "An empty tree needs only a root check, so this run is constant work.";
+        }
+
+        var successorPart = result.SuccessorChecks > 0
+            ? $" The two-child delete also used {result.SuccessorChecks} check(s) to find the successor."
+            : string.Empty;
+
+        return $"This run followed part of a root-to-node path and used {result.Comparisons} key comparison(s). BST search, insert, and delete are O(h), where h is tree height.{successorPart}";
+    }
+
+    private static string GetMemoryHeadline(BstOperationResult result)
+    {
+        if (result.Operation != BstOperationKind.Delete || !result.Succeeded)
+        {
+            return "The visual layout and the object-reference layout describe the same tree from two different angles.";
+        }
+
+        return result.DeleteCase switch
+        {
+            BstDeleteCase.Leaf => "A single parent-to-leaf reference became null.",
+            BstDeleteCase.OneChild => "The parent reference was redirected to the removed node's only child.",
+            BstDeleteCase.TwoChildren => "The successor node object was rewired into the removed node's position.",
+            _ => "The tree references were updated."
+        };
+    }
+
+    private static string GetMemoryExplanation(BstOperationResult result)
+    {
+        if (result.Operation == BstOperationKind.Insert && result.Succeeded)
+        {
+            return "A new node object was created and exactly one parent left/right reference was connected to it. The screen coordinates are not memory addresses.";
+        }
+
+        if (result.DuplicateRejected)
+        {
+            return "No new node object was connected, so Count and the tree's reference graph stayed unchanged.";
+        }
+
+        if (result.Operation == BstOperationKind.Search)
+        {
+            return "Search only followed existing references. It did not rearrange or copy any node objects.";
+        }
+
+        if (result.Operation == BstOperationKind.Delete && result.Succeeded)
+        {
+            return result.DeleteCase switch
+            {
+                BstDeleteCase.Leaf => "The removed leaf had no children. Disconnecting its parent link is enough; if nothing else references that node object, .NET can reclaim it later.",
+                BstDeleteCase.OneChild => "The child node object keeps its identity. The surrounding reference simply skips the removed node and points directly to that child.",
+                BstDeleteCase.TwoChildren => "This implementation does not copy the successor value into the target object. It moves the successor node by changing parent/left/right references, preserving the successor's identity.",
+                _ => "The tree reference graph changed without using a built-in collection operation."
+            };
+        }
+
+        return "No node was removed, so the tree's object-reference graph stayed unchanged.";
+    }
+
+    private static string GetDeleteCaseLabel(BstDeleteCase deleteCase) => deleteCase switch
+    {
+        BstDeleteCase.Leaf => "Leaf",
+        BstDeleteCase.OneChild => "One child",
+        BstDeleteCase.TwoChildren => "Two children",
+        _ => "—"
+    };
+
+    private bool IsCurrentRun(CancellationToken runToken) =>
+        !runToken.IsCancellationRequested && SimulationState.SimulationCancellationToken == runToken;
+
+    private void HandleStateChanged()
+    {
+        if (SimulationState.IsRunning)
+        {
+            CaptureFrame();
+        }
+
+        RequestRender();
+    }
+
+    private void HandleTreeChanged() => RequestRender();
+    private void RequestRender() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        SimulationState.Changed -= HandleStateChanged;
+        Tree.Changed -= HandleTreeChanged;
+    }
+
+    private sealed record RunFrame(string StepText, BstNodeSnapshot? Root, int Count, int Height);
+    private sealed record PracticeTaskDefinition(int Id, string Title, IReadOnlyList<string> Steps, string HelpHref);
+    private sealed record PracticeEvent(
+        BstOperationKind? Operation,
+        int? Value,
+        bool Succeeded,
+        bool DuplicateRejected,
+        BstDeleteCase DeleteCase,
+        int InitialCount,
+        int FinalCount,
+        int Sequence = -1,
+        bool IsReset = false);
+
+    private enum StateView { Visual, Memory }
+    private enum ResultPopupTab { Run, Memory }
+}

@@ -1,4 +1,17 @@
 # Core Tests
 
-The test project is intentionally not introduced in Phase 1 to avoid adding unnecessary NuGet dependencies before algorithm logic exists.
-Focused unit tests for each data structure and algorithm will be added here in later phases.
+Focused tests for pure Core algorithms and data structures live here. Rendering is intentionally excluded.
+
+## Current coverage
+
+`DataStructures/Trees/Bst/BstSimulationTests.cs` verifies:
+
+- ordered insertion shape;
+- strict duplicate rejection;
+- found and missing search paths;
+- leaf deletion;
+- one-child deletion while preserving child object identity;
+- two-child deletion using the actual successor node identity;
+- height growth for a skewed insertion order.
+
+The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctness is independent from Blazor playback timing.

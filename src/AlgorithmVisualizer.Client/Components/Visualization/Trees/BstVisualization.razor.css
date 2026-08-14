@@ -1,0 +1,281 @@
+.bst-visualization {
+    display: grid;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    background: #fff;
+}
+
+.visual-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.1rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.visual-header > div:first-child {
+    display: grid;
+    gap: .18rem;
+}
+
+.visual-kicker {
+    color: var(--color-text-muted);
+    font-size: .68rem;
+    font-weight: 850;
+    letter-spacing: .09em;
+}
+
+.visual-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.tree-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: .45rem;
+}
+
+.tree-metrics span {
+    display: inline-flex;
+    align-items: baseline;
+    gap: .3rem;
+    padding: .4rem .55rem;
+    border-radius: .6rem;
+    color: var(--color-text-muted);
+    background: #f5f6f9;
+    font-size: .75rem;
+}
+
+.tree-metrics strong {
+    color: #4c5260;
+    font-size: .86rem;
+}
+
+.visual-note {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem .5rem;
+    padding: .72rem 1.05rem;
+    border-bottom: 1px solid var(--color-border);
+    color: #646b79;
+    background: #fbfbfd;
+    font-size: .79rem;
+    line-height: 1.5;
+}
+
+.visual-note strong {
+    color: #4f5563;
+}
+
+.tree-scroll {
+    min-height: 26rem;
+    overflow: auto;
+    background:
+        linear-gradient(rgba(253, 253, 255, .92), rgba(253, 253, 255, .92)),
+        radial-gradient(#dfe2ea 1px, transparent 1px);
+    background-size: auto, 22px 22px;
+}
+
+.tree-canvas {
+    display: block;
+    min-width: 100%;
+}
+
+.tree-edge line {
+    stroke: #c7cad5;
+    stroke-width: 2;
+}
+
+.tree-edge text {
+    fill: #9a9fac;
+    font-size: 10px;
+    font-weight: 800;
+    text-anchor: middle;
+}
+
+.tree-node rect {
+    fill: #fff;
+    stroke: #cfd2db;
+    stroke-width: 2;
+    filter: drop-shadow(0 5px 8px rgba(47, 51, 65, .06));
+    transition: fill 150ms ease, stroke 150ms ease, stroke-width 150ms ease;
+}
+
+.tree-node text {
+    text-anchor: middle;
+    pointer-events: none;
+}
+
+.node-value {
+    fill: #303542;
+    font-size: 20px;
+    font-weight: 850;
+}
+
+.node-id {
+    fill: #838996;
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: .03em;
+}
+
+.root-label {
+    fill: #6757e5;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: .12em;
+}
+
+.tree-node.is-checking rect {
+    fill: #fff7e8;
+    stroke: #d49b3d;
+}
+
+.tree-node.is-visited rect {
+    fill: #f0f2f6;
+    stroke: #aeb4c1;
+}
+
+.tree-node.is-matched rect {
+    fill: #eaf9f5;
+    stroke: #1b9989;
+    stroke-width: 3;
+}
+
+.tree-node.is-adding rect {
+    fill: #f0edff;
+    stroke: #6757e5;
+    stroke-width: 3;
+}
+
+.tree-node.is-removing rect {
+    fill: #fff0f1;
+    stroke: #d85d69;
+    stroke-width: 3;
+}
+
+.tree-node.is-replacement rect {
+    fill: #eef5ff;
+    stroke: #4d78c7;
+    stroke-width: 3;
+}
+
+.tree-node.is-pointer rect {
+    fill: #faf8ff;
+    stroke: #8c7ee9;
+    stroke-dasharray: 5 4;
+}
+
+.tree-empty {
+    min-height: 26rem;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: .4rem;
+    color: var(--color-text-muted);
+    background:
+        linear-gradient(rgba(253, 253, 255, .9), rgba(253, 253, 255, .9)),
+        radial-gradient(#dfe2ea 1px, transparent 1px);
+    background-size: auto, 22px 22px;
+}
+
+.empty-tree-icon {
+    width: 3rem;
+    height: 3rem;
+    display: grid;
+    place-items: center;
+    margin-bottom: .2rem;
+    border: 1px dashed #bcb5f5;
+    border-radius: 1rem;
+    color: var(--color-primary);
+    background: var(--color-primary-soft);
+    font-weight: 900;
+}
+
+.tree-empty strong {
+    color: #4d5361;
+    font-size: 1rem;
+}
+
+.tree-empty small {
+    font-size: .8rem;
+}
+
+.state-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .55rem 1rem;
+    padding: .8rem 1rem;
+    border-top: 1px solid var(--color-border);
+    color: #727886;
+    font-size: .72rem;
+}
+
+.state-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+}
+
+.state-legend i {
+    width: .65rem;
+    height: .65rem;
+    border: 2px solid #cfd2db;
+    border-radius: .2rem;
+    background: #fff;
+}
+
+.state-legend i.normal {
+    background: #fff;
+    border-color: #cfd2db;
+}
+
+.state-legend i.checking {
+    background: #fff7e8;
+    border-color: #d49b3d;
+}
+
+.state-legend i.visited {
+    background: #f0f2f6;
+    border-color: #aeb4c1;
+}
+
+.state-legend i.matched {
+    background: #eaf9f5;
+    border-color: #1b9989;
+}
+
+.state-legend i.adding {
+    background: #f0edff;
+    border-color: #6757e5;
+}
+
+.state-legend i.replacement {
+    background: #eef5ff;
+    border-color: #4d78c7;
+}
+
+.state-legend i.removing {
+    background: #fff0f1;
+    border-color: #d85d69;
+}
+
+@media (max-width: 720px) {
+    .visual-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .tree-metrics {
+        justify-content: flex-start;
+    }
+
+    .tree-scroll,
+    .tree-empty {
+        min-height: 22rem;
+    }
+}

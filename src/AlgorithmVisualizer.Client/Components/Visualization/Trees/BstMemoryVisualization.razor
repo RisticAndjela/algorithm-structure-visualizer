@@ -1,0 +1,108 @@
+@using AlgorithmVisualizer.Core.DataStructures.Trees.Bst
+
+<section class="bst-memory" aria-label="Binary Search Tree memory state">
+    <header class="memory-header">
+        <div>
+            <span class="memory-kicker">MEMORY STATE</span>
+            <h3>Node objects and references</h3>
+        </div>
+        <div class="memory-metrics">
+            <span>Count <strong>@Count</strong></span>
+            <span>Height <strong>@Height</strong></span>
+        </div>
+    </header>
+
+    <div class="memory-note">
+        <strong>This BST is not stored as a row of screen positions.</strong>
+        <span>Each node is a C# object with references to its parent, left child, and right child. <code>MEM-#...</code> is only a stable learning label derived from the node ID, not a physical RAM address.</span>
+    </div>
+
+    <section class="root-reference" aria-label="Root reference">
+        <span>ROOT REFERENCE</span>
+        @if (Root is null)
+        {
+            <strong>null</strong>
+            <small>The tree cannot reach any node.</small>
+        }
+        else
+        {
+            <strong>ref → MEM-#@Root.DisplayId</strong>
+            <small>value @Root.Value</small>
+        }
+    </section>
+
+    @if (Root is null)
+    {
+        <div class="memory-empty">No BST node objects are reachable from the root.</div>
+    }
+    else
+    {
+        <div class="object-grid">
+            @foreach (var node in FlatNodes)
+            {
+                <article class="node-object @GetStateClass(node.VisualState)" @key="node.Id">
+                    <div class="object-heading">
+                        <span>MEM-#@node.DisplayId</span>
+                        <strong>value = @node.Value</strong>
+                    </div>
+                    <dl>
+                        <div><dt>parent</dt><dd>@FormatReference(node.ParentDisplayId)</dd></div>
+                        <div><dt>left</dt><dd>@FormatReference(node.Left?.DisplayId)</dd></div>
+                        <div><dt>right</dt><dd>@FormatReference(node.Right?.DisplayId)</dd></div>
+                    </dl>
+                </article>
+            }
+        </div>
+    }
+
+    <footer class="memory-footer">
+        <span><strong>Visual state:</strong> where nodes are drawn to explain ordering.</span>
+        <span><strong>Memory state:</strong> which object references connect the tree.</span>
+    </footer>
+</section>
+
+@code {
+    [Parameter]
+    public BstNodeSnapshot? Root { get; set; }
+
+    [Parameter]
+    public int Count { get; set; }
+
+    [Parameter]
+    public int Height { get; set; }
+
+    private readonly List<BstNodeSnapshot> _flatNodes = [];
+    private IReadOnlyList<BstNodeSnapshot> FlatNodes => _flatNodes;
+
+    protected override void OnParametersSet()
+    {
+        _flatNodes.Clear();
+        AddPreOrder(Root);
+    }
+
+    private void AddPreOrder(BstNodeSnapshot? node)
+    {
+        if (node is null)
+        {
+            return;
+        }
+
+        _flatNodes.Add(node);
+        AddPreOrder(node.Left);
+        AddPreOrder(node.Right);
+    }
+
+    private static string FormatReference(string? displayId) =>
+        string.IsNullOrWhiteSpace(displayId) ? "null" : $"ref → #{displayId}";
+
+    private static string GetStateClass(BstNodeVisualState state) => state switch
+    {
+        BstNodeVisualState.Checking => "is-checking",
+        BstNodeVisualState.Matched => "is-matched",
+        BstNodeVisualState.Adding => "is-adding",
+        BstNodeVisualState.Removing => "is-removing",
+        BstNodeVisualState.Replacement => "is-replacement",
+        BstNodeVisualState.PointerTarget => "is-pointer",
+        _ => string.Empty
+    };
+}

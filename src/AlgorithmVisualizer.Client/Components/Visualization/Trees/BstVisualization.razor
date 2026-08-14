@@ -1,0 +1,184 @@
+@using AlgorithmVisualizer.Core.DataStructures.Trees.Bst
+
+<section class="bst-visualization" aria-label="Binary Search Tree visual state">
+    <header class="visual-header">
+        <div>
+            <span class="visual-kicker">VISUAL STATE</span>
+            <h3>Binary Search Tree</h3>
+        </div>
+        <div class="tree-metrics">
+            <span>Nodes <strong>@Count</strong></span>
+            <span>Height <strong>@Height</strong></span>
+            <span>Root <strong>@(Root is null ? "—" : Root.Value)</strong></span>
+        </div>
+    </header>
+
+    <div class="visual-note">
+        <strong>Screen position shows ordering, not RAM position.</strong>
+        <span>Smaller values are drawn left and larger values right. The Memory state tab shows the actual node references used by this implementation.</span>
+    </div>
+
+    @if (Root is null)
+    {
+        <div class="tree-empty">
+            <span class="empty-tree-icon" aria-hidden="true">Y</span>
+            <strong>The BST is empty.</strong>
+            <small>Insert a value to create the root node.</small>
+        </div>
+    }
+    else
+    {
+        <div class="tree-scroll">
+            <svg class="tree-canvas"
+                 width="@CanvasWidth"
+                 height="@CanvasHeight"
+                 viewBox="0 0 @CanvasWidth @CanvasHeight"
+                 role="img"
+                 aria-label="Binary Search Tree with @Count nodes">
+                @foreach (var edge in Edges)
+                {
+                    <g class="tree-edge">
+                        <line x1="@edge.ParentX" y1="@edge.ParentY" x2="@edge.ChildX" y2="@edge.ChildY" />
+                        <text x="@edge.LabelX" y="@edge.LabelY">@edge.Label</text>
+                    </g>
+                }
+
+                @foreach (var node in Nodes)
+                {
+                    <g class="tree-node @GetStateClass(node.Node.VisualState)" transform="translate(@node.X @node.Y)">
+                        <rect x="-42" y="-30" width="84" height="60" rx="16" />
+                        <text class="node-value" x="0" y="-2">@node.Node.Value</text>
+                        <text class="node-id" x="0" y="17">#@node.Node.DisplayId</text>
+                        @if (node.Depth == 0)
+                        {
+                            <div class="root-label" x="0" y="-40"><text>ROOT</text></div>
+                        }
+                    </g>
+                }
+            </svg>
+        </div>
+    }
+
+    <footer class="state-legend" aria-label="Node state legend">
+        <span><i class="normal"></i> Normal</span>
+        <span><i class="checking"></i> Checking</span>
+        <span><i class="visited"></i> Visited</span>
+        <span><i class="matched"></i> Match</span>
+        <span><i class="adding"></i> New node</span>
+        <span><i class="replacement"></i> Replacement</span>
+        <span><i class="removing"></i> Removing</span>
+    </footer>
+</section>
+
+@code {
+    [Parameter]
+    public BstNodeSnapshot? Root { get; set; }
+
+    [Parameter]
+    public int Count { get; set; }
+
+    [Parameter]
+    public int Height { get; set; }
+
+    private readonly List<NodeLayout> _nodes = [];
+    private readonly List<EdgeLayout> _edges = [];
+
+    private IReadOnlyList<NodeLayout> Nodes => _nodes;
+    private IReadOnlyList<EdgeLayout> Edges => _edges;
+    private int CanvasWidth { get; set; } = 760;
+    private int CanvasHeight { get; set; } = 300;
+
+    protected override void OnParametersSet()
+    {
+        BuildLayout();
+    }
+
+    private void BuildLayout()
+    {
+        _nodes.Clear();
+        _edges.Clear();
+
+        if (Root is null)
+        {
+            CanvasWidth = 760;
+            CanvasHeight = 300;
+            return;
+        }
+
+        var cursor = 0;
+        AddNodesInOrder(Root, depth: 0, ref cursor);
+
+        CanvasWidth = Math.Max(760, 120 + Math.Max(1, _nodes.Count - 1) * 112);
+        CanvasHeight = Math.Max(300, 130 + Math.Max(0, Height - 1) * 116);
+
+        foreach (var parent in _nodes)
+        {
+            AddEdge(parent, parent.Node.Left, "L");
+            AddEdge(parent, parent.Node.Right, "R");
+        }
+    }
+
+    private void AddNodesInOrder(BstNodeSnapshot? node, int depth, ref int cursor)
+    {
+        if (node is null)
+        {
+            return;
+        }
+
+        AddNodesInOrder(node.Left, depth + 1, ref cursor);
+        var x = 72 + cursor * 112;
+        var y = 70 + depth * 116;
+        _nodes.Add(new NodeLayout(node, x, y, depth));
+        cursor++;
+        AddNodesInOrder(node.Right, depth + 1, ref cursor);
+    }
+
+    private void AddEdge(NodeLayout parent, BstNodeSnapshot? child, string label)
+    {
+        if (child is null)
+        {
+            return;
+        }
+
+        NodeLayout? childLayout = null;
+        foreach (var candidate in _nodes)
+        {
+            if (candidate.Node.Id == child.Id)
+            {
+                childLayout = candidate;
+                break;
+            }
+        }
+
+        if (childLayout is null)
+        {
+            return;
+        }
+
+        var parentY = parent.Y + 31;
+        var childY = childLayout.Y - 31;
+        _edges.Add(new EdgeLayout(
+            parent.X,
+            parentY,
+            childLayout.X,
+            childY,
+            (parent.X + childLayout.X) / 2,
+            (parentY + childY) / 2 - 5,
+            label));
+    }
+
+    private static string GetStateClass(BstNodeVisualState state) => state switch
+    {
+        BstNodeVisualState.Checking => "is-checking",
+        BstNodeVisualState.Visited => "is-visited",
+        BstNodeVisualState.Matched => "is-matched",
+        BstNodeVisualState.Adding => "is-adding",
+        BstNodeVisualState.Removing => "is-removing",
+        BstNodeVisualState.Replacement => "is-replacement",
+        BstNodeVisualState.PointerTarget => "is-pointer",
+        _ => "is-normal"
+    };
+
+    private sealed record NodeLayout(BstNodeSnapshot Node, int X, int Y, int Depth);
+    private sealed record EdgeLayout(int ParentX, int ParentY, int ChildX, int ChildY, int LabelX, int LabelY, string Label);
+}
