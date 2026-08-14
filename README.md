@@ -38,8 +38,9 @@ The application now has three fully implemented learning modules: **Queue & Stac
 - persistent learning progress in browser storage;
 - optional result explanation popups;
 - Concepts & Memory learning page;
-- BST insert, search, delete, and reset;
+- BST insert, search, delete, explicit DSW balance, and reset;
 - BST leaf / one-child / two-child deletion simulation;
+- BST Day-Stout-Warren vine + compression simulation with node-identity preservation;
 - in-order-successor visualization;
 - BST visual-state and node-reference memory-state views;
 - BST guided practice and persistent progress;
@@ -207,6 +208,7 @@ Implemented operations:
 - `Insert` by key;
 - `Search` by key;
 - `Delete` by key;
+- explicit `Balance BST` with the Day-Stout-Warren (DSW) algorithm;
 - `Reset` lab state.
 
 This implementation uses a strict ordering invariant:
@@ -248,6 +250,33 @@ Deletion explicitly simulates the three structural cases:
 
 The two-child implementation does not hide the operation by calling a collection remove method. It also does not merely copy the successor's value into the target node. The successor node object itself is transplanted by updating parent/left/right references, which lets the Memory state teach object identity truthfully.
 
+## Explicit BST balancing (Day-Stout-Warren)
+
+A normal BST in this project still does **not** rebalance automatically after insert or delete. That behavior is preserved intentionally so learners can see how insertion order affects height.
+
+The separate **Balance BST** action runs a manual Day-Stout-Warren implementation over the existing `BstNode` objects:
+
+1. **Tree → vine** — scan the tree and perform right rotations until no left links remain.
+2. **Vine → balanced shape** — perform spaced left rotations in compression passes until the tree becomes near-complete.
+
+The operation preserves:
+
+- every stored key;
+- every node `Guid` / short display ID;
+- the strict BST in-order ordering;
+- `Count`.
+
+It changes only the structural references (`root`, `parent`, `left`, `right`) and therefore can reduce tree height without allocating replacement nodes. The implementation does not flatten the tree into a `List<T>`/array and rebuild it, and it does not call a framework balancing collection.
+
+DSW balancing is:
+
+```text
+O(n) time
+O(1) algorithmic extra space
+```
+
+The lab publishes each vine scan, right rotation, compression pass, and left rotation through the same `SimulationState` playback runtime, so learners can pause and step through the actual pointer rewiring.
+
 ## BST complexity
 
 BST search, insert, and delete are:
@@ -256,7 +285,7 @@ BST search, insert, and delete are:
 O(h)
 ```
 
-where `h` is tree height. A roughly balanced tree keeps `h` near `log n`; a highly skewed tree can have `h = n`. The run explanation reports comparison count, successor checks when relevant, and height before/after the operation.
+where `h` is tree height. A roughly balanced tree keeps `h` near `log n`; a highly skewed tree can have `h = n`. The run explanation reports comparison count, successor checks when relevant, and height before/after the operation. Balance runs instead report vine rotations, compression rotations/passes, `Θ(n)` current-run work, and the height change produced by DSW.
 
 ## BST playback and learning UI
 
@@ -270,7 +299,8 @@ The BST lab reuses the shared asynchronous simulation runtime and supports:
 - Visual state;
 - Memory state;
 - optional Last Run popups;
-- guided practice with local completion persistence.
+- guided practice with local completion persistence;
+- explicit DSW balancing with a skewed-tree practice task.
 
 The Visual state uses an ordered tree layout by key. The Memory state shows the root reference plus each node object's parent/left/right references. Screen coordinates are never described as memory addresses.
 
@@ -660,7 +690,7 @@ This preserves correct algorithm state while still allowing the learner to revie
 
 # Result explanations
 
-After Queue/Stack Find/Delete operations and after BST or AVL Insert/Search/Delete operations, the application can show a **Last Run** explanation.
+After Queue/Stack Find/Delete operations, BST Insert/Search/Delete/**Balance** operations, and AVL Insert/Search/Delete operations, the application can show a **Last Run** explanation.
 
 The explanation contains two views:
 
@@ -733,7 +763,8 @@ The BST lab has its own guided tasks for:
 - one-child deletion;
 - two-child deletion with successor search;
 - opening Memory state after structural rewiring;
-- duplicate-key rejection.
+- duplicate-key rejection;
+- balancing a deliberately skewed BST with DSW and inspecting the same node IDs in Memory state after reference rewiring.
 
 BST task completion is also stored locally in the browser.
 
@@ -912,8 +943,6 @@ The development server will print the local application URL.
 dotnet build AlgorithmVisualizer.sln
 ```
 
-If the Client project reports that a live Core module namespace or type cannot be found, resolve any **Core compiler errors first**. A failed Core build can cascade into many `CS0234` / `CS0246` errors in Razor files even when their `@using` directives and project reference are correct.
-
 # Tests
 
 Focused Core tests are included in:
@@ -928,7 +957,7 @@ Run them with:
 dotnet test tests/AlgorithmVisualizer.Core.Tests/AlgorithmVisualizer.Core.Tests.csproj
 ```
 
-The BST test suite covers insertion shape, duplicate rejection, search success/miss, all three delete cases, successor-node identity, and skewed-tree height.
+The BST test suite covers insertion shape, duplicate rejection, search success/miss, all three delete cases, successor-node identity, skewed-tree height, DSW balancing of right- and left-skewed trees, height reduction, rotation counts, parent-link/BST invariants, and preservation of node identity across balancing.
 
 The AVL test suite covers LL/RR/LR/RL repairs, increasing-order height control, duplicate rejection, found/missing search, leaf/one-child/two-child deletion, delete-triggered rebalancing, successor/promoted-node identity, clear/reset behavior, and recursive validation of BST order, parent links, cached heights, balance factors, and the AVL balance invariant.
 
@@ -996,7 +1025,7 @@ The next module can now reuse our custom Queue, Stack, BST, and AVL implementati
 
 **Queue & Stack: implemented as the complete linear-structure learning module.**
 
-**Binary Search Tree: implemented as the first complete tree module, including structural deletion, Visual/Memory views, playback history, result explanations, and guided practice.**
+**Binary Search Tree: implemented as the first complete tree module, including structural deletion, explicit Day-Stout-Warren balancing, Visual/Memory views, playback history, result explanations, and guided practice.**
 
 **AVL Tree: implemented as the balanced-tree extension, including cached heights, balance factors, all four rotation cases, insert/delete rebalancing, Visual/Memory views, run explanations, and rotation-focused guided practice.**
 

@@ -115,6 +115,81 @@ public sealed class BstSimulationTests
     }
 
     [Fact]
+    public async Task BalanceAsync_SkewedTreeReducesHeightAndPreservesNodeIdentity()
+    {
+        var tree = CreateTree();
+        foreach (var value in new[] { 10, 20, 30, 40, 50, 60, 70 })
+        {
+            await tree.InsertAsync(value);
+        }
+
+        var before = Assert.IsType<BstNodeSnapshot>(tree.CreateSnapshot());
+        var identitiesBefore = CaptureIdentityByValue(before);
+        Assert.Equal(7, tree.Height);
+
+        var result = await tree.BalanceAsync();
+        var after = Assert.IsType<BstNodeSnapshot>(tree.CreateSnapshot());
+        var identitiesAfter = CaptureIdentityByValue(after);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(BstOperationKind.Balance, result.Operation);
+        Assert.Equal(7, tree.Count);
+        Assert.Equal(3, tree.Height);
+        Assert.Equal(7, result.HeightBefore);
+        Assert.Equal(3, result.HeightAfter);
+        Assert.Equal(0, result.VineRotations);
+        Assert.Equal(4, result.CompressionRotations);
+        Assert.Equal(2, result.CompressionPasses);
+        Assert.Equal("O(n)", result.WorstCaseComplexity);
+        Assert.Equal("Θ(n)", result.CurrentRunComplexity);
+        Assert.Equal(identitiesBefore.Count, identitiesAfter.Count);
+        foreach (var pair in identitiesBefore)
+        {
+            Assert.True(identitiesAfter.TryGetValue(pair.Key, out var afterId));
+            Assert.Equal(pair.Value, afterId);
+        }
+        AssertBstInvariant(after, minExclusive: null, maxExclusive: null, expectedParentDisplayId: null);
+    }
+
+    [Fact]
+    public async Task BalanceAsync_LeftSkewedTreeUsesRightRotationsThenCompression()
+    {
+        var tree = CreateTree();
+        foreach (var value in new[] { 70, 60, 50, 40, 30, 20, 10 })
+        {
+            await tree.InsertAsync(value);
+        }
+
+        var result = await tree.BalanceAsync();
+        var root = Assert.IsType<BstNodeSnapshot>(tree.CreateSnapshot());
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(6, result.VineRotations);
+        Assert.Equal(4, result.CompressionRotations);
+        Assert.Equal(7, tree.Count);
+        Assert.Equal(3, tree.Height);
+        AssertBstInvariant(root, minExclusive: null, maxExclusive: null, expectedParentDisplayId: null);
+    }
+
+    [Fact]
+    public async Task BalanceAsync_DoesNotAutomaticallyRunDuringNormalInsert()
+    {
+        var tree = CreateTree();
+
+        await tree.InsertAsync(1);
+        await tree.InsertAsync(2);
+        await tree.InsertAsync(3);
+        await tree.InsertAsync(4);
+        await tree.InsertAsync(5);
+
+        Assert.Equal(5, tree.Height);
+
+        await tree.BalanceAsync();
+
+        Assert.Equal(3, tree.Height);
+    }
+
+    [Fact]
     public async Task Height_ReflectsSkewedInsertionOrder()
     {
         var tree = CreateTree();
@@ -127,6 +202,51 @@ public sealed class BstSimulationTests
 
         Assert.Equal(5, tree.Count);
         Assert.Equal(5, tree.Height);
+    }
+
+    private static IReadOnlyDictionary<int, Guid> CaptureIdentityByValue(BstNodeSnapshot root)
+    {
+        var identities = new Dictionary<int, Guid>();
+        CaptureIdentityByValue(root, identities);
+        return identities;
+    }
+
+    private static void CaptureIdentityByValue(BstNodeSnapshot? node, IDictionary<int, Guid> identities)
+    {
+        if (node is null)
+        {
+            return;
+        }
+
+        identities[node.Value] = node.Id;
+        CaptureIdentityByValue(node.Left, identities);
+        CaptureIdentityByValue(node.Right, identities);
+    }
+
+    private static void AssertBstInvariant(
+        BstNodeSnapshot? node,
+        int? minExclusive,
+        int? maxExclusive,
+        string? expectedParentDisplayId)
+    {
+        if (node is null)
+        {
+            return;
+        }
+
+        if (minExclusive.HasValue)
+        {
+            Assert.True(node.Value > minExclusive.Value, $"Expected {node.Value} > {minExclusive.Value}.");
+        }
+
+        if (maxExclusive.HasValue)
+        {
+            Assert.True(node.Value < maxExclusive.Value, $"Expected {node.Value} < {maxExclusive.Value}.");
+        }
+
+        Assert.Equal(expectedParentDisplayId, node.ParentDisplayId);
+        AssertBstInvariant(node.Left, minExclusive, node.Value, node.DisplayId);
+        AssertBstInvariant(node.Right, node.Value, maxExclusive, node.DisplayId);
     }
 
     private static BstSimulation CreateTree() => new(new ImmediateSimulationRuntime());

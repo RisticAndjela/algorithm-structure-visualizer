@@ -15,14 +15,14 @@
         <div class="learn-copy">
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="bst-learn-title">One comparison decides the next branch.</h2>
-            <p>A BST repeats one rule: smaller goes left, larger goes right. Search, insert, and delete all depend on that ordering.</p>
-            <a href="/learn/concepts#tree-height">Open tree height &amp; complexity →</a>
+            <p>A BST repeats one rule: smaller goes left, larger goes right. Search, insert, and delete all depend on that ordering. This lab also lets you explicitly rebalance an existing BST so you can compare shape before and after.</p>
+            <a href="/learn/concepts#bst-balancing">Open BST height &amp; balancing →</a>
         </div>
         <div class="learn-grid">
             <article class="learn-card purple"><span>ORDER</span><strong>left &lt; node &lt; right</strong><small>This lab rejects duplicate keys so the invariant stays strict.</small></article>
             <article class="learn-card mint"><span>SEARCH</span><strong>Discard a whole side</strong><small>Each comparison chooses only one child link to follow.</small></article>
             <article class="learn-card blue"><span>DELETE</span><strong>3 structural cases</strong><small>Leaf, one child, or two children with an in-order successor.</small></article>
-            <article class="learn-card gold"><span>HEIGHT</span><strong>O(h)</strong><small>A short tree gives short paths. A skewed tree can behave like a list.</small></article>
+            <article class="learn-card gold"><span>BALANCE</span><strong>Shape controls h</strong><small>A normal BST does not self-balance. The explicit DSW action lets you repair a skewed shape and watch the references rotate.</small></article>
         </div>
     </section>
 
@@ -40,6 +40,7 @@
             <div><span>SEARCH</span><strong>O(h)</strong><small>follow one root-to-node path</small></div>
             <div><span>INSERT</span><strong>O(h)</strong><small>find one empty child link</small></div>
             <div><span>DELETE</span><strong>O(h)</strong><small>search + local rewiring</small></div>
+            <div><span>BALANCE</span><strong>O(n)</strong><small>DSW vine + compression</small></div>
         </div>
     </header>
 
@@ -105,11 +106,16 @@
                 <div class="operation-heading"><span class="operation-glyph">↺</span><span><strong>Reset tree</strong><small>Start another shape</small></span></div>
                 <button type="button" @onclick="ClearTreeAsync" disabled="@IsBusy">Clear BST</button>
             </div>
+
+            <div class="operation-card balance-card">
+                <div class="operation-heading"><span class="operation-glyph">⇄</span><span><strong>Balance BST</strong><small>Run Day–Stout–Warren</small></span></div>
+                <button class="balance-action" type="button" @onclick="BalanceTreeAsync" disabled="@(!CanBalanceTree)">Balance tree</button>
+            </div>
         </section>
 
         <div class="sample-sequence">
             <span class="section-kicker">GOOD FIRST TREE</span>
-            <p>Insert <strong>50, 30, 70, 20, 40, 60, 80</strong>. Then delete <strong>20</strong> (leaf), <strong>30</strong> (one child after 20 is gone), and <strong>50</strong> (two children).</p>
+            <p>Insert <strong>50, 30, 70, 20, 40, 60, 80</strong> for delete cases. To test balancing, reset and insert <strong>10, 20, 30, 40, 50, 60, 70</strong>, note the height, then run <strong>Balance BST</strong>.</p>
         </div>
 
         @if (!string.IsNullOrWhiteSpace(_errorMessage))
@@ -135,7 +141,7 @@
             </div>
             <p>@(_activeStateView == StateView.Visual
                 ? "Visual state places smaller values left and larger values right so the search path is easy to read."
-                : "Memory state shows the root reference and each node object's parent, left, and right references.")</p>
+                : "Memory state shows the root reference and each node object's parent, left, and right references. During Balance BST, DSW changes these links with rotations while preserving node IDs and values.")</p>
         </div>
 
         @if (_activeStateView == StateView.Visual)
@@ -211,17 +217,29 @@
             @if (_popupTab == ResultPopupTab.Run)
             {
                 <div class="popup-body">
-                    <div class="popup-metrics">
-                        <div><span>Node comparisons</span><strong>@_lastResult.Comparisons</strong></div>
-                        <div><span>Successor checks</span><strong>@_lastResult.SuccessorChecks</strong></div>
-                        <div><span>This run</span><strong>@_lastResult.CurrentRunComplexity</strong></div>
-                        <div><span>Worst-case rule</span><strong>@_lastResult.WorstCaseComplexity</strong></div>
-                    </div>
+                    @if (_lastResult.Operation == BstOperationKind.Balance)
+                    {
+                        <div class="popup-metrics">
+                            <div><span>Vine rotations</span><strong>@_lastResult.VineRotations</strong></div>
+                            <div><span>Compression rotations</span><strong>@_lastResult.CompressionRotations</strong></div>
+                            <div><span>This run</span><strong>@_lastResult.CurrentRunComplexity</strong></div>
+                            <div><span>Height</span><strong>@_lastResult.HeightBefore → @_lastResult.HeightAfter</strong></div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="popup-metrics">
+                            <div><span>Node comparisons</span><strong>@_lastResult.Comparisons</strong></div>
+                            <div><span>Successor checks</span><strong>@_lastResult.SuccessorChecks</strong></div>
+                            <div><span>This run</span><strong>@_lastResult.CurrentRunComplexity</strong></div>
+                            <div><span>Worst-case rule</span><strong>@_lastResult.WorstCaseComplexity</strong></div>
+                        </div>
+                    }
                     <div class="popup-explainer @(_lastResult.Succeeded ? "success" : string.Empty)">
                         <strong>@GetPlainRunSummary(_lastResult)</strong>
                         <p>@GetComplexityExplanation(_lastResult)</p>
                     </div>
-                    <a class="popup-learn" href="/learn/concepts#tree-height">Learn why BST operations depend on h →</a>
+                    <a class="popup-learn" href="@GetResultLearnHref(_lastResult)">@GetResultLearnLabel(_lastResult)</a>
                 </div>
             }
             else
@@ -230,7 +248,14 @@
                     <div class="popup-metrics shape">
                         <div><span>Count</span><strong>@_lastResult.InitialCount → @_lastResult.FinalCount</strong></div>
                         <div><span>Height</span><strong>@_lastResult.HeightBefore → @_lastResult.HeightAfter</strong></div>
-                        <div><span>Delete case</span><strong>@GetDeleteCaseLabel(_lastResult.DeleteCase)</strong></div>
+                        @if (_lastResult.Operation == BstOperationKind.Balance)
+                        {
+                            <div><span>Total rotations</span><strong>@_lastResult.TotalRotations</strong></div>
+                        }
+                        else
+                        {
+                            <div><span>Delete case</span><strong>@GetDeleteCaseLabel(_lastResult.DeleteCase)</strong></div>
+                        }
                     </div>
                     <div class="popup-explainer">
                         <strong>@GetMemoryHeadline(_lastResult)</strong>
@@ -263,7 +288,8 @@
         new(3, "Delete a leaf", ["Build a tree with at least one leaf.", "Delete a node with no children.", "Confirm only its parent link becomes empty."], "/learn/concepts#memory"),
         new(4, "Delete a node with one child", ["Create a node that has exactly one child.", "Delete that parent node.", "Watch its child move into the old position."], "/learn/concepts#memory"),
         new(5, "Delete a node with two children", ["Delete a node that has both left and right children.", "Watch the simulator find the in-order successor.", "Open Memory state after the delete."], "/learn/concepts#visual-vs-memory"),
-        new(6, "Try a duplicate key", ["Insert any value once.", "Insert the same value again.", "Confirm the second insert is rejected and Count does not change."], "/learn/concepts#tree-height")
+        new(6, "Try a duplicate key", ["Insert any value once.", "Insert the same value again.", "Confirm the second insert is rejected and Count does not change."], "/learn/concepts#tree-height"),
+        new(7, "Balance a skewed BST", ["Reset and insert increasing values such as 10, 20, 30, 40, 50, 60, 70.", "Run Balance BST and step through vine + compression phases.", "Open Memory state and verify the same node IDs remain while links change."], "/learn/concepts#bst-balancing")
     ];
 
     private int? _value;
@@ -282,6 +308,7 @@
 
     private bool IsBusy => SimulationState.IsRunning;
     private bool CanRunValueOperation => !IsBusy && _value.HasValue;
+    private bool CanBalanceTree => !IsBusy && Tree.Count > 1;
     private bool CanStepBack => _frameIndex > 0;
     private bool CanStepForward => (_runFrames.Count > 0 && _frameIndex < _runFrames.Count - 1) || SimulationState.IsRunning;
     private int TimelineCount => _runFrames.Count;
@@ -335,6 +362,46 @@
     private Task InsertAsync() => RunValueResultOperationAsync(BstOperationKind.Insert, Tree.InsertAsync);
     private Task SearchAsync() => RunValueResultOperationAsync(BstOperationKind.Search, Tree.SearchAsync);
     private Task DeleteAsync() => RunValueResultOperationAsync(BstOperationKind.Delete, Tree.DeleteAsync);
+
+    private async Task BalanceTreeAsync()
+    {
+        if (SimulationState.IsRunning || Tree.Count <= 1)
+        {
+            return;
+        }
+
+        PrepareNewRun();
+        var runToken = SimulationState.Start("Starting explicit BST balance with Day-Stout-Warren.");
+
+        try
+        {
+            var result = await Tree.BalanceAsync(runToken);
+            if (!IsCurrentRun(runToken))
+            {
+                return;
+            }
+
+            _lastResult = result;
+            RecordPracticeEvent(new PracticeEvent(
+                BstOperationKind.Balance, null, result.Succeeded, false, BstDeleteCase.None,
+                result.InitialCount, result.FinalCount, HeightBefore: result.HeightBefore, HeightAfter: result.HeightAfter));
+            SimulationState.SetCurrentStep("BST balance complete.");
+            SimulationState.Complete();
+            _popupTab = ResultPopupTab.Run;
+            _lastRunPopupOpen = _showRunPopups;
+        }
+        catch (OperationCanceledException) when (runToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = $"Something went wrong: {exception.Message}";
+            if (IsCurrentRun(runToken))
+            {
+                SimulationState.Complete("The balance run stopped because of an error.");
+            }
+        }
+    }
 
     private async Task RunValueResultOperationAsync(
         BstOperationKind operationKind,
@@ -558,6 +625,8 @@
             4 => _practiceEvents.Any(e => e.Operation == BstOperationKind.Delete && e.Succeeded && e.DeleteCase == BstDeleteCase.OneChild),
             5 => _memoryOpenedDuringTask && _practiceEvents.Any(e => e.Operation == BstOperationKind.Delete && e.Succeeded && e.DeleteCase == BstDeleteCase.TwoChildren),
             6 => _practiceEvents.Any(e => e.Operation == BstOperationKind.Insert && e.DuplicateRejected),
+            7 => _memoryOpenedDuringTask && _practiceEvents.Any(e =>
+                e.Operation == BstOperationKind.Balance && e.Succeeded && e.HeightAfter < e.HeightBefore),
             _ => false
         };
 
@@ -597,6 +666,9 @@
         4 => "You need one successful Delete whose result says One child.",
         5 => _memoryOpenedDuringTask ? "Memory state opened — finish a successful two-child Delete." : "Finish a two-child Delete, then open Memory state.",
         6 => "Insert a value, then insert that exact value again.",
+        7 => _memoryOpenedDuringTask
+            ? "Memory state opened — finish a Balance BST run that reduces tree height."
+            : "Build a skewed tree, run Balance BST, then open Memory state to inspect the rewired references.",
         _ => string.Empty
     };
 
@@ -651,6 +723,8 @@
         BstOperationKind.Search => $"Search: {result.RequestedValue} not found",
         BstOperationKind.Delete when result.Succeeded => $"Deleted {result.RequestedValue}",
         BstOperationKind.Delete => $"Delete: {result.RequestedValue} not found",
+        BstOperationKind.Balance when result.Succeeded => $"Balanced BST: h {result.HeightBefore} → {result.HeightAfter}",
+        BstOperationKind.Balance => "BST balance: nothing to change",
         _ => "BST run complete"
     };
 
@@ -659,6 +733,11 @@
         if (result.DuplicateRejected)
         {
             return "The comparison path reached an equal key, so this strict BST rejected the duplicate.";
+        }
+
+        if (result.Operation == BstOperationKind.Balance && !result.Succeeded)
+        {
+            return "The tree had no shape to rebalance, so no references changed.";
         }
 
         if (!result.Succeeded)
@@ -671,12 +750,18 @@
             BstOperationKind.Insert => "The new node was connected exactly where the comparison path reached an empty child link.",
             BstOperationKind.Search => "The search stopped as soon as the highlighted node matched the target.",
             BstOperationKind.Delete => $"The target was removed using the {GetDeleteCaseLabel(result.DeleteCase).ToLowerInvariant()} delete case.",
+            BstOperationKind.Balance => $"DSW first built a right-only vine, then compressed it into a shorter BST using {result.TotalRotations} rotation(s).",
             _ => "The operation completed."
         };
     }
 
     private static string GetComplexityExplanation(BstOperationResult result)
     {
+        if (result.Operation == BstOperationKind.Balance)
+        {
+            return $"Day-Stout-Warren visits and rewires nodes a constant number of times, so balancing is O(n) time. This implementation uses the existing node links and only a few node references/counters, so the algorithmic extra space is O(1). It performed {result.VineRotations} vine rotation(s) and {result.CompressionRotations} compression rotation(s) across {result.CompressionPasses} compression pass(es).";
+        }
+
         if (result.InitialCount == 0)
         {
             return "An empty tree needs only a root check, so this run is constant work.";
@@ -691,6 +776,11 @@
 
     private static string GetMemoryHeadline(BstOperationResult result)
     {
+        if (result.Operation == BstOperationKind.Balance && result.Succeeded)
+        {
+            return "Balancing rewired the root/parent/left/right references; it did not replace the node objects.";
+        }
+
         if (result.Operation != BstOperationKind.Delete || !result.Succeeded)
         {
             return "The visual layout and the object-reference layout describe the same tree from two different angles.";
@@ -707,6 +797,11 @@
 
     private static string GetMemoryExplanation(BstOperationResult result)
     {
+        if (result.Operation == BstOperationKind.Balance && result.Succeeded)
+        {
+            return $"DSW reused all {result.FinalCount} existing node objects. A rotation changes which object is root and which objects each parent/left/right reference points to, but each node keeps the same value and short ID. Count stays unchanged while height can decrease.";
+        }
+
         if (result.Operation == BstOperationKind.Insert && result.Succeeded)
         {
             return "A new node object was created and exactly one parent left/right reference was connected to it. The screen coordinates are not memory addresses.";
@@ -735,6 +830,16 @@
 
         return "No node was removed, so the tree's object-reference graph stayed unchanged.";
     }
+
+    private static string GetResultLearnHref(BstOperationResult result) =>
+        result.Operation == BstOperationKind.Balance
+            ? "/learn/concepts#bst-balancing"
+            : "/learn/concepts#tree-height";
+
+    private static string GetResultLearnLabel(BstOperationResult result) =>
+        result.Operation == BstOperationKind.Balance
+            ? "Learn the two DSW phases →"
+            : "Learn why BST operations depend on h →";
 
     private static string GetDeleteCaseLabel(BstDeleteCase deleteCase) => deleteCase switch
     {
@@ -776,6 +881,8 @@
         BstDeleteCase DeleteCase,
         int InitialCount,
         int FinalCount,
+        int HeightBefore = 0,
+        int HeightAfter = 0,
         int Sequence = -1,
         bool IsReset = false);
 

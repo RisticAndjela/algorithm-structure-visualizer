@@ -85,7 +85,7 @@ The application is a teaching tool, so the implementation being taught must not 
 Examples:
 
 - Queue/Stack use the custom `ManualDynamicArray<T>` rather than `Queue<T>`, `Stack<T>`, `List<T>`, or `Array.Copy` for the taught storage operations.
-- BST uses explicit `BstNode` parent/left/right references and manual comparison/transplant logic rather than a sorted collection or library tree.
+- BST uses explicit `BstNode` parent/left/right references and manual comparison/transplant logic rather than a sorted collection or library tree. Its optional `Balance BST` action runs manual Day-Stout-Warren rotations over those same nodes; ordinary BST mutations remain non-self-balancing.
 - AVL uses explicit `AvlNode` references, manually maintained cached heights, balance-factor checks, and explicit left/right rotations rather than a library balancing structure.
 
 Infrastructure types such as `Task`, `CancellationToken`, `SemaphoreSlim`, `Guid`, Blazor services, and browser storage interop are allowed because they do not implement the taught algorithm.
@@ -100,7 +100,7 @@ Every live data-structure module separates two models:
 Current examples:
 
 - Stack/Queue visual order differs from the custom backing-array slot view.
-- BST tree coordinates communicate key ordering, while Memory state shows the root reference and parent/left/right node references.
+- BST tree coordinates communicate key ordering, while Memory state shows the root reference and parent/left/right node references. During DSW balancing, timeline snapshots expose the same node IDs while those references are rewired by rotations.
 - AVL visual state adds cached height, balance factor, and rotation states; its Memory state shows the same node identities and the real reference rewiring performed by rotations.
 
 Learning labels such as `MEM-#A1B2C3` represent object identity only; they are not physical RAM addresses.

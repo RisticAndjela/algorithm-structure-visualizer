@@ -346,6 +346,144 @@ public sealed class BstSimulation : SimulationAlgorithmBase
         }, cancellationToken);
 
     /// <summary>
+    /// Explicitly balances the current BST with the Day-Stout-Warren algorithm.
+    /// Ordinary BST insert/delete remain unbalanced by design; this is a learner-triggered operation.
+    /// DSW first converts the tree into a right-only vine with right rotations, then compresses that
+    /// vine into a near-complete tree with left rotations. Existing node objects are reused.
+    /// </summary>
+    public Task<BstOperationResult> BalanceAsync(CancellationToken cancellationToken = default) =>
+        ExecuteExclusiveAsync(async () =>
+        {
+            var initialCount = _count;
+            var heightBefore = Height;
+
+            if (_root is null)
+            {
+                await NextStepAsync(
+                    "The BST is empty, so there is nothing to balance. A balance operation changes shape, not values.",
+                    cancellationToken);
+
+                return new BstOperationResult(
+                    BstOperationKind.Balance, 0, false, false, null,
+                    0, 0, initialCount, _count, heightBefore, Height, BstDeleteCase.None);
+            }
+
+            await NextStepAsync(
+                $"Start explicit BST balancing with Day-Stout-Warren (DSW). The tree has {_count} node(s) and height {heightBefore}. Normal BST insert/delete do not do this automatically.",
+                cancellationToken);
+
+            if (_count == 1)
+            {
+                _root.VisualState = BstNodeVisualState.Matched;
+                NotifyChanged();
+                await NextStepAsync(
+                    "A one-node BST is already as short as possible. No rotation is required.",
+                    cancellationToken);
+
+                return new BstOperationResult(
+                    BstOperationKind.Balance, 0, true, false, _root.Id,
+                    0, 0, initialCount, _count, heightBefore, Height, BstDeleteCase.None);
+            }
+
+            var vineRotations = 0;
+            var compressionRotations = 0;
+            var compressionPasses = 0;
+
+            await NextStepAsync(
+                "Phase 1 of 2 — build a vine. Scan from the root. Whenever the current node has a left child, rotate right so that child moves up. When no left links remain, every node lies on one right-only backbone.",
+                cancellationToken);
+
+            var current = _root;
+            while (current is not null)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (current.Left is not null)
+                {
+                    var promoted = current.Left;
+                    current.VisualState = BstNodeVisualState.Checking;
+                    promoted.VisualState = BstNodeVisualState.Replacement;
+                    NotifyChanged();
+
+                    await NextStepAsync(
+                        $"Vine step: {current.Value} has left child {promoted.Value}. Right-rotate around {current.Value}; {promoted.Value} will move above it while the in-order key order stays unchanged.",
+                        cancellationToken);
+
+                    RotateRight(current);
+                    vineRotations++;
+                    current.VisualState = BstNodeVisualState.Visited;
+                    promoted.VisualState = BstNodeVisualState.Replacement;
+                    NotifyChanged();
+
+                    await NextStepAsync(
+                        $"Right rotation #{vineRotations} complete. {promoted.Value} now owns this subtree position and {current.Value} is its right child. Continue from {promoted.Value} because it may still have a left child.",
+                        cancellationToken);
+
+                    current = promoted;
+                    continue;
+                }
+
+                current.VisualState = BstNodeVisualState.Visited;
+                NotifyChanged();
+                await NextStepAsync(
+                    $"Vine scan: {current.Value} has no left child, so it already fits the right-only backbone. Move to its right child.",
+                    cancellationToken);
+
+                current = current.Right;
+            }
+
+            NormalizeVisualStates(_root);
+            NotifyChanged();
+            await NextStepAsync(
+                $"Phase 1 complete after {vineRotations} right rotation(s). The BST is now a sorted right-only vine. No node was recreated and Count is still {_count}.",
+                cancellationToken);
+
+            var perfectNodeCount = GreatestPerfectTreeNodeCount(_count);
+            var initialCompression = _count - perfectNodeCount;
+
+            await NextStepAsync(
+                $"Phase 2 of 2 — compress the vine. For n = {_count}, the largest perfect-tree node count not exceeding n is {perfectNodeCount}. First perform {initialCompression} left rotation(s), then repeatedly halve the compression size.",
+                cancellationToken);
+
+            if (initialCompression > 0)
+            {
+                compressionPasses++;
+                compressionRotations += await CompressVineAsync(
+                    initialCompression,
+                    compressionPasses,
+                    cancellationToken);
+            }
+
+            for (var compressionSize = perfectNodeCount / 2; compressionSize > 0; compressionSize /= 2)
+            {
+                compressionPasses++;
+                compressionRotations += await CompressVineAsync(
+                    compressionSize,
+                    compressionPasses,
+                    cancellationToken);
+            }
+
+            NormalizeVisualStates(_root);
+            if (_root is not null)
+            {
+                _root.VisualState = BstNodeVisualState.Matched;
+            }
+            NotifyChanged();
+
+            var heightAfter = Height;
+            await NextStepAsync(
+                $"DSW balance complete. Height changed from {heightBefore} to {heightAfter}. The same {_count} node object(s) remain; only root/parent/left/right references were rewired using {vineRotations + compressionRotations} rotation(s).",
+                cancellationToken);
+
+            return new BstOperationResult(
+                BstOperationKind.Balance, 0, true, false, _root?.Id,
+                0, 0, initialCount, _count, heightBefore, heightAfter, BstDeleteCase.None,
+                VineRotations: vineRotations,
+                CompressionRotations: compressionRotations,
+                CompressionPasses: compressionPasses);
+        }, cancellationToken);
+
+    /// <summary>
     /// Lab utility: drops the root reference so the learner can start another example.
     /// This is not presented as a BST search/insert/delete algorithm.
     /// </summary>
@@ -454,6 +592,137 @@ public sealed class BstSimulation : SimulationAlgorithmBase
         {
             replacement.Parent = node.Parent;
         }
+    }
+
+    private async Task<int> CompressVineAsync(
+        int rotationCount,
+        int passNumber,
+        CancellationToken cancellationToken)
+    {
+        var completed = 0;
+        BstNode? scanner = null;
+
+        for (var index = 0; index < rotationCount; index++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var pivot = scanner is null ? _root : scanner.Right;
+            if (pivot?.Right is null)
+            {
+                break;
+            }
+
+            var promoted = pivot.Right;
+            pivot.VisualState = BstNodeVisualState.Checking;
+            promoted.VisualState = BstNodeVisualState.Replacement;
+            NotifyChanged();
+
+            await NextStepAsync(
+                $"Compression pass {passNumber}, rotation {index + 1}/{rotationCount}: left-rotate around {pivot.Value}. Its right child {promoted.Value} moves up and shortens the backbone.",
+                cancellationToken);
+
+            RotateLeft(pivot);
+            completed++;
+            pivot.VisualState = BstNodeVisualState.Visited;
+            promoted.VisualState = BstNodeVisualState.Replacement;
+            NotifyChanged();
+
+            await NextStepAsync(
+                $"Compression rotation complete: {promoted.Value} now owns this subtree position, with {pivot.Value} on its left. Continue two vine positions forward from the promoted node.",
+                cancellationToken);
+
+            pivot.VisualState = BstNodeVisualState.Normal;
+            promoted.VisualState = BstNodeVisualState.Normal;
+            scanner = promoted;
+        }
+
+        NotifyChanged();
+        await NextStepAsync(
+            $"Compression pass {passNumber} complete: {completed} left rotation(s) performed. The tree is shorter; continue with the next, smaller compression pass if one remains.",
+            cancellationToken);
+
+        return completed;
+    }
+
+    private BstNode RotateRight(BstNode pivot)
+    {
+        var promoted = pivot.Left
+            ?? throw new InvalidOperationException("A right rotation requires a left child.");
+        var parent = pivot.Parent;
+        var middleSubtree = promoted.Right;
+
+        promoted.Parent = parent;
+        if (parent is null)
+        {
+            _root = promoted;
+        }
+        else if (ReferenceEquals(parent.Left, pivot))
+        {
+            parent.Left = promoted;
+        }
+        else
+        {
+            parent.Right = promoted;
+        }
+
+        promoted.Right = pivot;
+        pivot.Parent = promoted;
+        pivot.Left = middleSubtree;
+        if (middleSubtree is not null)
+        {
+            middleSubtree.Parent = pivot;
+        }
+
+        NotifyChanged();
+        return promoted;
+    }
+
+    private BstNode RotateLeft(BstNode pivot)
+    {
+        var promoted = pivot.Right
+            ?? throw new InvalidOperationException("A left rotation requires a right child.");
+        var parent = pivot.Parent;
+        var middleSubtree = promoted.Left;
+
+        promoted.Parent = parent;
+        if (parent is null)
+        {
+            _root = promoted;
+        }
+        else if (ReferenceEquals(parent.Left, pivot))
+        {
+            parent.Left = promoted;
+        }
+        else
+        {
+            parent.Right = promoted;
+        }
+
+        promoted.Left = pivot;
+        pivot.Parent = promoted;
+        pivot.Right = middleSubtree;
+        if (middleSubtree is not null)
+        {
+            middleSubtree.Parent = pivot;
+        }
+
+        NotifyChanged();
+        return promoted;
+    }
+
+    private static int GreatestPerfectTreeNodeCount(int nodeCount)
+    {
+        // A perfect tree contains 2^k - 1 nodes. Find the largest such value <= nodeCount
+        // without floating-point math or a library balancing helper.
+        var powerOfTwo = 1;
+        var target = nodeCount + 1;
+
+        while (powerOfTwo <= target / 2)
+        {
+            powerOfTwo *= 2;
+        }
+
+        return powerOfTwo - 1;
     }
 
     private static int GetHeight(BstNode? node)

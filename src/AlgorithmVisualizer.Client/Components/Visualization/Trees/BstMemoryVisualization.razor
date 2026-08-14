@@ -17,6 +17,11 @@
         <span>Each node is a C# object with references to its parent, left child, and right child. <code>MEM-#...</code> is only a stable learning label derived from the node ID, not a physical RAM address.</span>
     </div>
 
+    <div class="balance-memory-note">
+        <strong>During Balance BST:</strong>
+        <span>watch the same <code>MEM-#ID</code> objects keep their values while rotations change the <code>root</code>, <code>parent</code>, <code>left</code>, and <code>right</code> references. Balancing changes connectivity and height, not node identity.</span>
+    </div>
+
     <section class="root-reference" aria-label="Root reference">
         <span>ROOT REFERENCE</span>
         @if (Root is null)

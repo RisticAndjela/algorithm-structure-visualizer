@@ -70,6 +70,28 @@
     font-weight: 750;
 }
 
+.balance-memory-note {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .28rem .5rem;
+    padding: .72rem .85rem;
+    border: 1px solid #ead59d;
+    border-radius: .8rem;
+    color: #6f654d;
+    background: #fffaf0;
+    font-size: .78rem;
+    line-height: 1.5;
+}
+
+.balance-memory-note strong {
+    color: #765515;
+}
+
+.balance-memory-note code {
+    color: #765515;
+    font-weight: 760;
+}
+
 .root-reference {
     display: grid;
     grid-template-columns: minmax(8rem, .55fr) minmax(10rem, 1fr) minmax(10rem, 1fr);

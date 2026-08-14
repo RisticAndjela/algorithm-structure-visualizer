@@ -4,7 +4,8 @@ public enum BstOperationKind
 {
     Insert,
     Search,
-    Delete
+    Delete,
+    Balance
 }
 
 public enum BstDeleteCase
@@ -17,6 +18,7 @@ public enum BstDeleteCase
 
 /// <summary>
 /// Summarizes one learner-triggered BST operation without coupling Core logic to the UI.
+/// Balance runs additionally report the Day-Stout-Warren rotation counts.
 /// </summary>
 public sealed record BstOperationResult(
     BstOperationKind Operation,
@@ -30,15 +32,24 @@ public sealed record BstOperationResult(
     int FinalCount,
     int HeightBefore,
     int HeightAfter,
-    BstDeleteCase DeleteCase)
+    BstDeleteCase DeleteCase,
+    int VineRotations = 0,
+    int CompressionRotations = 0,
+    int CompressionPasses = 0)
 {
     public int TotalChecks => Comparisons + SuccessorChecks;
-    public string WorstCaseComplexity => "O(h)";
+    public int TotalRotations => VineRotations + CompressionRotations;
+    public string WorstCaseComplexity => Operation == BstOperationKind.Balance ? "O(n)" : "O(h)";
 
     public string CurrentRunComplexity
     {
         get
         {
+            if (Operation == BstOperationKind.Balance)
+            {
+                return InitialCount <= 1 ? "Θ(1)" : "Θ(n)";
+            }
+
             if (TotalChecks <= 1)
             {
                 return "Θ(1)";
