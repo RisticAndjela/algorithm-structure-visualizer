@@ -11,7 +11,7 @@ The project is built with **Blazor WebAssembly and C#**. Its goal is not only to
 - what the time complexity means for the current run;
 - how the visual representation differs from the way the data is stored in memory.
 
-The application now has two fully implemented learning modules: **Queue & Stack** and **Binary Search Tree (BST)**. Queue & Stack established the reusable simulation pattern; BST extends it to linked node structures, tree paths, structural deletion cases, and a reference-based memory view.
+The application now has three fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, and **AVL Tree**. Queue & Stack established the reusable simulation pattern; BST extended it to linked node structures; AVL now adds cached heights, balance factors, and explicit rotations while reusing the same playback and Visual/Memory learning model.
 
 ---
 
@@ -22,6 +22,7 @@ The application now has two fully implemented learning modules: **Queue & Stack*
 - Queue
 - Stack
 - Binary Search Tree (BST)
+- AVL Tree
 - shared simulation runtime;
 - play, pause and adjustable simulation speed;
 - manual step forward;
@@ -41,7 +42,13 @@ The application now has two fully implemented learning modules: **Queue & Stack*
 - BST leaf / one-child / two-child deletion simulation;
 - in-order-successor visualization;
 - BST visual-state and node-reference memory-state views;
-- BST guided practice and persistent progress.
+- BST guided practice and persistent progress;
+- AVL insert, search, delete, and reset;
+- AVL cached height and balance-factor maintenance;
+- LL / RR single rotations and LR / RL double rotations;
+- upward rebalancing after insert and delete;
+- AVL visual-state and node-reference memory-state views;
+- AVL rotation-focused guided practice and persistent progress.
 
 ### Planned
 
@@ -49,7 +56,6 @@ The following modules currently have UI placeholders and are intentionally marke
 
 #### Data structures
 
-- AVL Tree
 - Red-Black Tree
 - Heap
 - Graphs
@@ -121,7 +127,9 @@ The project manually implements:
 
 BST follows the same rule today: it uses explicit `BstNode` parent/left/right references and manual comparison/link-rewiring logic. It does not use `SortedSet<T>`, `SortedDictionary<TKey,TValue>`, `Dictionary<TKey,TValue>`, a built-in tree, or a library binary-search operation to implement the taught structure.
 
-This rule will also apply to future AVL/Red-Black trees, graphs, heaps, sorting algorithms and search algorithms.
+AVL also follows the rule: `AvlNode` stores explicit parent/left/right references and a manually maintained cached height. Balance factors are computed from those heights, and LL/RR/LR/RL repairs explicitly rewire references with custom left/right rotations. No ready-made balanced-tree implementation performs the teaching algorithm.
+
+This rule will also apply to future Red-Black trees, graphs, heaps, sorting algorithms and search algorithms.
 
 Standard .NET infrastructure such as `Task`, `CancellationToken`, `Guid`, `SemaphoreSlim`, Blazor components and browser interop may still be used. These provide application infrastructure rather than the algorithm being taught.
 
@@ -264,7 +272,96 @@ The BST lab reuses the shared asynchronous simulation runtime and supports:
 - optional Last Run popups;
 - guided practice with local completion persistence.
 
-The Visual state uses an SVG tree layout ordered by key. The Memory state shows the root reference plus each node object's parent/left/right references. Screen coordinates are never described as memory addresses.
+The Visual state uses an ordered tree layout by key. The Memory state shows the root reference plus each node object's parent/left/right references. Screen coordinates are never described as memory addresses.
+
+---
+
+# AVL Tree
+
+AVL is the third live data-structure module and the second live tree module. It deliberately builds on the same strict BST ordering rule:
+
+```text
+left subtree values < node value < right subtree values
+```
+
+The difference is that every mutation also maintains a height for each custom node and checks:
+
+```text
+balance factor = height(left) - height(right)
+```
+
+A node is valid when its balance factor is `-1`, `0`, or `+1`.
+
+Implemented operations:
+
+- `Insert` by key;
+- `Search` by key;
+- `Delete` by key;
+- `Reset` lab state.
+
+Duplicate keys are rejected only after the real comparison path reaches the equal node.
+
+Each `AvlNode` stores:
+
+- value;
+- short learner-facing ID derived from an internal `Guid`;
+- parent, left-child, and right-child references;
+- cached height;
+- transient renderer-neutral simulation state.
+
+## AVL insert and search
+
+Search is the same ordered search used by BST. It follows one child link per comparison and never rotates the tree.
+
+Insertion first finds the empty child link using the BST rule. After connecting the new node, the implementation walks back toward the root, recomputes cached heights, checks balance factors, and rotates only if an ancestor becomes invalid.
+
+## AVL rotations
+
+The implementation manually supports all four repair cases:
+
+- **LL** — one right rotation;
+- **RR** — one left rotation;
+- **LR** — left rotation on the heavy child, then right rotation on the unbalanced ancestor;
+- **RL** — right rotation on the heavy child, then left rotation on the unbalanced ancestor.
+
+Rotations do not copy values between nodes. They rewire the real custom node references while preserving BST ordering and node identity. Cached heights are updated after every primitive rotation.
+
+## AVL delete
+
+Deletion begins with the same three structural BST cases:
+
+1. leaf;
+2. one child;
+3. two children using the in-order successor.
+
+For the two-child case, the real successor node object is transplanted instead of copying its value. After the structural delete, AVL continues upward and may perform more than one repair while restoring the balance invariant.
+
+## AVL complexity
+
+Because AVL actively keeps the tree height logarithmic, search, insert, and delete are:
+
+```text
+O(log n)
+```
+
+Run explanations report key comparisons, successor checks when relevant, upward balance checks, primitive rotation count, first diagnosed rotation case, and height before/after the operation.
+
+## AVL playback and learning UI
+
+The AVL lab supports:
+
+- Play;
+- Pause;
+- Step forward;
+- Step back through captured snapshots;
+- adjustable delay;
+- Visual state with value, short ID, cached height, and balance factor;
+- highlighted unbalanced, rotation-pivot, rotating, and restored-balanced states;
+- Memory state with root/parent/left/right references and cached height;
+- optional Last Run popups;
+- guided rotation practice with local completion persistence.
+
+The Learn First section includes compact LL/RR/LR/RL recipes so a learner can predict the repair before running it.
 
 ---
 
@@ -434,6 +531,7 @@ For example:
 - its top element is marked;
 - Queue shows its front and rear;
 - BST is laid out as an ordered tree with smaller keys left and larger keys right;
+- AVL uses the same ordering view and additionally shows cached height, balance factor, and rotation states;
 - active elements/nodes are highlighted during traversal.
 
 ## Memory state
@@ -444,7 +542,8 @@ The memory view explains:
 
 - backing-array slots for the linear module;
 - occupied vs reserved capacity for the custom dynamic array;
-- node parent/left/right references for BST;
+- node parent/left/right references for BST and AVL;
+- cached height and balance factor for AVL nodes;
 - root references;
 - individual element/node objects;
 - IDs and values;
@@ -454,7 +553,7 @@ These views are intentionally separate.
 
 A drawing used to explain an algorithm is **not necessarily the same as the program's memory layout**.
 
-BST now demonstrates this distinction directly: the SVG position explains ordering, while the Memory state shows the actual parent/left/right object-reference graph. The same separation will be important for future Graph, AVL, Red-Black, and Heap modules.
+BST demonstrates this distinction with ordered screen position versus the actual parent/left/right object-reference graph. AVL extends the same separation: its Visual state explains balance and rotations, while Memory state shows the real reference rewiring and cached heights. The same separation will be important for future Graph, Red-Black, and Heap modules.
 
 ---
 
@@ -495,7 +594,7 @@ The current run inspected the complete linear structure.
 
 ### `h`
 
-BST height: the length, in levels, of the longest root-to-leaf path. BST search, insert, and delete are `O(h)` because they follow tree links rather than scanning every node in storage order.
+Tree height: the length, in levels, of the longest root-to-leaf path. BST search, insert, and delete are `O(h)` because they follow tree links rather than scanning every node in storage order. AVL maintains `h = O(log n)` by rebalancing after mutations, which makes its search, insert, and delete worst-case `O(log n)`.
 
 Example:
 
@@ -561,7 +660,7 @@ This preserves correct algorithm state while still allowing the learner to revie
 
 # Result explanations
 
-After Queue/Stack Find/Delete operations and after BST Insert/Search/Delete operations, the application can show a **Last Run** explanation.
+After Queue/Stack Find/Delete operations and after BST or AVL Insert/Search/Delete operations, the application can show a **Last Run** explanation.
 
 The explanation contains two views:
 
@@ -573,7 +672,8 @@ Shows:
 - number of checks;
 - current-run complexity;
 - full-operation complexity;
-- worst-case complexity.
+- worst-case complexity;
+- AVL balance checks, primitive rotation count, and diagnosed rotation case when relevant.
 
 ## Memory
 
@@ -637,6 +737,17 @@ The BST lab has its own guided tasks for:
 
 BST task completion is also stored locally in the browser.
 
+The AVL lab adds guided tasks for:
+
+- LL insertion repair;
+- RR insertion repair;
+- LR insertion repair;
+- RL insertion repair;
+- deletion that triggers upward rebalancing plus Memory-state inspection;
+- successful and missing search after rotations.
+
+AVL task completion is stored locally in the browser.
+
 ---
 
 # Concepts & Memory
@@ -663,7 +774,8 @@ It provides simple explanations for concepts reused across the simulations, incl
 - memory allocation;
 - garbage collection;
 - Visual state vs Memory state;
-- BST tree height `h` and why shape changes `O(h)` cost.
+- BST tree height `h` and why shape changes `O(h)` cost;
+- AVL balance factor and the LL / RR / LR / RL rotation cases.
 
 The page starts with short beginner-friendly explanations and provides links to deeper external documentation for learners who want more detail.
 
@@ -707,11 +819,17 @@ DataStructures/
 │   ├── ManualDynamicArray.cs
 │   ├── Stack/StackSimulation.cs
 │   └── Queue/QueueSimulation.cs
-└── Trees/Bst/
-    ├── BstNode.cs
-    ├── BstNodeSnapshot.cs
-    ├── BstOperationResult.cs
-    └── BstSimulation.cs
+└── Trees/
+    ├── Bst/
+    │   ├── BstNode.cs
+    │   ├── BstNodeSnapshot.cs
+    │   ├── BstOperationResult.cs
+    │   └── BstSimulation.cs
+    └── Avl/
+        ├── AvlNode.cs
+        ├── AvlNodeSnapshot.cs
+        ├── AvlOperationResult.cs
+        └── AvlSimulation.cs
 ```
 
 ## `AlgorithmVisualizer.Client`
@@ -794,6 +912,8 @@ The development server will print the local application URL.
 dotnet build AlgorithmVisualizer.sln
 ```
 
+If the Client project reports that a live Core module namespace or type cannot be found, resolve any **Core compiler errors first**. A failed Core build can cascade into many `CS0234` / `CS0246` errors in Razor files even when their `@using` directives and project reference are correct.
+
 # Tests
 
 Focused Core tests are included in:
@@ -808,13 +928,15 @@ Run them with:
 dotnet test tests/AlgorithmVisualizer.Core.Tests/AlgorithmVisualizer.Core.Tests.csproj
 ```
 
-The initial BST test suite covers insertion shape, duplicate rejection, search success/miss, all three delete cases, successor-node identity, and skewed-tree height.
+The BST test suite covers insertion shape, duplicate rejection, search success/miss, all three delete cases, successor-node identity, and skewed-tree height.
+
+The AVL test suite covers LL/RR/LR/RL repairs, increasing-order height control, duplicate rejection, found/missing search, leaf/one-child/two-child deletion, delete-triggered rebalancing, successor/promoted-node identity, clear/reset behavior, and recursive validation of BST order, parent links, cached heights, balance factors, and the AVL balance invariant.
 
 ---
 
 # Learning design principles
 
-Every future module should follow the same principles established by Queue & Stack and extended by BST.
+Every future module should follow the same principles established by Queue & Stack and extended by BST and AVL.
 
 ## 1. Show the algorithm, do not hide it
 
@@ -848,7 +970,7 @@ Do not replace an implementation with a framework collection or library algorith
 
 # Next implementation direction
 
-Queue & Stack established the linear foundation and BST now validates the same learning architecture for linked non-linear structures:
+Queue & Stack established the linear foundation; BST validated linked non-linear structures; AVL now validates mutation-driven balancing and multi-step pointer rewiring on top of the same learning architecture:
 
 ```text
 algorithm
@@ -866,7 +988,7 @@ complexity explanation
 guided practice
 ```
 
-AVL is now the most natural next tree module because it can reuse the BST ordering/search foundation while adding height tracking and rotations. Graph, Heap, Sorting and Search modules should reuse the same learning model while providing their own manually implemented algorithms and data structures.
+The next module can now reuse our custom Queue, Stack, BST, and AVL implementations wherever that is algorithmically appropriate. Red-Black Tree is the next tree in the written specification, while Heap is also a reasonable next dependency for later Heap Sort and Dijkstra work.
 
 ---
 
@@ -876,4 +998,6 @@ AVL is now the most natural next tree module because it can reuse the BST orderi
 
 **Binary Search Tree: implemented as the first complete tree module, including structural deletion, Visual/Memory views, playback history, result explanations, and guided practice.**
 
-The project is ready to build AVL on top of the validated BST/tree visualization foundation.
+**AVL Tree: implemented as the balanced-tree extension, including cached heights, balance factors, all four rotation cases, insert/delete rebalancing, Visual/Memory views, run explanations, and rotation-focused guided practice.**
+
+The project now has reusable manual linear structures and two reusable manual tree foundations for subsequent algorithms and data structures.

@@ -16,7 +16,7 @@ algorithm-structure-visualizer/
 │  │  │  │  └─ Queue/
 │  │  │  └─ Trees/
 │  │  │     ├─ Bst/             # implemented
-│  │  │     ├─ Avl/             # planned
+│  │  │     ├─ Avl/             # implemented
 │  │  │     └─ RedBlack/        # planned
 │  │  ├─ Algorithms/Sorting/    # planned modules
 │  │  └─ Simulation/
@@ -86,6 +86,7 @@ Examples:
 
 - Queue/Stack use the custom `ManualDynamicArray<T>` rather than `Queue<T>`, `Stack<T>`, `List<T>`, or `Array.Copy` for the taught storage operations.
 - BST uses explicit `BstNode` parent/left/right references and manual comparison/transplant logic rather than a sorted collection or library tree.
+- AVL uses explicit `AvlNode` references, manually maintained cached heights, balance-factor checks, and explicit left/right rotations rather than a library balancing structure.
 
 Infrastructure types such as `Task`, `CancellationToken`, `SemaphoreSlim`, `Guid`, Blazor services, and browser storage interop are allowed because they do not implement the taught algorithm.
 
@@ -99,7 +100,8 @@ Every live data-structure module separates two models:
 Current examples:
 
 - Stack/Queue visual order differs from the custom backing-array slot view.
-- BST SVG coordinates communicate key ordering, while Memory state shows the root reference and parent/left/right node references.
+- BST tree coordinates communicate key ordering, while Memory state shows the root reference and parent/left/right node references.
+- AVL visual state adds cached height, balance factor, and rotation states; its Memory state shows the same node identities and the real reference rewiring performed by rotations.
 
 Learning labels such as `MEM-#A1B2C3` represent object identity only; they are not physical RAM addresses.
 
@@ -121,12 +123,25 @@ The first tree module implements:
 - manual node-reference transplant;
 - strict duplicate rejection;
 - tree-height reporting;
-- SVG visual state;
+- tree visual state;
 - node-reference Memory state;
 - playback history;
 - result explanations;
 - guided practice.
 
+### AVL Tree
+
+The second tree module builds on the BST ordering model and adds:
+
+- cached node heights and balance factors;
+- upward rebalance checks after insert and delete;
+- LL and RR single-rotation repairs;
+- LR and RL double-rotation repairs;
+- explicit parent/left/right pointer rewiring;
+- AVL-specific visual states for unbalanced nodes, rotation pivots, active rotation, and restored balance;
+- Memory state with node identity, links, height, and balance factor;
+- rotation-focused guided practice and persistent progress.
+
 ## Planned extension path
 
-AVL is the natural next tree module because it can reuse the BST ordering/search concepts and tree visualization while adding explicit height/balance-factor maintenance and rotations. Other planned modules should reuse the same Core/runtime/Client separation rather than duplicating playback infrastructure.
+Red-Black Tree, Heap, Graph, and sorting modules should reuse the same Core/runtime/Client separation rather than duplicating playback infrastructure. Future tree modules may reuse the established BST/AVL ordering, reference, layout, and playback concepts where appropriate.

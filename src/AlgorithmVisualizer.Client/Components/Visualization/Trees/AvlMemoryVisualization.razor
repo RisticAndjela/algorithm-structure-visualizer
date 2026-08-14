@@ -1,0 +1,115 @@
+@using AlgorithmVisualizer.Core.DataStructures.Trees.Avl
+
+<section class="avl-memory" aria-label="AVL tree memory state">
+    <header class="memory-header">
+        <div>
+            <span class="memory-kicker">MEMORY STATE</span>
+            <h3>Node objects, references, and cached height</h3>
+        </div>
+        <div class="memory-metrics">
+            <span>Count <strong>@Count</strong></span>
+            <span>Height <strong>@Height</strong></span>
+        </div>
+    </header>
+
+    <div class="memory-note">
+        <strong>Rotations move references, not values on a drawing.</strong>
+        <span>Each AVL node is a C# object with parent/left/right references and a cached <code>Height</code>. <code>MEM-#...</code> is a stable learning label derived from the node ID, never a physical RAM address.</span>
+    </div>
+
+    <section class="root-reference" aria-label="Root reference">
+        <span>ROOT REFERENCE</span>
+        @if (Root is null)
+        {
+            <strong>null</strong>
+            <small>The tree cannot reach any node.</small>
+        }
+        else
+        {
+            <strong>ref → MEM-#@Root.DisplayId</strong>
+            <small>value @Root.Value · h @Root.Height · BF @FormatBalance(Root.BalanceFactor)</small>
+        }
+    </section>
+
+    @if (Root is null)
+    {
+        <div class="memory-empty">No AVL node objects are reachable from the root.</div>
+    }
+    else
+    {
+        <div class="object-grid">
+            @foreach (var node in FlatNodes)
+            {
+                <article class="node-object @GetStateClass(node.VisualState)" @key="node.Id">
+                    <div class="object-heading">
+                        <span>MEM-#@node.DisplayId</span>
+                        <strong>value = @node.Value</strong>
+                        <small>height = @node.Height · balance = @FormatBalance(node.BalanceFactor)</small>
+                    </div>
+                    <dl>
+                        <div><dt>parent</dt><dd>@FormatReference(node.ParentDisplayId)</dd></div>
+                        <div><dt>left</dt><dd>@FormatReference(node.Left?.DisplayId)</dd></div>
+                        <div><dt>right</dt><dd>@FormatReference(node.Right?.DisplayId)</dd></div>
+                    </dl>
+                </article>
+            }
+        </div>
+    }
+
+    <footer class="memory-footer">
+        <span><strong>Visual state:</strong> the balanced shape used to understand search and rotations.</span>
+        <span><strong>Memory state:</strong> the actual custom node links changed by each rotation.</span>
+    </footer>
+</section>
+
+@code {
+    [Parameter]
+    public AvlNodeSnapshot? Root { get; set; }
+
+    [Parameter]
+    public int Count { get; set; }
+
+    [Parameter]
+    public int Height { get; set; }
+
+    private readonly List<AvlNodeSnapshot> _flatNodes = [];
+    private IReadOnlyList<AvlNodeSnapshot> FlatNodes => _flatNodes;
+
+    protected override void OnParametersSet()
+    {
+        _flatNodes.Clear();
+        AddPreOrder(Root);
+    }
+
+    private void AddPreOrder(AvlNodeSnapshot? node)
+    {
+        if (node is null)
+        {
+            return;
+        }
+
+        _flatNodes.Add(node);
+        AddPreOrder(node.Left);
+        AddPreOrder(node.Right);
+    }
+
+    private static string FormatReference(string? displayId) =>
+        string.IsNullOrWhiteSpace(displayId) ? "null" : $"ref → MEM-#{displayId}";
+
+    private static string FormatBalance(int balance) => balance > 0 ? $"+{balance}" : balance.ToString();
+
+    private static string GetStateClass(AvlNodeVisualState state) => state switch
+    {
+        AvlNodeVisualState.Checking => "is-checking",
+        AvlNodeVisualState.Matched => "is-matched",
+        AvlNodeVisualState.Adding => "is-adding",
+        AvlNodeVisualState.Removing => "is-removing",
+        AvlNodeVisualState.Replacement => "is-replacement",
+        AvlNodeVisualState.PointerTarget => "is-pointer",
+        AvlNodeVisualState.Unbalanced => "is-unbalanced",
+        AvlNodeVisualState.RotationPivot => "is-pivot",
+        AvlNodeVisualState.Rotating => "is-rotating",
+        AvlNodeVisualState.Balanced => "is-balanced",
+        _ => string.Empty
+    };
+}

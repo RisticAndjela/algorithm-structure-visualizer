@@ -16,6 +16,7 @@
         <a href="#lifo-fifo">LIFO &amp; FIFO</a>
         <a href="#big-o">O(1), O(n), k</a>
         <a href="#tree-height">Tree height h</a>
+        <a href="#avl-balance">AVL balance &amp; rotations</a>
         <a href="#identity">Value vs ID</a>
         <a href="#memory">Memory</a>
         <a href="#visual-vs-memory">Visual vs memory</a>
@@ -115,10 +116,37 @@
         </div>
     </section>
 
+
+    <section id="avl-balance" class="concept-section">
+        <div class="section-heading">
+            <span>AVL</span>
+            <div><h2>Balance factor and rotations</h2><p>AVL keeps the BST ordering rule, then repairs shape whenever one side becomes more than one level taller.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class="concept-card">
+                <span class="term">BF</span>
+                <h3>Measure left height minus right height</h3>
+                <p><code>BF = height(left) - height(right)</code>. A node is AVL-balanced when BF is <code>-1</code>, <code>0</code>, or <code>+1</code>. Values below -1 are too right-heavy; values above +1 are too left-heavy.</p>
+                <div class="example"><strong>Example:</strong> left height 3 and right height 1 → BF = +2 → repair required.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">CASE</span>
+                <h3>Read the heavy path before rotating</h3>
+                <p><b>LL</b> and <b>RR</b> are outside-heavy cases and need one primitive rotation. <b>LR</b> and <b>RL</b> bend inward and need two primitive rotations.</p>
+                <div class="example"><strong>Recipes:</strong> 30,20,10 → LL · 10,20,30 → RR · 30,10,20 → LR · 10,30,20 → RL.</div>
+            </article>
+        </div>
+        <div class="plain-note">
+            <strong>Rotations change links, not the sorted order.</strong>
+            <p>The same node objects remain in the tree. A rotation rewires parent, left, and right references and then updates cached heights. In-order traversal still produces the same sorted keys before and after the repair.</p>
+            <a href="/structures/avl">Open the AVL lab →</a>
+        </div>
+    </section>
+
     <section id="identity" class="concept-section">
         <div class="section-heading">
             <span>03</span>
-            <div><h2>Value is not the same as identity</h2><p>This is why duplicate values are completely valid in this lab.</p></div>
+            <div><h2>Value is not the same as identity</h2><p>Structures that allow duplicate values can still store them as different element objects. BST and AVL intentionally use unique keys, but the identity idea still matters when references move.</p></div>
         </div>
         <div class="identity-demo">
             <div class="identity-object"><span>MEM-#A1B2C3</span><strong>value = 7</strong><small>ID #A1B2C3</small></div>

@@ -3,6 +3,7 @@ using AlgorithmVisualizer.Client.State;
 using AlgorithmVisualizer.Core.DataStructures.Linear.Queue;
 using AlgorithmVisualizer.Core.DataStructures.Linear.Stack;
 using AlgorithmVisualizer.Core.DataStructures.Trees.Bst;
+using AlgorithmVisualizer.Core.DataStructures.Trees.Avl;
 using AlgorithmVisualizer.Core.Simulation.Contracts;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -17,9 +18,10 @@ builder.Services.AddScoped<SimulationState>();
 builder.Services.AddScoped<ISimulationRuntime>(serviceProvider =>
     serviceProvider.GetRequiredService<SimulationState>());
 
-// Phase 3 simulation services own data-structure state, not rendering concerns.
+// Live simulation services own data-structure state, not rendering concerns.
 builder.Services.AddScoped<StackSimulation>();
 builder.Services.AddScoped<QueueSimulation>();
 builder.Services.AddScoped<BstSimulation>();
+builder.Services.AddScoped<AvlSimulation>();
 
 await builder.Build().RunAsync();
