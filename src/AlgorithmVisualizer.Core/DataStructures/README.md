@@ -12,3 +12,6 @@ Live modules currently include:
 - `Matrix/` — row-major `double[]` Matrix workspace with arithmetic, multiplication, elimination, inverse, rank and graph-adjacency presets.
 
 All taught mutation/search/balancing behavior is implemented explicitly rather than delegated to ready-made framework data structures.
+
+
+Graph is live with manual adjacency lists plus the existing ManualMatrix adjacency representation. Traversal/path algorithms remain separate consumers of this structure.

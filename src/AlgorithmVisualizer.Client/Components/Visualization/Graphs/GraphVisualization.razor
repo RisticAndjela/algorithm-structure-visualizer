@@ -1,0 +1,597 @@
+@using AlgorithmVisualizer.Core.DataStructures.Graph
+@using Microsoft.AspNetCore.Components.Web
+@using System.Text.Json.Serialization
+@implements IAsyncDisposable
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<div class="graph-visualization">
+    <div class="visualization-heading">
+        <div>
+            <span class="eyebrow">TOPOLOGY</span>
+            <strong>@ModeLabel</strong>
+        </div>
+        <div class="visualization-meta">
+            <span>@Snapshot.VertexCount vertices · @Snapshot.EdgeCount edges</span>
+            <span class="drag-hint">Drag freely · the canvas expands only as graph content reaches new bounds.</span>
+            <button type="button" class="layout-reset" @onclick="ResetLayout" disabled="@(!HasManualLayout)">Reset layout</button>
+        </div>
+    </div>
+
+    @if (Snapshot.VertexCount == 0)
+    {
+        <div class="empty-graph">
+            <div class="empty-symbol"><i></i><i></i><i></i></div>
+            <strong>Add a vertex to start the graph.</strong>
+            <p>Vertices are the entities. Edges will describe relationships between them.</p>
+        </div>
+    }
+    else
+    {
+        <div class="graph-canvas" @ref="_canvasElement">
+            <svg @ref="_svgElement"
+                 style="@StageStyle"
+                 role="img"
+                 aria-label="Interactive graph topology. Drag vertices in any direction; the scrollable workspace grows with graph content."
+                 @onpointermove="HandlePointerMove"
+                 @onpointerup="EndDragAsync"
+                 @onpointercancel="EndDragAsync">
+                <defs>
+                    <marker id="graph-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+                        <path d="M0,0 L8,4 L0,8 Z" class="arrow-head"></path>
+                    </marker>
+                </defs>
+
+                @foreach (var edge in Snapshot.Edges)
+                {
+                    var from = RenderPosition(Position(edge.FromId, edge.FromIndex));
+                    var to = RenderPosition(Position(edge.ToId, edge.ToIndex));
+                    var edgeClass = EdgeStateClass(edge.VisualState);
+                    if (edge.FromIndex == edge.ToIndex)
+                    {
+                        var loopPath = SelfLoopPath(from);
+                        var loopLabel = SelfLoopLabelPosition(from);
+                        <path d="@loopPath" class="graph-edge self-loop @edgeClass" marker-end="@ArrowMarker"></path>
+                        @if (Snapshot.Weighted)
+                        {
+                            <foreignObject x="@F(loopLabel.X - 38)" y="@F(loopLabel.Y - 15)" width="76" height="30" class="edge-label-object">
+                                <div class="weight-label">@FormatWeight(edge.Weight)</div>
+                            </foreignObject>
+                        }
+                    }
+                    else
+                    {
+                        var path = EdgePath(edge, from, to);
+                        <path d="@path" class="graph-edge @edgeClass" marker-end="@ArrowMarker"></path>
+                        @if (Snapshot.Weighted)
+                        {
+                            var label = EdgeLabelPosition(edge, from, to);
+                            <foreignObject x="@F(label.X - 34)" y="@F(label.Y - 15)" width="68" height="30" class="edge-label-object">
+                                <div class="weight-label">@FormatWeight(edge.Weight)</div>
+                            </foreignObject>
+                        }
+                    }
+                }
+
+                @foreach (var vertex in Snapshot.Vertices)
+                {
+                    var position = RenderPosition(Position(vertex.Id, vertex.Index));
+                    <g @key="vertex.Id"
+                       class="vertex-group"
+                       transform="translate(@F(position.X) @F(position.Y))"
+                       @onpointerdown="@(args => BeginDragAsync(vertex.Id, vertex.Index, args))"
+                       @onpointerdown:preventDefault="true"
+                       @onpointerdown:stopPropagation="true">
+                        <foreignObject x="-48" y="-48" width="96" height="96" class="vertex-object">
+                            <div class="graph-node @VertexCssClass(vertex)" title="Drag @vertex.Label to reposition it">
+                                <strong>@vertex.Label</strong>
+                                <span>#@vertex.DisplayId</span>
+                                <small>@DegreeText(vertex)</small>
+                            </div>
+                        </foreignObject>
+                    </g>
+                }
+            </svg>
+        </div>
+    }
+
+    <div class="state-legend" aria-label="Graph animation state legend">
+        <span><i class="normal"></i>Normal</span>
+        <span><i class="checking"></i>Checking</span>
+        <span><i class="source"></i>Source</span>
+        <span><i class="target"></i>Target</span>
+        <span><i class="neighbor"></i>Neighbor</span>
+        <span><i class="matched"></i>Match</span>
+        <span><i class="added"></i>New</span>
+        <span><i class="removing"></i>Removing</span>
+    </div>
+</div>
+
+@code {
+    private const double DefaultViewportWidth = 760d;
+    private const double DefaultViewportHeight = 440d;
+    private const double ContentPadding = 128d;
+    private const double AutoLayoutMargin = 70d;
+
+    [Parameter, EditorRequired]
+    public GraphSnapshot Snapshot { get; set; } = new(false, false, 0, 0, Array.Empty<GraphVertexSnapshot>(), Array.Empty<GraphEdgeSnapshot>(), Array.Empty<GraphMatrixCellSnapshot>());
+
+    private ElementReference _canvasElement;
+    private ElementReference _svgElement;
+    private Microsoft.JSInterop.IJSObjectReference? _dragModule;
+    private ManualVertexPosition[] _manualPositions = Array.Empty<ManualVertexPosition>();
+    private Guid? _draggedVertexId;
+    private long _dragPointerId;
+    private double _dragWorldX;
+    private double _dragWorldY;
+    private double _lastClientX;
+    private double _lastClientY;
+    private double _viewportWidth = DefaultViewportWidth;
+    private double _viewportHeight = DefaultViewportHeight;
+    private double _stageOriginX;
+    private double _stageOriginY;
+    private double _stageWidth = DefaultViewportWidth;
+    private double _stageHeight = DefaultViewportHeight;
+    private double _pendingScrollX;
+    private double _pendingScrollY;
+    private bool _resetScrollRequested;
+
+    private string? ArrowMarker => Snapshot.Directed ? "url(#graph-arrow)" : null;
+    private string ModeLabel => $"{(Snapshot.Directed ? "Directed" : "Undirected")} · {(Snapshot.Weighted ? "Weighted" : "Unweighted")}";
+    private bool HasManualLayout => _manualPositions.Length > 0;
+    private string StageStyle => $"width:{F(_stageWidth)}px;height:{F(_stageHeight)}px";
+
+    protected override void OnParametersSet()
+    {
+        PruneManualPositions();
+        RecalculateStageBounds(preserveViewport: false);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
+            _dragModule ??= await JS.InvokeAsync<Microsoft.JSInterop.IJSObjectReference>("import", "./js/graph-drag.js");
+
+            var viewport = await _dragModule.InvokeAsync<ViewportSize>("measureViewport", _canvasElement);
+            if (viewport.IsFinite && viewport.Width > 0 && viewport.Height > 0)
+            {
+                var widthChanged = Math.Abs(viewport.Width - _viewportWidth) > 2d;
+                var heightChanged = Math.Abs(viewport.Height - _viewportHeight) > 2d;
+                if (widthChanged || heightChanged)
+                {
+                    _viewportWidth = Math.Max(320d, viewport.Width);
+                    _viewportHeight = Math.Max(320d, viewport.Height);
+                    RecalculateStageBounds(preserveViewport: false);
+                    StateHasChanged();
+                    return;
+                }
+            }
+
+            if (_resetScrollRequested)
+            {
+                _resetScrollRequested = false;
+                _pendingScrollX = 0d;
+                _pendingScrollY = 0d;
+                await _dragModule.InvokeVoidAsync("resetScroll", _canvasElement);
+                return;
+            }
+
+            if (Math.Abs(_pendingScrollX) > .01d || Math.Abs(_pendingScrollY) > .01d)
+            {
+                var scrollX = _pendingScrollX;
+                var scrollY = _pendingScrollY;
+                _pendingScrollX = 0d;
+                _pendingScrollY = 0d;
+                await _dragModule.InvokeVoidAsync("adjustScroll", _canvasElement, scrollX, scrollY);
+            }
+        }
+        catch
+        {
+            // The graph remains usable without measurements; dragging simply falls back
+            // to the current viewport dimensions until JS interop becomes available.
+        }
+    }
+
+    private Point Position(Guid vertexId, int fallbackIndex)
+    {
+        for (var i = 0; i < _manualPositions.Length; i++)
+        {
+            if (_manualPositions[i].VertexId == vertexId)
+            {
+                return new Point(_manualPositions[i].X, _manualPositions[i].Y);
+            }
+        }
+
+        return AutoPosition(fallbackIndex);
+    }
+
+    private Point RenderPosition(Point worldPosition) => new(
+        worldPosition.X - _stageOriginX,
+        worldPosition.Y - _stageOriginY);
+
+    private Point AutoPosition(int index)
+    {
+        var count = Math.Max(1, Snapshot.VertexCount);
+        if (count == 1)
+        {
+            return new Point(_viewportWidth / 2d, _viewportHeight / 2d);
+        }
+
+        if (count <= 10)
+        {
+            var angle = (-Math.PI / 2d) + ((Math.PI * 2d * index) / count);
+            var radiusX = Math.Max(100d, (_viewportWidth / 2d) - 120d);
+            var radiusY = Math.Max(90d, (_viewportHeight / 2d) - 105d);
+            return new Point(
+                (_viewportWidth / 2d) + (Math.Cos(angle) * radiusX),
+                (_viewportHeight / 2d) + (Math.Sin(angle) * radiusY));
+        }
+
+        var columns = (int)Math.Ceiling(Math.Sqrt(count));
+        var rows = (int)Math.Ceiling(count / (double)columns);
+        var column = index % columns;
+        var row = index / columns;
+        var usableWidth = Math.Max(0d, _viewportWidth - (AutoLayoutMargin * 2d));
+        var usableHeight = Math.Max(0d, _viewportHeight - (AutoLayoutMargin * 2d));
+        var xStep = columns <= 1 ? 0d : usableWidth / (columns - 1d);
+        var yStep = rows <= 1 ? 0d : usableHeight / (rows - 1d);
+
+        return new Point(
+            AutoLayoutMargin + (column * xStep),
+            AutoLayoutMargin + (row * yStep));
+    }
+
+    private async Task BeginDragAsync(Guid vertexId, int fallbackIndex, PointerEventArgs args)
+    {
+        if (args.PointerType == "mouse" && args.Button != 0)
+        {
+            return;
+        }
+
+        var current = Position(vertexId, fallbackIndex);
+        if (!current.IsFinite || !double.IsFinite(args.ClientX) || !double.IsFinite(args.ClientY))
+        {
+            return;
+        }
+
+        try
+        {
+            _dragModule ??= await JS.InvokeAsync<Microsoft.JSInterop.IJSObjectReference>("import", "./js/graph-drag.js");
+            await _dragModule.InvokeVoidAsync("beginDrag", _svgElement, args.PointerId);
+
+            _draggedVertexId = vertexId;
+            _dragPointerId = args.PointerId;
+            _dragWorldX = current.X;
+            _dragWorldY = current.Y;
+            _lastClientX = args.ClientX;
+            _lastClientY = args.ClientY;
+        }
+        catch
+        {
+            _draggedVertexId = null;
+            _dragPointerId = 0;
+        }
+    }
+
+    private void HandlePointerMove(PointerEventArgs args)
+    {
+        if (_draggedVertexId is not Guid vertexId || args.PointerId != _dragPointerId)
+        {
+            return;
+        }
+
+        var deltaX = args.ClientX - _lastClientX;
+        var deltaY = args.ClientY - _lastClientY;
+        if (!double.IsFinite(deltaX) || !double.IsFinite(deltaY))
+        {
+            return;
+        }
+
+        _lastClientX = args.ClientX;
+        _lastClientY = args.ClientY;
+        _dragWorldX += deltaX;
+        _dragWorldY += deltaY;
+
+        if (!double.IsFinite(_dragWorldX) || !double.IsFinite(_dragWorldY))
+        {
+            return;
+        }
+
+        SetManualPosition(vertexId, _dragWorldX, _dragWorldY);
+        RecalculateStageBounds(preserveViewport: true);
+    }
+
+    private async Task EndDragAsync(PointerEventArgs args)
+    {
+        if (_draggedVertexId is null || args.PointerId != _dragPointerId)
+        {
+            return;
+        }
+
+        try
+        {
+            if (_dragModule is not null)
+            {
+                await _dragModule.InvokeVoidAsync("endDrag", _svgElement, _dragPointerId);
+            }
+        }
+        catch
+        {
+            // Pointer capture may already have been released by the browser.
+        }
+        finally
+        {
+            _draggedVertexId = null;
+            _dragPointerId = 0;
+        }
+    }
+
+    private void SetManualPosition(Guid vertexId, double x, double y)
+    {
+        for (var i = 0; i < _manualPositions.Length; i++)
+        {
+            if (_manualPositions[i].VertexId != vertexId)
+            {
+                continue;
+            }
+
+            _manualPositions[i] = new ManualVertexPosition(vertexId, x, y);
+            return;
+        }
+
+        var expanded = new ManualVertexPosition[_manualPositions.Length + 1];
+        for (var i = 0; i < _manualPositions.Length; i++)
+        {
+            expanded[i] = _manualPositions[i];
+        }
+
+        expanded[^1] = new ManualVertexPosition(vertexId, x, y);
+        _manualPositions = expanded;
+    }
+
+    private void PruneManualPositions()
+    {
+        if (_manualPositions.Length == 0)
+        {
+            return;
+        }
+
+        var keepCount = 0;
+        for (var i = 0; i < _manualPositions.Length; i++)
+        {
+            if (SnapshotContainsVertex(_manualPositions[i].VertexId))
+            {
+                keepCount++;
+            }
+        }
+
+        if (keepCount == _manualPositions.Length)
+        {
+            return;
+        }
+
+        var kept = new ManualVertexPosition[keepCount];
+        var target = 0;
+        for (var i = 0; i < _manualPositions.Length; i++)
+        {
+            if (SnapshotContainsVertex(_manualPositions[i].VertexId))
+            {
+                kept[target++] = _manualPositions[i];
+            }
+        }
+
+        _manualPositions = kept;
+    }
+
+    private bool SnapshotContainsVertex(Guid vertexId)
+    {
+        foreach (var vertex in Snapshot.Vertices)
+        {
+            if (vertex.Id == vertexId)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void RecalculateStageBounds(bool preserveViewport)
+    {
+        var oldOriginX = _stageOriginX;
+        var oldOriginY = _stageOriginY;
+
+        if (Snapshot.VertexCount == 0)
+        {
+            _stageOriginX = 0d;
+            _stageOriginY = 0d;
+            _stageWidth = _viewportWidth;
+            _stageHeight = _viewportHeight;
+            return;
+        }
+
+        var minX = double.PositiveInfinity;
+        var minY = double.PositiveInfinity;
+        var maxX = double.NegativeInfinity;
+        var maxY = double.NegativeInfinity;
+
+        foreach (var vertex in Snapshot.Vertices)
+        {
+            var position = Position(vertex.Id, vertex.Index);
+            if (!position.IsFinite)
+            {
+                continue;
+            }
+
+            minX = Math.Min(minX, position.X);
+            minY = Math.Min(minY, position.Y);
+            maxX = Math.Max(maxX, position.X);
+            maxY = Math.Max(maxY, position.Y);
+        }
+
+        if (!double.IsFinite(minX) || !double.IsFinite(minY) || !double.IsFinite(maxX) || !double.IsFinite(maxY))
+        {
+            return;
+        }
+
+        // The base viewport is always retained. Extra world space exists only where
+        // a vertex (and therefore its incident edges/labels) actually reaches beyond it.
+        _stageOriginX = Math.Min(0d, minX - ContentPadding);
+        _stageOriginY = Math.Min(0d, minY - ContentPadding);
+        var rightBound = Math.Max(_viewportWidth, maxX + ContentPadding);
+        var bottomBound = Math.Max(_viewportHeight, maxY + ContentPadding);
+        _stageWidth = Math.Max(_viewportWidth, rightBound - _stageOriginX);
+        _stageHeight = Math.Max(_viewportHeight, bottomBound - _stageOriginY);
+
+        if (preserveViewport)
+        {
+            _pendingScrollX += oldOriginX - _stageOriginX;
+            _pendingScrollY += oldOriginY - _stageOriginY;
+        }
+    }
+
+    private void ResetLayout()
+    {
+        _manualPositions = Array.Empty<ManualVertexPosition>();
+        _draggedVertexId = null;
+        _dragPointerId = 0;
+        RecalculateStageBounds(preserveViewport: false);
+        _resetScrollRequested = true;
+    }
+
+    private string EdgePath(GraphEdgeSnapshot edge, Point from, Point to)
+    {
+        const double nodeRadius = 49;
+        var dx = to.X - from.X;
+        var dy = to.Y - from.Y;
+        var length = Math.Sqrt((dx * dx) + (dy * dy));
+        if (length < 0.001)
+        {
+            return string.Empty;
+        }
+
+        var ux = dx / length;
+        var uy = dy / length;
+        var startX = from.X + (ux * nodeRadius);
+        var startY = from.Y + (uy * nodeRadius);
+        var endX = to.X - (ux * (Snapshot.Directed ? nodeRadius + 6 : nodeRadius));
+        var endY = to.Y - (uy * (Snapshot.Directed ? nodeRadius + 6 : nodeRadius));
+
+        if (Snapshot.Directed && HasReverse(edge))
+        {
+            var midpointX = (startX + endX) / 2d;
+            var midpointY = (startY + endY) / 2d;
+            var perpendicularX = -uy * 34d;
+            var perpendicularY = ux * 34d;
+            return $"M {F(startX)} {F(startY)} Q {F(midpointX + perpendicularX)} {F(midpointY + perpendicularY)} {F(endX)} {F(endY)}";
+        }
+
+        return $"M {F(startX)} {F(startY)} L {F(endX)} {F(endY)}";
+    }
+
+    private Point EdgeLabelPosition(GraphEdgeSnapshot edge, Point from, Point to)
+    {
+        var midpoint = new Point((from.X + to.X) / 2d, (from.Y + to.Y) / 2d);
+        if (!Snapshot.Directed || !HasReverse(edge))
+        {
+            return midpoint;
+        }
+
+        var dx = to.X - from.X;
+        var dy = to.Y - from.Y;
+        var length = Math.Max(1d, Math.Sqrt((dx * dx) + (dy * dy)));
+        return new Point(midpoint.X + ((-dy / length) * 27d), midpoint.Y + ((dx / length) * 27d));
+    }
+
+    private bool HasReverse(GraphEdgeSnapshot edge)
+    {
+        foreach (var candidate in Snapshot.Edges)
+        {
+            if (candidate.Id != edge.Id && candidate.FromId == edge.ToId && candidate.ToId == edge.FromId)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string SelfLoopPath(Point p)
+    {
+        if (p.Y < 118)
+        {
+            return $"M {F(p.X + 30)} {F(p.Y + 36)} C {F(p.X + 100)} {F(p.Y + 105)}, {F(p.X - 100)} {F(p.Y + 105)}, {F(p.X - 30)} {F(p.Y + 36)}";
+        }
+
+        return $"M {F(p.X + 30)} {F(p.Y - 36)} C {F(p.X + 100)} {F(p.Y - 105)}, {F(p.X - 100)} {F(p.Y - 105)}, {F(p.X - 30)} {F(p.Y - 36)}";
+    }
+
+    private static Point SelfLoopLabelPosition(Point p) => p.Y < 118
+        ? new Point(p.X + 42, p.Y + 72)
+        : new Point(p.X + 42, p.Y - 72);
+
+    private string DegreeText(GraphVertexSnapshot vertex) => Snapshot.Directed
+        ? $"in {vertex.InDegree} · out {vertex.OutDegree}"
+        : $"degree {vertex.OutDegree}";
+
+    private string VertexCssClass(GraphVertexSnapshot vertex)
+    {
+        var stateClass = VertexStateClass(vertex.VisualState);
+        return _draggedVertexId == vertex.Id ? $"{stateClass} is-dragging" : stateClass;
+    }
+
+    private static string VertexStateClass(GraphVertexVisualState state) => state switch
+    {
+        GraphVertexVisualState.Checking => "is-checking",
+        GraphVertexVisualState.Source => "is-source",
+        GraphVertexVisualState.Target => "is-target",
+        GraphVertexVisualState.Added => "is-added",
+        GraphVertexVisualState.Matched => "is-matched",
+        GraphVertexVisualState.Neighbor => "is-neighbor",
+        GraphVertexVisualState.Removing => "is-removing",
+        _ => "is-normal"
+    };
+
+    private static string EdgeStateClass(GraphEdgeVisualState state) => state switch
+    {
+        GraphEdgeVisualState.Checking => "is-checking",
+        GraphEdgeVisualState.Added => "is-added",
+        GraphEdgeVisualState.Matched => "is-matched",
+        GraphEdgeVisualState.Removing => "is-removing",
+        _ => "is-normal"
+    };
+
+    private static string FormatWeight(double value) => value.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+    private static string F(double value) => value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_dragModule is not null)
+        {
+            try
+            {
+                await _dragModule.DisposeAsync();
+            }
+            catch
+            {
+                // Component disposal should not fail if the JS runtime is already gone.
+            }
+        }
+    }
+
+    private sealed class ViewportSize
+    {
+        [JsonPropertyName("width")]
+        public double Width { get; set; }
+
+        [JsonPropertyName("height")]
+        public double Height { get; set; }
+        public bool IsFinite => double.IsFinite(Width) && double.IsFinite(Height);
+    }
+
+    private readonly record struct ManualVertexPosition(Guid VertexId, double X, double Y);
+    private readonly record struct Point(double X, double Y)
+    {
+        public bool IsFinite => double.IsFinite(X) && double.IsFinite(Y);
+    }
+}

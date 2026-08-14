@@ -50,3 +50,5 @@ The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctnes
 ## Matrix coverage
 
 `DataStructures/Matrix/MatrixSimulationTests.cs` covers row-major storage/resizing, element-wise arithmetic, matrix multiplication, determinant, inverse/singular handling, RREF/rank, solving `A·X=B`, elementary row operations, and the graph-adjacency preset.
+
+- `GraphSimulationTests` covers directed/undirected synchronization, weighted zero-edge presence, duplicate rules, self-loops, vertex deletion, mode guards, identity-preserving rename/weight update, and growth beyond the standalone Matrix page's 8×8 teaching limit.

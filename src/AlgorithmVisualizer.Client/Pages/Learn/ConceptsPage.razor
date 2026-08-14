@@ -320,10 +320,27 @@
             </article>
         </div>
         <div class="plain-note">
-            <strong>Why this module comes before Graphs</strong>
-            <p>The project plans both adjacency-list and adjacency-matrix graph representations. Learning matrices first means the graph module can focus on graph behavior instead of introducing two unrelated ideas at once.</p>
+            <strong>Why Matrix comes before Graph</strong>
+            <p>The Graph lab is now live and reuses this Matrix implementation for its adjacency-matrix representation, while adding its own manually stored adjacency lists.</p>
         </div>
     </section>
+
+    <section id="graph" class="concept-section">
+        <div class="section-heading">
+            <span>G</span>
+            <div><h2>Graph: vertices, edges and adjacency</h2><p>A graph models relationships. Vertices are entities; edges describe which entities are connected and may also carry direction or weight.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class="concept-card"><span class="term">VERTEX + EDGE</span><h3>Separate entities from relationships</h3><p>A city can be a vertex and a road an edge. A task can be a vertex and a prerequisite a directed edge. The same graph abstraction fits many domains.</p><a href="/structures/graph">Open Graph lab →</a></article>
+            <article class="concept-card"><span class="term queue">DIRECTED</span><h3>A → B does not imply B → A</h3><p>Direction matters for one-way roads, web links and dependencies. In an undirected graph, one logical A—B edge makes each endpoint a neighbor of the other.</p></article>
+            <article class="concept-card"><span class="term">WEIGHTED</span><h3>An edge can store a cost</h3><p>Weights can represent distance, time, price or another numeric relationship. This generic graph lab allows any finite weight; later algorithms impose their own validity rules.</p></article>
+            <article class="concept-card"><span class="term queue">ADJACENCY</span><h3>Direct neighbor is not the same as reachable</h3><p>Adjacency means one edge away. Reachability may require several edges and belongs to traversal/path algorithms such as BFS, DFS and Dijkstra.</p></article>
+            <article class="concept-card"><span class="term">ADJACENCY LIST</span><h3>Store only the neighbors that exist</h3><p>Each vertex owns a list of outgoing/direct neighbors. It typically uses O(V+E) space and is especially natural for sparse graphs.</p></article>
+            <article class="concept-card"><span class="term queue">ADJACENCY MATRIX</span><h3>Reserve one cell for every ordered pair</h3><p>A V×V table gives direct [u,v] edge lookup but reserves O(V²) cells. Our Graph lab reuses the existing ManualMatrix implementation for this representation.</p></article>
+        </div>
+        <div class="plain-note"><strong>Graph structure vs graph algorithm</strong><p>Adding/removing vertices and edges changes the graph. BFS or DFS should not mutate those structural edges; they add temporary traversal state such as frontier, visited and parent on top of the same graph.</p></div>
+    </section>
+
     <section id="identity" class="concept-section">
         <div class="section-heading">
             <span>03</span>
@@ -393,11 +410,11 @@
     <section class="concept-section implementation-note">
         <div class="section-heading">
             <span>✓</span>
-            <div><h2>Implemented from scratch</h2><p>The learning structures do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, Matrix, or balancing algorithms to ready-made framework collections.</p></div>
+            <div><h2>Implemented from scratch</h2><p>The learning structures do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, Matrix, Graph, or balancing algorithms to ready-made framework collections.</p></div>
         </div>
         <div class="plain-note">
             <strong>What our code does itself</strong>
-            <p>Linear structures keep and grow their own raw array and move references with manual loops. BST, AVL, and Red-Black Tree keep explicit node links and perform their own comparisons, transplants, recoloring, and rotations. BST Balance uses our own Day-Stout-Warren vine/compression logic over those same node references. Heap uses its own growable raw array and manual index swaps for bubble-up/bubble-down instead of PriorityQueue or a library heap. Matrix uses its own row-major <code>double[]</code>, manual cell/index loops, row operations, multiplication and elimination instead of a numerical or linear-algebra library. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the taught data-structure algorithms for us.</p>
+            <p>Linear structures keep and grow their own raw array and move references with manual loops. BST, AVL, and Red-Black Tree keep explicit node links and perform their own comparisons, transplants, recoloring, and rotations. BST Balance uses our own Day-Stout-Warren vine/compression logic over those same node references. Heap uses its own growable raw array and manual index swaps for bubble-up/bubble-down instead of PriorityQueue or a library heap. Matrix uses its own row-major <code>double[]</code>, manual cell/index loops, row operations, multiplication and elimination instead of a numerical or linear-algebra library. Graph keeps canonical vertex/edge objects, manual adjacency lists over our own dynamic-array storage, and reuses ManualMatrix for the synchronized adjacency table instead of a graph package or dictionary-backed graph. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the taught data-structure algorithms for us.</p>
         </div>
     </section>
 

@@ -1,15 +1,719 @@
 @page "/structures/graph"
+@implements IDisposable
+@using AlgorithmVisualizer.Core.DataStructures.Graph
+@using AlgorithmVisualizer.Client.Components.Visualization.Graphs
+@using Microsoft.JSInterop
+@inject SimulationState SimulationState
+@inject GraphSimulation Graph
+@inject IJSRuntime JS
 
-<PageTitle>Graphs — Algorithm Visualizer</PageTitle>
+<PageTitle>Graph — Algorithm Visualizer</PageTitle>
 
-<LearningPlaceholder
-    Title="Graphs"
-    Eyebrow="Data structure"
-    Description="Build intuition for vertices, edges, neighborhoods, and traversal state before moving into BFS, DFS, shortest paths, and graph-specific algorithm design."
-    Complexity="O(V + E)"
-    ComplexityNote="A full traversal visits vertices and edges in the represented graph."
-    Concepts="vertex · edge · adjacency · visited state · traversal frontier"
-    TipTitle="Separate the graph from the traversal state."
-    TipText="The graph itself does not change when BFS or DFS runs. What changes is your knowledge: visited vertices, the frontier, parents, and distances."
-    FocusText="The planned lab should clearly distinguish structural edges from temporary algorithm state such as visited, queued, active, and completed vertices."
-    PromptText="What is in the frontier right now, and why?" />
+<div class="graph-page">
+    <section class="learn-launchpad" aria-labelledby="graph-learn-title">
+        <div class="learn-launchpad-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="graph-learn-title">Start with the big idea, then build the connections.</h2>
+            <p>A graph models entities and the relationships between them. Learn the four rules below first, then create your own topology in the playground.</p>
+            <a class="learn-launchpad-link" href="/learn/concepts#graph">Open the Graph concepts guide →</a>
+        </div>
+        <div class="learn-launchpad-grid">
+            <a class="launch-card vertex-edge" href="/learn/concepts#graph">
+                <span class="card-badge">VERTEX + EDGE</span>
+                <strong>Entities connected by relationships</strong>
+                <small>Vertices are the things. Edges say which things are connected: cities and roads, people and links, or devices and cables.</small>
+            </a>
+            <a class="launch-card direction" href="/learn/concepts#graph">
+                <span class="card-badge">DIRECTION</span>
+                <strong>A connection can be one-way</strong>
+                <small>Undirected A—B works both ways. Directed A → B does not automatically mean B → A.</small>
+            </a>
+            <a class="launch-card weight" href="/learn/concepts#graph">
+                <span class="card-badge">WEIGHT</span>
+                <strong>An edge can carry a numeric cost</strong>
+                <small>A weight can represent distance, time, price, capacity, or another value that later algorithms can use.</small>
+            </a>
+            <a class="launch-card representation" href="/learn/concepts#visual-vs-memory">
+                <span class="card-badge">TWO VIEWS</span>
+                <strong>Adjacency list and matrix</strong>
+                <small>The topology is the same. The list stores neighbors compactly; the matrix stores every possible vertex pair in a table.</small>
+            </a>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow"><span>DATA STRUCTURES</span><span>/</span><span class="live-status"><i></i> Interactive lab</span></div>
+            <h1>Graph</h1>
+            <p>Build the topology itself: add/remove vertices and edges, inspect neighborhoods, and watch one canonical graph stay synchronized as an adjacency list and as the Matrix-backed adjacency table.</p>
+        </div>
+        <div class="complexity-summary">
+            <div><span>LIST STORAGE</span><strong>O(V + E)</strong><small>good for sparse graphs</small></div>
+            <div><span>MATRIX STORAGE</span><strong>O(V²)</strong><small>direct [u,v] lookup</small></div>
+            <div><span>TRAVERSAL LATER</span><strong>O(V + E)</strong><small>BFS / DFS reuse this graph</small></div>
+        </div>
+    </header>
+
+    <section class="smart-tip">
+        <span class="tip-icon">✦</span>
+        <div><strong>Do not confuse a graph with BFS or DFS.</strong><p>This page mutates the graph. BFS/DFS later keep this topology fixed and change only traversal state such as visited/frontier/parent.</p></div>
+    </section>
+
+    <section class="use-cases">
+        <div><span>MAPS</span><strong>Cities + roads</strong><small>Direction models one-way roads; weights can store distance or travel cost.</small></div>
+        <div><span>SOCIAL / WEB</span><strong>People + links</strong><small>Neighborhoods answer who is directly connected before any multi-hop search begins.</small></div>
+        <div><span>DEPENDENCIES</span><strong>Tasks + prerequisites</strong><small>Directed edges encode “A must happen before B”, later reused by topological sort.</small></div>
+        <div><span>NETWORKS</span><strong>Devices + connections</strong><small>Graph structure naturally models non-linear connectivity.</small></div>
+    </section>
+
+    <section class="lab-shell">
+        <div class="lab-heading">
+            <div><span class="section-kicker">PLAYGROUND</span><h2>Build one graph and inspect both representations.</h2></div>
+            <div class="lab-options">
+                @if (_lastResult is not null)
+                {
+                    <button class="last-run-button" type="button" @onclick="OpenLastRunPopup">Last run explanation</button>
+                }
+                <label class="popup-toggle">
+                    <input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopupsAsync" />
+                    <span>Result popups</span>
+                </label>
+            </div>
+        </div>
+        <p class="canvas-note">No fixed vertex cap. Visual State expands in every direction only when graph content reaches those bounds; large matrices scroll inside Memory State.</p>
+
+        <section class="mode-selector">
+            <div><span>EDGE DIRECTION</span><strong>@(Graph.Directed ? "Directed" : "Undirected")</strong><small>Mode can change while there are no edges; existing edges are never silently reinterpreted.</small></div>
+            <div class="mode-buttons"><button class="@(!Graph.Directed ? "active" : "")" @onclick="() => SetDirected(false)" disabled="@IsBusy">Undirected</button><button class="@(Graph.Directed ? "active" : "")" @onclick="() => SetDirected(true)" disabled="@IsBusy">Directed</button></div>
+            <div><span>EDGE DATA</span><strong>@(Graph.Weighted ? "Weighted" : "Unweighted")</strong><small>Weighted edges may use positive, zero, or negative values here; algorithms such as Dijkstra impose their own restrictions later.</small></div>
+            <div class="mode-buttons"><button class="@(!Graph.Weighted ? "active" : "")" @onclick="() => SetWeighted(false)" disabled="@IsBusy">Unweighted</button><button class="@(Graph.Weighted ? "active" : "")" @onclick="() => SetWeighted(true)" disabled="@IsBusy">Weighted</button></div>
+        </section>
+
+        @if (!string.IsNullOrWhiteSpace(_modeExplanation))
+        {
+            <div class="mode-explanation" role="status"><strong>What changed?</strong><span>@_modeExplanation</span></div>
+        }
+
+        <div class="operation-layout">
+            <section class="operation-group">
+                <div class="operation-title"><span>01</span><div><strong>Vertices</strong><small>Create the entities first.</small></div></div>
+                <label><span>VERTEX LABEL</span><input @bind="_vertexLabel" maxlength="12" placeholder="e.g. A or Novi Sad" disabled="@IsBusy" /></label>
+                <div class="action-row"><button class="primary" @onclick="AddVertexAsync" disabled="@IsBusy">Add vertex</button><button @onclick="SearchVertexAsync" disabled="@IsBusy">Search</button><button @onclick="InspectNeighborsAsync" disabled="@IsBusy">Neighbors</button><button class="danger" @onclick="RemoveVertexAsync" disabled="@IsBusy">Remove</button></div>
+                <div class="rename-row"><label><span>RENAME SELECTED LABEL TO</span><input @bind="_newVertexLabel" maxlength="12" placeholder="new unique label" disabled="@IsBusy" /></label><button @onclick="RenameVertexAsync" disabled="@IsBusy">Rename vertex</button></div>
+                <small class="helper">Labels are unique (case-insensitive). Removing a vertex also removes every incident edge.</small>
+            </section>
+
+            <section class="operation-group">
+                <div class="operation-title"><span>02</span><div><strong>Edges</strong><small>Connect existing vertices.</small></div></div>
+                <div class="edge-inputs">
+                    <label>
+                        <span>FROM</span>
+                        <select @bind="_fromLabel" disabled="@(IsBusy || Graph.VertexCount == 0)">
+                            <option value="">Choose</option>
+                            @foreach (var vertex in Current.Vertices)
+                            {
+                                <option value="@vertex.Label">@vertex.Label</option>
+                            }
+                        </select>
+                    </label>
+                    <label>
+                        <span>TO</span>
+                        <select @bind="_toLabel" disabled="@(IsBusy || Graph.VertexCount == 0)">
+                            <option value="">Choose</option>
+                            @foreach (var vertex in Current.Vertices)
+                            {
+                                <option value="@vertex.Label">@vertex.Label</option>
+                            }
+                        </select>
+                    </label>
+                    @if (Graph.Weighted)
+                    {
+                        <label>
+                            <span>WEIGHT</span>
+                            <InputNumber TValue="double" @bind-Value="_weight" disabled="@IsBusy" />
+                        </label>
+                    }
+                </div>
+                <div class="action-row">
+                    <button class="primary" @onclick="AddEdgeAsync" disabled="@(!CanRunEdge)">Add edge</button>
+                    <button @onclick="SearchEdgeAsync" disabled="@(!CanRunEdge)">Search edge</button>
+                    @if (Graph.Weighted)
+                    {
+                        <button @onclick="UpdateEdgeWeightAsync" disabled="@(!CanRunEdge)">Update weight</button>
+                    }
+                    <button class="danger" @onclick="RemoveEdgeAsync" disabled="@(!CanRunEdge)">Remove edge</button>
+                </div>
+                <small class="helper">Self-loops are allowed. In an undirected graph A—B and B—A are the same logical edge.</small>
+            </section>
+        </div>
+
+        <div class="reset-strip"><div><strong>Reset graph</strong><span>Clear vertices and edges, then choose a new directed/weighted mode.</span></div><button @onclick="ClearGraphAsync" disabled="@IsBusy">Clear graph</button></div>
+
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <div class="error-message" role="alert">@_errorMessage</div>
+        }
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+
+        <div class="learning-controls">
+            <div class="state-tabs">
+                <button class="@(_view == StateView.Visual ? "active" : "")" @onclick="() => SetStateView(StateView.Visual)">Visual state</button>
+                <button class="@(_view == StateView.Memory ? "active" : "")" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
+            </div>
+            <div class="concept-links" aria-label="Graph learning links">
+                <a href="/learn/concepts#graph">Graph concepts →</a>
+                <a href="/learn/concepts#visual-vs-memory">Concepts &amp; memory →</a>
+            </div>
+        </div>
+
+        <section class="state-panel">
+            @if (_view == StateView.Visual)
+            {
+                <GraphVisualization Snapshot="@DisplayedSnapshot" />
+            }
+            else
+            {
+                <GraphMemoryVisualization Snapshot="@DisplayedSnapshot" />
+            }
+        </section>
+
+        @if (_lastResult is not null)
+        {
+            <section class="last-run">
+                <div class="last-run-heading">
+                    <div><span>LAST RUN</span><strong>@RunHeadline(_lastResult)</strong></div>
+                    <button type="button" @onclick="OpenLastRunPopup">Open explanation</button>
+                </div>
+                <p>@RunExplanation(_lastResult)</p>
+                <div class="run-metrics"><span>Comparisons <strong>@_lastResult.Comparisons</strong></span><span>Vertices <strong>@_lastResult.InitialVertexCount → @_lastResult.FinalVertexCount</strong></span><span>Edges <strong>@_lastResult.InitialEdgeCount → @_lastResult.FinalEdgeCount</strong></span><span>Worst case <strong>@_lastResult.WorstCaseComplexity</strong></span></div>
+            </section>
+        }
+
+    </section>
+
+    <section class="practice-section" aria-labelledby="graph-practice-title">
+        <div class="practice-heading">
+            <div><span class="section-kicker">GUIDED PRACTICE</span><h2 id="graph-practice-title">Build it, let the lab verify it, then keep your progress.</h2></div>
+            <div class="task-score"><strong>@_completedTaskIds.Count / @PracticeTasks.Count</strong><span>completed</span></div>
+        </div>
+
+        @if (_activeTaskId is not null)
+        {
+            var activeTask = PracticeTasks.First(task => task.Id == _activeTaskId.Value);
+            <div class="active-task-banner">
+                <span>ACTIVE TASK @activeTask.Id.ToString("00")</span>
+                <strong>@activeTask.Title</strong>
+                <small>@GetActiveTaskProgressText(activeTask.Id)</small>
+            </div>
+        }
+
+        <div class="practice-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                var completed = _completedTaskIds.Contains(task.Id);
+                var active = _activeTaskId == task.Id;
+                <article class="task-card @(completed ? "completed" : string.Empty) @(active ? "active" : string.Empty)">
+                    <div class="task-topline"><span>@task.Id.ToString("00")</span><span>@(completed ? "✓ Completed" : active ? "In progress" : "Practice")</span></div>
+                    <h3>@task.Title</h3>
+                    <ol>
+                        @foreach (var step in task.Steps)
+                        {
+                            <li>@step</li>
+                        }
+                    </ol>
+                    <div class="task-actions"><a href="@task.HelpHref">Need the concept? →</a><button type="button" @onclick="() => StartTask(task.Id)" disabled="@IsBusy">@(active ? "Restart task" : completed ? "Practice again" : "Start task")</button></div>
+                </article>
+            }
+        </div>
+    </section>
+</div>
+
+@if (_lastRunPopupOpen && _lastResult is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRunPopup">
+        <section class="run-popup" role="dialog" aria-modal="true" aria-labelledby="graph-run-popup-title" @onclick="IgnorePopupClick" @onclick:stopPropagation="true">
+            <header>
+                <div><span class="section-kicker">WHAT JUST HAPPENED?</span><h2 id="graph-run-popup-title">@RunHeadline(_lastResult)</h2></div>
+                <button class="popup-close" type="button" @onclick="CloseLastRunPopup" aria-label="Close result explanation">×</button>
+            </header>
+            <div class="popup-tabs" role="tablist">
+                <button type="button" class="@(_popupTab == ResultPopupTab.Action ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Action">Action</button>
+                <button type="button" class="@(_popupTab == ResultPopupTab.Representation ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Representation">List &amp; matrix</button>
+                <button type="button" class="@(_popupTab == ResultPopupTab.Why ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Why">Why it matters</button>
+            </div>
+
+            @if (_popupTab == ResultPopupTab.Action)
+            {
+                <div class="popup-body">
+                    <div class="popup-metrics"><div><span>Comparisons</span><strong>@_lastResult.Comparisons</strong></div><div><span>Vertices</span><strong>@_lastResult.InitialVertexCount → @_lastResult.FinalVertexCount</strong></div><div><span>Edges</span><strong>@_lastResult.InitialEdgeCount → @_lastResult.FinalEdgeCount</strong></div><div><span>Worst case</span><strong>@_lastResult.WorstCaseComplexity</strong></div></div>
+                    <h3>@RunExplanation(_lastResult)</h3>
+                    <p>The animation above shows the same checks and structural changes in the order the implementation performed them. Use Step back / Step forward when you want to inspect one decision again.</p>
+                </div>
+            }
+            else if (_popupTab == ResultPopupTab.Representation)
+            {
+                <div class="popup-body">
+                    <h3>One graph, two synchronized representations.</h3>
+                    <p>@RunRepresentationExplanation(_lastResult)</p>
+                    <a class="popup-concept-link" href="/learn/concepts#visual-vs-memory">Open Concepts &amp; Memory →</a>
+                </div>
+            }
+            else
+            {
+                <div class="popup-body">
+                    <h3>@RunWhyHeadline(_lastResult)</h3>
+                    <p>@RunWhyExplanation(_lastResult)</p>
+                    <a class="popup-concept-link" href="/learn/concepts#graph">Open the Graph concept guide →</a>
+                </div>
+            }
+        </section>
+    </div>
+}
+
+@code {
+    private const string CompletedTasksStorageKey = "algorithm-visualizer.graph.completed-tasks.v1";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.graph.result-popups.v1";
+
+    private readonly List<RunFrame> _frames = [];
+    private readonly HashSet<int> _completedTaskIds = [];
+    private readonly List<GraphOperationResult> _practiceResults = [];
+
+    private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
+    [
+        new(1, "Prove undirected symmetry", ["Clear the graph and use Undirected mode.", "Add A, B and C, then add A—B and A—C.", "Open Memory state and verify that the list/matrix mirror the same two-way relationships."], "/learn/concepts#graph"),
+        new(2, "Prove direction is one-way", ["Clear the graph and switch to Directed mode.", "Add A and B, then add only A → B.", "Search for B → A and let the lab observe the missing reverse edge."], "/learn/concepts#graph"),
+        new(3, "Store a real zero-weight edge", ["Clear the graph and switch to Weighted mode.", "Add A and B, then connect them with weight 0.", "Open Memory state and confirm that weight 0 is still a real edge, not an empty matrix cell."], "/learn/concepts#graph"),
+        new(4, "Delete a vertex safely", ["Build a vertex with at least two incident edges.", "Remove that vertex.", "The task completes only if the operation also removes at least two incident edges."], "/learn/concepts#memory"),
+        new(5, "Compare sparse list vs matrix", ["Create at least five vertices.", "Add at least three edges without making every pair connected.", "Open Memory state and compare used neighbor entries with the reserved V×V matrix."], "/learn/concepts#visual-vs-memory"),
+        new(6, "Prepare a graph for BFS / DFS", ["Use Undirected mode with A, B, C and D.", "Add A—B, A—C, B—D and C—D to create a branch plus a cycle.", "Inspect A's neighbors. The task verifies the topology and the two direct neighbors."], "/learn/concepts#graph")
+    ];
+
+    private string _vertexLabel = "A";
+    private string _newVertexLabel = "B";
+    private string _fromLabel = "";
+    private string _toLabel = "";
+    private double _weight = 1d;
+    private string? _errorMessage;
+    private string? _modeExplanation;
+    private string? _lastCapturedStep;
+    private int _frameIndex = -1;
+    private GraphOperationResult? _lastResult;
+    private StateView _view = StateView.Visual;
+    private ResultPopupTab _popupTab = ResultPopupTab.Action;
+    private bool _showRunPopups = true;
+    private bool _lastRunPopupOpen;
+    private bool _storageLoaded;
+    private bool _memoryOpenedDuringTask;
+    private int? _activeTaskId;
+
+    private bool IsBusy => SimulationState.IsRunning;
+    private GraphSnapshot Current => Graph.CreateSnapshot();
+    private bool CanRunEdge => !IsBusy && !string.IsNullOrWhiteSpace(_fromLabel) && !string.IsNullOrWhiteSpace(_toLabel);
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_frames.Count > 0 && _frameIndex < _frames.Count - 1) || SimulationState.IsRunning;
+    private int TimelineCount => _frames.Count;
+    private int TimelinePosition => _frameIndex >= 0 ? _frameIndex + 1 : 0;
+    private RunFrame? DisplayedFrame => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex] : null;
+    private string DisplayedStepText => DisplayedFrame?.StepText ?? SimulationState.CurrentStepText;
+    private GraphSnapshot DisplayedSnapshot => DisplayedFrame?.Snapshot ?? Graph.CreateSnapshot();
+
+    protected override void OnInitialized() => SimulationState.Changed += HandleSimulationChanged;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _storageLoaded) return;
+        _storageLoaded = true;
+        try
+        {
+            var completedJson = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { CompletedTasksStorageKey });
+            if (!string.IsNullOrWhiteSpace(completedJson))
+            {
+                var completed = System.Text.Json.JsonSerializer.Deserialize<int[]>(completedJson) ?? [];
+                foreach (var id in completed.Where(id => PracticeTasks.Any(task => task.Id == id)))
+                {
+                    _completedTaskIds.Add(id);
+                }
+            }
+
+            var popupSetting = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { PopupSettingStorageKey });
+            if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
+        }
+        catch
+        {
+            // localStorage is an optional convenience; the lab remains fully usable without it.
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void SetDirected(bool value)
+    {
+        _errorMessage = null;
+        _modeExplanation = null;
+        if (!Graph.TrySetDirected(value))
+        {
+            _errorMessage = "Remove all edges before changing directed/undirected mode. Existing edges are never silently reinterpreted.";
+            return;
+        }
+
+        _modeExplanation = value
+            ? "Directed mode treats A → B and B → A as different edges. Adding one direction does not create the reverse direction."
+            : "Undirected mode treats A—B as one two-way relationship, so each endpoint appears in the other's adjacency list.";
+        ClearReview();
+        CheckActiveTaskCompletion();
+    }
+
+    private void SetWeighted(bool value)
+    {
+        _errorMessage = null;
+        _modeExplanation = null;
+        if (!Graph.TrySetWeighted(value))
+        {
+            _errorMessage = "Remove all edges before changing weighted/unweighted mode. Existing edge data is never silently rewritten.";
+            return;
+        }
+
+        _modeExplanation = value
+            ? "Weighted mode stores a numeric value on each edge. The number can model distance, time, cost, capacity, or another relationship."
+            : "Unweighted mode cares only whether a connection exists; each present edge is represented as a connection rather than a learner-entered cost.";
+        ClearReview();
+        CheckActiveTaskCompletion();
+    }
+
+    private Task AddVertexAsync() => RunAsync("Adding vertex", ct => Graph.AddVertexAsync(_vertexLabel, ct));
+    private Task SearchVertexAsync() => RunAsync("Searching vertex", ct => Graph.SearchVertexAsync(_vertexLabel, ct));
+    private Task RenameVertexAsync() => RunAsync("Renaming vertex", ct => Graph.RenameVertexAsync(_vertexLabel, _newVertexLabel, ct));
+    private Task InspectNeighborsAsync() => RunAsync("Inspecting neighbors", ct => Graph.InspectNeighborsAsync(_vertexLabel, ct));
+    private Task RemoveVertexAsync() => RunAsync("Removing vertex", ct => Graph.RemoveVertexAsync(_vertexLabel, ct));
+    private Task AddEdgeAsync() => RunAsync("Adding edge", ct => Graph.AddEdgeAsync(_fromLabel, _toLabel, _weight, ct));
+    private Task SearchEdgeAsync() => RunAsync("Searching edge", ct => Graph.SearchEdgeAsync(_fromLabel, _toLabel, ct));
+    private Task UpdateEdgeWeightAsync() => RunAsync("Updating edge weight", ct => Graph.UpdateEdgeWeightAsync(_fromLabel, _toLabel, _weight, ct));
+    private Task RemoveEdgeAsync() => RunAsync("Removing edge", ct => Graph.RemoveEdgeAsync(_fromLabel, _toLabel, ct));
+    private Task ClearGraphAsync() => RunAsync("Clearing graph", ct => Graph.ClearAsync(ct));
+
+    private async Task RunAsync(string start, Func<CancellationToken, Task<GraphOperationResult>> operation)
+    {
+        if (IsBusy) return;
+        PrepareRun();
+        var token = SimulationState.Start(start + ".");
+        try
+        {
+            var result = await operation(token);
+            if (!IsCurrent(token)) return;
+            FinishRun(result);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Something went wrong: {ex.Message}";
+            if (IsCurrent(token)) SimulationState.Complete("The run stopped because of an error.");
+        }
+    }
+
+    private void FinishRun(GraphOperationResult result)
+    {
+        _lastResult = result;
+        RecordPracticeResult(result);
+        SimulationState.SetCurrentStep("Run complete.");
+        SimulationState.Complete();
+        NormalizeSelections();
+        _popupTab = ResultPopupTab.Action;
+        _lastRunPopupOpen = _showRunPopups;
+    }
+
+    private void PrepareRun()
+    {
+        _errorMessage = null;
+        _modeExplanation = null;
+        _lastRunPopupOpen = false;
+        _frames.Clear();
+        _frameIndex = -1;
+        _lastCapturedStep = null;
+    }
+
+    private void Capture()
+    {
+        var step = SimulationState.CurrentStepText;
+        if (step == _lastCapturedStep) return;
+        var tail = _frameIndex < 0 || _frameIndex == _frames.Count - 1;
+        _frames.Add(new(step, Graph.CreateSnapshot()));
+        _lastCapturedStep = step;
+        if (tail) _frameIndex = _frames.Count - 1;
+    }
+
+    private void HandleSimulationChanged()
+    {
+        if (SimulationState.IsRunning) Capture();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private bool IsCurrent(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;
+
+    private void ClearReview()
+    {
+        SimulationState.Reset();
+        _frames.Clear();
+        _frameIndex = -1;
+        _lastCapturedStep = null;
+        _lastResult = null;
+        _lastRunPopupOpen = false;
+        NormalizeSelections();
+    }
+
+    private void NormalizeSelections()
+    {
+        var snapshot = Graph.CreateSnapshot();
+        if (snapshot.VertexCount == 0)
+        {
+            _fromLabel = "";
+            _toLabel = "";
+            return;
+        }
+        if (!snapshot.Vertices.Any(v => v.Label == _fromLabel)) _fromLabel = snapshot.Vertices[0].Label;
+        if (!snapshot.Vertices.Any(v => v.Label == _toLabel)) _toLabel = snapshot.Vertices[Math.Min(1, snapshot.VertexCount - 1)].Label;
+    }
+
+    private Task PlayTimelineAsync()
+    {
+        if (_frames.Count > 0) _frameIndex = _frames.Count - 1;
+        SimulationState.Resume();
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task PauseTimelineAsync()
+    {
+        SimulationState.Pause();
+        return Task.CompletedTask;
+    }
+
+    private Task StepBackAsync()
+    {
+        if (SimulationState.IsRunning && !SimulationState.IsPaused) SimulationState.Pause();
+        if (_frameIndex > 0) _frameIndex--;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task StepForwardAsync()
+    {
+        if (_frameIndex >= 0 && _frameIndex < _frames.Count - 1)
+        {
+            _frameIndex++;
+            return InvokeAsync(StateHasChanged);
+        }
+        if (SimulationState.IsRunning) SimulationState.Step();
+        return Task.CompletedTask;
+    }
+
+    private Task ResetPlaybackAsync()
+    {
+        SimulationState.Reset();
+        _frames.Clear();
+        _frameIndex = -1;
+        _lastCapturedStep = null;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private void SetStateView(StateView view)
+    {
+        _view = view;
+        if (view == StateView.Memory && _activeTaskId is not null)
+        {
+            _memoryOpenedDuringTask = true;
+            CheckActiveTaskCompletion();
+        }
+    }
+
+    private void StartTask(int taskId)
+    {
+        if (IsBusy) return;
+        _activeTaskId = taskId;
+        _practiceResults.Clear();
+        _memoryOpenedDuringTask = false;
+    }
+
+    private void RecordPracticeResult(GraphOperationResult result)
+    {
+        if (_activeTaskId is null) return;
+        _practiceResults.Add(result);
+        CheckActiveTaskCompletion();
+    }
+
+    private void CheckActiveTaskCompletion()
+    {
+        if (_activeTaskId is null) return;
+        var snapshot = Graph.CreateSnapshot();
+        var completed = _activeTaskId.Value switch
+        {
+            1 => !snapshot.Directed && HasVertices(snapshot, "A", "B", "C") && HasEdge(snapshot, "A", "B") && HasEdge(snapshot, "A", "C") && _memoryOpenedDuringTask,
+            2 => snapshot.Directed && HasVertices(snapshot, "A", "B") && HasEdge(snapshot, "A", "B") && !HasEdge(snapshot, "B", "A") && _practiceResults.Any(r => r.Operation == GraphOperationKind.SearchEdge && !r.Succeeded && LabelsEqual(r.FirstLabel, "B") && LabelsEqual(r.SecondLabel, "A")),
+            3 => snapshot.Weighted && HasVertices(snapshot, "A", "B") && HasEdgeWithWeight(snapshot, "A", "B", 0d) && _memoryOpenedDuringTask,
+            4 => _practiceResults.Any(r => r.Operation == GraphOperationKind.RemoveVertex && r.Succeeded && r.InitialEdgeCount - r.FinalEdgeCount >= 2),
+            5 => snapshot.VertexCount >= 5 && snapshot.EdgeCount >= 3 && snapshot.EdgeCount <= snapshot.VertexCount && _memoryOpenedDuringTask,
+            6 => !snapshot.Directed && HasVertices(snapshot, "A", "B", "C", "D") && HasEdge(snapshot, "A", "B") && HasEdge(snapshot, "A", "C") && HasEdge(snapshot, "B", "D") && HasEdge(snapshot, "C", "D") && _practiceResults.Any(r => r.Operation == GraphOperationKind.InspectNeighbors && r.Succeeded && LabelsEqual(r.FirstLabel, "A") && r.NeighborCount == 2),
+            _ => false
+        };
+
+        if (!completed) return;
+        _completedTaskIds.Add(_activeTaskId.Value);
+        _activeTaskId = null;
+        _practiceResults.Clear();
+        _memoryOpenedDuringTask = false;
+        _ = PersistCompletedTasksAsync();
+    }
+
+    private string GetActiveTaskProgressText(int taskId)
+    {
+        var snapshot = Graph.CreateSnapshot();
+        return taskId switch
+        {
+            1 => $"Need Undirected A—B and A—C, then Memory state. Current: V={snapshot.VertexCount}, E={snapshot.EdgeCount}, Memory opened={(_memoryOpenedDuringTask ? "yes" : "no")}.",
+            2 => "Need Directed A → B and then a real Search edge attempt for B → A that returns missing.",
+            3 => $"Need a Weighted A/B edge whose stored weight is exactly 0, then open Memory state. Memory opened={(_memoryOpenedDuringTask ? "yes" : "no")}.",
+            4 => "Remove one vertex that currently has at least two incident edges. The lab validates the edge-count drop from the actual delete result.",
+            5 => $"Need at least 5 vertices, 3..V edges so the example stays sparse, and Memory state. Current: V={snapshot.VertexCount}, E={snapshot.EdgeCount}, Memory opened={(_memoryOpenedDuringTask ? "yes" : "no")}.",
+            6 => "Need Undirected A—B, A—C, B—D, C—D, then run Neighbors for A and observe exactly two direct neighbors.",
+            _ => string.Empty
+        };
+    }
+
+    private static bool HasVertices(GraphSnapshot snapshot, params string[] labels) => labels.All(label => snapshot.Vertices.Any(vertex => LabelsEqual(vertex.Label, label)));
+
+    private static bool HasEdge(GraphSnapshot snapshot, string from, string to)
+    {
+        foreach (var edge in snapshot.Edges)
+        {
+            if (LabelsEqual(edge.FromLabel, from) && LabelsEqual(edge.ToLabel, to)) return true;
+            if (!snapshot.Directed && LabelsEqual(edge.FromLabel, to) && LabelsEqual(edge.ToLabel, from)) return true;
+        }
+        return false;
+    }
+
+    private static bool HasEdgeWithWeight(GraphSnapshot snapshot, string from, string to, double weight)
+    {
+        foreach (var edge in snapshot.Edges)
+        {
+            var endpointsMatch = LabelsEqual(edge.FromLabel, from) && LabelsEqual(edge.ToLabel, to)
+                || (!snapshot.Directed && LabelsEqual(edge.FromLabel, to) && LabelsEqual(edge.ToLabel, from));
+            if (endpointsMatch && Math.Abs(edge.Weight - weight) <= 1e-9) return true;
+        }
+        return false;
+    }
+
+    private static bool LabelsEqual(string? left, string? right) => string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
+
+    private async Task PersistCompletedTasksAsync()
+    {
+        try
+        {
+            var json = System.Text.Json.JsonSerializer.Serialize(_completedTaskIds.OrderBy(id => id).ToArray());
+            await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { CompletedTasksStorageKey, json });
+        }
+        catch
+        {
+        }
+    }
+
+    private async Task ToggleRunPopupsAsync(ChangeEventArgs args)
+    {
+        _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed;
+        try
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { PopupSettingStorageKey, _showRunPopups.ToString() });
+        }
+        catch
+        {
+        }
+    }
+
+    private void OpenLastRunPopup()
+    {
+        if (_lastResult is null) return;
+        _popupTab = ResultPopupTab.Action;
+        _lastRunPopupOpen = true;
+    }
+
+    private void CloseLastRunPopup() => _lastRunPopupOpen = false;
+    private static void IgnorePopupClick() { }
+
+    private static string RunHeadline(GraphOperationResult result) => result.Operation switch
+    {
+        GraphOperationKind.AddVertex => result.Succeeded ? $"Added vertex {result.FirstLabel}" : $"Could not add {result.FirstLabel}",
+        GraphOperationKind.RenameVertex => result.Succeeded ? $"Renamed {result.FirstLabel} → {result.SecondLabel}" : "Vertex rename rejected",
+        GraphOperationKind.RemoveVertex => result.Succeeded ? $"Removed vertex {result.FirstLabel}" : $"Vertex {result.FirstLabel} not found",
+        GraphOperationKind.SearchVertex => result.Succeeded ? $"Found vertex {result.FirstLabel}" : $"Vertex {result.FirstLabel} not found",
+        GraphOperationKind.AddEdge => result.Succeeded ? $"Added edge {result.FirstLabel} → {result.SecondLabel}" : "Edge was not added",
+        GraphOperationKind.UpdateEdgeWeight => result.Succeeded ? $"Updated edge weight to {FormatOptionalWeight(result.Weight)}" : "Weight update rejected",
+        GraphOperationKind.RemoveEdge => result.Succeeded ? "Removed edge" : "Edge not found",
+        GraphOperationKind.SearchEdge => result.Succeeded ? "Edge found" : "Edge missing",
+        GraphOperationKind.InspectNeighbors => result.Succeeded ? $"{result.NeighborCount} direct neighbor(s)" : "Vertex not found",
+        GraphOperationKind.Clear => "Graph cleared",
+        _ => "Graph run complete"
+    };
+
+    private static string RunExplanation(GraphOperationResult result) => result.Operation switch
+    {
+        GraphOperationKind.AddVertex => "A vertex becomes a new entity slot. The adjacency list starts empty and the adjacency matrix gains one row and one column.",
+        GraphOperationKind.AddEdge => "One logical edge is stored canonically, then the adjacency list and our Matrix-backed representation are synchronized. Undirected edges create neighbor entries at both endpoints.",
+        GraphOperationKind.RenameVertex => "Rename preserves the same vertex object, ID and incident edge objects. Only the label shown by both synchronized representations changes.",
+        GraphOperationKind.UpdateEdgeWeight => "A weighted edge keeps the same identity and endpoints. Only its numeric weight changes, then both adjacency representations refresh that value.",
+        GraphOperationKind.RemoveVertex => "Removing a vertex also removes every incident edge first, preventing dangling graph references, then rebuilds indexes in both representations.",
+        GraphOperationKind.SearchEdge => "Adjacency-list lookup starts at the source vertex and scans only its outgoing/direct neighbor entries. The matrix answers the same question at one [u,v] cell.",
+        GraphOperationKind.InspectNeighbors => "A neighborhood is the set of vertices reachable by one edge from the selected source. This is structural adjacency, not BFS/DFS traversal state.",
+        GraphOperationKind.RemoveEdge => "The canonical edge is removed and both representations are rebuilt so no stale adjacency entry remains.",
+        GraphOperationKind.SearchVertex => "Vertex lookup is linear in this teaching implementation because labels live in our manual vertex array and no dictionary hides the search.",
+        GraphOperationKind.Clear => "All logical edge and vertex references are released from the graph while the selected graph mode remains available for the next experiment.",
+        _ => "The graph structure was updated."
+    };
+
+    private static string RunRepresentationExplanation(GraphOperationResult result) => result.Operation switch
+    {
+        GraphOperationKind.AddVertex => "The adjacency-list side gets a new empty vertex entry. The adjacency matrix grows by one row and one column because there is now one more possible source/target pair.",
+        GraphOperationKind.AddEdge => "The canonical edge object is the relationship itself. The adjacency list adds the corresponding neighbor entry; the matrix marks the matching [from,to] cell, and for an undirected edge the mirrored direction is represented too.",
+        GraphOperationKind.RemoveEdge => "Removing the canonical edge removes its neighbor entry from the adjacency list and clears the corresponding matrix relationship, so the two views cannot disagree.",
+        GraphOperationKind.RemoveVertex => "Every incident edge is removed first. Then vertex indexes are compacted and both adjacency representations are rebuilt around the remaining vertices.",
+        GraphOperationKind.RenameVertex => "The object and edge IDs stay stable. Only human-readable labels change, so both list and matrix headers refresh without creating a new vertex.",
+        GraphOperationKind.UpdateEdgeWeight => "The same edge object remains. Its weight is refreshed in the neighbor entry and in the Matrix-backed cell rather than replacing the relationship.",
+        GraphOperationKind.SearchEdge => "The list checks neighbors from the selected source. The matrix represents the same question as one source-row/target-column position; Visual state and Memory state are two views of the same topology.",
+        GraphOperationKind.InspectNeighbors => "The adjacency list is the natural representation for this action: it exposes exactly the direct outgoing/two-way neighbors stored for that vertex. The matrix shows the same set across one row.",
+        GraphOperationKind.SearchVertex => "The vertex array is searched by label. Once the vertex is identified, its list entry and corresponding matrix row/column refer to that same stable vertex object.",
+        GraphOperationKind.Clear => "The vertex/edge storage, adjacency lists and matrix representation all become empty together; there is no hidden second graph left behind.",
+        _ => "Both representations are refreshed from the same canonical vertex and edge objects."
+    };
+
+    private static string RunWhyHeadline(GraphOperationResult result) => result.Operation switch
+    {
+        GraphOperationKind.AddEdge => "Edges are the part graph algorithms actually follow.",
+        GraphOperationKind.RemoveVertex => "Safe deletion must remove dangling relationships.",
+        GraphOperationKind.SearchEdge => "Adjacency is one step; reachability can be many steps.",
+        GraphOperationKind.InspectNeighbors => "Direct neighbors become the next choices for BFS/DFS.",
+        GraphOperationKind.UpdateEdgeWeight => "Weights become costs for later path and MST algorithms.",
+        GraphOperationKind.AddVertex => "Vertices give the graph entities to connect.",
+        _ => "This changes or inspects the graph structure itself."
+    };
+
+    private static string RunWhyExplanation(GraphOperationResult result) => result.Operation switch
+    {
+        GraphOperationKind.AddVertex => "A graph without vertices has no entities to reason about. Later traversal and path algorithms will reuse these same vertex identities rather than creating a second graph.",
+        GraphOperationKind.AddEdge => "BFS and DFS use edges to decide where they may move next. Dijkstra and Prim additionally care about edge weights, so building the relationship correctly now matters later.",
+        GraphOperationKind.RenameVertex => "Algorithms should depend on vertex identity and connectivity, not a display label. Preserving the same object while renaming demonstrates that distinction.",
+        GraphOperationKind.UpdateEdgeWeight => "A weight may mean distance, time, cost, or capacity. Later algorithms interpret that number according to their own rules; changing the weight does not change which two vertices are connected.",
+        GraphOperationKind.RemoveVertex => "If incident edges survived after their endpoint disappeared, traversal would follow invalid references. Removing relationships first preserves a valid graph.",
+        GraphOperationKind.SearchEdge => "A direct edge answers whether two vertices are adjacent. It does not answer whether one can eventually reach the other through several intermediate vertices—that is what traversal/path algorithms do.",
+        GraphOperationKind.InspectNeighbors => "The neighbor set is exactly the local frontier BFS/DFS will inspect. Directed mode matters because outgoing neighbors may differ from incoming neighbors.",
+        GraphOperationKind.RemoveEdge => "Removing an edge changes reachability possibilities without deleting either endpoint. Later algorithms will see the new topology automatically because they reuse this graph.",
+        GraphOperationKind.SearchVertex => "Finding a vertex is usually only the first step before inspecting its edges. This teaching implementation keeps that lookup visible instead of hiding it behind a dictionary.",
+        GraphOperationKind.Clear => "Resetting lets you compare directed, undirected, weighted and unweighted semantics without silently converting existing relationships.",
+        _ => "Graph operations define the topology that later graph algorithms will consume."
+    };
+
+    private static string FormatOptionalWeight(double? value) => value.HasValue ? value.Value.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) : "—";
+
+    public void Dispose() => SimulationState.Changed -= HandleSimulationChanged;
+
+    private sealed record RunFrame(string StepText, GraphSnapshot Snapshot);
+    private sealed record PracticeTaskDefinition(int Id, string Title, string[] Steps, string HelpHref);
+    private enum StateView { Visual, Memory }
+    private enum ResultPopupTab { Action, Representation, Why }
+}

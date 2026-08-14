@@ -11,7 +11,7 @@ The project is built with **Blazor WebAssembly and C#**. Its goal is not only to
 - what the time complexity means for the current run;
 - how the visual representation differs from the way the data is stored in memory.
 
-The application now has seven fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **AVL Tree**, **Red-Black Tree**, **Heap (generalized d-ary)**, **Binary Heap (Min/Max)**, and **Matrix**. Queue & Stack established the reusable simulation pattern; BST extended it to linked nodes; AVL added strict height balancing; Red-Black added color-invariant repair; the two Heap labs explicitly teach the difference between the heap family and the Binary Heap d = 2 specialization; Matrix now provides the row-major, arithmetic, elimination, and adjacency-matrix foundation needed before Graphs.
+The application now has eight fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **AVL Tree**, **Red-Black Tree**, **Heap (generalized d-ary)**, **Binary Heap (Min/Max)**, **Matrix**, and **Graph**. Queue & Stack established the reusable simulation pattern; BST extended it to linked nodes; AVL added strict height balancing; Red-Black added color-invariant repair; the two Heap labs explicitly teach the difference between the heap family and the Binary Heap d = 2 specialization; Matrix provides the row-major foundation that the live Graph module now reuses for its adjacency-matrix representation.
 
 ---
 
@@ -27,6 +27,7 @@ The application now has seven fully implemented learning modules: **Queue & Stac
 - Heap (generalized d-ary Min/Max)
 - Binary Heap (Min/Max)
 - Matrix
+- Graph
 - shared simulation runtime;
 - play, pause and adjustable simulation speed;
 - manual step forward;
@@ -82,6 +83,16 @@ The application now has seven fully implemented learning modules: **Queue & Stac
 - matrix property analysis (square, zero, identity, diagonal, triangular, symmetric);
 - Matrix Visual/Memory views showing cell states, a list-of-row-lists memory explanation, and an expandable actual backing-array view with `index = row * columns + column`;
 - matrix guided practice and persistent progress;
+- Graph directed/undirected and weighted/unweighted modes;
+- Graph add/search/remove vertex and add/search/remove edge operations;
+- direct-neighbor inspection with semantic playback states;
+- canonical stable vertex/edge identities, duplicate-edge rejection and self-loop support;
+- synchronized manual adjacency-list and Matrix-backed adjacency-matrix representations;
+- zero-weight edge presence kept distinct from an absent weighted edge;
+- vertex deletion that removes all incident edges before representation rebuild;
+- Graph Visual/Memory views plus guided practice that prepare the same structure for BFS, DFS, Dijkstra, topological sort and MST;
+- Graph Core can grow beyond eight vertices; the standalone Matrix page remains intentionally limited to 8×8 while reusable `ManualMatrix` storage grows with Graph adjacency data;
+- Graph Learn First and all Graph/SimulationToolbar instructional copy use a larger readability floor so helper text, playback explanations, node metadata and memory labels are legible at normal desktop zoom;
 - Heap readability pass: instructional text and labels enlarged, with overflow kept inside visualization regions.
 
 ### Matrix module details
@@ -90,7 +101,7 @@ Matrix is now a live pre-Graph foundation. `ManualMatrix` stores values in one r
 
 Implemented capabilities include direct editing/resizing, presets (zero, identity, sequence, diagonal, symmetric, random and graph adjacency), copy/swap/result chaining, addition/subtraction/Hadamard/scalar operations, matrix multiplication, transpose, powers, trace, determinant, minor/cofactor, elementary row operations, REF/RREF/rank, inverse, and solving `A·X=B`.
 
-No numerical or linear-algebra library performs these taught operations. The upcoming Graph module should reuse this Matrix implementation for adjacency-matrix representation.
+No numerical or linear-algebra library performs these taught operations. The live Graph module reuses this Matrix implementation for adjacency-matrix representation rather than creating a second matrix engine.
 
 The Client imports `Microsoft.JSInterop` globally because interactive learning pages use `IJSRuntime` for browser-side task progress persistence. This keeps Razor pages compile-safe without repeating JS interop imports in every module.
 
@@ -100,7 +111,7 @@ The following modules currently have UI placeholders and are intentionally marke
 
 #### Data structures
 
-- Graphs
+All currently planned base data-structure modules in the specification are now represented by live labs; traversal/path algorithms remain separate.
 
 #### Sorting algorithms
 
@@ -1268,7 +1279,7 @@ complexity explanation
 guided practice
 ```
 
-The next module can now reuse our custom Queue, Stack, BST, AVL, Red-Black, Heap, Binary Heap, and Matrix implementations wherever that is algorithmically appropriate. **Graphs (adjacency list / matrix)** are the next data structure in the written specification, and the adjacency-matrix side should reuse the Matrix module rather than duplicate it. The Heap implementations are also available as future dependencies for Heap Sort, priority-queue teaching, Dijkstra, and Prim.
+The structure foundation now includes our custom Queue, Stack, BST, AVL, Red-Black, generalized Heap, Binary Heap, Matrix, and Graph implementations. The next graph-algorithm modules should reuse this live Graph directly: BFS should reuse our Queue, DFS should reuse our Stack, and later Dijkstra/Prim should reuse our Heap implementations instead of duplicating those structures.
 
 ---
 
@@ -1288,8 +1299,26 @@ The next module can now reuse our custom Queue, Stack, BST, AVL, Red-Black, Heap
 
 **Matrix: implemented as the pre-Graph row-major module with direct cell editing, bulk custom-value input with automatic dimension detection, arithmetic, multiplication, transpose, powers, determinant, minors/cofactors, elementary row operations, REF/RREF/rank, inverse, equation solving, graph-adjacency presets, Visual/Memory views, a row-list-first memory explanation with expandable real `double[]` backing storage, and guided practice.**
 
-The project now has reusable manual linear structures, three reusable manual tree foundations, two reusable heap views of the same family, and a reusable Matrix foundation for subsequent graph and numerical-algorithm modules.
+The project now has reusable manual linear structures, three reusable manual tree foundations, two reusable heap views of the same family, a reusable Matrix foundation, and a live reusable Graph structure ready for BFS/DFS and later path/MST algorithms.
 
 ### Matrix memory visualization
 
 The Matrix Memory State now presents the conceptual structure as a compact list of row lists (`A[0]`, `A[1]`, ...) with values aligned by column. The real contiguous row-major `double[]` remains available as an expandable implementation detail rather than dominating the learning view.
+
+
+## Graph module
+
+Graph is now a live structure lab before the traversal/path algorithms. Graph Learn First now uses the same launchpad visual hierarchy as Queue & Stack / BST, with the four concepts ordered as vertex+edge, direction, weight, and adjacency-list-vs-matrix representation. It implements directed/undirected and weighted/unweighted graphs with explicit vertex/edge objects, manual adjacency-list storage and the existing `ManualMatrix` for the synchronized adjacency matrix. The lab supports add/search/rename/remove vertex, add/search/update-weight/remove edge, direct-neighbor inspection, self-loops, zero/negative weights at the generic structure level, Visual/Memory state, playback and guided practice. BFS, DFS, Dijkstra, topological sort and MST remain separate modules and should reuse this graph rather than create another graph representation. Graph Core no longer inherits the Matrix page's 8×8 teaching cap: `ManualMatrix` is reusable/growable in Core, while MatrixPage alone keeps the 8×8 input limit. Larger Graph adjacency matrices scroll inside Memory State.
+
+Graph Visual State supports direct vertex dragging without changing graph topology. Vertex positions are UI-only overrides keyed by stable vertex ID; edges, arrows, weights and self-loops are recalculated from the moved coordinates. The workspace is content-bounded but effectively unbounded: there is no fixed drag clamp, the SVG stage expands left/right/up/down only when current graph content reaches those bounds, and the surrounding viewport gains scroll range only for that occupied extent. Expanding on the left/top compensates scroll position so existing content does not jump. `Reset layout` removes manual positions and returns to the automatic layout. The drag implementation uses stable SVG group transforms with invariant numeric formatting so clicking/dragging cannot invalidate `foreignObject` coordinates.
+
+### Razor control-flow markup rule
+
+Graph UI markup follows a strict Razor rule: whenever `@if`, `@foreach`, `@for`, or similar control flow renders HTML/component markup, the body is always enclosed in `{ ... }`. This avoids Razor parser failures such as “Single-statement control-flow statements in Razor documents cannot contain markup.”
+
+
+### Graph guided practice and explanations
+
+Graph now follows the same learning-completion contract as the mature Queue/Stack, tree, and Heap modules. Guided Practice is no longer static reading: the learner starts a task, the page observes real `GraphSimulation` results plus the current graph snapshot, validates the requested topology/operation, marks completion automatically, and persists completed task IDs in browser `localStorage`. Tasks cover undirected symmetry, directed asymmetry, a real zero-weight edge, incident-edge cleanup during vertex deletion, sparse list-vs-matrix inspection, and a branch/cycle topology prepared for later BFS/DFS.
+
+Every completed Graph action now has a learner-facing explanation layer. The Last Run card can reopen a dismissible interactive explanation with three views: the action that happened, how the adjacency list and Matrix-backed representation changed together, and why the operation matters for later graph algorithms. Automatic result explanations can be disabled and that preference is persisted locally. The Graph `Result popups` toggle now lives in the Playground header beside `Last run explanation`, matching the established Queue/Stack, BST, AVL, and Heap interaction pattern instead of creating a graph-specific preference strip below the result. The Graph lab also exposes direct `Graph concepts` and `Concepts & memory` links beside the Visual/Memory controls so theory is always reachable from the working area.

@@ -1,0 +1,131 @@
+@using AlgorithmVisualizer.Core.DataStructures.Graph
+
+<div class="graph-memory">
+    <div class="memory-intro">
+        <span class="eyebrow">MEMORY / REPRESENTATION</span>
+        <h3>One graph, two synchronized ways to store adjacency.</h3>
+        <p>The adjacency list is compact for sparse graphs. The adjacency matrix uses our existing row-major Matrix implementation and makes an edge lookup a direct cell question.</p>
+    </div>
+
+    @if (Snapshot.VertexCount == 0)
+    {
+        <div class="empty-memory">Add vertices and edges to inspect their adjacency representations.</div>
+    }
+    else
+    {
+        <div class="memory-grid">
+            <section class="representation-card list-card">
+                <div class="representation-heading">
+                    <div><span>ADJACENCY LIST</span><strong>Store only actual neighbors</strong></div>
+                    <small>Space ≈ O(V + E)</small>
+                </div>
+                <div class="adjacency-list">
+                    @foreach (var vertex in Snapshot.Vertices)
+                    {
+                        <div class="adjacency-row">
+                            <div class="vertex-slot"><span>@vertex.Index</span><strong>@vertex.Label</strong><small>#@vertex.DisplayId</small></div>
+                            <span class="arrow">→</span>
+                            <div class="neighbor-list">
+                                @if (vertex.Neighbors.Length == 0)
+                                {
+                                    <span class="empty-neighbor">[ ]</span>
+                                }
+                                else
+                                {
+                                    @foreach (var neighbor in vertex.Neighbors)
+                                    {
+                                        <span class="neighbor-chip">
+                                            <strong>@neighbor.Label</strong>
+                                            @if (Snapshot.Weighted)
+                                            {
+                                                <small>w=@FormatWeight(neighbor.Weight)</small>
+                                            }
+                                        </span>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+                <p class="representation-note">In a directed graph each row stores <strong>outgoing</strong> neighbors. In an undirected graph one logical edge appears in both endpoint lists.</p>
+            </section>
+
+            <section class="representation-card matrix-card">
+                <div class="representation-heading">
+                    <div><span>ADJACENCY MATRIX</span><strong>Ask one row/column cell</strong></div>
+                    <small>Space O(V²)</small>
+                </div>
+                <div class="matrix-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th></th>
+                                @foreach (var vertex in Snapshot.Vertices)
+                                {
+                                    <th>@vertex.Label</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (var row = 0; row < Snapshot.VertexCount; row++)
+                            {
+                                <tr>
+                                    <th>@Snapshot.Vertices[row].Label</th>
+                                    @for (var column = 0; column < Snapshot.VertexCount; column++)
+                                    {
+                                        var cell = Cell(row, column);
+                                        <td class="@(cell.HasEdge ? "has-edge" : string.Empty)">@(cell.HasEdge ? (Snapshot.Weighted ? FormatWeight(cell.Weight) : "1") : "·")</td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <p class="representation-note">The table is backed by our existing <code>ManualMatrix</code>. Weighted mode stores edge weights; a separate presence bit lets a real weight of 0 stay distinguishable from “no edge”.</p>
+            </section>
+        </div>
+
+        <div class="edge-object-strip">
+            <div class="edge-object-heading"><span>CANONICAL EDGE OBJECTS</span><strong>One logical edge keeps one stable ID.</strong></div>
+            <div class="edge-object-list">
+                @if (Snapshot.Edges.Length == 0)
+                {
+                    <span class="no-edges">No edge objects yet.</span>
+                }
+                else
+                {
+                    @foreach (var edge in Snapshot.Edges)
+                    {
+                        <span class="edge-object">
+                            <small>#@edge.DisplayId</small>
+                            <strong>@edge.FromLabel @(Snapshot.Directed ? "→" : "—") @edge.ToLabel</strong>
+                            @if (Snapshot.Weighted)
+                            {
+                                <em>w=@FormatWeight(edge.Weight)</em>
+                            }
+                        </span>
+                    }
+                }
+            </div>
+        </div>
+
+        <div class="representation-comparison">
+            <div><span>SPARSE GRAPH</span><strong>Adjacency list usually wins</strong><small>Do not reserve V² cells when each vertex has only a few neighbors.</small></div>
+            <div><span>DENSE GRAPH / EDGE LOOKUP</span><strong>Adjacency matrix is direct</strong><small>Cell [u,v] tells you whether the relationship exists without scanning u's neighbor list.</small></div>
+            <div><span>UNDIRECTED MATRIX</span><strong>Symmetric around the diagonal</strong><small>If A—B exists, both [A,B] and [B,A] describe that same connection.</small></div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public GraphSnapshot Snapshot { get; set; } = new(false, false, 0, 0, Array.Empty<GraphVertexSnapshot>(), Array.Empty<GraphEdgeSnapshot>(), Array.Empty<GraphMatrixCellSnapshot>());
+
+    private GraphMatrixCellSnapshot Cell(int row, int column)
+    {
+        var index = (row * Snapshot.VertexCount) + column;
+        return Snapshot.MatrixCells[index];
+    }
+
+    private static string FormatWeight(double value) => value.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+}

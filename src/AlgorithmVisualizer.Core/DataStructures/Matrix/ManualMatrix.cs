@@ -152,13 +152,17 @@ public sealed class ManualMatrix
 
     private static void ValidateDimensions(int rows, int columns)
     {
-        if (rows < 1 || rows > 8)
+        if (rows < 1)
         {
-            throw new ArgumentOutOfRangeException(nameof(rows), "Rows must be between 1 and 8 for the learning lab.");
+            throw new ArgumentOutOfRangeException(nameof(rows), "Rows must be at least 1.");
         }
-        if (columns < 1 || columns > 8)
+        if (columns < 1)
         {
-            throw new ArgumentOutOfRangeException(nameof(columns), "Columns must be between 1 and 8 for the learning lab.");
+            throw new ArgumentOutOfRangeException(nameof(columns), "Columns must be at least 1.");
         }
+
+        // The reusable Core storage has no 8×8 teaching cap. Individual learning
+        // pages may impose smaller UI limits for readability (Matrix currently does).
+        _ = checked(rows * columns);
     }
 }

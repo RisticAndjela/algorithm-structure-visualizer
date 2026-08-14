@@ -194,20 +194,29 @@ The dedicated Binary Heap specialization adds:
 - Memory state with used/reserved slots and capacity;
 - heap-specific guided practice and persistent progress.
 
+### Graph
+
+The Graph structure module adds canonical `GraphVertex`/`GraphEdge` objects, manually stored adjacency lists, and a synchronized adjacency matrix backed by the existing `ManualMatrix`. Graph Core has no fixed eight-vertex cap; `ManualMatrix` is reusable storage whose dimensions follow the graph, while MatrixPage keeps its separate 8×8 teaching/input limit. The Client renders topology separately from representation memory, scrolls large matrix views internally, and uses ring-then-grid automatic topology placement before optional manual dragging. This structure intentionally stops before traversal/path algorithms; BFS, DFS, Dijkstra, topological sort and MST should consume the same graph and the already-live Queue/Stack/Heap implementations.
+
 ## Planned extension path
 
-Graph and sorting modules should reuse the same Core/runtime/Client separation rather than duplicating playback infrastructure. Future modules may reuse the established Stack/Queue/BST/AVL/Red-Black/generalized-Heap/Binary-Heap implementations when they are genuine algorithmic dependencies.
+Graph-algorithm and sorting modules should reuse the same Core/runtime/Client separation rather than duplicating playback infrastructure. Future modules may reuse the established Stack/Queue/BST/AVL/Red-Black/generalized-Heap/Binary-Heap implementations when they are genuine algorithmic dependencies.
 
 
 ## Matrix module
 
-The Matrix lab is a Core/runtime/Client implementation inserted before Graphs because adjacency matrices are a planned graph representation. The Client exposes two equivalent data-entry paths for A and B: direct cell editing and validated bulk row input; bulk input auto-resizes the existing Core matrix and then delegates all computation to the same `MatrixSimulation` algorithms.
+The Matrix lab is a Core/runtime/Client implementation inserted before Graph because the live Graph module reuses its row-major adjacency-matrix storage. The Client exposes two equivalent data-entry paths for A and B: direct cell editing and validated bulk row input; bulk input auto-resizes the existing Core matrix and then delegates all computation to the same `MatrixSimulation` algorithms.
 
-- `Core/DataStructures/Matrix/ManualMatrix.cs` owns row-major `double[]` storage, indexing, resize and elementary row primitives.
+- `Core/DataStructures/Matrix/ManualMatrix.cs` owns row-major `double[]` storage, indexing, resize and elementary row primitives. Core dimensions are not capped at 8×8; the standalone Matrix learning page imposes that smaller UI limit for readability.
 - `MatrixSimulation` owns A, B and derived-result workspaces plus semantic cell states.
 - arithmetic, multiplication, transpose, powers, determinant, minors/cofactors, REF/RREF/rank, inverse and `A·X=B` solving are manual algorithms; no numerical library is used.
 - Client matrix editors mutate only A/B between runs; algorithmic operations publish intermediate frames through the shared `SimulationState` playback runtime.
 - Visual state presents mathematical grids and active cells; Memory state exposes contiguous row-major slots and the flat-index formula.
-- Graphs should reuse this Matrix implementation for adjacency-matrix storage/education instead of implementing a duplicate matrix engine.
+- Graph reuses this Matrix implementation for adjacency-matrix storage/education instead of implementing a duplicate matrix engine.
 
-The Matrix page also establishes a readability floor for new modules: normal explanatory copy is approximately 0.9rem or larger, and tiny labels are avoided.
+The Matrix page established a readability floor that Graph now tightens: normal explanatory/help copy is approximately 0.95rem or larger, playback text is near 1rem, and only truly secondary uppercase metadata may sit near 0.82rem.
+
+
+### Graph visual workspace
+
+Graph drag coordinates are Client-only world coordinates keyed by stable vertex ID. They never enter Core graph topology. The SVG stage is a content-bounded unbounded workspace: it dynamically expands only to the current visual extents (plus rendering padding), supports negative world coordinates through a render-origin offset, and compensates scroll when that origin moves left/up.

@@ -1,0 +1,317 @@
+.graph-memory {
+    min-width: 0;
+}
+
+.memory-intro {
+    margin-bottom: 1.1rem;
+}
+
+.memory-intro .eyebrow {
+    color: var(--color-primary);
+    font-size: .88rem;
+    font-weight: 820;
+    letter-spacing: .1em;
+}
+
+.memory-intro h3 {
+    margin: .3rem 0 .4rem;
+    font-size: 1.22rem;
+}
+
+.memory-intro p {
+    margin: 0;
+    color: var(--color-text-soft);
+    font-size: 1rem;
+    line-height: 1.65;
+}
+
+.memory-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1rem;
+}
+
+.representation-card {
+    min-width: 0;
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: #fff;
+}
+
+.representation-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.representation-heading > div {
+    display: grid;
+    gap: .22rem;
+}
+
+.representation-heading span {
+    color: var(--color-primary);
+    font-size: .86rem;
+    font-weight: 850;
+    letter-spacing: .09em;
+}
+
+.representation-heading strong {
+    font-size: 1.04rem;
+}
+
+.representation-heading small {
+    color: var(--color-text-soft);
+    font-size: .92rem;
+    white-space: nowrap;
+}
+
+.adjacency-list {
+    display: grid;
+    gap: .58rem;
+}
+
+.adjacency-row {
+    display: grid;
+    grid-template-columns: 104px 24px minmax(0, 1fr);
+    gap: .5rem;
+    align-items: center;
+    padding: .62rem;
+    border: 1px solid var(--color-border);
+    border-radius: .8rem;
+    background: var(--color-surface-subtle);
+}
+
+.vertex-slot {
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    column-gap: .35rem;
+    align-items: center;
+}
+
+.vertex-slot > span {
+    grid-row: 1 / 3;
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    border-radius: .4rem;
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-size: .88rem;
+    font-weight: 820;
+}
+
+.vertex-slot strong {
+    font-size: 1rem;
+}
+
+.vertex-slot small {
+    color: var(--color-text-muted);
+    font-size: .92rem;
+}
+
+.arrow {
+    color: var(--color-text-muted);
+    font-weight: 900;
+}
+
+.neighbor-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .42rem;
+}
+
+.neighbor-chip {
+    display: flex;
+    align-items: baseline;
+    gap: .3rem;
+    padding: .42rem .58rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: .55rem;
+    background: #fff;
+    font-size: .95rem;
+}
+
+.neighbor-chip small {
+    color: var(--color-text-soft);
+    font-size: .92rem;
+}
+
+.empty-neighbor {
+    color: var(--color-text-muted);
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: .95rem;
+}
+
+.matrix-scroll {
+    max-width: 100%;
+    overflow: auto;
+}
+
+table {
+    margin: auto;
+    border-collapse: separate;
+    border-spacing: .3rem;
+}
+
+th,
+td {
+    min-width: 44px;
+    height: 44px;
+    border-radius: .55rem;
+    font-size: .96rem;
+    text-align: center;
+}
+
+th {
+    color: var(--color-text-soft);
+    font-weight: 820;
+}
+
+td {
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-subtle);
+    color: var(--color-text-muted);
+    font-weight: 720;
+}
+
+td.has-edge {
+    border-color: #c9c3ff;
+    background: var(--color-primary-soft);
+    color: var(--color-primary-strong);
+}
+
+.representation-note {
+    margin: .95rem 0 0;
+    color: var(--color-text-soft);
+    font-size: .96rem;
+    line-height: 1.6;
+}
+
+.representation-comparison {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .75rem;
+    margin-top: 1rem;
+}
+
+.representation-comparison > div {
+    display: grid;
+    gap: .25rem;
+    padding: .9rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-subtle);
+}
+
+.representation-comparison span {
+    color: var(--color-primary);
+    font-size: .86rem;
+    font-weight: 850;
+    letter-spacing: .07em;
+}
+
+.representation-comparison strong {
+    font-size: 1rem;
+}
+
+.representation-comparison small {
+    color: var(--color-text-soft);
+    font-size: .95rem;
+    line-height: 1.5;
+}
+
+.empty-memory {
+    padding: 2rem;
+    border: 1px dashed var(--color-border-strong);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-subtle);
+    color: var(--color-text-soft);
+    font-size: 1rem;
+    text-align: center;
+}
+
+.edge-object-strip {
+    margin-top: 1rem;
+    padding: .9rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: #fff;
+}
+
+.edge-object-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: baseline;
+}
+
+.edge-object-heading span {
+    color: var(--color-primary);
+    font-size: .86rem;
+    font-weight: 850;
+    letter-spacing: .07em;
+}
+
+.edge-object-heading strong {
+    font-size: .98rem;
+}
+
+.edge-object-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+    margin-top: .65rem;
+}
+
+.edge-object {
+    display: flex;
+    align-items: center;
+    gap: .38rem;
+    padding: .45rem .6rem;
+    border: 1px solid var(--color-border);
+    border-radius: .6rem;
+    background: var(--color-surface-subtle);
+    font-size: .94rem;
+}
+
+.edge-object small {
+    color: var(--color-text-muted);
+    font-size: .92rem;
+}
+
+.edge-object em {
+    color: var(--color-primary);
+    font-style: normal;
+    font-weight: 760;
+}
+
+.no-edges {
+    color: var(--color-text-soft);
+    font-size: .96rem;
+}
+
+@media (max-width: 980px) {
+    .memory-grid,
+    .representation-comparison {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 560px) {
+    .adjacency-row {
+        grid-template-columns: 96px 20px minmax(0, 1fr);
+    }
+
+    .representation-heading {
+        flex-direction: column;
+    }
+
+    .representation-heading small {
+        white-space: normal;
+    }
+}
