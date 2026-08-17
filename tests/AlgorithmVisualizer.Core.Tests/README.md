@@ -84,3 +84,14 @@ The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctnes
 - the `2, 2, 1` counterexample reverses equal-item identity in Classic mode and demonstrates instability;
 - Stable Shift sorts the same duplicate case while preserving equal-item identity and avoiding direct swaps;
 - a single-element input performs zero comparisons and swaps.
+
+
+`Algorithms/Sorting/Insertion/InsertionSortSimulationTests.cs` verifies:
+
+- canonical Linear Insertion Sort counts on the classic example;
+- adaptive `Θ(n)` sorted-input behavior with zero shifts;
+- reverse-input quadratic shifting;
+- duplicate stability by original item identity;
+- Binary Insertion reducing key comparisons while preserving the same shifts;
+- stable upper-bound behavior for duplicates;
+- the one-element boundary and online-maintenance capability flags.

@@ -1,0 +1,96 @@
+@using AlgorithmVisualizer.Core.Algorithms.Sorting.Insertion
+
+<section class="insertion-visualization" aria-label="Insertion Sort visual state">
+    @if (Snapshot.Count == 0)
+    {
+        <div class="empty-state"><strong>No values yet.</strong><span>Enter an array above, then Insertion Sort can grow its sorted prefix.</span></div>
+    }
+    else
+    {
+        @if (Snapshot.HeldKeyValue is not null)
+        {
+            <div class="held-key-card" aria-label="Held insertion key">
+                <span>HELD KEY</span>
+                <strong>@Snapshot.HeldKeyValue</strong>
+                <small>item #@(Snapshot.HeldKeyOriginalIndex + 1) is temporarily outside the array</small>
+            </div>
+        }
+
+        <div class="array-track" role="list" aria-label="Current array order">
+            @for (var index = 0; index < Snapshot.Elements.Length; index++)
+            {
+                var element = Snapshot.Elements[index];
+                <div class="sort-item @StateClass(index, element)" role="listitem">
+                    <span class="index-label">index @index</span>
+                    @if (element.Occupied)
+                    {
+                        <strong>@element.Value</strong>
+                        <span class="identity-label">item #@(element.OriginalIndex + 1)</span>
+                    }
+                    else
+                    {
+                        <strong class="gap-symbol">□</strong>
+                        <span class="identity-label">empty slot</span>
+                    }
+                    <span class="state-label">@StateLabel(index, element)</span>
+                </div>
+            }
+        </div>
+
+        <div class="visual-guide">
+            <div class="guide-part destination"><span>HELD KEY</span><strong>@HeldKeyText</strong><small>The next value being inserted into the already-sorted prefix.</small></div>
+            <div class="guide-part candidate"><span>INSERTION POINT</span><strong>@InsertionText</strong><small>Where the held key will be written after larger values move right.</small></div>
+            <div class="guide-part scan"><span>@(Snapshot.Variant == InsertionSortVariant.BinarySearch ? "BINARY PROBE" : "COMPARE")</span><strong>@CompareText</strong><small>@(Snapshot.Variant == InsertionSortVariant.BinarySearch ? BinaryRangeText : "The prefix value currently compared with the held key.")</small></div>
+            <div class="guide-part prefix"><span>SORTED PREFIX</span><strong>@PrefixText</strong><small>This prefix is sorted before the next key is selected.</small></div>
+        </div>
+
+        <div class="legend">
+            <span><i class="swatch destination"></i>Held key / gap</span>
+            <span><i class="swatch minimum"></i>Insertion point</span>
+            <span><i class="swatch compare"></i>Compare / probe</span>
+            <span><i class="swatch swap"></i>Shift right</span>
+            <span><i class="swatch sorted"></i>Sorted prefix</span>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public InsertionSortSnapshot Snapshot { get; set; } = default!;
+
+    private string HeldKeyText => Snapshot.HeldKeyValue is null ? "No key held" : $"{Snapshot.HeldKeyValue} from index {Snapshot.KeySourceIndex}";
+    private string InsertionText => Snapshot.InsertionIndex >= 0 ? $"index {Snapshot.InsertionIndex}" : "Not known yet";
+    private string CompareText => Snapshot.CompareIndex >= 0 && Snapshot.Elements[Snapshot.CompareIndex].Occupied
+        ? $"{Snapshot.Elements[Snapshot.CompareIndex].Value} at index {Snapshot.CompareIndex}"
+        : "Not comparing now";
+    private string BinaryRangeText => Snapshot.SearchLow >= 0 ? $"Search range [{Snapshot.SearchLow}, {Snapshot.SearchHigh})" : "Binary search has not started.";
+    private string PrefixText => Snapshot.SortedPrefixLength == 0 ? "Not started" : Snapshot.SortedPrefixLength >= Snapshot.Count ? "Whole array" : $"indexes 0…{Snapshot.SortedPrefixLength - 1}";
+
+    private string StateClass(int index, InsertionSortElementSnapshot element)
+    {
+        var classes = new List<string>();
+        if (!element.Occupied) classes.Add("is-destination");
+        if (index == Snapshot.CompareIndex) classes.Add("is-scan");
+        if (index == Snapshot.InsertionIndex) classes.Add("is-minimum");
+        classes.Add(element.VisualState switch
+        {
+            InsertionSortElementVisualState.Comparing => "is-comparing",
+            InsertionSortElementVisualState.ShiftRequired => "is-swap-required",
+            InsertionSortElementVisualState.Shifted => "is-swapped",
+            InsertionSortElementVisualState.Inserted => "is-new-minimum",
+            InsertionSortElementVisualState.Sorted => "is-sorted",
+            _ => string.Empty
+        });
+        return string.Join(" ", classes.Where(value => !string.IsNullOrWhiteSpace(value)));
+    }
+
+    private string StateLabel(int index, InsertionSortElementSnapshot element)
+    {
+        if (!element.Occupied) return "GAP";
+        if (element.VisualState == InsertionSortElementVisualState.ShiftRequired) return "SHIFT →";
+        if (element.VisualState == InsertionSortElementVisualState.Shifted) return "SHIFTED";
+        if (element.VisualState == InsertionSortElementVisualState.Inserted) return "INSERTED";
+        if (index == Snapshot.CompareIndex) return Snapshot.Variant == InsertionSortVariant.BinarySearch ? "MID" : "COMPARE";
+        if (element.VisualState == InsertionSortElementVisualState.Sorted) return "SORTED PREFIX";
+        return "WAITING";
+    }
+}

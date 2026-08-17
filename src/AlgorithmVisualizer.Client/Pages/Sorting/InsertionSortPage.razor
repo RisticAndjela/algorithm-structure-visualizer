@@ -1,15 +1,519 @@
 @page "/sorting/insertion"
+@using AlgorithmVisualizer.Core.Algorithms.Sorting.Insertion
+@using AlgorithmVisualizer.Client.Components.Visualization.Sorting.Insertion
+@implements IDisposable
+@inject SimulationState SimulationState
+@inject InsertionSortSimulation InsertionSort
+@inject IJSRuntime JS
 
 <PageTitle>Insertion Sort — Algorithm Visualizer</PageTitle>
 
-<LearningPlaceholder
-    Title="Insertion Sort"
-    Eyebrow="Sorting algorithm"
-    Description="Grow a sorted prefix one element at a time by shifting larger values out of the way and inserting the current key into the correct position."
-    Complexity="O(n²)"
-    ComplexityNote="Adaptive: nearly sorted input can approach O(n)."
-    Concepts="key · sorted prefix · shift · insertion point"
-    TipTitle="Think like sorting a hand of cards."
-    TipText="The prefix is already sorted. Your only job is to find where the new key belongs and create room for it without destroying that order."
-    FocusText="The planned lab should separate the held key from shifted array elements so the temporary gap in the array is explicit."
-    PromptText="How far must this key move before the prefix is sorted again?" />
+<div class="insertion-page">
+    <section class="learn-launchpad" aria-labelledby="insertion-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="insertion-learn-title">Insertion Sort grows one sorted hand, one key at a time.</h2>
+            <p>
+                Imagine sorting playing cards in your hand. Everything on the left is already sorted. Pick the next value as the <b>key</b>,
+                hold it temporarily, shift larger values one slot right, then insert the key into the gap.
+            </p>
+            <div class="learn-rule">
+                <span>ONE PASS = HOLD KEY → FIND PLACE → SHIFT → INSERT</span>
+                <div class="rule-example"><strong>2</strong><strong>5</strong><strong>7</strong><strong class="candidate">4</strong><i>→</i><strong>2</strong><strong>4</strong><strong>5</strong><strong>7</strong></div>
+                <small>The left prefix stays sorted throughout the algorithm. Only the new key needs to find its place inside that prefix.</small>
+            </div>
+            <div class="learn-actions">
+                <a class="primary-link" href="#insertion-lab">Try Insertion Sort ↓</a>
+                <a href="/learn/concepts#insertion-sort">Insertion Sort concepts &amp; memory →</a>
+            </div>
+        </div>
+
+        <div class="pass-story" aria-label="Insertion Sort pass explanation">
+            <div class="story-heading"><span>ONE PASS</span><strong>Take one new key and repair the sorted prefix.</strong></div>
+            <div class="story-row"><span class="fixed">2</span><span class="fixed">5</span><span class="fixed">7</span><span class="candidate">4</span><span>9</span></div>
+            <div class="story-arrow">hold 4 → shift 7 → shift 5 → insert 4</div>
+            <div class="story-row result"><span class="fixed">2</span><span class="fixed">4</span><span class="fixed">5</span><span class="fixed">7</span><span>9</span></div>
+            <p>The sorted prefix grew from three values to four without sorting the entire array again.</p>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow"><span>SORTING ALGORITHMS</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <h1>Insertion Sort</h1>
+            <p>Build an array, predict where the next key belongs, then watch the gap move left while the sorted prefix grows.</p>
+        </div>
+        <div class="complexity-summary" aria-label="Insertion Sort complexity">
+            <div><span>Selected mode</span><strong>@VariantLabel</strong><small>@VariantTradeoffNote</small></div>
+            <div><span>Best case</span><strong>@(_variant == InsertionSortVariant.Linear ? "Θ(n)" : "Θ(n log n)")</strong><small>@(_variant == InsertionSortVariant.Linear ? "already / nearly sorted" : "binary search every pass")</small></div>
+            <div><span>Worst case</span><strong>Θ(n²)</strong><small>array shifts still dominate</small></div>
+        </div>
+    </header>
+
+    <section class="implementation-section" aria-labelledby="insertion-implementation-title">
+        <div class="section-heading-row">
+            <div><span class="section-kicker">IMPLEMENTATION CHOICE</span><h2 id="insertion-implementation-title">Choose how the insertion point is found.</h2><p>Both modes perform the same stable shifts. The difference is whether the sorted prefix is searched linearly or with binary search.</p></div>
+        </div>
+        <div class="variant-grid">
+            <button type="button" class="variant-card @(_variant == InsertionSortVariant.Linear ? "active" : string.Empty)" @onclick="() => SetVariant(InsertionSortVariant.Linear)" disabled="@IsBusy">
+                <span>BASIC · LINEAR</span><strong>Scan backward from the key</strong><p>Compare with neighbors from right to left and stop as soon as an equal-or-smaller value is found. This is the canonical adaptive implementation.</p><small>Best Θ(n) · Worst Θ(n²) · Stable · O(1)</small>
+            </button>
+            <button type="button" class="variant-card @(_variant == InsertionSortVariant.BinarySearch ? "active" : string.Empty)" @onclick="() => SetVariant(InsertionSortVariant.BinarySearch)" disabled="@IsBusy">
+                <span>ADVANCED · BINARY INSERTION</span><strong>Binary-search the sorted prefix</strong><p>Use an upper-bound binary search to reduce key comparisons, then perform the same shifts. Useful when comparisons are expensive, but not automatically faster.</p><small>Fewer comparisons · Same Θ(n²) worst-case moves · Stable · O(1)</small>
+            </button>
+        </div>
+
+        <div class="live-data-card online">
+            <div><span>REAL-TIME CRUD</span><strong>Insertion Sort is online-friendly — full re-sort is not always required</strong></div>
+            <p><b>READ</b> is always safe. On an already sorted collection, a new <b>CREATE/append</b> can be inserted as the next key; <b>DELETE</b> preserves sorted order; an <b>UPDATE</b> can be handled as remove + reinsert. During this visual playback, any mutation starts a new trace because the recorded frames describe the old snapshot.</p>
+            <span class="compatibility-badge">Online maintenance possible · playback trace restarts</span>
+        </div>
+    </section>
+
+    <section id="insertion-lab" class="builder-section" aria-labelledby="insertion-build-title">
+        <div class="section-heading-row">
+            <div class="heading-with-step"><span class="step-number">1</span><div><span class="section-kicker">BUILD THE ARRAY</span><h2 id="insertion-build-title">Choose values you want to sort.</h2><p>Use 1–12 integers. Negative values and duplicates are allowed.</p></div></div>
+            <a class="concept-link" href="/learn/concepts#insertion-sort">How Insertion Sort works →</a>
+        </div>
+
+        <div class="array-builder">
+            <label class="array-input"><span>VALUES</span><input value="@_arrayText" @oninput="ArrayTextChanged" disabled="@IsBusy" aria-label="Insertion Sort array values" placeholder="Example: 5, 2, 4, 6, 1, 3" /><small>Separate values with spaces or commas.</small></label>
+            <button class="primary-action" type="button" @onclick="ApplyArray" disabled="@IsBusy">Use this array</button>
+        </div>
+
+        <div class="preset-row" aria-label="Insertion Sort example arrays">
+            <span>TRY AN EXAMPLE</span>
+            <button type="button" @onclick="() => LoadPreset(Preset.Classic)" disabled="@IsBusy">Classic</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.NearlySorted)" disabled="@IsBusy">Nearly sorted</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Reverse)" disabled="@IsBusy">Reverse</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Duplicates)" disabled="@IsBusy">Duplicates</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Sorted)" disabled="@IsBusy">Already sorted</button>
+            <button type="button" @onclick="LoadRandom" disabled="@IsBusy">Random</button>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_inputError))
+        {
+            <div class="input-error" role="alert"><strong>Check the array.</strong><span>@_inputError</span></div>
+        }
+
+        <div class="current-array" aria-label="Current Insertion Sort input">
+            <span>CURRENT INPUT</span>
+            <div>
+                @for (var index = 0; index < Current.Elements.Length; index++)
+                {
+                    var element = Current.Elements[index];
+                    <span><small>@index</small><strong>@(element.Occupied ? element.Value.ToString() : "□")</strong></span>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="predict-section" aria-labelledby="insertion-prediction-title">
+        <div class="prediction-copy"><span class="step-number">2</span><div><span class="section-kicker">PREDICT FIRST</span><h2 id="insertion-prediction-title">Where should the first key be inserted?</h2><p>Index 0 is already a sorted prefix. The value at index 1 becomes the first held key.</p></div></div>
+
+        @if (Current.Count >= 2)
+        {
+            <div class="prediction-card insertion-prediction">
+                <div class="prediction-question">Key <strong>@Current.Elements[1].Value</strong> starts at index 1. Choose its insertion index after comparing it with <strong>@Current.Elements[0].Value</strong>.</div>
+                <div class="index-choice-row">
+                    <button type="button" class="@(_predictedInsertionIndex == 0 ? "chosen" : string.Empty)" @onclick="() => AnswerPrediction(0)" disabled="@IsBusy"><small>index 0</small><strong>before @Current.Elements[0].Value</strong></button>
+                    <button type="button" class="@(_predictedInsertionIndex == 1 ? "chosen" : string.Empty)" @onclick="() => AnswerPrediction(1)" disabled="@IsBusy"><small>index 1</small><strong>after @Current.Elements[0].Value</strong></button>
+                </div>
+                @if (_predictedInsertionIndex is not null) { <p class="prediction-feedback @(_predictionCorrect ? "correct" : "incorrect")" aria-live="polite">@PredictionFeedback</p> }
+            </div>
+        }
+        else
+        {
+            <div class="prediction-card empty"><strong>No insertion is needed.</strong><p>A single value is already a sorted prefix.</p></div>
+        }
+    </section>
+
+    <section class="lab-section" aria-labelledby="insertion-visualizer-title">
+        <div class="lab-heading">
+            <div><span class="section-kicker">3 · WATCH THE ALGORITHM</span><h2 id="insertion-visualizer-title">Watch the key leave the array and the gap move left.</h2></div>
+            <div class="lab-actions">
+                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopupsAsync" /><span>Open explanation after run</span></label>
+                @if (_lastResult is not null) { <button class="secondary-action" type="button" @onclick="OpenLastRunPopup">Last explanation</button> }
+                <button class="sort-button" type="button" @onclick="RunSortAsync" disabled="@(IsBusy || Current.Count == 0)"><span>▶</span> Sort this array</button>
+            </div>
+        </div>
+
+        <div class="state-tabs" role="tablist" aria-label="Insertion Sort state view">
+            <button type="button" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state <small>key, gap, compare, shifts</small></button>
+            <button type="button" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state <small>fixed slots + temporary key</small></button>
+        </div>
+
+        <div class="visualizer-shell">
+            @if (_view == StateView.Visual) { <InsertionSortVisualization Snapshot="@DisplayedSnapshot" /> }
+            else { <InsertionSortMemoryVisualization Snapshot="@DisplayedSnapshot" /> }
+        </div>
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+
+        <div class="run-dashboard" aria-label="Insertion Sort live metrics">
+            <article><span>Pass</span><strong>@PassMetric</strong><small>One new key joins the sorted prefix per pass.</small></article>
+            <article><span>Comparisons</span><strong>@DisplayedSnapshot.Comparisons</strong><small>@(_variant == InsertionSortVariant.BinarySearch ? "Binary probes used to locate insertion points." : "Backward key comparisons through the prefix.")</small></article>
+            <article><span>Shifts</span><strong>@DisplayedSnapshot.Shifts</strong><small>Larger values moved one slot right.</small></article>
+            <article><span>Sorted prefix</span><strong>@DisplayedSnapshot.SortedPrefixLength / @DisplayedSnapshot.Count</strong><small>The left side already in order.</small></article>
+        </div>
+
+        <div class="role-strip" aria-label="Insertion Sort current roles">
+            <article><span>HELD KEY</span><strong>@RoleKey</strong><small>Temporarily outside the array.</small></article>
+            <article><span>INSERT AT</span><strong>@RoleInsertion</strong><small>Current stable insertion point.</small></article>
+            <article><span>@(_variant == InsertionSortVariant.BinarySearch ? "MID" : "COMPARE")</span><strong>@RoleCompare</strong><small>@(_variant == InsertionSortVariant.BinarySearch ? "Binary-search probe." : "Prefix value checked now.")</small></article>
+        </div>
+
+        <div class="invariant-panel">
+            <div><span>INVARIANT TO WATCH</span><h3>Before each pass, the entire left prefix is already sorted.</h3><p>The algorithm never needs to sort that prefix from scratch. It only makes room for one new key and restores the same invariant with a prefix one item longer.</p></div>
+            <div class="early-exit-note"><span>WHY IT CAN BE FAST</span><strong>Nearly sorted data means very short travel.</strong><p>In Linear mode, a key that already belongs near its current position needs only a few comparisons and shifts. That is why the best case is Θ(n).</p></div>
+        </div>
+    </section>
+
+    <section class="algorithm-map" aria-labelledby="insertion-map-title">
+        <div class="section-heading-row"><div><span class="section-kicker">ALGORITHM MAP</span><h2 id="insertion-map-title">Search only the sorted prefix, then shift one contiguous block.</h2><p>The Core implementation performs these operations manually over the teaching array.</p></div><a class="concept-link" href="/learn/concepts#big-o">Review Big-O →</a></div>
+        <div class="pseudo-grid">
+            <div class="pseudo-code" aria-label="Insertion Sort pseudocode">
+                <span>for i = 1 to n - 1</span>
+                <span class="indent">key = a[i]</span>
+                @if (_variant == InsertionSortVariant.Linear)
+                {
+                    <span class="indent">scan left while a[j] &gt; key</span>
+                    <span class="indent-two">shift a[j] one slot right</span>
+                    <span class="indent">insert key after first value ≤ key</span>
+                }
+                else
+                {
+                    <span class="indent">binary-search upper bound in a[0..i)</span>
+                    <span class="indent">shift that suffix of the prefix right</span>
+                    <span class="indent">insert key at the found index</span>
+                }
+            </div>
+            <div class="why-cards">
+                @if (_variant == InsertionSortVariant.Linear)
+                {
+                    <article><span>Adaptive</span><strong>Existing order is useful information.</strong><p>When values are already close to their final positions, the backward scan stops quickly and few shifts are needed.</p></article>
+                    <article><span>Stable</span><strong>Equal values never cross.</strong><p>The scan stops when it reaches a value ≤ key, so the new equal key is inserted after earlier equal items.</p></article>
+                }
+                else
+                {
+                    <article><span>Fewer comparisons</span><strong>Binary search narrows the insertion point logarithmically.</strong><p>Each pass uses roughly log(prefix length) key comparisons instead of scanning the whole prefix.</p></article>
+                    <article><span>Trade-off</span><strong>Moving the array still costs linear time.</strong><p>After the insertion point is found, every larger value between it and the key still shifts right, so worst-case time remains Θ(n²).</p></article>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="fit-section" aria-labelledby="insertion-fit-title">
+        <div class="section-heading-row"><div><span class="section-kicker">WHEN SHOULD I USE IT?</span><h2 id="insertion-fit-title">Insertion Sort is excellent for small, nearly sorted, or incrementally arriving data.</h2><p>It becomes unattractive when large arrays require many long shifts.</p></div></div>
+        <div class="fit-grid">
+            <article class="fit-card good"><span>GOOD FIT</span><strong>Small arrays, nearly sorted input, streaming additions</strong><p>Linear Insertion Sort is simple, stable, in-place, adaptive, and online. It is also commonly useful as the small-subarray finishing step inside hybrid sorting strategies.</p></article>
+            <article class="fit-card avoid"><span>AVOID FOR</span><strong>Large arrays with many values far from their final position</strong><p>A reverse-like array forces Θ(n²) shifts. Binary search reduces comparisons but cannot avoid those physical moves.</p></article>
+            <article class="fit-card better"><span>BETTER NEXT CHOICE</span><strong>Use Merge Sort when stable large-scale sorting matters</strong><p>Merge Sort keeps stability while reducing general sorting time to Θ(n log n), at the cost of extra memory. Later, the Merge Sort page will link back here for tiny/nearly-sorted subproblems where insertion-style finishing is useful.</p><div class="fit-links"><a href="/sorting/merge">Merge Sort →</a></div></article>
+        </div>
+    </section>
+
+    <section class="practice-section" aria-labelledby="insertion-practice-title">
+        <div class="practice-heading"><div><span class="section-kicker">GUIDED PRACTICE</span><h2 id="insertion-practice-title">Prove each Insertion Sort behavior yourself.</h2></div><div class="task-score"><strong>@_completedTaskIds.Count / @PracticeTasks.Count</strong><span>completed</span></div></div>
+
+        @if (_activeTaskId is not null)
+        {
+            var activeTask = PracticeTasks.First(task => task.Id == _activeTaskId.Value);
+            <div class="active-task-banner"><span>ACTIVE TASK @activeTask.Id.ToString("00")</span><strong>@activeTask.Title</strong><small>@GetActiveTaskProgressText(activeTask.Id)</small></div>
+        }
+
+        <div class="practice-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                var completed = _completedTaskIds.Contains(task.Id);
+                var active = _activeTaskId == task.Id;
+                <article class="task-card @(completed ? "completed" : string.Empty) @(active ? "active" : string.Empty)">
+                    <div class="task-topline"><span>@task.Id.ToString("00")</span><span>@(completed ? "✓ Completed" : active ? "In progress" : "Practice")</span></div>
+                    <h3>@task.Title</h3><p>@task.Goal</p><div class="task-input">Input: <code>@FormatValues(task.Input)</code></div>
+                    <div class="task-actions"><a href="/learn/concepts#insertion-sort">Need the concept? →</a><button type="button" @onclick="() => StartTask(task.Id)" disabled="@IsBusy">@(active ? "Restart task" : completed ? "Practice again" : "Start task")</button></div>
+                </article>
+            }
+        </div>
+    </section>
+</div>
+
+@if (_lastRunPopupOpen && _lastResult is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRunPopup">
+        <section class="run-popup" role="dialog" aria-modal="true" aria-labelledby="insertion-run-popup-title" @onclick="IgnorePopupClick" @onclick:stopPropagation="true">
+            <header><div><span class="section-kicker">WHAT JUST HAPPENED?</span><h2 id="insertion-run-popup-title">@RunHeadline</h2></div><button class="popup-close" type="button" @onclick="CloseLastRunPopup" aria-label="Close result explanation">×</button></header>
+            <div class="popup-tabs" role="tablist"><button type="button" class="@(_popupTab == ResultPopupTab.Action ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Action">Run</button><button type="button" class="@(_popupTab == ResultPopupTab.Complexity ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Complexity">Complexity</button><button type="button" class="@(_popupTab == ResultPopupTab.Memory ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Memory">Memory &amp; stability</button></div>
+
+            @if (_popupTab == ResultPopupTab.Action)
+            {
+                <div class="popup-body"><div class="popup-metrics"><div><span>Mode</span><strong>@VariantLabelFor(_lastResult.Variant)</strong></div><div><span>Comparisons</span><strong>@_lastResult.Comparisons</strong></div><div><span>Shifts</span><strong>@_lastResult.Shifts</strong></div><div><span>Stable</span><strong>Yes</strong></div></div><h3>@RunActionExplanation</h3><p><strong>@FormatValues(_lastResult.InitialValues)</strong> became <strong>@FormatValues(_lastResult.SortedValues)</strong>. Step backward to inspect when each key was held outside the array and where the gap moved.</p></div>
+            }
+            else if (_popupTab == ResultPopupTab.Complexity)
+            {
+                <div class="popup-body"><h3>@(_lastResult.Variant == InsertionSortVariant.Linear ? "Linear Insertion Sort benefits directly from existing order." : "Binary search reduces comparisons, not array movement.")</h3><p>This run used <strong>@_lastResult.Comparisons comparisons</strong> and <strong>@_lastResult.Shifts shifts</strong>. @(_lastResult.Variant == InsertionSortVariant.Linear ? "If each next key is already near its final place, the backward scans stop quickly and the run can approach Θ(n)." : "The insertion point is found faster, but a key that belongs far left still forces many values to shift right, so worst-case time remains Θ(n²).")</p><a class="popup-concept-link" href="/learn/concepts#insertion-sort">Review Insertion Sort complexity →</a></div>
+            }
+            else
+            {
+                <div class="popup-body"><h3>One temporary key is enough.</h3><p>@MemoryPopupExplanation</p><p><strong>Online property:</strong> once a collection is sorted, a newly arriving item can be treated as one more key and inserted without re-sorting all previous values.</p><a class="popup-concept-link" href="/learn/concepts#memory">Review memory concepts →</a></div>
+            }
+        </section>
+    </div>
+}
+
+@code {
+    private const string CompletedTasksStorageKey = "algorithm-visualizer.insertion-sort.completed-tasks.v1";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.insertion-sort.result-popups.v1";
+
+    private readonly List<RunFrame> _frames = [];
+    private readonly HashSet<int> _completedTaskIds = [];
+    private readonly List<InsertionSortResult> _practiceResults = [];
+
+    private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
+    [
+        new(1, "Trace canonical insertion", "Use Linear mode and verify the classic 5, 2, 4, 6, 1, 3 example: 12 comparisons and 9 right shifts.", [5, 2, 4, 6, 1, 3], InsertionSortVariant.Linear),
+        new(2, "Prove the adaptive best case", "Use Linear mode on an already sorted array. Each new key should stop after one comparison and require no shifts.", [1, 2, 3, 4, 5], InsertionSortVariant.Linear),
+        new(3, "Expose the reverse worst case", "Use Linear mode on reverse input and verify that every previous value has to shift right.", [5, 4, 3, 2, 1], InsertionSortVariant.Linear),
+        new(4, "Preserve duplicate identity", "Use Linear mode on 2, 2, 1, then open Memory state and verify that the two equal items keep their original order.", [2, 2, 1], InsertionSortVariant.Linear),
+        new(5, "Reduce comparisons with Binary Insertion", "Use Binary mode on the classic example. It must produce the same stable order with fewer key comparisons than Linear mode while keeping the same shifts.", [5, 2, 4, 6, 1, 3], InsertionSortVariant.BinarySearch),
+        new(6, "Test the one-item boundary", "Use Linear mode on one value and prove that no comparison, shift, or pass is needed.", [42], InsertionSortVariant.Linear)
+    ];
+
+    private string _arrayText = "5, 2, 4, 6, 1, 3";
+    private string? _inputError;
+    private string? _lastCapturedStep;
+    private int _frameIndex = -1;
+    private int? _predictedInsertionIndex;
+    private bool _predictionCorrect;
+    private InsertionSortResult? _lastResult;
+    private bool _lastRunPopupOpen;
+    private bool _showRunPopups = true;
+    private bool _storageLoaded;
+    private bool _memoryOpenedDuringTask;
+    private int? _activeTaskId;
+    private StateView _view = StateView.Visual;
+    private ResultPopupTab _popupTab = ResultPopupTab.Action;
+    private InsertionSortVariant _variant = InsertionSortVariant.Linear;
+
+    private bool IsBusy => SimulationState.IsRunning;
+    private InsertionSortSnapshot Current => InsertionSort.CreateSnapshot();
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_frames.Count > 0 && _frameIndex < _frames.Count - 1) || SimulationState.IsRunning;
+    private int TimelineCount => _frames.Count;
+    private int TimelinePosition => _frameIndex >= 0 ? _frameIndex + 1 : 0;
+    private RunFrame? DisplayedFrame => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex] : null;
+    private string DisplayedStepText => DisplayedFrame?.StepText ?? SimulationState.CurrentStepText;
+    private InsertionSortSnapshot DisplayedSnapshot => DisplayedFrame?.Snapshot ?? InsertionSort.CreateSnapshot();
+    private string PassMetric => DisplayedSnapshot.CurrentPass == 0 ? "—" : DisplayedSnapshot.CurrentPass.ToString();
+    private string RoleKey => DisplayedSnapshot.HeldKeyValue is null ? "—" : $"{DisplayedSnapshot.HeldKeyValue} from {DisplayedSnapshot.KeySourceIndex}";
+    private string RoleInsertion => DisplayedSnapshot.InsertionIndex >= 0 ? $"index {DisplayedSnapshot.InsertionIndex}" : "—";
+    private string RoleCompare => DisplayedSnapshot.CompareIndex >= 0 && DisplayedSnapshot.Elements[DisplayedSnapshot.CompareIndex].Occupied ? $"{DisplayedSnapshot.Elements[DisplayedSnapshot.CompareIndex].Value} @ {DisplayedSnapshot.CompareIndex}" : "—";
+
+    private string PredictionFeedback
+    {
+        get
+        {
+            if (_predictedInsertionIndex is null || Current.Count < 2) return string.Empty;
+            var correctIndex = Current.Elements[1].Value < Current.Elements[0].Value ? 0 : 1;
+            return _predictionCorrect
+                ? $"Correct. The first key {Current.Elements[1].Value} belongs at index {correctIndex}. The prefix of two values will be sorted after this pass."
+                : $"Not quite. Compare {Current.Elements[1].Value} with {Current.Elements[0].Value}: the stable insertion index is {correctIndex}.";
+        }
+    }
+
+    private string VariantLabel => VariantLabelFor(_variant);
+    private string VariantTradeoffNote => _variant == InsertionSortVariant.BinarySearch ? "fewer comparisons, same shifts" : "adaptive on nearly sorted data";
+    private static string VariantLabelFor(InsertionSortVariant variant) => variant == InsertionSortVariant.BinarySearch ? "Binary Insertion" : "Linear Insertion";
+    private string RunHeadline => _lastResult is null ? "Insertion Sort run complete" : $"{VariantLabelFor(_lastResult.Variant)} finished after {_lastResult.Passes} passes";
+    private string RunActionExplanation => _lastResult is null ? string.Empty : _lastResult.Shifts == 0 ? "Every key was already in the correct position relative to the sorted prefix, so no element had to shift." : $"The algorithm held one key per pass and performed {_lastResult.Shifts} right shift{(_lastResult.Shifts == 1 ? string.Empty : "s")} to create insertion gaps.";
+    private string MemoryPopupExplanation => _lastResult is null ? string.Empty : $"The run used one fixed array and O(1) temporary algorithmic storage. It performed {_lastResult.Writes} array-slot write{(_lastResult.Writes == 1 ? string.Empty : "s")}. Equal-item order was {(_lastResult.PreservedEqualValueOrder ? "preserved" : "changed")}, which demonstrates the stable insertion rule.";
+
+    protected override void OnInitialized()
+    {
+        InsertionSort.LoadValues([5, 2, 4, 6, 1, 3]);
+        SimulationState.Changed += HandleSimulationChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _storageLoaded) return;
+        _storageLoaded = true;
+        try
+        {
+            var completedJson = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { CompletedTasksStorageKey });
+            if (!string.IsNullOrWhiteSpace(completedJson))
+            {
+                var completed = System.Text.Json.JsonSerializer.Deserialize<int[]>(completedJson) ?? [];
+                foreach (var id in completed.Where(id => PracticeTasks.Any(task => task.Id == id))) _completedTaskIds.Add(id);
+            }
+            var popupSetting = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { PopupSettingStorageKey });
+            if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
+        }
+        catch { }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ArrayTextChanged(ChangeEventArgs args) { _arrayText = args.Value?.ToString() ?? string.Empty; _inputError = null; }
+    private void ApplyArray() { if (IsBusy) return; if (!TryParseArray(_arrayText, out var values, out var error)) { _inputError = error; return; } LoadValues(values); }
+
+    private void LoadPreset(Preset preset)
+    {
+        if (IsBusy) return;
+        var values = preset switch
+        {
+            Preset.NearlySorted => new[] { 1, 2, 3, 5, 4, 6 },
+            Preset.Reverse => new[] { 6, 5, 4, 3, 2, 1 },
+            Preset.Duplicates => new[] { 3, 1, 3, 2, 3 },
+            Preset.Sorted => new[] { 1, 2, 3, 4, 5, 6 },
+            _ => new[] { 5, 2, 4, 6, 1, 3 }
+        };
+        LoadValues(values);
+    }
+
+    private void LoadRandom()
+    {
+        if (IsBusy) return;
+        var values = new int[7];
+        for (var index = 0; index < values.Length; index++) values[index] = Random.Shared.Next(-5, 16);
+        LoadValues(values);
+    }
+
+    private void LoadValues(int[] values)
+    {
+        ClearReview();
+        InsertionSort.LoadValues(values);
+        _arrayText = FormatValues(values);
+        _inputError = null;
+        _predictedInsertionIndex = null;
+        _predictionCorrect = false;
+    }
+
+    private static bool TryParseArray(string input, out int[] values, out string error)
+    {
+        var parts = (input ?? string.Empty).Split([',', ';', ' ', '\n', '\r', '\t'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length == 0) { values = []; error = "Enter at least one integer."; return false; }
+        if (parts.Length > 12) { values = []; error = "Keep this learning view to at most 12 values so every insertion step stays readable."; return false; }
+        values = new int[parts.Length];
+        for (var index = 0; index < parts.Length; index++)
+        {
+            if (!int.TryParse(parts[index], out values[index])) { values = []; error = $"“{parts[index]}” is not a whole number."; return false; }
+        }
+        error = string.Empty;
+        return true;
+    }
+
+    private void AnswerPrediction(int index)
+    {
+        if (Current.Count < 2 || IsBusy || index is < 0 or > 1) return;
+        _predictedInsertionIndex = index;
+        _predictionCorrect = index == (Current.Elements[1].Value < Current.Elements[0].Value ? 0 : 1);
+    }
+
+    private async Task RunSortAsync()
+    {
+        if (IsBusy || Current.Count == 0) return;
+        PrepareRun();
+        InsertionSort.ResetVisualState();
+        var token = SimulationState.Start("Insertion Sort is ready. Index 0 is the first sorted prefix; the value at index 1 will become the first held key.");
+        try
+        {
+            var result = await InsertionSort.SortAsync(_variant, token);
+            if (!IsCurrent(token)) return;
+            FinishRun(result);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception ex)
+        {
+            _inputError = $"The sorting run stopped: {ex.Message}";
+            if (IsCurrent(token)) SimulationState.Complete("The run stopped because of an error.");
+        }
+    }
+
+    private void FinishRun(InsertionSortResult result)
+    {
+        _lastResult = result;
+        RecordPracticeResult(result);
+        SimulationState.Complete($"Sorted. {result.Comparisons} comparisons, {result.Shifts} shifts, {result.Passes} passes.");
+        _popupTab = ResultPopupTab.Action;
+        _lastRunPopupOpen = _showRunPopups;
+    }
+
+    private void PrepareRun() { _inputError = null; _lastRunPopupOpen = false; _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; }
+    private void Capture() { var step = SimulationState.CurrentStepText; if (step == _lastCapturedStep) return; var tail = _frameIndex < 0 || _frameIndex == _frames.Count - 1; _frames.Add(new RunFrame(step, InsertionSort.CreateSnapshot())); _lastCapturedStep = step; if (tail) _frameIndex = _frames.Count - 1; }
+    private void HandleSimulationChanged() { if (SimulationState.IsRunning) Capture(); _ = InvokeAsync(StateHasChanged); }
+    private bool IsCurrent(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;
+    private void ClearReview() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; _lastResult = null; _lastRunPopupOpen = false; }
+    private Task PlayTimelineAsync() { if (_frames.Count > 0) _frameIndex = _frames.Count - 1; SimulationState.Resume(); return InvokeAsync(StateHasChanged); }
+    private Task PauseTimelineAsync() { SimulationState.Pause(); return Task.CompletedTask; }
+    private Task StepBackAsync() { if (SimulationState.IsRunning && !SimulationState.IsPaused) SimulationState.Pause(); if (_frameIndex > 0) _frameIndex--; return InvokeAsync(StateHasChanged); }
+    private Task StepForwardAsync() { if (_frameIndex >= 0 && _frameIndex < _frames.Count - 1) { _frameIndex++; return InvokeAsync(StateHasChanged); } if (SimulationState.IsRunning) SimulationState.Step(); return Task.CompletedTask; }
+    private Task ResetPlaybackAsync() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; return InvokeAsync(StateHasChanged); }
+
+    private void SetStateView(StateView view)
+    {
+        _view = view;
+        if (view == StateView.Memory && _activeTaskId is not null && _practiceResults.Count > 0) { _memoryOpenedDuringTask = true; CheckActiveTaskCompletion(); }
+    }
+
+    private void StartTask(int taskId)
+    {
+        if (IsBusy) return;
+        var task = PracticeTasks.First(item => item.Id == taskId);
+        _activeTaskId = taskId;
+        _practiceResults.Clear();
+        _memoryOpenedDuringTask = false;
+        _variant = task.Variant;
+        LoadValues(CloneValues(task.Input));
+    }
+
+    private void RecordPracticeResult(InsertionSortResult result) { if (_activeTaskId is null) return; _practiceResults.Add(result); CheckActiveTaskCompletion(); }
+
+    private void CheckActiveTaskCompletion()
+    {
+        if (_activeTaskId is null || _practiceResults.Count == 0) return;
+        var result = _practiceResults[^1];
+        var completed = _activeTaskId.Value switch
+        {
+            1 => result.Variant == InsertionSortVariant.Linear && SameValues(result.InitialValues, [5,2,4,6,1,3]) && SameValues(result.SortedValues, [1,2,3,4,5,6]) && result.Comparisons == 12 && result.Shifts == 9 && result.Passes == 5,
+            2 => result.Variant == InsertionSortVariant.Linear && SameValues(result.InitialValues, [1,2,3,4,5]) && result.Comparisons == 4 && result.Shifts == 0,
+            3 => result.Variant == InsertionSortVariant.Linear && SameValues(result.InitialValues, [5,4,3,2,1]) && result.Comparisons == 10 && result.Shifts == 10,
+            4 => result.Variant == InsertionSortVariant.Linear && SameValues(result.InitialValues, [2,2,1]) && result.PreservedEqualValueOrder && _memoryOpenedDuringTask,
+            5 => result.Variant == InsertionSortVariant.BinarySearch && SameValues(result.InitialValues, [5,2,4,6,1,3]) && result.Comparisons == 10 && result.Shifts == 9 && result.PreservedEqualValueOrder,
+            6 => result.Variant == InsertionSortVariant.Linear && SameValues(result.InitialValues, [42]) && result.Comparisons == 0 && result.Shifts == 0 && result.Passes == 0,
+            _ => false
+        };
+        if (!completed) return;
+        _completedTaskIds.Add(_activeTaskId.Value); _activeTaskId = null; _practiceResults.Clear(); _memoryOpenedDuringTask = false; _ = PersistCompletedTasksAsync();
+    }
+
+    private string GetActiveTaskProgressText(int taskId)
+    {
+        if (_practiceResults.Count == 0) return taskId == 4 ? $"Input is loaded in {VariantLabel}. Run it, then open Memory state after the run to verify duplicate identity." : $"Input is loaded in {VariantLabel}. Predict the first insertion if you want, then run Insertion Sort.";
+        var result = _practiceResults[^1];
+        return taskId switch
+        {
+            1 => $"Need 12 comparisons and 9 shifts. Last run: {result.Comparisons} comparisons, {result.Shifts} shifts.",
+            2 => $"Need 4 comparisons and 0 shifts. Last run: {result.Comparisons} comparisons, {result.Shifts} shifts.",
+            3 => $"Need 10 comparisons and 10 shifts. Last run: {result.Comparisons} comparisons, {result.Shifts} shifts.",
+            4 => $"Stable order preserved={(result.PreservedEqualValueOrder ? "yes" : "no")}; Memory state opened={(_memoryOpenedDuringTask ? "yes" : "no")}.",
+            5 => $"Need 10 binary comparisons and the same 9 shifts. Last run: {result.Comparisons} comparisons, {result.Shifts} shifts.",
+            6 => $"Need zero work. Last run: {result.Comparisons} comparisons, {result.Shifts} shifts.",
+            _ => string.Empty
+        };
+    }
+
+    private async Task PersistCompletedTasksAsync() { try { var json = System.Text.Json.JsonSerializer.Serialize(_completedTaskIds.OrderBy(id => id).ToArray()); await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { CompletedTasksStorageKey, json }); } catch { } }
+    private async Task ToggleRunPopupsAsync(ChangeEventArgs args) { _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed; try { await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { PopupSettingStorageKey, _showRunPopups.ToString() }); } catch { } }
+    private void OpenLastRunPopup() { if (_lastResult is null) return; _popupTab = ResultPopupTab.Action; _lastRunPopupOpen = true; }
+    private void CloseLastRunPopup() => _lastRunPopupOpen = false;
+    private static void IgnorePopupClick() { }
+    private static int[] CloneValues(int[] source) { var copy = new int[source.Length]; for (var index = 0; index < source.Length; index++) copy[index] = source[index]; return copy; }
+    private static bool SameValues(int[] left, int[] right) { if (left.Length != right.Length) return false; for (var index = 0; index < left.Length; index++) if (left[index] != right[index]) return false; return true; }
+    private void SetVariant(InsertionSortVariant variant) { if (IsBusy || _variant == variant) return; _variant = variant; ClearReview(); }
+    private static string FormatValues(int[] values) => string.Join(", ", values);
+    public void Dispose() => SimulationState.Changed -= HandleSimulationChanged;
+
+    private sealed record RunFrame(string StepText, InsertionSortSnapshot Snapshot);
+    private sealed record PracticeTaskDefinition(int Id, string Title, string Goal, int[] Input, InsertionSortVariant Variant);
+    private enum StateView { Visual, Memory }
+    private enum ResultPopupTab { Action, Complexity, Memory }
+    private enum Preset { Classic, NearlySorted, Reverse, Duplicates, Sorted }
+}

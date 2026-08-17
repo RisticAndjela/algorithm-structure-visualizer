@@ -28,4 +28,13 @@ Selection Sort exposes two real Core modes:
 
 Both preserve the canonical full minimum scan and therefore remain `Θ(n²)`. The page teaches destination/minimum/scan roles, sorted-prefix invariants, mutation restart semantics, and workload guidance toward Heap Sort or Merge Sort when appropriate.
 
-Insertion, Merge, Quick, and Heap Sort remain TODO placeholders until their Core implementations are added.
+## Insertion Sort — live
+
+Insertion Sort exposes two real Core modes:
+
+- **Linear** — canonical stable backward scan; adaptive with a `Θ(n)` best case on already-sorted input;
+- **Binary Insertion** — stable upper-bound binary search for the insertion point; fewer key comparisons, but the same explicit array shifts and `Θ(n²)` worst-case total time.
+
+The page makes the held key and temporary gap explicit in both Visual and Memory views. It teaches the sorted-prefix invariant, adaptive behavior, duplicate stability, practical workload fit, and the online CRUD property: a sorted collection can accept incremental insertions without a full re-sort, delete preserves order, and update can be repaired by remove + reinsert. Recorded playback frames remain snapshot based and restart after mutation.
+
+Merge, Quick, and Heap Sort remain TODO placeholders until their Core implementations are added.

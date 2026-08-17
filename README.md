@@ -11,7 +11,7 @@ The project is built with **Blazor WebAssembly and C#**. Its goal is not only to
 - what the time complexity means for the current run;
 - how the visual representation differs from the way the data is stored in memory.
 
-The application now has ten fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **AVL Tree**, **Red-Black Tree**, **Heap (generalized d-ary)**, **Binary Heap (Min/Max)**, **Matrix**, **Graph**, **Bubble Sort**, and **Selection Sort**. Queue & Stack established the reusable simulation pattern; BST extended it to linked nodes; AVL added strict height balancing; Red-Black added color-invariant repair; the two Heap labs teach the heap family and Binary Heap specialization; Matrix provides the row-major foundation reused by Graph; Bubble Sort introduces adjacent comparison, stability, sorted-suffix invariants, and Basic/Optimized stopping behavior; Selection Sort adds minimum-candidate scanning, sorted-prefix invariants, fixed quadratic comparison counts, Classic low-swap placement, and Stable Shift placement.
+The application now has eleven fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **AVL Tree**, **Red-Black Tree**, **Heap (generalized d-ary)**, **Binary Heap (Min/Max)**, **Matrix**, **Graph**, **Bubble Sort**, **Selection Sort**, and **Insertion Sort**. Queue & Stack established the reusable simulation pattern; BST extended it to linked nodes; AVL added strict height balancing; Red-Black added color-invariant repair; the two Heap labs teach the heap family and Binary Heap specialization; Matrix provides the row-major foundation reused by Graph; Bubble Sort introduces adjacent comparison, stability, sorted-suffix invariants, and Basic/Optimized stopping behavior; Selection Sort adds minimum-candidate scanning, sorted-prefix invariants, fixed quadratic comparison counts, Classic low-swap placement, and Stable Shift placement; Insertion Sort adds held-key/gap mechanics, adaptive sorted-prefix growth, Binary Insertion, stability, and online maintenance semantics.
 
 ---
 
@@ -130,6 +130,15 @@ For `n >= 2`, both Selection Sort variants perform `(n-1) + (n-2) + ... + 1 = n(
 
 The page explains practical fit and live-data behavior: Classic Selection Sort can be useful on tiny inputs when writes/swaps are expensive, but all variants remain quadratic and arbitrary insert/delete/update operations require restart. Heap Sort is linked as the asymptotically stronger repeated-selection strategy; Merge Sort is linked when stability and scale matter together. Guided Practice verifies Classic exact counts, its instability counterexample, the Stable Shift duplicate-preservation behavior, and boundary cases.
 
+
+### Insertion Sort module details
+
+Insertion Sort is the third live sorting-algorithm module at `/sorting/insertion`. The Core implementation is fully manual and stable. **Linear** mode is the canonical algorithm: hold the next key, scan the sorted prefix backward, shift only strictly larger values right, and insert the key into the resulting gap. **Binary Insertion** uses a stable upper-bound binary search to find the insertion point with fewer key comparisons, then performs the same explicit shifts. Neither mode delegates to `Array.Sort`, `List.Sort`, LINQ ordering, or another sorter.
+
+The learner workflow remains **Build → Predict → Watch → Explain → Practice**. Visual state separates held key, gap, comparison/binary probe, insertion point, and sorted prefix. Memory state shows the fixed array slots plus the one temporary key reference so the shifting process is concrete. Both variants preserve duplicate identity order and use `O(1)` extra algorithmic space.
+
+Linear Insertion Sort is adaptive: already-sorted input performs one comparison per new key and zero shifts, giving a `Θ(n)` best case. Binary Insertion reduces insertion-point comparisons but cannot remove array movement, so worst-case total time remains `Θ(n²)`. The page also teaches the algorithm's online property: once a collection is sorted, a newly arriving item can be inserted without a full re-sort, delete preserves sorted order, and update can be repaired by remove + reinsert. Recorded UI playback still restarts after mutation because existing frames describe the old snapshot. For large stable general-purpose sorting, the page points toward Merge Sort.
+
 ### Matrix module details
 
 Matrix is now a live pre-Graph foundation. `ManualMatrix` stores values in one row-major `double[]`. The Memory State deliberately teaches this in two layers: it first groups values as an outer list of row lists so row/column membership is easy to read, then exposes the actual flat backing array and its index formula.
@@ -152,7 +161,6 @@ All currently planned base data-structure modules in the specification are now r
 
 #### Sorting algorithms
 
-- Insertion Sort
 - Merge Sort
 - Quick Sort
 - Heap Sort
@@ -217,7 +225,7 @@ BST follows the same rule today: it uses explicit `BstNode` parent/left/right re
 
 AVL also follows the rule: `AvlNode` stores explicit parent/left/right references and a manually maintained cached height. Balance factors are computed from those heights, and LL/RR/LR/RL repairs explicitly rewire references with custom left/right rotations. No ready-made balanced-tree implementation performs the teaching algorithm.
 
-This rule also applies to the live Red-Black Tree, Binary Heap, Graph, Bubble Sort, and Selection Sort modules and will continue to apply to future sorting and search algorithms.
+This rule also applies to the live Red-Black Tree, Binary Heap, Graph, Bubble Sort, Selection Sort, and Insertion Sort modules and will continue to apply to future sorting and search algorithms.
 
 Standard .NET infrastructure such as `Task`, `CancellationToken`, `Guid`, `SemaphoreSlim`, Blazor components and browser interop may still be used. These provide application infrastructure rather than the algorithm being taught.
 
@@ -1336,7 +1344,7 @@ The structure foundation now includes our custom Queue, Stack, BST, AVL, Red-Bla
 
 **Matrix: implemented as the pre-Graph row-major module with direct cell editing, bulk custom-value input with automatic dimension detection, arithmetic, multiplication, transpose, powers, determinant, minors/cofactors, elementary row operations, REF/RREF/rank, inverse, equation solving, graph-adjacency presets, Visual/Memory views, a row-list-first memory explanation with expandable real `double[]` backing storage, verified Start/Restart guided practice with active progress, and automatic three-view Last Run explanations.**
 
-The project now has reusable manual linear structures, three reusable manual tree foundations, two reusable heap views of the same family, a reusable Matrix foundation, a live reusable Graph structure ready for BFS/DFS and later path/MST algorithms, plus two complete sorting labs: Bubble Sort and Selection Sort.
+The project now has reusable manual linear structures, three reusable manual tree foundations, two reusable heap views of the same family, a reusable Matrix foundation, a live reusable Graph structure ready for BFS/DFS and later path/MST algorithms, plus three complete sorting labs: Bubble Sort, Selection Sort, and Insertion Sort.
 
 ### Matrix memory visualization
 

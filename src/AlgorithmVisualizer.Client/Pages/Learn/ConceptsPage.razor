@@ -23,6 +23,7 @@
         <a href="#matrices">Matrix</a>
         <a href="#bubble-sort">Bubble Sort</a>
         <a href="#selection-sort">Selection Sort</a>
+        <a href="#insertion-sort">Insertion Sort</a>
         <a href="#identity">Value vs ID</a>
         <a href="#memory">Memory</a>
         <a href="#visual-vs-memory">Visual vs memory</a>
@@ -194,6 +195,56 @@
             <strong>Why show Visual state and Memory state?</strong>
             <p>Visual state explains the search roles and sorted prefix. Memory state keeps array indexes fixed and exposes the element references exchanged by a direct swap, which makes the stability counterexample concrete.</p>
             <a href="/sorting/selection">Open the Selection Sort lab →</a>
+        </div>
+    </section>
+
+    <section id="insertion-sort" class="concept-section">
+        <div class="section-heading">
+            <span>SORT</span>
+            <div><h2>Insertion Sort: key, sorted prefix, gap, and insertion point</h2><p>Insertion Sort keeps a sorted prefix and integrates one new value at a time instead of repeatedly sorting everything again.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class="concept-card">
+                <span class="term">KEY</span>
+                <h3>Hold one value outside the array</h3>
+                <p>At pass <code>i</code>, the value at <code>a[i]</code> becomes the key. The prefix <code>a[0..i)</code> is already sorted. Larger prefix values move right until there is a gap where the key belongs.</p>
+                <div class="example"><strong>Example:</strong> 2, 5, 7 | 4 → hold 4, shift 7 and 5, insert 4 → 2, 4, 5, 7.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">ADAPTIVE</span>
+                <h3>Existing order can make the work much smaller</h3>
+                <p>Linear Insertion Sort scans backward only as far as the key needs to travel. If the data is already sorted, each pass needs one comparison and zero shifts, giving a Θ(n) best case.</p>
+                <div class="example"><strong>Good fit:</strong> small arrays, nearly sorted data, and small subarrays inside hybrid sorting strategies.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term">BINARY INSERTION</span>
+                <h3>Binary search can reduce comparisons</h3>
+                <p>The advanced variant binary-searches the already-sorted prefix for the key's stable upper-bound insertion point. It can use fewer key comparisons, especially when comparisons are expensive.</p>
+                <div class="example"><strong>Trade-off:</strong> finding the index faster does not move the array faster. Values still shift one slot at a time, so worst-case time remains Θ(n²).</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">STABLE</span>
+                <h3>Equal values keep their original relative order</h3>
+                <p>Linear mode shifts only values strictly greater than the key. Binary mode chooses an insertion point after existing equal values. In both cases, equal-item identity order is preserved.</p>
+                <div class="example"><strong>Memory:</strong> one fixed array plus one temporary held key gives O(1) extra algorithmic space.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term">ONLINE</span>
+                <h3>New values can be integrated incrementally</h3>
+                <p>Insertion Sort is an online algorithm. Once the current collection is sorted, a newly arriving item can be treated as the next key and inserted in the correct place without re-sorting every older item.</p>
+                <div class="example"><strong>CRUD:</strong> create/append can be inserted; delete preserves sorted order; update can be repaired by remove + reinsert. A recorded UI playback trace still restarts because its snapshots belong to the old state.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">WHEN TO MOVE ON</span>
+                <h3>Large arrays with long shifts need a stronger general sorter</h3>
+                <p>If many keys belong far to the left, array shifting becomes quadratic. Binary Insertion cannot remove this movement cost.</p>
+                <div class="example"><strong>Better fit:</strong> use Merge Sort when stable Θ(n log n) general sorting is more important than O(1) extra space.</div>
+            </article>
+        </div>
+        <div class="plain-note">
+            <strong>Visual state vs Memory state</strong>
+            <p>Visual state emphasizes the held key, current comparison/search probe, gap, shifts, and sorted prefix. Memory state shows that the array slots stay fixed while references move and one temporary key exists outside the array.</p>
+            <a href="/sorting/insertion">Open the Insertion Sort lab →</a>
         </div>
     </section>
 

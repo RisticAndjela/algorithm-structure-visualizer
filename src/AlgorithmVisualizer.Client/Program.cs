@@ -9,6 +9,7 @@ using AlgorithmVisualizer.Core.DataStructures.Heap;
 using AlgorithmVisualizer.Core.DataStructures.Graph;
 using AlgorithmVisualizer.Core.Algorithms.Sorting.Bubble;
 using AlgorithmVisualizer.Core.Algorithms.Sorting.Selection;
+using AlgorithmVisualizer.Core.Algorithms.Sorting.Insertion;
 using AlgorithmVisualizer.Core.Simulation.Contracts;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -34,5 +35,6 @@ builder.Services.AddScoped<DaryHeapSimulation>();
 builder.Services.AddScoped<GraphSimulation>();
 builder.Services.AddScoped<BubbleSortSimulation>();
 builder.Services.AddScoped<SelectionSortSimulation>();
+builder.Services.AddScoped<InsertionSortSimulation>();
 
 await builder.Build().RunAsync();

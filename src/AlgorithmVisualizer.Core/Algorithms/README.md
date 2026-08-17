@@ -39,4 +39,22 @@ Core namespace: `AlgorithmVisualizer.Core.Algorithms.Sorting.Selection`
 
 The classic ascending implementation is written from scratch over a fixed raw array of teaching elements. Each pass scans the full unsorted suffix, remembers the smallest candidate index, and performs at most one direct swap into the next target position. For `n >= 2`, it therefore performs exactly `n(n-1)/2` comparisons regardless of input order, uses at most `n-1` swaps when self-swaps are skipped, and uses `O(1)` extra algorithmic space. The direct-swap variant is intentionally taught as not stable; element identity is preserved so the `2, 2, 1` counterexample is observable.
 
-Insertion Sort, Merge Sort, Quick Sort, and Heap Sort are still planned and must not be presented as interactive until their Core logic exists.
+### Insertion Sort
+
+Route: `/sorting/insertion`
+
+Core namespace: `AlgorithmVisualizer.Core.Algorithms.Sorting.Insertion`
+
+The implementation is written from scratch over a fixed nullable raw teaching array so the held key and temporary gap are explicit. **Linear** mode performs canonical stable backward scanning and right shifts. **BinarySearch** mode uses a stable upper-bound binary search to locate the insertion point before performing the same explicit shifts. No framework sorting/searching collection performs the taught behavior.
+
+Complexity taught by the module:
+
+- Linear best case on already-sorted input: `Θ(n)`;
+- Binary Insertion search work across passes: about `Θ(n log n)` comparisons, but total worst-case time remains `Θ(n²)` because shifts still dominate;
+- average/worst general movement: `Θ(n²)`;
+- algorithmic extra space: `O(1)`;
+- both variants are stable.
+
+Insertion Sort is also taught as an online algorithm: after the collection is sorted, a new item can be inserted incrementally, delete preserves order, and update can be repaired by remove + reinsert. UI playback frames are still snapshot-specific and restart after mutation.
+
+Merge Sort, Quick Sort, and Heap Sort are still planned and must not be presented as interactive until their Core logic exists.

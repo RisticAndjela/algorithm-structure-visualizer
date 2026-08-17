@@ -1,0 +1,70 @@
+@using AlgorithmVisualizer.Core.Algorithms.Sorting.Insertion
+
+<section class="insertion-memory" aria-label="Insertion Sort memory state">
+    <div class="memory-note">
+        <div><span>ACTUAL TEACHING STORAGE</span><strong>Fixed <code>InsertionSortElement?[]</code> + one temporary key reference</strong></div>
+        <p>Insertion Sort does not allocate another array. It temporarily holds one key, shifts existing element references inside the same slots, then writes the key into the gap.</p>
+    </div>
+
+    @if (Snapshot.HeldKeyValue is not null)
+    {
+        <div class="held-object-memory"><span>TEMP KEY</span><strong>@Snapshot.HeldKeyValue</strong><small>item #@(Snapshot.HeldKeyOriginalIndex + 1)</small></div>
+    }
+
+    @if (Snapshot.Count == 0)
+    {
+        <div class="empty-memory">Load an array to see its fixed slots.</div>
+    }
+    else
+    {
+        <div class="slot-strip" role="list" aria-label="Array slots and element references">
+            @for (var index = 0; index < Snapshot.Elements.Length; index++)
+            {
+                var element = Snapshot.Elements[index];
+                <article class="memory-slot @StateClass(index, element)" role="listitem">
+                    <header><span>slot</span><strong>[@index]</strong></header>
+                    <div class="reference-arrow" aria-hidden="true">↓</div>
+                    <div class="element-object">
+                        @if (element.Occupied)
+                        {
+                            <span>item #@(element.OriginalIndex + 1)</span><strong>@element.Value</strong>
+                        }
+                        else
+                        {
+                            <span>temporary</span><strong>GAP</strong>
+                        }
+                    </div>
+                    <small>@RoleLabel(index, element)</small>
+                </article>
+            }
+        </div>
+
+        <div class="memory-facts">
+            <article><span>Length</span><strong>@Snapshot.Count</strong><small>The array length stays fixed during the run.</small></article>
+            <article><span>Extra algorithmic space</span><strong>O(1)</strong><small>One held key plus index variables.</small></article>
+            <article><span>Stability</span><strong>Preserved</strong><small>Only strictly larger values shift right, so equal items never cross.</small></article>
+        </div>
+
+        <div class="stability-note">
+            <strong>Why is Insertion Sort stable?</strong>
+            <p>With <code>2, 2, 1</code>, the 1 moves left by shifting both 2-items right in their existing order. Linear mode stops after an equal value; Binary mode uses an upper-bound insertion point after equal values.</p>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public InsertionSortSnapshot Snapshot { get; set; } = default!;
+
+    private string StateClass(int index, InsertionSortElementSnapshot element)
+    {
+        if (!element.Occupied) return "is-destination";
+        if (element.VisualState is InsertionSortElementVisualState.ShiftRequired or InsertionSortElementVisualState.Shifted) return "is-swap";
+        if (index == Snapshot.CompareIndex) return "is-scan";
+        if (index == Snapshot.InsertionIndex) return "is-minimum";
+        if (element.VisualState == InsertionSortElementVisualState.Sorted) return "is-sorted";
+        return string.Empty;
+    }
+
+    private string RoleLabel(int index, InsertionSortElementSnapshot element)
+        => !element.Occupied ? "gap" : index < Snapshot.SortedPrefixLength ? "sorted prefix" : index == Snapshot.CompareIndex ? "comparison ref" : "array ref";
+}
