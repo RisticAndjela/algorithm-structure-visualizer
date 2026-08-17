@@ -1,15 +1,714 @@
 @page "/sorting/bubble"
+@using AlgorithmVisualizer.Core.Algorithms.Sorting.Bubble
+@using AlgorithmVisualizer.Client.Components.Visualization.Sorting.Bubble
+@implements IDisposable
+@inject SimulationState SimulationState
+@inject BubbleSortSimulation BubbleSort
+@inject IJSRuntime JS
 
 <PageTitle>Bubble Sort — Algorithm Visualizer</PageTitle>
 
-<LearningPlaceholder
-    Title="Bubble Sort"
-    Eyebrow="Sorting algorithm"
-    Description="Watch adjacent comparisons push larger values toward the end of the array. Simple mechanics make it a good first lens for understanding passes, swaps, and invariants."
-    Complexity="O(n²)"
-    ComplexityNote="Quadratic in the average and worst case; optimized best case can be linear."
-    Concepts="adjacent compare · swap · pass · sorted suffix"
-    TipTitle="Look for the growing sorted suffix."
-    TipText="After each complete pass, at least one largest remaining element is fixed in its final position. That invariant matters more than any individual swap."
-    FocusText="The visualization should make the active pair, swap decision, and already-settled suffix visually distinct at every step."
-    PromptText="Which element is guaranteed to be finished after this pass?" />
+<div class="bubble-page">
+    <section class="learn-launchpad" aria-labelledby="bubble-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="bubble-learn-title">Bubble Sort fixes one neighbor pair at a time.</h2>
+            <p>
+                Look at two values next to each other. If the left value is larger, swap them.
+                Keep moving right. A large value can move several times in one pass until it reaches the part of the array where it belongs.
+            </p>
+            <div class="learn-rule">
+                <span>THE ONLY DECISION</span>
+                <div class="rule-example"><strong>7</strong><span>&gt;</span><strong>3</strong><i>→</i><strong>3</strong><strong>7</strong></div>
+                <small><b>7 &gt; 3</b>, so swap. If left ≤ right, keep the pair.</small>
+            </div>
+            <div class="learn-actions">
+                <a class="primary-link" href="#bubble-lab">Try Bubble Sort ↓</a>
+                <a href="/learn/concepts#bubble-sort">Bubble Sort concepts &amp; memory →</a>
+            </div>
+        </div>
+
+        <div class="pass-story" aria-label="Bubble Sort pass explanation">
+            <div class="story-heading"><span>ONE PASS</span><strong>Why does the largest value end on the right?</strong></div>
+            <div class="story-row"><span>5</span><span>1</span><span>4</span><span>2</span><span>8</span></div>
+            <div class="story-arrow">compare → swap when needed → keep moving right</div>
+            <div class="story-row result"><span>1</span><span>4</span><span>2</span><span>5</span><span class="fixed">8</span></div>
+            <p>After the pass, the largest remaining value is fixed. The next pass can stop one position earlier.</p>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow"><span>SORTING ALGORITHMS</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <h1>Bubble Sort</h1>
+            <p>Build an array, predict the first comparison, then watch adjacent decisions create a sorted suffix.</p>
+        </div>
+        <div class="complexity-summary" aria-label="Bubble Sort complexity">
+            <div><span>Best</span><strong>Θ(n)</strong><small>already sorted + early exit</small></div>
+            <div><span>Average / worst</span><strong>Θ(n²)</strong><small>many neighbor comparisons</small></div>
+            <div><span>Extra space</span><strong>O(1)</strong><small>in-place swaps</small></div>
+        </div>
+    </header>
+
+    <section id="bubble-lab" class="builder-section" aria-labelledby="build-array-title">
+        <div class="section-heading-row">
+            <div class="heading-with-step">
+                <span class="step-number">1</span>
+                <div><span class="section-kicker">BUILD THE ARRAY</span><h2 id="build-array-title">Choose values you want to sort.</h2><p>Use 1–12 integers. Negative values and duplicates are allowed.</p></div>
+            </div>
+            <a class="concept-link" href="/learn/concepts#bubble-sort">How Bubble Sort works →</a>
+        </div>
+
+        <div class="array-builder">
+            <label class="array-input">
+                <span>VALUES</span>
+                <input value="@_arrayText" @oninput="ArrayTextChanged" disabled="@IsBusy" aria-label="Bubble Sort array values" placeholder="Example: 5, 1, 4, 2, 8" />
+                <small>Separate values with spaces or commas.</small>
+            </label>
+            <button class="primary-action" type="button" @onclick="ApplyArray" disabled="@IsBusy">Use this array</button>
+        </div>
+
+        <div class="preset-row" aria-label="Bubble Sort example arrays">
+            <span>TRY AN EXAMPLE</span>
+            <button type="button" @onclick="() => LoadPreset(Preset.Classic)" disabled="@IsBusy">Classic</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.NearlySorted)" disabled="@IsBusy">Nearly sorted</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Reverse)" disabled="@IsBusy">Worst case</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Duplicates)" disabled="@IsBusy">Duplicates</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Sorted)" disabled="@IsBusy">Already sorted</button>
+            <button type="button" @onclick="LoadRandom" disabled="@IsBusy">Random</button>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_inputError))
+        {
+            <div class="input-error" role="alert"><strong>Check the array.</strong><span>@_inputError</span></div>
+        }
+
+        <div class="current-array" aria-label="Current Bubble Sort input">
+            <span>CURRENT INPUT</span>
+            <div>
+                @for (var index = 0; index < Current.Elements.Length; index++)
+                {
+                    <span><small>@index</small><strong>@Current.Elements[index].Value</strong></span>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="predict-section" aria-labelledby="prediction-title">
+        <div class="prediction-copy">
+            <span class="step-number">2</span>
+            <div><span class="section-kicker">PREDICT FIRST</span><h2 id="prediction-title">What should happen to the first pair?</h2><p>Make the same decision the algorithm will make before you press Sort.</p></div>
+        </div>
+
+        @if (Current.Count >= 2)
+        {
+            <div class="prediction-card">
+                <div class="prediction-pair"><strong>@Current.Elements[0].Value</strong><span>and</span><strong>@Current.Elements[1].Value</strong></div>
+                <div class="prediction-actions">
+                    <button type="button" @onclick="() => AnswerPrediction(PredictionChoice.Swap)" disabled="@IsBusy">Swap them</button>
+                    <button type="button" @onclick="() => AnswerPrediction(PredictionChoice.Keep)" disabled="@IsBusy">Keep this order</button>
+                </div>
+                @if (_predictionChoice is not null)
+                {
+                    <p class="prediction-feedback @(_predictionCorrect ? "correct" : "incorrect")" aria-live="polite">@PredictionFeedback</p>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="prediction-card empty"><strong>No comparison is needed.</strong><p>With fewer than two values, the array is already sorted.</p></div>
+        }
+    </section>
+
+    <section class="lab-section" aria-labelledby="visualizer-title">
+        <div class="lab-heading">
+            <div>
+                <span class="section-kicker">3 · WATCH THE ALGORITHM</span>
+                <h2 id="visualizer-title">Follow every compare, decision, and swap.</h2>
+            </div>
+            <div class="lab-actions">
+                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopupsAsync" /><span>Open explanation after run</span></label>
+                @if (_lastResult is not null)
+                {
+                    <button class="secondary-action" type="button" @onclick="OpenLastRunPopup">Last explanation</button>
+                }
+                <button class="sort-button" type="button" @onclick="RunSortAsync" disabled="@(IsBusy || Current.Count == 0)"><span>▶</span> Sort this array</button>
+            </div>
+        </div>
+
+        <div class="state-tabs" role="tablist" aria-label="Bubble Sort state view">
+            <button type="button" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state <small>what the algorithm is doing</small></button>
+            <button type="button" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state <small>what swaps change in the array</small></button>
+        </div>
+
+        <div class="visualizer-shell">
+            @if (_view == StateView.Visual)
+            {
+                <BubbleSortVisualization Snapshot="@DisplayedSnapshot" />
+            }
+            else
+            {
+                <BubbleSortMemoryVisualization Snapshot="@DisplayedSnapshot" />
+            }
+        </div>
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync"
+                           OnPause="PauseTimelineAsync"
+                           OnStepBack="StepBackAsync"
+                           OnStepForward="StepForwardAsync"
+                           OnReset="ResetPlaybackAsync"
+                           CanStepBack="@CanStepBack"
+                           CanStepForwardOverride="@CanStepForward"
+                           StepTextOverride="@DisplayedStepText"
+                           TimelinePosition="@TimelinePosition"
+                           TimelineCount="@TimelineCount" />
+
+        <div class="run-dashboard" aria-label="Bubble Sort live metrics">
+            <article><span>Pass</span><strong>@PassMetric</strong><small>A full left-to-right scan of the unsorted region.</small></article>
+            <article><span>Comparisons</span><strong>@DisplayedSnapshot.Comparisons</strong><small>Each one checks exactly one adjacent pair.</small></article>
+            <article><span>Swaps</span><strong>@DisplayedSnapshot.Swaps</strong><small>Only out-of-order neighbors exchange places.</small></article>
+            <article><span>Fixed on right</span><strong>@DisplayedSnapshot.SortedCount / @DisplayedSnapshot.Count</strong><small>This suffix is already final.</small></article>
+        </div>
+
+        <div class="invariant-panel">
+            <div><span>INVARIANT TO WATCH</span><h3>After pass p, the p largest finished values are fixed at the right.</h3><p>The algorithm never needs to compare that sorted suffix again. This is why each pass is one comparison shorter.</p></div>
+            <div class="early-exit-note"><span>OPTIMIZATION</span><strong>No swaps in a whole pass?</strong><p>Then every remaining adjacent pair is ordered, so the entire array is sorted and the algorithm stops early.</p></div>
+        </div>
+    </section>
+
+    <section class="algorithm-map" aria-labelledby="algorithm-map-title">
+        <div class="section-heading-row">
+            <div><span class="section-kicker">ALGORITHM MAP</span><h2 id="algorithm-map-title">The code idea is smaller than the animation.</h2><p>These are the exact decisions the Core implementation performs manually.</p></div>
+            <a class="concept-link" href="/learn/concepts#big-o">Review Big-O →</a>
+        </div>
+        <div class="pseudo-grid">
+            <div class="pseudo-code" aria-label="Bubble Sort pseudocode">
+                <span>for each pass</span>
+                <span class="indent">swapped = false</span>
+                <span class="indent">for each adjacent pair still unsorted</span>
+                <span class="indent-two">compare a[j] and a[j+1]</span>
+                <span class="indent-two">if a[j] &gt; a[j+1]</span>
+                <span class="indent-three">swap manually</span>
+                <span class="indent-three">swapped = true</span>
+                <span class="indent">if swapped == false → stop</span>
+            </div>
+            <div class="why-cards">
+                <article><span>Stable</span><strong>Equal values are never swapped just for being equal.</strong><p>That preserves their original relative order. Use the Duplicates example and watch the item numbers.</p></article>
+                <article><span>In-place</span><strong>No second sorted array is created.</strong><p>The implementation uses one temporary reference while exchanging two neighboring slots.</p></article>
+            </div>
+        </div>
+    </section>
+
+    <section class="practice-section" aria-labelledby="bubble-practice-title">
+        <div class="practice-heading">
+            <div><span class="section-kicker">GUIDED PRACTICE</span><h2 id="bubble-practice-title">Prove each Bubble Sort behavior yourself.</h2></div>
+            <div class="task-score"><strong>@_completedTaskIds.Count / @PracticeTasks.Count</strong><span>completed</span></div>
+        </div>
+
+        @if (_activeTaskId is not null)
+        {
+            var activeTask = PracticeTasks.First(task => task.Id == _activeTaskId.Value);
+            <div class="active-task-banner"><span>ACTIVE TASK @activeTask.Id.ToString("00")</span><strong>@activeTask.Title</strong><small>@GetActiveTaskProgressText(activeTask.Id)</small></div>
+        }
+
+        <div class="practice-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                var completed = _completedTaskIds.Contains(task.Id);
+                var active = _activeTaskId == task.Id;
+                <article class="task-card @(completed ? "completed" : string.Empty) @(active ? "active" : string.Empty)">
+                    <div class="task-topline"><span>@task.Id.ToString("00")</span><span>@(completed ? "✓ Completed" : active ? "In progress" : "Practice")</span></div>
+                    <h3>@task.Title</h3>
+                    <p>@task.Goal</p>
+                    <div class="task-input">Input: <code>@FormatValues(task.Input)</code></div>
+                    <div class="task-actions"><a href="/learn/concepts#bubble-sort">Need the concept? →</a><button type="button" @onclick="() => StartTask(task.Id)" disabled="@IsBusy">@(active ? "Restart task" : completed ? "Practice again" : "Start task")</button></div>
+                </article>
+            }
+        </div>
+    </section>
+</div>
+
+@if (_lastRunPopupOpen && _lastResult is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRunPopup">
+        <section class="run-popup" role="dialog" aria-modal="true" aria-labelledby="bubble-run-popup-title" @onclick="IgnorePopupClick" @onclick:stopPropagation="true">
+            <header>
+                <div><span class="section-kicker">WHAT JUST HAPPENED?</span><h2 id="bubble-run-popup-title">@RunHeadline</h2></div>
+                <button class="popup-close" type="button" @onclick="CloseLastRunPopup" aria-label="Close result explanation">×</button>
+            </header>
+            <div class="popup-tabs" role="tablist">
+                <button type="button" class="@(_popupTab == ResultPopupTab.Action ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Action">Run</button>
+                <button type="button" class="@(_popupTab == ResultPopupTab.Complexity ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Complexity">Complexity</button>
+                <button type="button" class="@(_popupTab == ResultPopupTab.Memory ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Memory">Memory &amp; stability</button>
+            </div>
+
+            @if (_popupTab == ResultPopupTab.Action)
+            {
+                <div class="popup-body">
+                    <div class="popup-metrics"><div><span>Passes</span><strong>@_lastResult.Passes</strong></div><div><span>Comparisons</span><strong>@_lastResult.Comparisons</strong></div><div><span>Swaps</span><strong>@_lastResult.Swaps</strong></div><div><span>Early exit</span><strong>@(_lastResult.UsedEarlyExit ? "Yes" : "No")</strong></div></div>
+                    <h3>@RunActionExplanation</h3>
+                    <p><strong>@FormatValues(_lastResult.InitialValues)</strong> became <strong>@FormatValues(_lastResult.SortedValues)</strong>. Step back through the timeline if you want to find exactly where one value moved.</p>
+                </div>
+            }
+            else if (_popupTab == ResultPopupTab.Complexity)
+            {
+                <div class="popup-body">
+                    <h3>@RunComplexityHeadline</h3>
+                    <p>@RunComplexityExplanation</p>
+                    <div class="complexity-line"><span>Best</span><strong>Θ(n)</strong><span>Average</span><strong>Θ(n²)</strong><span>Worst</span><strong>Θ(n²)</strong></div>
+                    <a class="popup-concept-link" href="/learn/concepts#big-o">Open the Big-O guide →</a>
+                </div>
+            }
+            else
+            {
+                <div class="popup-body">
+                    <h3>Swaps changed positions, not item identity.</h3>
+                    <p>The Core algorithm uses one fixed element array and one temporary reference for each swap. Equal values are not swapped when they are equal, so their original item order remains stable. This run's stability check: <strong>@(_lastResult.Stable ? "preserved" : "not preserved")</strong>.</p>
+                    <a class="popup-concept-link" href="/learn/concepts#bubble-sort">Open Bubble Sort concepts &amp; memory →</a>
+                </div>
+            }
+        </section>
+    </div>
+}
+
+@code {
+    private const string CompletedTasksStorageKey = "algorithm-visualizer.bubble-sort.completed-tasks.v1";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.bubble-sort.result-popups.v1";
+
+    private readonly List<RunFrame> _frames = [];
+    private readonly HashSet<int> _completedTaskIds = [];
+    private readonly List<BubbleSortResult> _practiceResults = [];
+
+    private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
+    [
+        new(1, "Trace the classic example", "Run the standard five-value example and verify the optimized algorithm's real comparison/swap counts.", [5, 1, 4, 2, 8]),
+        new(2, "Trigger the best-case early exit", "Sort an already ordered array. The task completes only when one pass makes zero swaps and stops early.", [1, 2, 3, 4, 5]),
+        new(3, "Create the quadratic worst case", "Sort a reverse array and observe every possible adjacent inversion being swapped.", [5, 4, 3, 2, 1]),
+        new(4, "Prove duplicate stability", "Sort duplicate 3s, then open Memory state. Their item numbers must remain in the same relative order.", [3, 2, 3, 1, 3]),
+        new(5, "Test the one-item boundary", "Sort a single value and prove that Bubble Sort needs no comparison or swap.", [42])
+    ];
+
+    private string _arrayText = "5, 1, 4, 2, 8";
+    private string? _inputError;
+    private string? _lastCapturedStep;
+    private int _frameIndex = -1;
+    private BubbleSortResult? _lastResult;
+    private PredictionChoice? _predictionChoice;
+    private bool _predictionCorrect;
+    private bool _showRunPopups = true;
+    private bool _lastRunPopupOpen;
+    private bool _storageLoaded;
+    private bool _memoryOpenedDuringTask;
+    private int? _activeTaskId;
+    private StateView _view = StateView.Visual;
+    private ResultPopupTab _popupTab = ResultPopupTab.Action;
+
+    private bool IsBusy => SimulationState.IsRunning;
+    private BubbleSortSnapshot Current => BubbleSort.CreateSnapshot();
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_frames.Count > 0 && _frameIndex < _frames.Count - 1) || SimulationState.IsRunning;
+    private int TimelineCount => _frames.Count;
+    private int TimelinePosition => _frameIndex >= 0 ? _frameIndex + 1 : 0;
+    private RunFrame? DisplayedFrame => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex] : null;
+    private string DisplayedStepText => DisplayedFrame?.StepText ?? SimulationState.CurrentStepText;
+    private BubbleSortSnapshot DisplayedSnapshot => DisplayedFrame?.Snapshot ?? BubbleSort.CreateSnapshot();
+    private string PassMetric => DisplayedSnapshot.CurrentPass == 0 ? "—" : DisplayedSnapshot.CurrentPass.ToString();
+
+    private string PredictionFeedback
+    {
+        get
+        {
+            if (Current.Count < 2 || _predictionChoice is null) return string.Empty;
+            var left = Current.Elements[0].Value;
+            var right = Current.Elements[1].Value;
+            var action = left > right ? "swap" : "keep";
+            return _predictionCorrect
+                ? $"Correct. {left} {(left > right ? ">" : "≤")} {right}, so Bubble Sort will {action} this first pair."
+                : $"Not this time. {left} {(left > right ? ">" : "≤")} {right}, so the rule says {action}.";
+        }
+    }
+
+    private string RunHeadline => _lastResult is null
+        ? "Bubble Sort run complete"
+        : _lastResult.UsedEarlyExit
+            ? $"Sorted in {_lastResult.Passes} pass{(_lastResult.Passes == 1 ? string.Empty : "es")} with an early exit"
+            : $"Sorted in {_lastResult.Passes} full passes";
+
+    private string RunActionExplanation => _lastResult is null
+        ? string.Empty
+        : _lastResult.Swaps == 0
+            ? "The algorithm checked the remaining adjacent pairs and never found an inversion to repair."
+            : $"The algorithm repaired {_lastResult.Swaps} out-of-order adjacent pair{(_lastResult.Swaps == 1 ? string.Empty : "s")} while the sorted suffix grew from right to left.";
+
+    private string RunComplexityHeadline => _lastResult?.UsedEarlyExit == true
+        ? "This run demonstrated why optimized Bubble Sort can finish early."
+        : "This run still follows Bubble Sort's quadratic comparison pattern.";
+
+    private string RunComplexityExplanation => _lastResult is null
+        ? string.Empty
+        : _lastResult.UsedEarlyExit
+            ? $"The no-swap check ended the algorithm as soon as a complete pass proved the remaining region sorted. This run used {_lastResult.Comparisons} comparisons instead of blindly executing every possible pass. Best case is Θ(n), but average and worst cases remain Θ(n²)."
+            : $"The input kept requiring swaps through the available passes, so there was no no-swap proof to stop early. This run used {_lastResult.Comparisons} comparisons; reverse order produces the classic Θ(n²) worst case.";
+
+    protected override void OnInitialized()
+    {
+        BubbleSort.LoadValues([5, 1, 4, 2, 8]);
+        SimulationState.Changed += HandleSimulationChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _storageLoaded) return;
+        _storageLoaded = true;
+        try
+        {
+            var completedJson = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { CompletedTasksStorageKey });
+            if (!string.IsNullOrWhiteSpace(completedJson))
+            {
+                var completed = System.Text.Json.JsonSerializer.Deserialize<int[]>(completedJson) ?? [];
+                foreach (var id in completed.Where(id => PracticeTasks.Any(task => task.Id == id)))
+                {
+                    _completedTaskIds.Add(id);
+                }
+            }
+
+            var popupSetting = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { PopupSettingStorageKey });
+            if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
+        }
+        catch
+        {
+            // Browser persistence is optional; sorting remains fully usable without it.
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ArrayTextChanged(ChangeEventArgs args)
+    {
+        _arrayText = args.Value?.ToString() ?? string.Empty;
+        _inputError = null;
+    }
+
+    private void ApplyArray()
+    {
+        if (IsBusy) return;
+        if (!TryParseArray(_arrayText, out var values, out var error))
+        {
+            _inputError = error;
+            return;
+        }
+        LoadValues(values);
+    }
+
+    private void LoadPreset(Preset preset)
+    {
+        var values = preset switch
+        {
+            Preset.NearlySorted => new[] { 1, 2, 4, 3, 5, 6 },
+            Preset.Reverse => new[] { 6, 5, 4, 3, 2, 1 },
+            Preset.Duplicates => new[] { 3, 2, 3, 1, 3 },
+            Preset.Sorted => new[] { 1, 2, 3, 4, 5, 6 },
+            _ => new[] { 5, 1, 4, 2, 8 }
+        };
+        LoadValues(values);
+    }
+
+    private void LoadRandom()
+    {
+        if (IsBusy) return;
+        var values = new int[7];
+        for (var index = 0; index < values.Length; index++)
+        {
+            values[index] = Random.Shared.Next(-5, 16);
+        }
+        LoadValues(values);
+    }
+
+    private void LoadValues(int[] values)
+    {
+        ClearReview();
+        BubbleSort.LoadValues(values);
+        _arrayText = FormatValues(values);
+        _inputError = null;
+        _predictionChoice = null;
+        _predictionCorrect = false;
+    }
+
+    private static bool TryParseArray(string input, out int[] values, out string error)
+    {
+        var parts = (input ?? string.Empty).Split([',', ';', ' ', '\n', '\r', '\t'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length == 0)
+        {
+            values = [];
+            error = "Enter at least one integer.";
+            return false;
+        }
+        if (parts.Length > 12)
+        {
+            values = [];
+            error = "Keep this learning view to at most 12 values so every comparison stays readable.";
+            return false;
+        }
+
+        values = new int[parts.Length];
+        for (var index = 0; index < parts.Length; index++)
+        {
+            if (!int.TryParse(parts[index], out values[index]))
+            {
+                values = [];
+                error = $"“{parts[index]}” is not a whole number.";
+                return false;
+            }
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    private void AnswerPrediction(PredictionChoice choice)
+    {
+        if (Current.Count < 2 || IsBusy) return;
+        _predictionChoice = choice;
+        var shouldSwap = Current.Elements[0].Value > Current.Elements[1].Value;
+        _predictionCorrect = shouldSwap == (choice == PredictionChoice.Swap);
+    }
+
+    private async Task RunSortAsync()
+    {
+        if (IsBusy || Current.Count == 0) return;
+        PrepareRun();
+        BubbleSort.ResetVisualState();
+        var token = SimulationState.Start("Bubble Sort is ready to compare the first adjacent pair.");
+        try
+        {
+            var result = await BubbleSort.SortAsync(token);
+            if (!IsCurrent(token)) return;
+            FinishRun(result);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            _inputError = $"The sorting run stopped: {ex.Message}";
+            if (IsCurrent(token)) SimulationState.Complete("The run stopped because of an error.");
+        }
+    }
+
+    private void FinishRun(BubbleSortResult result)
+    {
+        _lastResult = result;
+        RecordPracticeResult(result);
+        SimulationState.Complete($"Sorted. {result.Comparisons} comparisons, {result.Swaps} swaps, {result.Passes} passes.");
+        _popupTab = ResultPopupTab.Action;
+        _lastRunPopupOpen = _showRunPopups;
+    }
+
+    private void PrepareRun()
+    {
+        _inputError = null;
+        _lastRunPopupOpen = false;
+        _frames.Clear();
+        _frameIndex = -1;
+        _lastCapturedStep = null;
+    }
+
+    private void Capture()
+    {
+        var step = SimulationState.CurrentStepText;
+        if (step == _lastCapturedStep) return;
+        var tail = _frameIndex < 0 || _frameIndex == _frames.Count - 1;
+        _frames.Add(new RunFrame(step, BubbleSort.CreateSnapshot()));
+        _lastCapturedStep = step;
+        if (tail) _frameIndex = _frames.Count - 1;
+    }
+
+    private void HandleSimulationChanged()
+    {
+        if (SimulationState.IsRunning) Capture();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private bool IsCurrent(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;
+
+    private void ClearReview()
+    {
+        SimulationState.Reset();
+        _frames.Clear();
+        _frameIndex = -1;
+        _lastCapturedStep = null;
+        _lastResult = null;
+        _lastRunPopupOpen = false;
+    }
+
+    private Task PlayTimelineAsync()
+    {
+        if (_frames.Count > 0) _frameIndex = _frames.Count - 1;
+        SimulationState.Resume();
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task PauseTimelineAsync()
+    {
+        SimulationState.Pause();
+        return Task.CompletedTask;
+    }
+
+    private Task StepBackAsync()
+    {
+        if (SimulationState.IsRunning && !SimulationState.IsPaused) SimulationState.Pause();
+        if (_frameIndex > 0) _frameIndex--;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task StepForwardAsync()
+    {
+        if (_frameIndex >= 0 && _frameIndex < _frames.Count - 1)
+        {
+            _frameIndex++;
+            return InvokeAsync(StateHasChanged);
+        }
+        if (SimulationState.IsRunning) SimulationState.Step();
+        return Task.CompletedTask;
+    }
+
+    private Task ResetPlaybackAsync()
+    {
+        SimulationState.Reset();
+        _frames.Clear();
+        _frameIndex = -1;
+        _lastCapturedStep = null;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private void SetStateView(StateView view)
+    {
+        _view = view;
+        if (view == StateView.Memory && _activeTaskId is not null && _practiceResults.Count > 0)
+        {
+            _memoryOpenedDuringTask = true;
+            CheckActiveTaskCompletion();
+        }
+    }
+
+    private void StartTask(int taskId)
+    {
+        if (IsBusy) return;
+        var task = PracticeTasks.First(item => item.Id == taskId);
+        _activeTaskId = taskId;
+        _practiceResults.Clear();
+        _memoryOpenedDuringTask = false;
+        LoadValues(CloneValues(task.Input));
+    }
+
+    private void RecordPracticeResult(BubbleSortResult result)
+    {
+        if (_activeTaskId is null) return;
+        _practiceResults.Add(result);
+        CheckActiveTaskCompletion();
+    }
+
+    private void CheckActiveTaskCompletion()
+    {
+        if (_activeTaskId is null || _practiceResults.Count == 0) return;
+        var result = _practiceResults[^1];
+        var completed = _activeTaskId.Value switch
+        {
+            1 => SameValues(result.InitialValues, [5, 1, 4, 2, 8]) && SameValues(result.SortedValues, [1, 2, 4, 5, 8]) && result.Comparisons == 9 && result.Swaps == 4 && result.UsedEarlyExit,
+            2 => SameValues(result.InitialValues, [1, 2, 3, 4, 5]) && result.Passes == 1 && result.Comparisons == 4 && result.Swaps == 0 && result.UsedEarlyExit,
+            3 => SameValues(result.InitialValues, [5, 4, 3, 2, 1]) && result.Comparisons == 10 && result.Swaps == 10 && !result.UsedEarlyExit,
+            4 => SameValues(result.InitialValues, [3, 2, 3, 1, 3]) && result.Stable && _memoryOpenedDuringTask,
+            5 => SameValues(result.InitialValues, [42]) && result.Comparisons == 0 && result.Swaps == 0,
+            _ => false
+        };
+
+        if (!completed) return;
+        _completedTaskIds.Add(_activeTaskId.Value);
+        _activeTaskId = null;
+        _practiceResults.Clear();
+        _memoryOpenedDuringTask = false;
+        _ = PersistCompletedTasksAsync();
+    }
+
+    private string GetActiveTaskProgressText(int taskId)
+    {
+        if (_practiceResults.Count == 0)
+        {
+            return taskId == 4
+                ? "Input is loaded. Run Bubble Sort, then open Memory state to inspect duplicate item identity."
+                : "Input is loaded. Predict the first pair if you want, then run Bubble Sort.";
+        }
+
+        var result = _practiceResults[^1];
+        return taskId switch
+        {
+            1 => $"Need 9 comparisons, 4 swaps and early exit. Last run: {result.Comparisons} comparisons, {result.Swaps} swaps, early exit={(result.UsedEarlyExit ? "yes" : "no")}.",
+            2 => $"Need one no-swap pass. Last run: {result.Passes} pass(es), {result.Swaps} swaps, early exit={(result.UsedEarlyExit ? "yes" : "no")}.",
+            3 => $"Need 10 comparisons and 10 swaps. Last run: {result.Comparisons} comparisons, {result.Swaps} swaps.",
+            4 => $"Stable result={(result.Stable ? "yes" : "no")}; Memory state opened={(_memoryOpenedDuringTask ? "yes" : "no")}.",
+            5 => $"Need zero work. Last run: {result.Comparisons} comparisons and {result.Swaps} swaps.",
+            _ => string.Empty
+        };
+    }
+
+    private async Task PersistCompletedTasksAsync()
+    {
+        try
+        {
+            var json = System.Text.Json.JsonSerializer.Serialize(_completedTaskIds.OrderBy(id => id).ToArray());
+            await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { CompletedTasksStorageKey, json });
+        }
+        catch
+        {
+        }
+    }
+
+    private async Task ToggleRunPopupsAsync(ChangeEventArgs args)
+    {
+        _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed;
+        try
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { PopupSettingStorageKey, _showRunPopups.ToString() });
+        }
+        catch
+        {
+        }
+    }
+
+    private void OpenLastRunPopup()
+    {
+        if (_lastResult is null) return;
+        _popupTab = ResultPopupTab.Action;
+        _lastRunPopupOpen = true;
+    }
+
+    private void CloseLastRunPopup() => _lastRunPopupOpen = false;
+    private static void IgnorePopupClick() { }
+
+    private static int[] CloneValues(int[] source)
+    {
+        var copy = new int[source.Length];
+        for (var index = 0; index < source.Length; index++) copy[index] = source[index];
+        return copy;
+    }
+
+    private static bool SameValues(int[] left, int[] right)
+    {
+        if (left.Length != right.Length) return false;
+        for (var index = 0; index < left.Length; index++)
+        {
+            if (left[index] != right[index]) return false;
+        }
+        return true;
+    }
+
+    private static string FormatValues(int[] values) => string.Join(", ", values);
+
+    public void Dispose() => SimulationState.Changed -= HandleSimulationChanged;
+
+    private sealed record RunFrame(string StepText, BubbleSortSnapshot Snapshot);
+    private sealed record PracticeTaskDefinition(int Id, string Title, string Goal, int[] Input);
+    private enum StateView { Visual, Memory }
+    private enum ResultPopupTab { Action, Complexity, Memory }
+    private enum PredictionChoice { Swap, Keep }
+    private enum Preset { Classic, NearlySorted, Reverse, Duplicates, Sorted }
+}

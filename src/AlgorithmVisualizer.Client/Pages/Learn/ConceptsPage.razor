@@ -21,6 +21,7 @@
         <a href="#red-black">Red-Black invariants</a>
         <a href="#heap">Heap property &amp; indexes</a>
         <a href="#matrices">Matrix</a>
+        <a href="#bubble-sort">Bubble Sort</a>
         <a href="#identity">Value vs ID</a>
         <a href="#memory">Memory</a>
         <a href="#visual-vs-memory">Visual vs memory</a>
@@ -92,6 +93,44 @@
             <strong>O(...) vs Θ(...)</strong>
             <p>In this app, <b>O(n)</b> is often used for the general worst-case growth of an operation. <b>Θ(k)</b> or <b>Θ(n)</b> describes what kind of work this one run performed. You do not need the mathematical definition to use the simulator.</p>
             <a href="https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/recitation-1-asymptotic-complexity-peak-finding/" target="_blank" rel="noreferrer">MIT OpenCourseWare: asymptotic complexity ↗</a>
+        </div>
+    </section>
+
+    <section id="bubble-sort" class="concept-section">
+        <div class="section-heading">
+            <span>SORT</span>
+            <div><h2>Bubble Sort: neighbors, passes, and a sorted suffix</h2><p>Bubble Sort is a simple place to learn what a sorting algorithm actually does one decision at a time.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class="concept-card">
+                <span class="term">ADJACENT</span>
+                <h3>Compare only neighbors</h3>
+                <p>At index <code>j</code>, compare <code>a[j]</code> with <code>a[j+1]</code>. If the left value is larger, swap them. If left ≤ right, leave them where they are.</p>
+                <div class="example"><strong>Example:</strong> 7, 3 → 3, 7 because 7 &gt; 3. But 3, 7 stays 3, 7.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">PASS</span>
+                <h3>One pass fixes one largest remaining value</h3>
+                <p>A pass scans the unsorted region from left to right. Whenever a larger value meets a smaller neighbor, the larger value moves one position right. By the end, the largest remaining value has reached its final position.</p>
+                <div class="example"><strong>Invariant:</strong> after pass p, the p rightmost finished values form a sorted suffix that later passes can skip.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term">EARLY EXIT</span>
+                <h3>No swaps means the remaining region is sorted</h3>
+                <p>If a complete pass makes zero swaps, every adjacent pair in that region is already ordered. The optimized algorithm can stop immediately instead of running useless extra passes.</p>
+                <div class="example"><strong>Complexity:</strong> already sorted input becomes Θ(n), while average and worst cases remain Θ(n²).</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">STABLE</span>
+                <h3>Equal values keep their original relative order</h3>
+                <p>Our Bubble Sort swaps only when the left value is strictly greater. Equal values are not exchanged merely because they are equal, so their original item order is preserved.</p>
+                <div class="example"><strong>Memory:</strong> the teaching implementation uses one fixed element array and swaps neighboring references with one temporary reference, so extra algorithmic space is O(1).</div>
+            </article>
+        </div>
+        <div class="plain-note">
+            <strong>Visual state vs Memory state</strong>
+            <p>The visual view emphasizes comparisons, swaps, and the growing sorted suffix. Memory state keeps indexes fixed and shows which element reference currently occupies each array slot. With duplicate values, the item number makes stability visible.</p>
+            <a href="/sorting/bubble">Open the Bubble Sort lab →</a>
         </div>
     </section>
 

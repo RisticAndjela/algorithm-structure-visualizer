@@ -1,20 +1,152 @@
-.matrix-visual { min-width:0; display:grid; gap:.75rem; padding:1rem; border:1px solid #e3e5ec; border-radius:1rem; background:#fff; }
-.matrix-visual header { display:flex; align-items:flex-start; justify-content:space-between; gap:.75rem; }
-.matrix-visual header div { display:flex; align-items:baseline; gap:.55rem; }
-.matrix-visual header strong { font-size:1.02rem; }
-.matrix-visual header span,.matrix-visual header small { color:#727887; font-size:.84rem; }
-.matrix-shell { display:flex; align-items:stretch; justify-content:center; min-width:0; overflow:auto; padding:.15rem; }
-.matrix-grid { display:grid; grid-template-columns:repeat(var(--matrix-columns), minmax(4.15rem,1fr)); gap:.45rem; min-width:max-content; }
-.matrix-bracket { width:.65rem; border-top:2px solid #737a89; border-bottom:2px solid #737a89; flex:0 0 .65rem; }
-.matrix-bracket.left { border-left:2px solid #737a89; margin-right:.5rem; }
-.matrix-bracket.right { border-right:2px solid #737a89; margin-left:.5rem; }
-.matrix-cell { position:relative; min-height:4.2rem; display:grid; place-items:center; align-content:center; gap:.12rem; padding:.45rem; border:1px solid #e0e3eb; border-radius:.72rem; background:#fafbfc; transition:.16s ease; }
-.matrix-cell strong { color:#252936; font-size:1.03rem; }
-.matrix-cell small { color:#858b99; font-size:.73rem; font-weight:700; }
-.matrix-cell span { position:absolute; top:.25rem; right:.28rem; padding:.15rem .28rem; border-radius:.35rem; background:rgba(255,255,255,.88); color:#555c6d; font-size:.58rem; font-weight:900; letter-spacing:.06em; }
-.matrix-cell.is-reading { background:#fff7e7; border-color:#d9a241; box-shadow:0 0 0 3px rgba(217,162,65,.10); }
-.matrix-cell.is-writing { background:#f0ecff; border-color:#7564e8; box-shadow:0 0 0 3px rgba(117,100,232,.10); }
-.matrix-cell.is-pivot { background:#eaf9f5; border-color:#249786; box-shadow:0 0 0 3px rgba(36,151,134,.10); }
-.matrix-cell.is-candidate { background:#eef5ff; border-color:#5e80c7; }
-.matrix-cell.is-matched { background:#ecfaef; border-color:#4b9e61; }
-.matrix-cell.is-eliminated { background:#fff0f1; border-color:#d66b75; }
+.matrix-visual {
+    min-width: 0;
+    display: grid;
+    gap: .72rem;
+    padding: .88rem;
+    border: 1px solid #e2e4eb;
+    border-radius: .9rem;
+    background: #fff;
+}
+
+.matrix-visual header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .75rem;
+}
+
+.visual-title {
+    display: flex;
+    align-items: baseline;
+    gap: .5rem;
+}
+
+.matrix-visual header strong {
+    color: #2c313e;
+    font-size: 1rem;
+}
+
+.matrix-visual header span,
+.matrix-visual header small {
+    color: #7b8190;
+    font-size: .78rem;
+}
+
+.matrix-shell {
+    min-width: 0;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    overflow: auto;
+    padding: .15rem;
+}
+
+.matrix-grid {
+    min-width: max-content;
+    display: grid;
+    grid-template-columns: 1.9rem repeat(var(--matrix-columns), minmax(3.9rem, 1fr));
+    gap: .35rem;
+    align-items: center;
+}
+
+.matrix-bracket {
+    width: .58rem;
+    flex: 0 0 .58rem;
+    margin-top: 1.55rem;
+    border-top: 2px solid #777e8b;
+    border-bottom: 2px solid #777e8b;
+}
+
+.matrix-bracket.left {
+    margin-right: .4rem;
+    border-left: 2px solid #777e8b;
+}
+
+.matrix-bracket.right {
+    margin-left: .4rem;
+    border-right: 2px solid #777e8b;
+}
+
+.axis-corner,
+.axis-label {
+    color: #9196a2;
+    font-size: .68rem;
+    font-weight: 820;
+    text-align: center;
+}
+
+.axis-corner { color: #a6aab4; font-size: .62rem; }
+.row-label { padding-right: .14rem; text-align: right; }
+
+.matrix-cell {
+    position: relative;
+    min-height: 4rem;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: .08rem;
+    padding: .4rem;
+    border: 1px solid #e0e3eb;
+    border-radius: .68rem;
+    background: #fafbfc;
+    transition: background .16s ease, border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.matrix-cell strong {
+    color: #252936;
+    font-size: 1rem;
+}
+
+.matrix-cell small {
+    color: #9297a3;
+    font-size: .66rem;
+    font-weight: 700;
+}
+
+.state-badge {
+    position: absolute;
+    top: .22rem;
+    right: .24rem;
+    padding: .13rem .26rem;
+    border-radius: .32rem;
+    background: rgba(255, 255, 255, .9);
+    color: #555c6d;
+    font-size: .54rem;
+    font-weight: 900;
+    letter-spacing: .06em;
+}
+
+.matrix-cell.is-reading {
+    background: #fff7e7;
+    border-color: #d9a241;
+    box-shadow: 0 0 0 3px rgba(217, 162, 65, .10);
+    transform: translateY(-1px);
+}
+
+.matrix-cell.is-writing {
+    background: #f0ecff;
+    border-color: #7564e8;
+    box-shadow: 0 0 0 3px rgba(117, 100, 232, .10);
+    transform: translateY(-1px);
+}
+
+.matrix-cell.is-pivot {
+    background: #eaf9f5;
+    border-color: #249786;
+    box-shadow: 0 0 0 3px rgba(36, 151, 134, .10);
+}
+
+.matrix-cell.is-candidate { background: #eef5ff; border-color: #5e80c7; }
+.matrix-cell.is-matched { background: #ecfaef; border-color: #4b9e61; }
+.matrix-cell.is-eliminated { background: #fff0f1; border-color: #d66b75; }
+
+@media (max-width: 760px) {
+    .matrix-grid {
+        grid-template-columns: 1.7rem repeat(var(--matrix-columns), minmax(3.45rem, 1fr));
+        gap: .28rem;
+    }
+
+    .matrix-cell {
+        min-height: 3.65rem;
+    }
+}

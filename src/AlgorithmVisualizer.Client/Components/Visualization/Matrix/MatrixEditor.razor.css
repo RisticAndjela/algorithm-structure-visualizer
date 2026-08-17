@@ -1,16 +1,111 @@
-.matrix-editor-shell { display:flex; align-items:stretch; justify-content:center; min-width:0; }
-.matrix-editor-grid { display:grid; grid-template-columns:repeat(var(--matrix-columns), minmax(4.25rem, 1fr)); gap:.48rem; min-width:0; }
-.matrix-bracket { width:.7rem; border-top:2px solid #727887; border-bottom:2px solid #727887; flex:0 0 .7rem; }
-.matrix-bracket.left { border-left:2px solid #727887; margin-right:.5rem; }
-.matrix-bracket.right { border-right:2px solid #727887; margin-left:.5rem; }
-.matrix-edit-cell { display:grid; gap:.2rem; min-width:0; }
-.matrix-edit-cell input { width:100%; min-height:3rem; padding:.55rem .5rem; border:1px solid #dfe2ea; border-radius:.72rem; background:#fff; color:#252936; text-align:center; font:750 1rem/1.2 inherit; box-sizing:border-box; }
-.matrix-edit-cell input:focus { outline:3px solid rgba(103,87,229,.14); border-color:#7768e6; }
-.matrix-edit-cell small { color:#737988; font-size:.76rem; font-weight:720; text-align:center; }
-@media (max-width:760px) { .matrix-editor-grid { grid-template-columns:repeat(var(--matrix-columns), minmax(3.65rem,1fr)); gap:.35rem; } .matrix-edit-cell input { min-height:2.75rem; font-size:.94rem; } }
+.matrix-editor-shell {
+    min-width: 0;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+}
 
-/* Editable cells must look editable at normal laptop zoom. */
-.matrix-edit-cell input { border-color:#c9ced9; background:#ffffff; font-size:1.05rem; }
-.matrix-edit-cell input:hover:not(:disabled) { border-color:#9e95e8; background:#fcfbff; }
-.matrix-edit-cell input:disabled { background:#f5f6f8; color:#676d7b; }
-.matrix-edit-cell small { font-size:.8rem; }
+.matrix-editor-grid {
+    min-width: max-content;
+    display: grid;
+    grid-template-columns: 2.1rem repeat(var(--matrix-columns), minmax(4.15rem, 1fr));
+    gap: .38rem;
+    align-items: center;
+}
+
+.matrix-bracket {
+    width: .62rem;
+    flex: 0 0 .62rem;
+    margin-top: 1.7rem;
+    border-top: 2px solid #777d8b;
+    border-bottom: 2px solid #777d8b;
+}
+
+.matrix-bracket.left {
+    margin-right: .42rem;
+    border-left: 2px solid #777d8b;
+}
+
+.matrix-bracket.right {
+    margin-left: .42rem;
+    border-right: 2px solid #777d8b;
+}
+
+.axis-corner,
+.axis-label {
+    color: #8a909d;
+    font-size: .72rem;
+    font-weight: 820;
+    text-align: center;
+}
+
+.axis-corner {
+    color: #a0a5b0;
+    font-size: .65rem;
+}
+
+.row-label {
+    padding-right: .2rem;
+    text-align: right;
+}
+
+.matrix-edit-cell {
+    min-width: 0;
+    display: grid;
+    gap: .16rem;
+}
+
+.matrix-edit-cell input {
+    width: 100%;
+    min-height: 3.25rem;
+    box-sizing: border-box;
+    padding: .55rem .45rem;
+    border: 1px solid #cdd1db;
+    border-radius: .7rem;
+    background: #fff;
+    color: #242936;
+    text-align: center;
+    font: 780 1.06rem/1.2 inherit;
+    box-shadow: 0 1px 2px rgba(31, 35, 48, .03);
+    transition: border-color .14s ease, background .14s ease, box-shadow .14s ease;
+}
+
+.matrix-edit-cell input:hover:not(:disabled) {
+    border-color: #9e95e8;
+    background: #fcfbff;
+}
+
+.matrix-edit-cell input:focus {
+    outline: 0;
+    border-color: #7768e6;
+    box-shadow: 0 0 0 3px rgba(103, 87, 229, .13);
+}
+
+.matrix-edit-cell input:disabled {
+    background: #f5f6f8;
+    color: #676d7b;
+}
+
+.matrix-edit-cell small {
+    color: #969ba7;
+    font-size: .68rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+@media (max-width: 760px) {
+    .matrix-editor-grid {
+        grid-template-columns: 1.75rem repeat(var(--matrix-columns), minmax(3.55rem, 1fr));
+        gap: .28rem;
+    }
+
+    .matrix-edit-cell input {
+        min-height: 2.9rem;
+        font-size: .96rem;
+    }
+
+    .matrix-bracket {
+        width: .5rem;
+        flex-basis: .5rem;
+    }
+}

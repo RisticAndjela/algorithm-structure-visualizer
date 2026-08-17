@@ -1,0 +1,50 @@
+@using AlgorithmVisualizer.Core.Algorithms.Sorting.Bubble
+
+<section class="bubble-memory" aria-label="Bubble Sort memory state">
+    <div class="memory-note">
+        <div><span>ACTUAL TEACHING STORAGE</span><strong>Fixed <code>BubbleSortElement[]</code> for one run</strong></div>
+        <p>The array slots stay at indexes 0…n−1. A swap exchanges the two element references stored in neighboring slots; it does not allocate a second sorting array.</p>
+    </div>
+
+    @if (Snapshot.Count == 0)
+    {
+        <div class="empty-memory">Load an array to see its fixed slots.</div>
+    }
+    else
+    {
+        <div class="slot-strip" role="list" aria-label="Array slots and element references">
+            @for (var index = 0; index < Snapshot.Elements.Length; index++)
+            {
+                var element = Snapshot.Elements[index];
+                <article class="memory-slot @StateClass(element.VisualState)" role="listitem">
+                    <header><span>slot</span><strong>[@index]</strong></header>
+                    <div class="reference-arrow" aria-hidden="true">↓</div>
+                    <div class="element-object">
+                        <span>item #@(element.OriginalIndex + 1)</span>
+                        <strong>@element.Value</strong>
+                    </div>
+                </article>
+            }
+        </div>
+
+        <div class="memory-facts">
+            <article><span>Length</span><strong>@Snapshot.Count</strong><small>No growth or shrink during sorting.</small></article>
+            <article><span>Extra algorithmic space</span><strong>O(1)</strong><small>One temporary reference is enough for a swap.</small></article>
+            <article><span>Duplicate values</span><strong>Keep identity</strong><small>Item numbers let you verify stable ordering.</small></article>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public BubbleSortSnapshot Snapshot { get; set; } = default!;
+
+    private static string StateClass(BubbleSortElementVisualState state) => state switch
+    {
+        BubbleSortElementVisualState.Comparing => "is-comparing",
+        BubbleSortElementVisualState.SwapRequired => "is-swap-required",
+        BubbleSortElementVisualState.Kept => "is-kept",
+        BubbleSortElementVisualState.Swapped => "is-swapped",
+        BubbleSortElementVisualState.Sorted => "is-sorted",
+        _ => string.Empty
+    };
+}
