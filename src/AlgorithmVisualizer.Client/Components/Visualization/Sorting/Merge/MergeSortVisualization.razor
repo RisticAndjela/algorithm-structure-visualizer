@@ -3,49 +3,158 @@
 <section class="merge-visualization" aria-label="Merge Sort visual state">
     @if (Snapshot.Count == 0)
     {
-        <div class="empty-state"><strong>No values yet.</strong><span>Load an array to see how Merge Sort divides it into runs and merges them back.</span></div>
+        <div class="empty-state"><strong>No values yet.</strong><span>Load an array to see Merge Sort divide it into single-item ranges and merge those ranges back together.</span></div>
     }
     else
     {
-        <div class="range-story">
-            <div><span>ACTIVE RANGE</span><strong>@ActiveRangeText</strong></div>
-            <div><span>LEFT RUN</span><strong>@LeftRunText</strong></div>
-            <div><span>RIGHT RUN</span><strong>@RightRunText</strong></div>
-            <div><span>PHASE</span><strong>@PhaseText</strong></div>
-        </div>
+        @if (Snapshot.Variant == MergeSortVariant.TopDownRecursive)
+        {
+            <section class="algorithm-stage divide-stage" aria-label="Recursive divide tree">
+                <header class="stage-heading">
+                    <div><span>1 · DIVIDE</span><strong>Keep splitting each range in half until every leaf contains one item.</strong></div>
+                    <small>A one-item range is already sorted. No values move during this phase.</small>
+                </header>
 
-        <div class="array-track" role="list" aria-label="Current main array">
-            @for (var index = 0; index < Snapshot.Elements.Length; index++)
+                @{ var divideLevels = DivideLevels; }
+                <div class="divide-tree">
+                    @for (var levelIndex = 0; levelIndex < divideLevels.Count; levelIndex++)
+                    {
+                        var level = divideLevels[levelIndex];
+                        <div class="tree-level">
+                            @foreach (var node in level)
+                            {
+                                <article class="range-node @RangeNodeClass(node)">
+                                    <span class="range-label">@($"[{node.Start}..{node.End}]")</span>
+                                    <div class="range-values">
+                                        @for (var index = node.Start; index <= node.End; index++)
+                                        {
+                                            <strong>@Snapshot.InitialValues[index]</strong>
+                                        }
+                                    </div>
+                                    <small>@RangeNodeCaption(node)</small>
+                                </article>
+                            }
+                        </div>
+                        @if (levelIndex < divideLevels.Count - 1)
+                        {
+                            <div class="tree-arrow" aria-hidden="true">↓ split each non-single range ↓</div>
+                        }
+                    }
+                </div>
+            </section>
+        }
+        else
+        {
+            <section class="algorithm-stage divide-stage" aria-label="Natural run detection">
+                <header class="stage-heading">
+                    <div><span>1 · DETECT EXISTING RUNS</span><strong>Natural Merge Sort does not recursively split the array.</strong></div>
+                    <small>It scans left to right and keeps each maximal nondecreasing run that already exists.</small>
+                </header>
+                <div class="natural-runs">
+                    @foreach (var run in NaturalRuns)
+                    {
+                        <article class="range-node natural-run">
+                            <span class="range-label">@($"[{run.Start}..{run.End}]")</span>
+                            <div class="range-values">
+                                @for (var index = run.Start; index <= run.End; index++)
+                                {
+                                    <strong>@Snapshot.Elements[index].Value</strong>
+                                }
+                            </div>
+                            <small>existing sorted run</small>
+                        </article>
+                    }
+                </div>
+            </section>
+        }
+
+        <section class="algorithm-stage merge-stage" aria-label="Merge workspace">
+            <header class="stage-heading">
+                <div><span>2 · MERGE BACK</span><strong>@MergeStageTitle</strong></div>
+                <small>@MergeStageHelp</small>
+            </header>
+
+            @if (IsActivelyMerging)
             {
-                var element = Snapshot.Elements[index];
-                <article class="sort-item @StateClass(index, element)" role="listitem">
-                    <span class="index-label">index @index</span>
-                    <strong>@element.Value</strong>
-                    <span class="identity-label">item #@(element.OriginalIndex + 1)</span>
-                    <span class="state-label">@StateLabel(index, element)</span>
-                </article>
+                <div class="merge-equation">
+                    <article class="run-panel left-run">
+                        <div class="run-panel-title"><span>LEFT SORTED RUN</span><strong>@($"[{Snapshot.ActiveStart}..{Snapshot.LeftEnd}]")</strong></div>
+                        <div class="mini-array">
+                            @for (var index = Snapshot.ActiveStart; index <= Snapshot.LeftEnd; index++)
+                            {
+                                <div class="mini-cell @(index == Snapshot.LeftReadIndex ? "front" : string.Empty)">
+                                    <small>@index</small><strong>@Snapshot.Elements[index].Value</strong><span>@(index == Snapshot.LeftReadIndex ? "front" : "")</span>
+                                </div>
+                            }
+                        </div>
+                    </article>
+
+                    <div class="merge-symbol" aria-hidden="true">+</div>
+
+                    <article class="run-panel right-run">
+                        <div class="run-panel-title"><span>RIGHT SORTED RUN</span><strong>@($"[{Snapshot.RightStart}..{Snapshot.ActiveEnd}]")</strong></div>
+                        <div class="mini-array">
+                            @for (var index = Snapshot.RightStart; index <= Snapshot.ActiveEnd; index++)
+                            {
+                                <div class="mini-cell @(index == Snapshot.RightReadIndex ? "front" : string.Empty)">
+                                    <small>@index</small><strong>@Snapshot.Elements[index].Value</strong><span>@(index == Snapshot.RightReadIndex ? "front" : "")</span>
+                                </div>
+                            }
+                        </div>
+                    </article>
+
+                    <div class="merge-symbol arrow" aria-hidden="true">→</div>
+
+                    <article class="run-panel buffer-run">
+                        <div class="run-panel-title"><span>TEMP BUFFER</span><strong>choose smaller front</strong></div>
+                        <div class="mini-array">
+                            @for (var index = Snapshot.ActiveStart; index <= Snapshot.ActiveEnd; index++)
+                            {
+                                var slot = Snapshot.Buffer[index];
+                                <div class="mini-cell buffer-cell @(slot.IsWriteTarget ? "write-target" : string.Empty) @(slot.Occupied ? "occupied" : string.Empty)">
+                                    <small>@index</small><strong>@(slot.Occupied ? slot.Value.ToString() : "·")</strong><span>@(slot.IsWriteTarget ? "write" : "")</span>
+                                </div>
+                            }
+                        </div>
+                    </article>
+                </div>
             }
-        </div>
-
-        <div class="merge-direction" aria-hidden="true">main array ↓ compare fronts ↓ temporary buffer ↓ copy back</div>
-
-        <div class="buffer-track" role="list" aria-label="Temporary merge buffer">
-            @for (var index = 0; index < Snapshot.Buffer.Length; index++)
+            else if (Snapshot.Phase == MergeSortPhase.Splitting)
             {
-                var slot = Snapshot.Buffer[index];
-                <article class="buffer-slot @(slot.IsWriteTarget ? "write-target" : string.Empty) @(slot.Occupied ? "occupied" : string.Empty)" role="listitem">
-                    <span>buffer[@index]</span>
-                    <strong>@(slot.Occupied ? slot.Value.ToString() : "·")</strong>
-                    <small>@(slot.Occupied ? $"item #{slot.OriginalIndex + 1}" : "empty")</small>
-                </article>
+                <div class="waiting-merge"><strong>No merge yet.</strong><span>Merge Sort must finish sorting the two smaller halves first. Step forward until two neighboring sorted runs are ready to combine.</span></div>
             }
-        </div>
+            else if (Snapshot.Phase == MergeSortPhase.Complete)
+            {
+                <div class="waiting-merge complete"><strong>All merge levels are finished.</strong><span>The full range is now one sorted run.</span></div>
+            }
+            else
+            {
+                <div class="waiting-merge"><strong>The merge workspace activates when two sorted runs are ready.</strong><span>@(Snapshot.Variant == MergeSortVariant.NaturalRuns ? "Natural mode first detects the runs that already exist." : "Top-down mode first descends to the one-item base cases.")</span></div>
+            }
+        </section>
+
+        <section class="main-array-stage" aria-label="Current main array">
+            <div class="main-array-heading"><span>CURRENT MAIN ARRAY</span><strong>@MainArrayCaption</strong></div>
+            <div class="array-track" role="list">
+                @for (var index = 0; index < Snapshot.Elements.Length; index++)
+                {
+                    var element = Snapshot.Elements[index];
+                    <article class="sort-item @StateClass(index, element)" role="listitem">
+                        <span class="index-label">index @index</span>
+                        <strong>@element.Value</strong>
+                        <span class="identity-label">item #@(element.OriginalIndex + 1)</span>
+                        <span class="state-label">@StateLabel(index, element)</span>
+                    </article>
+                }
+            </div>
+        </section>
 
         <div class="legend">
-            <span><i class="swatch left"></i>Left run</span>
-            <span><i class="swatch right"></i>Right run</span>
-            <span><i class="swatch compare"></i>Front values compared</span>
-            <span><i class="swatch write"></i>Copy-back target</span>
+            <span><i class="swatch split"></i>Range being divided</span>
+            <span><i class="swatch left"></i>Left sorted run</span>
+            <span><i class="swatch right"></i>Right sorted run</span>
+            <span><i class="swatch compare"></i>Front value</span>
+            <span><i class="swatch write"></i>Buffer/copy target</span>
             <span><i class="swatch sorted"></i>Finished</span>
         </div>
     }
@@ -54,20 +163,106 @@
 @code {
     [Parameter, EditorRequired] public MergeSortSnapshot Snapshot { get; set; } = default!;
 
-    private string ActiveRangeText => Snapshot.ActiveStart < 0 ? "—" : $"[{Snapshot.ActiveStart}..{Snapshot.ActiveEnd}]";
-    private string LeftRunText => Snapshot.ActiveStart < 0 || Snapshot.LeftEnd < 0 ? "—" : $"[{Snapshot.ActiveStart}..{Snapshot.LeftEnd}]";
-    private string RightRunText => Snapshot.RightStart < 0 ? "—" : $"[{Snapshot.RightStart}..{Snapshot.ActiveEnd}]";
-    private string PhaseText => Snapshot.Phase switch
+    private IReadOnlyList<IReadOnlyList<RangeNode>> DivideLevels => BuildDivideLevels();
+    private IReadOnlyList<RangeNode> NaturalRuns => BuildNaturalRuns();
+
+    private bool IsActivelyMerging => Snapshot.ActiveStart >= 0 && Snapshot.RightStart >= 0 && Snapshot.Phase is
+        MergeSortPhase.Comparing or MergeSortPhase.FillingBuffer or MergeSortPhase.CopyingBack or MergeSortPhase.MergeComplete;
+
+    private string MergeStageTitle => Snapshot.Phase switch
     {
-        MergeSortPhase.Splitting => "DIVIDE",
-        MergeSortPhase.DetectingRuns => "DETECT RUNS",
-        MergeSortPhase.Comparing => "COMPARE FRONTS",
-        MergeSortPhase.FillingBuffer => "WRITE BUFFER",
-        MergeSortPhase.CopyingBack => "COPY BACK",
-        MergeSortPhase.MergeComplete => "RUN MERGED",
-        MergeSortPhase.Complete => "SORTED",
-        _ => "READY"
+        MergeSortPhase.Comparing => "Compare only the two front unread values.",
+        MergeSortPhase.FillingBuffer => "Write the smaller front value into the temporary buffer.",
+        MergeSortPhase.BaseCase => "One-item base case reached — return it as an already-sorted run.",
+        MergeSortPhase.CopyingBack => "The buffer is sorted; copy it back into the same range.",
+        MergeSortPhase.MergeComplete => "Two sorted runs have become one larger sorted run.",
+        MergeSortPhase.Complete => "The whole array is one sorted run.",
+        _ => "After the divide phase, combine neighboring sorted runs from the bottom up."
     };
+
+    private string MergeStageHelp => Snapshot.Phase switch
+    {
+        MergeSortPhase.Comparing or MergeSortPhase.FillingBuffer => "Because both inputs are already sorted, the smaller front is always the next correct output value.",
+        MergeSortPhase.BaseCase => "This is where recursive splitting stops. The parent can merge this one-item run with its sorted sibling.",
+        MergeSortPhase.CopyingBack => "Copy-back does not re-sort anything; it commits the order that was already built in the buffer.",
+        MergeSortPhase.MergeComplete => "That merged result can now participate as one sorted run at the next recursion level.",
+        _ => "The algorithm never merges arbitrary unsorted halves. Each half is sorted recursively before its parent merge begins."
+    };
+
+    private string MainArrayCaption => Snapshot.Phase switch
+    {
+        MergeSortPhase.Splitting => "Values have not moved during this split step.",
+        MergeSortPhase.BaseCase => "A one-item range is already sorted; nothing moves.",
+        MergeSortPhase.CopyingBack => "The active merged result is being committed here.",
+        MergeSortPhase.Complete => "Final sorted result.",
+        _ => "The array changes only when a completed buffer is copied back."
+    };
+
+    private IReadOnlyList<IReadOnlyList<RangeNode>> BuildDivideLevels()
+    {
+        var levels = new List<IReadOnlyList<RangeNode>>();
+        if (Snapshot.InitialValues.Length == 0) return levels;
+
+        var current = new List<RangeNode> { new(0, Snapshot.InitialValues.Length - 1) };
+        while (current.Count > 0)
+        {
+            levels.Add(current.ToArray());
+            var next = new List<RangeNode>();
+            var hasSplit = false;
+            foreach (var node in current)
+            {
+                if (node.Start >= node.End)
+                {
+                    next.Add(node);
+                    continue;
+                }
+                var middle = node.Start + ((node.End - node.Start) / 2);
+                next.Add(new RangeNode(node.Start, middle));
+                next.Add(new RangeNode(middle + 1, node.End));
+                hasSplit = true;
+            }
+            if (!hasSplit) break;
+            current = next;
+        }
+        return levels;
+    }
+
+    private IReadOnlyList<RangeNode> BuildNaturalRuns()
+    {
+        var runs = new List<RangeNode>();
+        if (Snapshot.Elements.Length == 0) return runs;
+        var start = 0;
+        for (var index = 1; index < Snapshot.Elements.Length; index++)
+        {
+            if (Snapshot.Elements[index - 1].Value <= Snapshot.Elements[index].Value) continue;
+            runs.Add(new RangeNode(start, index - 1));
+            start = index;
+        }
+        runs.Add(new RangeNode(start, Snapshot.Elements.Length - 1));
+        return runs;
+    }
+
+    private string RangeNodeClass(RangeNode node)
+    {
+        if (Snapshot.ActiveStart == node.Start && Snapshot.ActiveEnd == node.End)
+        {
+            if (Snapshot.Phase == MergeSortPhase.Splitting) return "active-split";
+            if (Snapshot.Phase == MergeSortPhase.BaseCase) return "active-base";
+            if (IsActivelyMerging) return "active-merge";
+        }
+        return node.Start == node.End ? "leaf" : string.Empty;
+    }
+
+    private string RangeNodeCaption(RangeNode node)
+    {
+        if (Snapshot.ActiveStart == node.Start && Snapshot.ActiveEnd == node.End && Snapshot.Phase == MergeSortPhase.Splitting)
+            return "split this range now";
+        if (Snapshot.ActiveStart == node.Start && Snapshot.ActiveEnd == node.End && Snapshot.Phase == MergeSortPhase.BaseCase)
+            return "base case · return sorted run";
+        if (Snapshot.ActiveStart == node.Start && Snapshot.ActiveEnd == node.End && IsActivelyMerging)
+            return "merge returns here";
+        return node.Start == node.End ? "base case · already sorted" : "recursive range";
+    }
 
     private string StateClass(int index, MergeSortElementSnapshot element)
     {
@@ -89,11 +284,15 @@
     private string StateLabel(int index, MergeSortElementSnapshot element)
     {
         if (Snapshot.Phase == MergeSortPhase.Complete) return "SORTED";
+        if (Snapshot.Phase == MergeSortPhase.Splitting && index >= Snapshot.ActiveStart && index <= Snapshot.ActiveEnd) return "DIVIDE RANGE";
+        if (Snapshot.Phase == MergeSortPhase.BaseCase && index == Snapshot.ActiveStart) return "BASE CASE";
         if (index == Snapshot.LeftReadIndex) return "LEFT FRONT";
         if (index == Snapshot.RightReadIndex) return "RIGHT FRONT";
-        if (Snapshot.Phase == MergeSortPhase.CopyingBack && index == Snapshot.WriteIndex) return "WRITE BACK";
+        if (Snapshot.Phase == MergeSortPhase.CopyingBack && index == Snapshot.WriteIndex) return "COPY BACK";
         if (element.VisualState == MergeSortElementVisualState.LeftRun) return "LEFT RUN";
         if (element.VisualState == MergeSortElementVisualState.RightRun) return "RIGHT RUN";
         return "WAITING";
     }
+
+    private readonly record struct RangeNode(int Start, int End);
 }

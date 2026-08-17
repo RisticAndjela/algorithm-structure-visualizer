@@ -4,7 +4,7 @@ The Merge Sort module is implemented manually in `MergeSortSimulation`; it does 
 
 ## Variants
 
-- **Basic — Top-down Recursive Merge Sort**: recursively splits a range in half until one-item runs remain, then merges upward. Best, average, and worst time are `Θ(n log n)`.
+- **Basic — Top-down Recursive Merge Sort**: recursively splits a range in half until one-item runs remain, emits the one-item base case explicitly in playback, then merges sorted children upward. Best, average, and worst time are `Θ(n log n)`.
 - **Advanced — Natural Merge Sort**: scans for maximal nondecreasing runs already present in the data and merges neighboring runs. A fully sorted input is recognized in `Θ(n)`; worst-case time remains `Θ(n log n)`.
 
 Both variants are stable. During merging, equal values are taken from the left run first (`left <= right`), preserving duplicate identity order. One reusable auxiliary buffer of length `n` gives `O(n)` extra array storage; top-down recursion also uses `O(log n)` call-stack depth.

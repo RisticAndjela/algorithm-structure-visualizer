@@ -22,6 +22,7 @@ public enum MergeSortPhase
 {
     Ready,
     Splitting,
+    BaseCase,
     DetectingRuns,
     Comparing,
     FillingBuffer,
@@ -42,6 +43,7 @@ public sealed record MergeSortBufferSlotSnapshot(
     bool IsWriteTarget);
 
 public sealed record MergeSortSnapshot(
+    int[] InitialValues,
     MergeSortElementSnapshot[] Elements,
     MergeSortBufferSlotSnapshot[] Buffer,
     int Comparisons,

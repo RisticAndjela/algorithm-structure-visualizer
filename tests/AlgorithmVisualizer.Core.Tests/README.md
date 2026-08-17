@@ -99,7 +99,7 @@ The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctnes
 
 `Algorithms/Sorting/Merge/MergeSortSimulationTests.cs` verifies:
 
-- canonical Top-down split/merge counts and exact work on a small classic example;
+- canonical Top-down split/merge counts, exact work, explicit one-item base-case playback, full recursion depth, and preservation of the immutable initial input used by the recursion-tree visual;
 - already-sorted Top-down input still follows the canonical recursion tree;
 - Natural Merge recognizes one sorted run and skips merging;
 - two existing natural runs collapse in one merge pass;

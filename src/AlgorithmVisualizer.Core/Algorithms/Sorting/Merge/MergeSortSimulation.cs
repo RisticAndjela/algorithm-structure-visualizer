@@ -68,7 +68,7 @@ public sealed class MergeSortSimulation : SimulationAlgorithmBase
         }
 
         return new MergeSortSnapshot(
-            elements, buffer, _comparisons, _writes, _merges, _splits, _currentDepth, _maxDepth,
+            Clone(_initialValues), elements, buffer, _comparisons, _writes, _merges, _splits, _currentDepth, _maxDepth,
             _activeStart, _leftEnd, _rightStart, _activeEnd, _leftReadIndex, _rightReadIndex,
             _writeIndex, _naturalRunCount, _naturalPass, _phase, _variant);
     }
@@ -127,7 +127,24 @@ public sealed class MergeSortSimulation : SimulationAlgorithmBase
     private async Task SortRangeAsync(int start, int end, int depth, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (start >= end) return;
+        if (start >= end)
+        {
+            _currentDepth = depth;
+            _maxDepth = Math.Max(_maxDepth, depth + 1);
+            _activeStart = start;
+            _leftEnd = start;
+            _rightStart = -1;
+            _activeEnd = end;
+            _leftReadIndex = -1;
+            _rightReadIndex = -1;
+            _writeIndex = -1;
+            _phase = MergeSortPhase.BaseCase;
+            RefreshVisualStates();
+            await NextStepAsync(
+                $"Base case [{start}..{end}]: one value ({_elements[start].Value}) is already sorted. Return this one-item run to its parent; no comparison or movement is needed.",
+                cancellationToken);
+            return;
+        }
 
         _currentDepth = depth;
         _maxDepth = Math.Max(_maxDepth, depth + 1);

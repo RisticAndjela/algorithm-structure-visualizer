@@ -29,11 +29,17 @@
         </div>
 
         <div class="pass-story" aria-label="Merge Sort divide and merge explanation">
-            <div class="story-heading"><span>DIVIDE &amp; MERGE</span><strong>Small sorted runs become larger sorted runs.</strong></div>
+            <div class="story-heading"><span>CLASSIC MERGE SORT</span><strong>First go down the recursion tree. Then merge back up.</strong></div>
             <div class="story-row"><span>8</span><span>3</span><span>5</span><span>1</span></div>
-            <div class="story-arrow">split → [8, 3] + [5, 1] → sort halves → merge fronts</div>
+            <div class="story-arrow">↓ divide in half ↓</div>
+            <div class="story-group-row"><span>[8, 3]</span><span>[5, 1]</span></div>
+            <div class="story-arrow">↓ divide again until one item remains ↓</div>
+            <div class="story-group-row singles"><span>[8]</span><span>[3]</span><span>[5]</span><span>[1]</span></div>
+            <div class="story-arrow">↑ merge sorted children back into their parent ↑</div>
+            <div class="story-group-row"><span>[3, 8]</span><span>[1, 5]</span></div>
+            <div class="story-arrow">↑ final merge ↑</div>
             <div class="story-row result"><span class="fixed">1</span><span class="fixed">3</span><span class="fixed">5</span><span class="fixed">8</span></div>
-            <p>The temporary buffer is not an implementation detail to hide: it is what lets the two sorted runs be combined safely and stably.</p>
+            <p>The split phase does not move values. Ordering happens while two already-sorted child ranges are merged through the temporary buffer.</p>
         </div>
     </section>
 
@@ -127,7 +133,7 @@
 
     <section class="lab-section" aria-labelledby="merge-visualizer-title">
         <div class="lab-heading">
-            <div><span class="section-kicker">3 · WATCH THE ALGORITHM</span><h2 id="merge-visualizer-title">Follow the active ranges and the temporary buffer.</h2></div>
+            <div><span class="section-kicker">3 · WATCH THE ALGORITHM</span><h2 id="merge-visualizer-title">See the recursion tree split down, then watch sorted ranges merge back up.</h2></div>
             <div class="lab-actions">
                 <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopupsAsync" /><span>Open explanation after run</span></label>
                 @if (_lastResult is not null) { <button class="secondary-action" type="button" @onclick="OpenLastRunPopup">Last explanation</button> }
@@ -136,7 +142,7 @@
         </div>
 
         <div class="state-tabs" role="tablist" aria-label="Merge Sort state view">
-            <button type="button" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state <small>ranges, fronts, buffer, merge</small></button>
+            <button type="button" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state <small>recursion tree → sorted runs → buffer → merge back</small></button>
             <button type="button" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state <small>main array + O(n) auxiliary buffer</small></button>
         </div>
 

@@ -17,10 +17,14 @@ public sealed class MergeSortSimulationTests
         var result = await simulation.SortAsync(MergeSortVariant.TopDownRecursive, runtime.SimulationCancellationToken);
 
         Assert.Equal(new[] { 1, 3, 5, 8 }, result.SortedValues);
+        Assert.Equal(new[] { 8, 3, 5, 1 }, simulation.CreateSnapshot().InitialValues);
         Assert.Equal(3, result.Splits);
         Assert.Equal(3, result.Merges);
         Assert.Equal(5, result.Comparisons);
         Assert.Equal(16, result.Writes);
+        Assert.Equal(3, result.MaxDepth);
+        Assert.Contains(runtime.Steps, step => step.Contains("Base case [0..0]", StringComparison.Ordinal));
+        Assert.Contains(runtime.Steps, step => step.Contains("Base case [3..3]", StringComparison.Ordinal));
         Assert.True(result.PreservedEqualValueOrder);
         Assert.Equal("Θ(n log n)", result.WorstCaseComplexity);
         Assert.Equal("O(n)", result.ExtraSpaceComplexity);
@@ -121,8 +125,9 @@ public sealed class MergeSortSimulationTests
         private CancellationTokenSource _cancellation = new();
         public CancellationToken SimulationCancellationToken => _cancellation.Token;
         public string CurrentStep { get; private set; } = "Ready.";
-        public void Start() { _cancellation.Dispose(); _cancellation = new CancellationTokenSource(); }
-        public void SetCurrentStep(string description) => CurrentStep = description;
+        public List<string> Steps { get; } = [];
+        public void Start() { _cancellation.Dispose(); _cancellation = new CancellationTokenSource(); Steps.Clear(); }
+        public void SetCurrentStep(string description) { CurrentStep = description; Steps.Add(description); }
         public Task WaitForNextStepAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 }

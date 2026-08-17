@@ -151,7 +151,7 @@
 
 .story-row {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: .4rem;
 }
 
@@ -163,6 +163,29 @@
     border-radius: .58rem;
     background: #fff;
     font-size: 1rem;
+    font-weight: 800;
+}
+
+.story-group-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .5rem;
+}
+
+.story-group-row.singles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.story-group-row span {
+    min-height: 2.55rem;
+    display: grid;
+    place-items: center;
+    padding: .45rem;
+    border: 1px dashed #cbc7e4;
+    border-radius: .58rem;
+    color: #555b6b;
+    background: #fbfaff;
+    font-size: .92rem;
     font-weight: 800;
 }
 

@@ -44,6 +44,8 @@ Merge Sort exposes two real Core modes:
 - **Top-down Recursive** — canonical divide-and-conquer midpoint splitting and recursive merge-up; `Θ(n log n)` best/average/worst;
 - **Natural Merge** — detects maximal nondecreasing runs already present in the input; adaptive `Θ(n)` best case for one sorted run and `Θ(n log n)` worst case.
 
+Basic Top-down Visual state must show the recursion tree as an actual teaching structure: immutable input ranges split level by level to one-item base cases, and merge-back is shown separately with left/right sorted children, front reads, the temporary buffer, and copy-back. Do not collapse the divide phase into color changes on one flat array. Natural Merge intentionally uses a separate detected-runs presentation instead of pretending it has the same recursion tree.
+
 Both modes use one reusable `O(n)` auxiliary buffer and preserve duplicate identity by selecting from the left run on equality. Visual State exposes active ranges, run fronts, buffer writes, and copy-back. Memory State shows the main array and auxiliary buffer side by side. Reads are safe during analysis, but active create/update/delete mutations require a new run because range/run boundaries and playback frames belong to the previous snapshot.
 
 Quick and Heap Sort remain TODO placeholders until their Core implementations are added.
