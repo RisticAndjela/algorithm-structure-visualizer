@@ -11,7 +11,7 @@ The project is built with **Blazor WebAssembly and C#**. Its goal is not only to
 - what the time complexity means for the current run;
 - how the visual representation differs from the way the data is stored in memory.
 
-The application now has eight fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **AVL Tree**, **Red-Black Tree**, **Heap (generalized d-ary)**, **Binary Heap (Min/Max)**, **Matrix**, and **Graph**. Queue & Stack established the reusable simulation pattern; BST extended it to linked nodes; AVL added strict height balancing; Red-Black added color-invariant repair; the two Heap labs explicitly teach the difference between the heap family and the Binary Heap d = 2 specialization; Matrix provides the row-major foundation that the live Graph module now reuses for its adjacency-matrix representation.
+The application now has ten fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **AVL Tree**, **Red-Black Tree**, **Heap (generalized d-ary)**, **Binary Heap (Min/Max)**, **Matrix**, **Graph**, **Bubble Sort**, and **Selection Sort**. Queue & Stack established the reusable simulation pattern; BST extended it to linked nodes; AVL added strict height balancing; Red-Black added color-invariant repair; the two Heap labs teach the heap family and Binary Heap specialization; Matrix provides the row-major foundation reused by Graph; Bubble Sort introduces adjacent comparison, stability, sorted-suffix invariants, and Basic/Optimized stopping behavior; Selection Sort adds minimum-candidate scanning, sorted-prefix invariants, fixed quadratic comparison counts, Classic low-swap placement, and Stable Shift placement.
 
 ---
 
@@ -28,6 +28,8 @@ The application now has eight fully implemented learning modules: **Queue & Stac
 - Binary Heap (Min/Max)
 - Matrix
 - Graph
+- Bubble Sort
+- Selection Sort
 - shared simulation runtime;
 - play, pause and adjustable simulation speed;
 - manual step forward;
@@ -82,7 +84,8 @@ The application now has eight fully implemented learning modules: **Queue & Stac
 - REF, RREF, rank, inverse through Gauss-Jordan elimination, and `A·X=B` solving;
 - matrix property analysis (square, zero, identity, diagonal, triangular, symmetric);
 - Matrix Visual/Memory views showing cell states, a list-of-row-lists memory explanation, and an expandable actual backing-array view with `index = row * columns + column`;
-- matrix guided practice and persistent progress;
+- Matrix guided practice with explicit Start/Restart flow, live task-condition verification, active-task progress, and persistent completion;
+- Matrix Last Run explanations with Action / Memory / Why-it-matters tabs and a persisted automatic-popup preference, matching the other mature structure labs;
 - Graph directed/undirected and weighted/unweighted modes;
 - Graph add/search/remove vertex and add/search/remove edge operations;
 - direct-neighbor inspection with semantic playback states;
@@ -94,10 +97,44 @@ The application now has eight fully implemented learning modules: **Queue & Stac
 - Graph Core can grow beyond eight vertices; the standalone Matrix page remains intentionally limited to 8×8 while reusable `ManualMatrix` storage grows with Graph adjacency data;
 - Graph Learn First and all Graph/SimulationToolbar instructional copy use a larger readability floor so helper text, playback explanations, node metadata and memory labels are legible at normal desktop zoom;
 - Heap readability pass: instructional text and labels enlarged, with overflow kept inside visualization regions.
+- Bubble Sort implemented from scratch over a fixed raw array of stable teaching elements;
+- Bubble Sort adjacent compare / keep / swap / pass-complete semantic playback steps;
+- Bubble Sort implementation selector with **Basic** canonical full-pass mode and **Optimized** no-swap early exit;
+- Bubble Sort Visual state with active pair, stable item identity, and growing sorted suffix;
+- Bubble Sort Memory state showing fixed array indexes and neighboring reference swaps with `O(1)` algorithmic extra space;
+- first-move prediction interaction, presets for sorted/reverse/duplicate/boundary cases, automatic Last Run explanations, and verified persistent Guided Practice.
+- Selection Sort implemented from scratch over a fixed raw array of teaching elements;
+- Selection Sort destination/minimum/scan semantic playback, with the sorted prefix growing left-to-right;
+- exact `n(n-1)/2` comparison behavior for every input order, with at most `n-1` direct swaps when self-swaps are skipped;
+- Selection Sort Visual state showing destination, current minimum, scan position, and fixed prefix simultaneously;
+- Selection Sort implementation selector with **Classic** direct swaps and **Stable Shift** insertion-by-shifting, both using `O(1)` extra algorithmic space;
+- first-minimum prediction, instability preset, automatic Last Run explanations, Concepts integration, and verified persistent Guided Practice.
+
+### Bubble Sort module details
+
+Bubble Sort is the first live sorting-algorithm module at `/sorting/bubble`. The Core implementation performs every adjacent comparison and swap explicitly; it does not call `Array.Sort`, `List.Sort`, LINQ ordering, or another sorting routine. The learner can switch between **Basic** mode (all canonical shrinking passes, best case `Θ(n²)`) and **Optimized** mode (same stable neighbor rule plus a no-swap early exit, best case `Θ(n)`).
+
+The learner workflow is **Build → Predict → Watch → Explain → Practice**. Inputs are editable as 1–12 integers in the Client teaching view, with prepared examples for classic, nearly sorted, reverse, duplicate, already sorted, and random cases. The learner can predict the first adjacent decision before running the algorithm.
+
+Visual state distinguishes comparing, swap-required/moved, keep-order, and fixed/sorted states. The sorted-suffix invariant is kept visible throughout playback. Memory state keeps array indexes fixed and shows which stable `BubbleSortElement` reference occupies each slot, allowing duplicate stability to be verified directly. Equal values are not swapped merely for equality, so their original relative order is preserved.
+
+Each run reports its implementation mode, passes, comparisons, swaps, early-exit usage, stability, and precise complexity context. The page also explains practical fit and real-time mutation semantics: Bubble Sort is mainly appropriate for teaching/tiny data; arbitrary insert/delete/update operations invalidate the active trace and require restart. Nearly sorted workloads point toward Insertion Sort, while larger stable workloads point toward Merge Sort. Guided Practice validates both Basic and Optimized behavior, reverse-order worst case, duplicate stability plus Memory inspection, and the one-element boundary.
+
+### Selection Sort module details
+
+Selection Sort is the second live sorting-algorithm module at `/sorting/selection`. The Core implementation always performs the minimum scan directly and offers two placement strategies: **Classic** performs at most one direct swap after each scan, while **Stable Shift** holds the selected minimum, shifts the intervening block one slot right, and inserts the minimum at the target. Neither mode calls `Array.Sort`, `List.Sort`, LINQ ordering, or another sorting routine.
+
+The learner workflow remains **Build → Predict → Watch → Explain → Practice**, but the prediction asks for the first minimum index rather than an adjacent swap. Visual state deliberately separates four roles that beginners often merge together: the destination index, current minimum candidate, current scan index, and already fixed sorted prefix. This makes the key distinction explicit: Selection Sort spends most of its work *searching*; only after the search is complete does the selected mode either swap the minimum directly or insert it by stable shifting.
+
+For `n >= 2`, both Selection Sort variants perform `(n-1) + (n-2) + ... + 1 = n(n-1)/2` comparisons, so best/average/worst comparison growth remains `Θ(n²)` even when the input is already sorted. Classic mode skips self-swaps and performs at most `n-1` direct swaps, but the prepared `2, 2, 1` example shows that a long-distance swap can reverse equal-item identity. Stable Shift preserves duplicate order with `O(1)` extra algorithmic space by replacing the distant swap with block shifting, at the cost of more array-slot writes.
+
+The page explains practical fit and live-data behavior: Classic Selection Sort can be useful on tiny inputs when writes/swaps are expensive, but all variants remain quadratic and arbitrary insert/delete/update operations require restart. Heap Sort is linked as the asymptotically stronger repeated-selection strategy; Merge Sort is linked when stability and scale matter together. Guided Practice verifies Classic exact counts, its instability counterexample, the Stable Shift duplicate-preservation behavior, and boundary cases.
 
 ### Matrix module details
 
 Matrix is now a live pre-Graph foundation. `ManualMatrix` stores values in one row-major `double[]`. The Memory State deliberately teaches this in two layers: it first groups values as an outer list of row lists so row/column membership is easy to read, then exposes the actual flat backing array and its index formula.
+
+The Matrix UI uses a beginner-first **Build → Choose → Watch** workflow. Direct cell editing is the primary input path; paste controls and special presets are progressively disclosed instead of being shown simultaneously. A live shape/compatibility assistant explains whether `A ± B` and `A × B` currently fit, while invalid operations remain runnable so the simulator can teach why a shape is rejected. Row/column axis labels and `[row,column]` coordinates stay visible in both editing and playback views. Four core operation cards (addition, multiplication, transpose and RREF) explain the rule before execution; the complete advanced operation set remains available under **All matrix operations**.
 
 Implemented capabilities include direct editing/resizing, presets (zero, identity, sequence, diagonal, symmetric, random and graph adjacency), copy/swap/result chaining, addition/subtraction/Hadamard/scalar operations, matrix multiplication, transpose, powers, trace, determinant, minor/cofactor, elementary row operations, REF/RREF/rank, inverse, and solving `A·X=B`.
 
@@ -115,8 +152,6 @@ All currently planned base data-structure modules in the specification are now r
 
 #### Sorting algorithms
 
-- Bubble Sort
-- Selection Sort
 - Insertion Sort
 - Merge Sort
 - Quick Sort
@@ -182,7 +217,7 @@ BST follows the same rule today: it uses explicit `BstNode` parent/left/right re
 
 AVL also follows the rule: `AvlNode` stores explicit parent/left/right references and a manually maintained cached height. Balance factors are computed from those heights, and LL/RR/LR/RL repairs explicitly rewire references with custom left/right rotations. No ready-made balanced-tree implementation performs the teaching algorithm.
 
-This rule also applies to the live Red-Black Tree and Binary Heap and will continue to apply to future graphs, sorting algorithms and search algorithms.
+This rule also applies to the live Red-Black Tree, Binary Heap, Graph, Bubble Sort, and Selection Sort modules and will continue to apply to future sorting and search algorithms.
 
 Standard .NET infrastructure such as `Task`, `CancellationToken`, `Guid`, `SemaphoreSlim`, Blazor components and browser interop may still be used. These provide application infrastructure rather than the algorithm being taught.
 
@@ -1219,6 +1254,8 @@ Run them with:
 dotnet test tests/AlgorithmVisualizer.Core.Tests/AlgorithmVisualizer.Core.Tests.csproj
 ```
 
+The Queue/Stack test suite now covers true LIFO/FIFO removal order, duplicate-value traversal direction, short displayed-ID lookup, manual array compaction after keyed deletion, and the Count-versus-Capacity behavior of the custom backing array after Clear.
+
 The BST test suite covers insertion shape, duplicate rejection, search success/miss, all three delete cases, successor-node identity, skewed-tree height, DSW balancing of right- and left-skewed trees, height reduction, rotation counts, parent-link/BST invariants, and preservation of node identity across balancing.
 
 The AVL test suite covers LL/RR/LR/RL repairs, increasing-order height control, duplicate rejection, found/missing search, leaf/one-child/two-child deletion, delete-triggered rebalancing, successor/promoted-node identity, clear/reset behavior, and recursive validation of BST order, parent links, cached heights, balance factors, and the AVL balance invariant.
@@ -1297,9 +1334,9 @@ The structure foundation now includes our custom Queue, Stack, BST, AVL, Red-Bla
 
 **Binary Heap: implemented as the focused d = 2 complete-tree / custom-array module with Min/Max modes, bubble-up, bubble-down, extract-root, linear search, arbitrary delete repair, Visual/Memory views, capacity teaching, run explanations, and guided practice.**
 
-**Matrix: implemented as the pre-Graph row-major module with direct cell editing, bulk custom-value input with automatic dimension detection, arithmetic, multiplication, transpose, powers, determinant, minors/cofactors, elementary row operations, REF/RREF/rank, inverse, equation solving, graph-adjacency presets, Visual/Memory views, a row-list-first memory explanation with expandable real `double[]` backing storage, and guided practice.**
+**Matrix: implemented as the pre-Graph row-major module with direct cell editing, bulk custom-value input with automatic dimension detection, arithmetic, multiplication, transpose, powers, determinant, minors/cofactors, elementary row operations, REF/RREF/rank, inverse, equation solving, graph-adjacency presets, Visual/Memory views, a row-list-first memory explanation with expandable real `double[]` backing storage, verified Start/Restart guided practice with active progress, and automatic three-view Last Run explanations.**
 
-The project now has reusable manual linear structures, three reusable manual tree foundations, two reusable heap views of the same family, a reusable Matrix foundation, and a live reusable Graph structure ready for BFS/DFS and later path/MST algorithms.
+The project now has reusable manual linear structures, three reusable manual tree foundations, two reusable heap views of the same family, a reusable Matrix foundation, a live reusable Graph structure ready for BFS/DFS and later path/MST algorithms, plus two complete sorting labs: Bubble Sort and Selection Sort.
 
 ### Matrix memory visualization
 

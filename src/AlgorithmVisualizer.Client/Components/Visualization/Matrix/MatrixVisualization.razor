@@ -3,21 +3,34 @@
 
 <section class="matrix-visual" aria-label="@Title matrix">
     <header>
-        <div><strong>@Title</strong><span>@Snapshot.Rows × @Snapshot.Columns</span></div>
-        @if (!string.IsNullOrWhiteSpace(Subtitle)) { <small>@Subtitle</small> }
+        <div class="visual-title"><strong>@Title</strong><span>@Snapshot.Rows × @Snapshot.Columns</span></div>
+        @if (!string.IsNullOrWhiteSpace(Subtitle))
+        {
+            <small>@Subtitle</small>
+        }
     </header>
     <div class="matrix-shell">
         <div class="matrix-bracket left" aria-hidden="true"></div>
         <div class="matrix-grid" style="--matrix-columns:@Snapshot.Columns">
+            <span class="axis-corner" aria-hidden="true"></span>
+            @for (var column = 0; column < Snapshot.Columns; column++)
+            {
+                <span class="axis-label column-label">c@(column + 1)</span>
+            }
+
             @for (var row = 0; row < Snapshot.Rows; row++)
             {
+                <span class="axis-label row-label">r@(row + 1)</span>
                 @for (var column = 0; column < Snapshot.Columns; column++)
                 {
                     var state = Snapshot.GetState(row, column);
-                    <div class="matrix-cell @StateClass(state)">
+                    <div class="matrix-cell @StateClass(state)" title="Row @(row + 1), column @(column + 1)">
                         <strong>@Format(Snapshot.GetValue(row, column))</strong>
-                        <small>r@(row + 1)c@(column + 1)</small>
-                        @if (state != MatrixCellVisualState.Normal) { <span>@StateLabel(state)</span> }
+                        <small>[@(row + 1),@(column + 1)]</small>
+                        @if (state != MatrixCellVisualState.Normal)
+                    {
+                        <span class="state-badge">@StateLabel(state)</span>
+                    }
                     </div>
                 }
             }

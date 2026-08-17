@@ -1,0 +1,75 @@
+@using AlgorithmVisualizer.Core.Algorithms.Sorting.Selection
+
+<section class="selection-memory" aria-label="Selection Sort memory state">
+    <div class="memory-note">
+        <div><span>ACTUAL TEACHING STORAGE</span><strong>Fixed <code>SelectionSortElement[]</code> for one run</strong></div>
+        <p>@MemoryOperationExplanation</p>
+    </div>
+
+    @if (Snapshot.Count == 0)
+    {
+        <div class="empty-memory">Load an array to see its fixed slots.</div>
+    }
+    else
+    {
+        <div class="slot-strip" role="list" aria-label="Array slots and element references">
+            @for (var index = 0; index < Snapshot.Elements.Length; index++)
+            {
+                var element = Snapshot.Elements[index];
+                <article class="memory-slot @StateClass(index, element.VisualState)" role="listitem">
+                    <header><span>slot</span><strong>[@index]</strong></header>
+                    <div class="reference-arrow" aria-hidden="true">↓</div>
+                    <div class="element-object">
+                        <span>item #@(element.OriginalIndex + 1)</span>
+                        <strong>@element.Value</strong>
+                    </div>
+                    <small>@RoleLabel(index)</small>
+                </article>
+            }
+        </div>
+
+        <div class="memory-facts">
+            <article><span>Length</span><strong>@Snapshot.Count</strong><small>No growth or shrink during sorting.</small></article>
+            <article><span>Extra algorithmic space</span><strong>O(1)</strong><small>Both variants use one temporary element reference.</small></article>
+            <article><span>Stability</span><strong>@(Snapshot.Variant == SelectionSortVariant.StableShift ? "Preserved" : "Not guaranteed")</strong><small>@(Snapshot.Variant == SelectionSortVariant.StableShift ? "Shifting keeps equal items in their previous order." : "A long-distance swap can move one duplicate past another duplicate.")</small></article>
+        </div>
+
+        <div class="stability-note">
+            @if (Snapshot.Variant == SelectionSortVariant.StableShift)
+            {
+                <strong>Why is this variant stable?</strong>
+                <p>Try <code>2, 2, 1</code>. The <code>1</code> is removed temporarily, both 2-items shift one slot right in their existing order, and then 1 is inserted at the destination. Item #1 still remains before item #2 among equal values.</p>
+            }
+            else
+            {
+                <strong>Why can classic Selection Sort change equal-item order?</strong>
+                <p>Try <code>2, 2, 1</code>. The first pass swaps the <code>1</code> at index 2 with the first <code>2</code>. The second <code>2</code> stays in the middle, so item #2 can end before item #1 even though both values are 2.</p>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public SelectionSortSnapshot Snapshot { get; set; } = default!;
+
+    private string MemoryOperationExplanation => Snapshot.Variant == SelectionSortVariant.StableShift
+        ? "The slots stay at indexes 0…n−1. After the minimum scan, the selected minimum is held temporarily while every reference between target and minimum shifts one slot right. The minimum is then inserted at the target."
+        : "The slots stay at indexes 0…n−1. After a full scan, Classic Selection Sort exchanges the references at the destination and minimum indexes directly — even when those indexes are far apart.";
+
+    private string StateClass(int index, SelectionSortElementVisualState state)
+    {
+        if (state == SelectionSortElementVisualState.Sorted) return "is-sorted";
+        if (state is SelectionSortElementVisualState.SwapRequired or SelectionSortElementVisualState.Swapped or SelectionSortElementVisualState.ShiftRequired or SelectionSortElementVisualState.Shifted) return "is-swap";
+        if (index == Snapshot.MinimumIndex) return "is-minimum";
+        if (index == Snapshot.ScanIndex) return "is-scan";
+        if (index == Snapshot.TargetIndex) return "is-destination";
+        return string.Empty;
+    }
+
+    private string RoleLabel(int index) => index < Snapshot.SortedPrefixLength
+        ? "fixed prefix"
+        : index == Snapshot.MinimumIndex ? "minimum ref"
+        : index == Snapshot.ScanIndex ? "scan ref"
+        : index == Snapshot.TargetIndex ? "destination"
+        : "unsorted";
+}

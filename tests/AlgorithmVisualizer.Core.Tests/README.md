@@ -40,6 +40,16 @@ The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctnes
 - root-black, BST ordering, parent-link, no-red-red, and equal-black-height invariants after mutations;
 - clear/reset behavior.
 
+## Linear Stack / Queue coverage
+
+`DataStructures/Linear/StackQueueSimulationTests.cs` verifies:
+
+- true LIFO stack removal and FIFO queue removal;
+- duplicate-value lookup in each structure's real traversal direction;
+- stable short displayed-ID lookup;
+- delete-by-value compaction in the custom raw array without changing reserved capacity;
+- `Count`/`Capacity` behavior after clear.
+
 ## Heap coverage
 
 `DataStructures/Heap/HeapSimulationTests.cs` verifies both Min Heap and Max Heap ordering, bubble-up, extract-root bubble-down, arbitrary search, delete repair, duplicate element identities, heap-kind switching rules, and manual backing-array capacity behavior.
@@ -52,3 +62,25 @@ The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctnes
 `DataStructures/Matrix/MatrixSimulationTests.cs` covers row-major storage/resizing, element-wise arithmetic, matrix multiplication, determinant, inverse/singular handling, RREF/rank, solving `A·X=B`, elementary row operations, and the graph-adjacency preset.
 
 - `GraphSimulationTests` covers directed/undirected synchronization, weighted zero-edge presence, duplicate rules, self-loops, vertex deletion, mode guards, identity-preserving rename/weight update, and growth beyond the standalone Matrix page's 8×8 teaching limit.
+
+## Sorting coverage
+
+`Algorithms/Sorting/Bubble/BubbleSortSimulationTests.cs` verifies:
+
+- ascending correctness for the classic example;
+- exact comparison/swap/pass counts for the optimized implementation;
+- Basic mode still performs all canonical passes on already sorted input;
+- one-pass no-swap best-case early exit in Optimized mode;
+- reverse-order quadratic worst-case work;
+- stable relative identity for duplicate values;
+- the one-element zero-comparison boundary.
+
+
+`Algorithms/Sorting/Selection/SelectionSortSimulationTests.cs` verifies:
+
+- classic ascending output plus exact comparison/swap/pass counts;
+- already sorted input still performs `n(n-1)/2` comparisons;
+- reverse input keeps the same comparison count while using only direct Selection Sort swaps;
+- the `2, 2, 1` counterexample reverses equal-item identity in Classic mode and demonstrates instability;
+- Stable Shift sorts the same duplicate case while preserving equal-item identity and avoiding direct swaps;
+- a single-element input performs zero comparisons and swaps.

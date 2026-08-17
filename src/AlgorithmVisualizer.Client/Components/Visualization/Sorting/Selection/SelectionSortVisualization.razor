@@ -1,0 +1,115 @@
+@using AlgorithmVisualizer.Core.Algorithms.Sorting.Selection
+
+<section class="selection-visualization" aria-label="Selection Sort visual state">
+    @if (Snapshot.Count == 0)
+    {
+        <div class="empty-state">
+            <strong>No values yet.</strong>
+            <span>Enter an array above, then Selection Sort can search for each next minimum.</span>
+        </div>
+    }
+    else
+    {
+        <div class="array-track" role="list" aria-label="Current array order">
+            @for (var index = 0; index < Snapshot.Elements.Length; index++)
+            {
+                var element = Snapshot.Elements[index];
+                <div @key="element.OriginalIndex" class="sort-item @StateClass(index, element.VisualState)" role="listitem">
+                    <span class="index-label">index @index</span>
+                    <strong>@element.Value</strong>
+                    <span class="identity-label">item #@(element.OriginalIndex + 1)</span>
+                    <span class="state-label">@StateLabel(index, element.VisualState)</span>
+                </div>
+            }
+        </div>
+
+        <div class="visual-guide">
+            <div class="guide-part destination">
+                <span>DESTINATION</span>
+                <strong>@DestinationText</strong>
+                <small>The next array position Selection Sort is trying to finish.</small>
+            </div>
+            <div class="guide-part candidate">
+                <span>CURRENT MINIMUM</span>
+                <strong>@MinimumText</strong>
+                <small>The smallest value found so far in this pass.</small>
+            </div>
+            <div class="guide-part scan">
+                <span>SCAN</span>
+                <strong>@ScanText</strong>
+                <small>The value currently being tested against the candidate.</small>
+            </div>
+            <div class="guide-part prefix">
+                <span>SORTED PREFIX</span>
+                <strong>@PrefixText</strong>
+                <small>The fixed left side that later passes never change.</small>
+            </div>
+        </div>
+
+        <div class="legend" aria-label="Visualization legend">
+            <span><i class="swatch destination"></i>Destination</span>
+            <span><i class="swatch minimum"></i>Current minimum</span>
+            <span><i class="swatch compare"></i>Scanning / comparing</span>
+            <span><i class="swatch swap"></i>@(Snapshot.Variant == SelectionSortVariant.StableShift ? "Shift / insert" : "Swap")</span>
+            <span><i class="swatch sorted"></i>Fixed / sorted</span>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public SelectionSortSnapshot Snapshot { get; set; } = default!;
+
+    private string DestinationText => Snapshot.TargetIndex >= 0
+        ? $"index {Snapshot.TargetIndex}"
+        : Snapshot.Phase == SelectionSortPhase.Complete ? "All positions fixed" : "Not started";
+
+    private string MinimumText => Snapshot.MinimumIndex >= 0
+        ? $"{Snapshot.Elements[Snapshot.MinimumIndex].Value} at index {Snapshot.MinimumIndex}"
+        : "No candidate yet";
+
+    private string ScanText => Snapshot.ScanIndex >= 0
+        ? $"{Snapshot.Elements[Snapshot.ScanIndex].Value} at index {Snapshot.ScanIndex}"
+        : "Not scanning now";
+
+    private string PrefixText => Snapshot.SortedPrefixLength == 0
+        ? "Nothing fixed yet"
+        : Snapshot.SortedPrefixLength == Snapshot.Count
+            ? "Whole array"
+            : $"indexes 0…{Snapshot.SortedPrefixLength - 1}";
+
+    private string StateClass(int index, SelectionSortElementVisualState state)
+    {
+        var classes = new List<string>();
+        if (index == Snapshot.TargetIndex && index >= Snapshot.SortedPrefixLength) classes.Add("is-destination");
+        if (index == Snapshot.MinimumIndex && index >= Snapshot.SortedPrefixLength) classes.Add("is-minimum");
+        if (index == Snapshot.ScanIndex && index >= Snapshot.SortedPrefixLength) classes.Add("is-scan");
+        classes.Add(state switch
+        {
+            SelectionSortElementVisualState.Comparing => "is-comparing",
+            SelectionSortElementVisualState.NewMinimum => "is-new-minimum",
+            SelectionSortElementVisualState.SelectedMinimum => "is-selected-minimum",
+            SelectionSortElementVisualState.SwapRequired => "is-swap-required",
+            SelectionSortElementVisualState.Swapped => "is-swapped",
+            SelectionSortElementVisualState.ShiftRequired => "is-swap-required",
+            SelectionSortElementVisualState.Shifted => "is-swapped",
+            SelectionSortElementVisualState.Sorted => "is-sorted",
+            _ => string.Empty
+        });
+        return string.Join(" ", classes.Where(value => !string.IsNullOrWhiteSpace(value)));
+    }
+
+    private string StateLabel(int index, SelectionSortElementVisualState state)
+    {
+        if (state == SelectionSortElementVisualState.Sorted) return "SORTED";
+        if (state == SelectionSortElementVisualState.SwapRequired) return "SWAP";
+        if (state == SelectionSortElementVisualState.Swapped) return "MOVED";
+        if (state == SelectionSortElementVisualState.ShiftRequired) return "SHIFT";
+        if (state == SelectionSortElementVisualState.Shifted) return "SHIFTED";
+        if (state == SelectionSortElementVisualState.NewMinimum) return "NEW MIN";
+        if (index == Snapshot.ScanIndex && index == Snapshot.MinimumIndex) return "NEW MIN";
+        if (index == Snapshot.ScanIndex) return "SCAN";
+        if (index == Snapshot.MinimumIndex) return "MIN";
+        if (index == Snapshot.TargetIndex) return "DESTINATION";
+        return "UNSORTED";
+    }
+}

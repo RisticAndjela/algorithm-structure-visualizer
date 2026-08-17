@@ -21,6 +21,8 @@
         <a href="#red-black">Red-Black invariants</a>
         <a href="#heap">Heap property &amp; indexes</a>
         <a href="#matrices">Matrix</a>
+        <a href="#bubble-sort">Bubble Sort</a>
+        <a href="#selection-sort">Selection Sort</a>
         <a href="#identity">Value vs ID</a>
         <a href="#memory">Memory</a>
         <a href="#visual-vs-memory">Visual vs memory</a>
@@ -92,6 +94,106 @@
             <strong>O(...) vs Θ(...)</strong>
             <p>In this app, <b>O(n)</b> is often used for the general worst-case growth of an operation. <b>Θ(k)</b> or <b>Θ(n)</b> describes what kind of work this one run performed. You do not need the mathematical definition to use the simulator.</p>
             <a href="https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/recitation-1-asymptotic-complexity-peak-finding/" target="_blank" rel="noreferrer">MIT OpenCourseWare: asymptotic complexity ↗</a>
+        </div>
+    </section>
+
+    <section id="bubble-sort" class="concept-section">
+        <div class="section-heading">
+            <span>SORT</span>
+            <div><h2>Bubble Sort: neighbors, passes, and a sorted suffix</h2><p>Bubble Sort is a simple place to learn what a sorting algorithm actually does one decision at a time.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class="concept-card">
+                <span class="term">ADJACENT</span>
+                <h3>Compare only neighbors</h3>
+                <p>At index <code>j</code>, compare <code>a[j]</code> with <code>a[j+1]</code>. If the left value is larger, swap them. If left ≤ right, leave them where they are.</p>
+                <div class="example"><strong>Example:</strong> 7, 3 → 3, 7 because 7 &gt; 3. But 3, 7 stays 3, 7.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">PASS</span>
+                <h3>One pass fixes one largest remaining value</h3>
+                <p>A pass scans the unsorted region from left to right. Whenever a larger value meets a smaller neighbor, the larger value moves one position right. By the end, the largest remaining value has reached its final position.</p>
+                <div class="example"><strong>Invariant:</strong> after pass p, the p rightmost finished values form a sorted suffix that later passes can skip.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term">EARLY EXIT</span>
+                <h3>No swaps means the remaining region is sorted</h3>
+                <p>If a complete pass makes zero swaps, every adjacent pair in that region is already ordered. The optimized algorithm can stop immediately instead of running useless extra passes.</p>
+                <div class="example"><strong>Complexity:</strong> already sorted input becomes Θ(n), while average and worst cases remain Θ(n²).</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">STABLE</span>
+                <h3>Equal values keep their original relative order</h3>
+                <p>Our Bubble Sort swaps only when the left value is strictly greater. Equal values are not exchanged merely because they are equal, so their original item order is preserved.</p>
+                <div class="example"><strong>Memory:</strong> the teaching implementation uses one fixed element array and swaps neighboring references with one temporary reference, so extra algorithmic space is O(1).</div>
+            </article>
+            <article class="concept-card">
+                <span class="term">BASIC vs ADVANCED</span>
+                <h3>The optimization changes stopping, not the sorting rule</h3>
+                <p>Basic Bubble Sort runs every shrinking pass, so even sorted input stays Θ(n²). Optimized Bubble Sort adds a <code>swapped</code> flag and can stop after a complete no-swap pass, giving a Θ(n) best case.</p>
+                <div class="example"><strong>Use:</strong> Bubble Sort is mainly useful for teaching, tiny inputs, or very small nearly-sorted data where simplicity matters.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">LIVE CRUD</span>
+                <h3>Arbitrary mutations require a restart</h3>
+                <p>An insert, delete, or update can invalidate the active pair indexes, pass boundary, or sorted-suffix proof. Bubble Sort therefore treats each run as a snapshot. Reading/inspecting state is safe, but create/insert, update, or delete mutations are not a safe continuation.</p>
+                <div class="example"><strong>Better fit:</strong> for larger stable sorting use Merge Sort; for nearly sorted data, Insertion Sort is usually a better next choice.</div>
+            </article>
+        </div>
+        <div class="plain-note">
+            <strong>Visual state vs Memory state</strong>
+            <p>The visual view emphasizes comparisons, swaps, and the growing sorted suffix. Memory state keeps indexes fixed and shows which element reference currently occupies each array slot. With duplicate values, the item number makes stability visible.</p>
+            <a href="/sorting/bubble">Open the Bubble Sort lab →</a>
+        </div>
+    </section>
+
+    <section id="selection-sort" class="concept-section">
+        <div class="section-heading">
+            <span>SORT</span>
+            <div><h2>Selection Sort: scan, remember, then swap</h2><p>Selection Sort separates finding the next value from moving it into place.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class="concept-card">
+                <span class="term">MINIMUM</span>
+                <h3>Do not swap every time you see a smaller value</h3>
+                <p>For destination index <code>i</code>, start with <code>min = i</code>. Scan every later index. When a smaller value appears, only remember its index. Swap after the scan is finished.</p>
+                <div class="example"><strong>Roles:</strong> destination = where the answer goes; scan = what you are checking; minimum = best candidate so far.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">PREFIX</span>
+                <h3>One pass fixes one position on the left</h3>
+                <p>Once the smallest remaining value is placed at the destination, that position never changes again. The fixed sorted prefix therefore grows from left to right.</p>
+                <div class="example"><strong>Invariant:</strong> before each pass, every index left of the destination is already final.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term">Θ(n²)</span>
+                <h3>An already sorted array still gets fully scanned</h3>
+                <p>The classic algorithm performs <code>(n−1) + (n−2) + … + 1 = n(n−1)/2</code> comparisons. Input order can reduce swaps, but not these minimum-search comparisons.</p>
+                <div class="example"><strong>Contrast with Bubble Sort:</strong> optimized Bubble Sort can prove a sorted input in Θ(n); classic Selection Sort cannot.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">NOT STABLE</span>
+                <h3>A distant swap can reverse equal items</h3>
+                <p>Classic Selection Sort is in-place with O(1) extra algorithmic space, but its direct swap may move one equal-valued item past another equal-valued item.</p>
+                <div class="example"><strong>Try:</strong> <code>2, 2, 1</code>. Track item numbers in Memory state to see the two 2s reverse identity order.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term">ADVANCED</span>
+                <h3>Stable Selection uses shifting instead of a distant swap</h3>
+                <p>After the minimum is found, hold it temporarily, shift the values between target and minimum one slot right, then insert the minimum. Equal-item order is preserved, but more array writes are required.</p>
+                <div class="example"><strong>Important:</strong> this improves stability, not asymptotic speed. Comparisons remain Θ(n²) and extra algorithmic space remains O(1).</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">USE / LIVE CRUD</span>
+                <h3>Good when writes are expensive; restart when data changes</h3>
+                <p>Classic Selection Sort performs at most n−1 direct swaps, which can be attractive on tiny data when writes matter more than comparisons. Reading state is safe, but arbitrary create/insert, update, or delete mutations invalidate the fixed-prefix proof and require a new run.</p>
+                <div class="example"><strong>Better fit:</strong> Heap Sort preserves the repeated-selection idea with O(n log n) time; Merge Sort is the stronger choice when stability and scale both matter.</div>
+            </article>
+        </div>
+        <div class="plain-note">
+            <strong>Why show Visual state and Memory state?</strong>
+            <p>Visual state explains the search roles and sorted prefix. Memory state keeps array indexes fixed and exposes the element references exchanged by a direct swap, which makes the stability counterexample concrete.</p>
+            <a href="/sorting/selection">Open the Selection Sort lab →</a>
         </div>
     </section>
 

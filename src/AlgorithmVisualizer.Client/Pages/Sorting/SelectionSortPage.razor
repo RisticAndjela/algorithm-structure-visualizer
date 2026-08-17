@@ -1,15 +1,635 @@
 @page "/sorting/selection"
+@using AlgorithmVisualizer.Core.Algorithms.Sorting.Selection
+@using AlgorithmVisualizer.Client.Components.Visualization.Sorting.Selection
+@implements IDisposable
+@inject SimulationState SimulationState
+@inject SelectionSortSimulation SelectionSort
+@inject IJSRuntime JS
 
 <PageTitle>Selection Sort — Algorithm Visualizer</PageTitle>
 
-<LearningPlaceholder
-    Title="Selection Sort"
-    Eyebrow="Sorting algorithm"
-    Description="See how repeatedly selecting the smallest remaining value builds a sorted prefix. The interesting state is not the swap — it is the search for the next minimum."
-    Complexity="O(n²)"
-    ComplexityNote="It scans the unsorted region for every output position."
-    Concepts="minimum candidate · scan · sorted prefix · one swap per pass"
-    TipTitle="Keep two pointers in your head."
-    TipText="One position marks where the next minimum belongs; another scans for a better candidate. Tracking those roles makes the algorithm much easier to reason about."
-    FocusText="The simulation should distinguish the current output position, current scan position, and best candidate found so far."
-    PromptText="What evidence makes this value the current minimum candidate?" />
+<div class="selection-page">
+    <section class="learn-launchpad" aria-labelledby="selection-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="selection-learn-title">Selection Sort searches first and swaps second.</h2>
+            <p>
+                Pick the next empty position on the left. Then inspect <b>every value that is still unsorted</b>, remember the smallest one,
+                and only after the scan is finished move that minimum into the chosen position.
+            </p>
+            <div class="learn-rule">
+                <span>ONE PASS = SEARCH → SELECT → SWAP</span>
+                <div class="rule-example"><strong>29</strong><strong>10</strong><strong>14</strong><strong>7</strong><i>→</i><strong>7</strong></div>
+                <small>The minimum is not known after one comparison. Keep scanning until the whole unsorted region has been checked.</small>
+            </div>
+            <div class="learn-actions">
+                <a class="primary-link" href="#selection-lab">Try Selection Sort ↓</a>
+                <a href="/learn/concepts#selection-sort">Selection Sort concepts &amp; memory →</a>
+            </div>
+        </div>
+
+        <div class="pass-story" aria-label="Selection Sort pass explanation">
+            <div class="story-heading"><span>ONE PASS</span><strong>Separate searching from swapping.</strong></div>
+            <div class="story-row"><span class="target">29</span><span>10</span><span>14</span><span class="candidate">7</span><span>18</span></div>
+            <div class="story-arrow">scan all remaining values → minimum = 7 → one direct swap</div>
+            <div class="story-row result"><span class="fixed">7</span><span>10</span><span>14</span><span>29</span><span>18</span></div>
+            <p>Only index 0 is guaranteed finished after this pass. The next pass starts at index 1.</p>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow"><span>SORTING ALGORITHMS</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <h1>Selection Sort</h1>
+            <p>Build an array, predict the first minimum, then watch the sorted prefix grow one selected value at a time.</p>
+        </div>
+        <div class="complexity-summary" aria-label="Selection Sort complexity">
+            <div><span>Selected mode</span><strong>@VariantLabel</strong><small>@VariantTradeoffNote</small></div>
+            <div><span>All cases</span><strong>Θ(n²)</strong><small>the full minimum scan remains</small></div>
+            <div><span>Extra space</span><strong>O(1)</strong><small>@(_variant == SelectionSortVariant.StableShift ? "stable shifting" : "few direct swaps")</small></div>
+        </div>
+    </header>
+
+    <section class="implementation-section" aria-labelledby="selection-implementation-title">
+        <div class="section-heading-row">
+            <div><span class="section-kicker">IMPLEMENTATION CHOICE</span><h2 id="selection-implementation-title">Choose what happens after the minimum is found.</h2><p>The minimum-search logic is identical. The difference is how that minimum is placed at the destination.</p></div>
+        </div>
+        <div class="variant-grid">
+            <button type="button" class="variant-card @(_variant == SelectionSortVariant.Classic ? "active" : string.Empty)" @onclick="() => SetVariant(SelectionSortVariant.Classic)" disabled="@IsBusy">
+                <span>BASIC · CLASSIC</span><strong>One direct swap</strong><p>Swap the minimum with the destination. This keeps writes low — at most n−1 swaps — but a distant swap can reorder equal values.</p><small>Θ(n²) · O(1) · Not stable · Few writes</small>
+            </button>
+            <button type="button" class="variant-card @(_variant == SelectionSortVariant.StableShift ? "active" : string.Empty)" @onclick="() => SetVariant(SelectionSortVariant.StableShift)" disabled="@IsBusy">
+                <span>ADVANCED · STABLE SHIFT</span><strong>Shift, then insert the minimum</strong><p>Hold the minimum temporarily, shift the block between destination and minimum one slot right, then insert. Equal values keep their order, but the algorithm performs more writes.</p><small>Θ(n²) · O(1) · Stable · More moves</small>
+            </button>
+        </div>
+        <div class="live-data-card">
+            <div><span>REAL-TIME CRUD</span><strong>Restart required after INSERT, DELETE, or UPDATE</strong></div>
+            <p>Selection Sort assumes a fixed set of values while it proves that the left prefix is final. A new, deleted, or changed value can invalidate a minimum that was already selected — even inside the “finished” prefix. The current run must therefore be discarded and started again.</p>
+            <span class="compatibility-badge restart">READ safe · mutations restart</span>
+        </div>
+    </section>
+
+    <section id="selection-lab" class="builder-section" aria-labelledby="selection-build-title">
+        <div class="section-heading-row">
+            <div class="heading-with-step">
+                <span class="step-number">1</span>
+                <div><span class="section-kicker">BUILD THE ARRAY</span><h2 id="selection-build-title">Choose values you want to sort.</h2><p>Use 1–12 integers. Negative values and duplicates are allowed.</p></div>
+            </div>
+            <a class="concept-link" href="/learn/concepts#selection-sort">How Selection Sort works →</a>
+        </div>
+
+        <div class="array-builder">
+            <label class="array-input">
+                <span>VALUES</span>
+                <input value="@_arrayText" @oninput="ArrayTextChanged" disabled="@IsBusy" aria-label="Selection Sort array values" placeholder="Example: 64, 25, 12, 22, 11" />
+                <small>Separate values with spaces or commas.</small>
+            </label>
+            <button class="primary-action" type="button" @onclick="ApplyArray" disabled="@IsBusy">Use this array</button>
+        </div>
+
+        <div class="preset-row" aria-label="Selection Sort example arrays">
+            <span>TRY AN EXAMPLE</span>
+            <button type="button" @onclick="() => LoadPreset(Preset.Classic)" disabled="@IsBusy">Classic</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.NearlySorted)" disabled="@IsBusy">Nearly sorted</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Reverse)" disabled="@IsBusy">Reverse</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Duplicates)" disabled="@IsBusy">Unstable duplicates</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Sorted)" disabled="@IsBusy">Already sorted</button>
+            <button type="button" @onclick="LoadRandom" disabled="@IsBusy">Random</button>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_inputError))
+        {
+            <div class="input-error" role="alert"><strong>Check the array.</strong><span>@_inputError</span></div>
+        }
+
+        <div class="current-array" aria-label="Current Selection Sort input">
+            <span>CURRENT INPUT</span>
+            <div>
+                @for (var index = 0; index < Current.Elements.Length; index++)
+                {
+                    <span><small>@index</small><strong>@Current.Elements[index].Value</strong></span>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="predict-section" aria-labelledby="selection-prediction-title">
+        <div class="prediction-copy">
+            <span class="step-number">2</span>
+            <div><span class="section-kicker">PREDICT FIRST</span><h2 id="selection-prediction-title">Which index contains the first minimum?</h2><p>Selection Sort must know the minimum of the <b>whole current unsorted region</b>, not just the first pair.</p></div>
+        </div>
+
+        @if (Current.Count >= 2)
+        {
+            <div class="prediction-card selection-prediction">
+                <div class="prediction-question">Choose the index that should be selected for destination <strong>index 0</strong>.</div>
+                <div class="index-choice-row">
+                    @for (var index = 0; index < Current.Elements.Length; index++)
+                    {
+                        var choiceIndex = index;
+                        <button type="button" class="@(_predictedMinimumIndex == choiceIndex ? "chosen" : string.Empty)" @onclick="() => AnswerPrediction(choiceIndex)" disabled="@IsBusy">
+                            <small>index @choiceIndex</small><strong>@Current.Elements[choiceIndex].Value</strong>
+                        </button>
+                    }
+                </div>
+                @if (_predictedMinimumIndex is not null)
+                {
+                    <p class="prediction-feedback @(_predictionCorrect ? "correct" : "incorrect")" aria-live="polite">@PredictionFeedback</p>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="prediction-card empty"><strong>No scan is needed.</strong><p>With fewer than two values, there is no remaining minimum search to perform.</p></div>
+        }
+    </section>
+
+    <section class="lab-section" aria-labelledby="selection-visualizer-title">
+        <div class="lab-heading">
+            <div><span class="section-kicker">3 · WATCH THE ALGORITHM</span><h2 id="selection-visualizer-title">Track destination, candidate, and scan separately.</h2></div>
+            <div class="lab-actions">
+                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopupsAsync" /><span>Open explanation after run</span></label>
+                @if (_lastResult is not null) { <button class="secondary-action" type="button" @onclick="OpenLastRunPopup">Last explanation</button> }
+                <button class="sort-button" type="button" @onclick="RunSortAsync" disabled="@(IsBusy || Current.Count == 0)"><span>▶</span> Sort this array</button>
+            </div>
+        </div>
+
+        <div class="state-tabs" role="tablist" aria-label="Selection Sort state view">
+            <button type="button" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state <small>where the search is looking</small></button>
+            <button type="button" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state <small>what the direct swap changes</small></button>
+        </div>
+
+        <div class="visualizer-shell">
+            @if (_view == StateView.Visual) { <SelectionSortVisualization Snapshot="@DisplayedSnapshot" /> }
+            else { <SelectionSortMemoryVisualization Snapshot="@DisplayedSnapshot" /> }
+        </div>
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync"
+                           OnPause="PauseTimelineAsync"
+                           OnStepBack="StepBackAsync"
+                           OnStepForward="StepForwardAsync"
+                           OnReset="ResetPlaybackAsync"
+                           CanStepBack="@CanStepBack"
+                           CanStepForwardOverride="@CanStepForward"
+                           StepTextOverride="@DisplayedStepText"
+                           TimelinePosition="@TimelinePosition"
+                           TimelineCount="@TimelineCount" />
+
+        <div class="run-dashboard" aria-label="Selection Sort live metrics">
+            <article><span>Pass</span><strong>@PassMetric</strong><small>One destination index is fixed per pass.</small></article>
+            <article><span>Comparisons</span><strong>@DisplayedSnapshot.Comparisons</strong><small>Every remaining value must be checked against the minimum.</small></article>
+            <article><span>@(_variant == SelectionSortVariant.StableShift ? "Moves" : "Swaps")</span><strong>@(_variant == SelectionSortVariant.StableShift ? DisplayedSnapshot.Moves : DisplayedSnapshot.Swaps)</strong><small>@(_variant == SelectionSortVariant.StableShift ? "Array-slot writes used to preserve stability." : "At most one direct swap per pass.")</small></article>
+            <article><span>Fixed on left</span><strong>@DisplayedSnapshot.SortedPrefixLength / @DisplayedSnapshot.Count</strong><small>This prefix is final.</small></article>
+        </div>
+
+        <div class="role-strip" aria-label="Selection Sort current roles">
+            <article><span>DESTINATION</span><strong>@RoleDestination</strong><small>Where the minimum must go.</small></article>
+            <article><span>MINIMUM</span><strong>@RoleMinimum</strong><small>Smallest value found so far.</small></article>
+            <article><span>SCAN</span><strong>@RoleScan</strong><small>Value being checked now.</small></article>
+        </div>
+
+        <div class="invariant-panel">
+            <div><span>INVARIANT TO WATCH</span><h3>Before each pass, everything left of the destination is already final.</h3><p>The pass searches only the unsorted suffix. After the minimum is placed, the sorted prefix grows by exactly one position.</p></div>
+            <div class="early-exit-note"><span>IMPORTANT DIFFERENCE</span><strong>Already sorted does not mean fewer comparisons.</strong><p>Both variants still scan the complete remaining suffix on every pass. Best, average, and worst comparison growth are all Θ(n²).</p></div>
+        </div>
+    </section>
+
+    <section class="algorithm-map" aria-labelledby="selection-map-title">
+        <div class="section-heading-row">
+            <div><span class="section-kicker">ALGORITHM MAP</span><h2 id="selection-map-title">Remember the minimum index, not a chain of swaps.</h2><p>The Core implementation performs exactly this manual scan.</p></div>
+            <a class="concept-link" href="/learn/concepts#big-o">Review Big-O →</a>
+        </div>
+        <div class="pseudo-grid">
+            <div class="pseudo-code" aria-label="Selection Sort pseudocode">
+                <span>for target = 0 to n - 2</span>
+                <span class="indent">min = target</span>
+                <span class="indent">scan all later indexes for the minimum</span>
+                <span class="indent">if min != target</span>
+                @if (_variant == SelectionSortVariant.Classic)
+                {
+                    <span class="indent-two">swap a[target] and a[min]</span>
+                }
+                else
+                {
+                    <span class="indent-two">hold a[min] temporarily</span>
+                    <span class="indent-two">shift a[target..min-1] one slot right</span>
+                    <span class="indent-two">insert held minimum at target</span>
+                }
+            </div>
+            <div class="why-cards">
+                @if (_variant == SelectionSortVariant.Classic)
+                {
+                    <article><span>Few swaps</span><strong>Searching is expensive; writing is limited.</strong><p>There are always n(n−1)/2 comparisons, but at most n−1 direct swaps when self-swaps are skipped.</p></article>
+                    <article><span>Not stable</span><strong>A distant swap can reorder equal values.</strong><p>Use <code>2, 2, 1</code> and Memory state to see item identity reverse.</p></article>
+                }
+                else
+                {
+                    <article><span>Stable</span><strong>Equal values keep their previous relative order.</strong><p>Instead of jumping one value across the suffix, the block shifts right without internally reordering its items.</p></article>
+                    <article><span>Trade-off</span><strong>Stability costs additional writes.</strong><p>The comparison count is unchanged, but moving a minimum from far right can require many array-slot assignments.</p></article>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="fit-section" aria-labelledby="selection-fit-title">
+        <div class="section-heading-row">
+            <div><span class="section-kicker">WHEN SHOULD I USE IT?</span><h2 id="selection-fit-title">Selection Sort is most attractive when writes matter more than comparisons.</h2><p>Its scan cost is predictable; its practical weakness is that the scan stays quadratic.</p></div>
+        </div>
+        <div class="fit-grid">
+            <article class="fit-card good"><span>GOOD FIT</span><strong>Tiny arrays or expensive write operations</strong><p>Classic Selection Sort performs at most n−1 direct swaps, so it can be useful when minimizing swaps/writes matters more than minimizing comparisons.</p></article>
+            <article class="fit-card avoid"><span>AVOID FOR</span><strong>Large, live-changing, or latency-sensitive data</strong><p>Every variant here still performs n(n−1)/2 minimum-search comparisons, and arbitrary CRUD changes require a restart.</p></article>
+            <article class="fit-card better"><span>BETTER NEXT CHOICE</span><strong>Keep the idea, improve the asymptotics</strong><p>Heap Sort keeps the repeated-selection idea but finds the next extreme through a heap in O(n log n). If you need stability on larger data, prefer Merge Sort instead of paying Θ(n²) for Stable Selection.</p><div class="fit-links"><a href="/sorting/heap">Heap Sort →</a><a href="/sorting/merge">Merge Sort →</a></div></article>
+        </div>
+    </section>
+
+    <section class="practice-section" aria-labelledby="selection-practice-title">
+        <div class="practice-heading">
+            <div><span class="section-kicker">GUIDED PRACTICE</span><h2 id="selection-practice-title">Prove each Selection Sort behavior yourself.</h2></div>
+            <div class="task-score"><strong>@_completedTaskIds.Count / @PracticeTasks.Count</strong><span>completed</span></div>
+        </div>
+
+        @if (_activeTaskId is not null)
+        {
+            var activeTask = PracticeTasks.First(task => task.Id == _activeTaskId.Value);
+            <div class="active-task-banner"><span>ACTIVE TASK @activeTask.Id.ToString("00")</span><strong>@activeTask.Title</strong><small>@GetActiveTaskProgressText(activeTask.Id)</small></div>
+        }
+
+        <div class="practice-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                var completed = _completedTaskIds.Contains(task.Id);
+                var active = _activeTaskId == task.Id;
+                <article class="task-card @(completed ? "completed" : string.Empty) @(active ? "active" : string.Empty)">
+                    <div class="task-topline"><span>@task.Id.ToString("00")</span><span>@(completed ? "✓ Completed" : active ? "In progress" : "Practice")</span></div>
+                    <h3>@task.Title</h3><p>@task.Goal</p>
+                    <div class="task-input">Input: <code>@FormatValues(task.Input)</code></div>
+                    <div class="task-actions"><a href="/learn/concepts#selection-sort">Need the concept? →</a><button type="button" @onclick="() => StartTask(task.Id)" disabled="@IsBusy">@(active ? "Restart task" : completed ? "Practice again" : "Start task")</button></div>
+                </article>
+            }
+        </div>
+    </section>
+</div>
+
+@if (_lastRunPopupOpen && _lastResult is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRunPopup">
+        <section class="run-popup" role="dialog" aria-modal="true" aria-labelledby="selection-run-popup-title" @onclick="IgnorePopupClick" @onclick:stopPropagation="true">
+            <header>
+                <div><span class="section-kicker">WHAT JUST HAPPENED?</span><h2 id="selection-run-popup-title">@RunHeadline</h2></div>
+                <button class="popup-close" type="button" @onclick="CloseLastRunPopup" aria-label="Close result explanation">×</button>
+            </header>
+            <div class="popup-tabs" role="tablist">
+                <button type="button" class="@(_popupTab == ResultPopupTab.Action ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Action">Run</button>
+                <button type="button" class="@(_popupTab == ResultPopupTab.Complexity ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Complexity">Complexity</button>
+                <button type="button" class="@(_popupTab == ResultPopupTab.Memory ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Memory">Memory &amp; stability</button>
+            </div>
+
+            @if (_popupTab == ResultPopupTab.Action)
+            {
+                <div class="popup-body">
+                    <div class="popup-metrics"><div><span>Mode</span><strong>@VariantLabelFor(_lastResult.Variant)</strong></div><div><span>Comparisons</span><strong>@_lastResult.Comparisons</strong></div><div><span>@(_lastResult.Variant == SelectionSortVariant.StableShift ? "Moves" : "Swaps")</span><strong>@(_lastResult.Variant == SelectionSortVariant.StableShift ? _lastResult.Moves : _lastResult.Swaps)</strong></div><div><span>Stable</span><strong>@(_lastResult.StableAlgorithm ? "Yes" : "No")</strong></div></div>
+                    <h3>@RunActionExplanation</h3>
+                    <p><strong>@FormatValues(_lastResult.InitialValues)</strong> became <strong>@FormatValues(_lastResult.SortedValues)</strong>. Step backward to inspect when a new minimum replaced the previous candidate.</p>
+                </div>
+            }
+            else if (_popupTab == ResultPopupTab.Complexity)
+            {
+                <div class="popup-body">
+                    <h3>Changing the placement strategy does not remove Selection Sort's full minimum scan.</h3>
+                    <p>This run used <strong>@_lastResult.Comparisons comparisons</strong>. For n values, both modes check (n−1) + (n−2) + … + 1 candidates, which is n(n−1)/2 and therefore Θ(n²) in the best, average, and worst cases.</p>
+                    <div class="complexity-line"><span>Best</span><strong>Θ(n²)</strong><span>Average</span><strong>Θ(n²)</strong><span>Worst</span><strong>Θ(n²)</strong></div>
+                    <a class="popup-concept-link" href="/learn/concepts#big-o">Open the Big-O guide →</a>
+                </div>
+            }
+            else
+            {
+                <div class="popup-body">
+                    <h3>@(_lastResult.StableAlgorithm ? "Stable placement preserves equal-item order." : "In-place does not automatically mean stable.")</h3>
+                    <p>@MemoryPopupExplanation</p>
+                    <a class="popup-concept-link" href="/learn/concepts#selection-sort">Open Selection Sort concepts &amp; memory →</a>
+                </div>
+            }
+        </section>
+    </div>
+}
+
+@code {
+    private const string CompletedTasksStorageKey = "algorithm-visualizer.selection-sort.completed-tasks.v1";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.selection-sort.result-popups.v1";
+
+    private readonly List<RunFrame> _frames = [];
+    private readonly HashSet<int> _completedTaskIds = [];
+    private readonly List<SelectionSortResult> _practiceResults = [];
+
+    private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
+    [
+        new(1, "Trace Classic Selection Sort", "Use Classic mode and verify that four minimum scans produce 10 comparisons but only three direct swaps.", [64, 25, 12, 22, 11], SelectionSortVariant.Classic),
+        new(2, "Prove there is no sorted-input shortcut", "Use Classic mode on an ordered array. It must still perform every Selection Sort comparison even though no swap is needed.", [1, 2, 3, 4, 5], SelectionSortVariant.Classic),
+        new(3, "Compare scans with few swaps", "Use Classic mode on a reverse array and notice that comparison count stays quadratic while swaps stay limited.", [5, 4, 3, 2, 1], SelectionSortVariant.Classic),
+        new(4, "Expose classic instability", "Use Classic mode on 2, 2, 1, then open Memory state. The two equal 2-items must reverse relative identity.", [2, 2, 1], SelectionSortVariant.Classic),
+        new(5, "Preserve duplicates with Stable Shift", "Use the advanced Stable Shift mode on 2, 2, 1, then open Memory state and verify that equal-item identity order is preserved.", [2, 2, 1], SelectionSortVariant.StableShift),
+        new(6, "Test the one-item boundary", "Use Classic mode on a single value and prove that no minimum scan or movement is needed.", [42], SelectionSortVariant.Classic)
+    ];
+
+    private string _arrayText = "64, 25, 12, 22, 11";
+    private string? _inputError;
+    private string? _lastCapturedStep;
+    private int _frameIndex = -1;
+    private int? _predictedMinimumIndex;
+    private bool _predictionCorrect;
+    private SelectionSortResult? _lastResult;
+    private bool _lastRunPopupOpen;
+    private bool _showRunPopups = true;
+    private bool _storageLoaded;
+    private bool _memoryOpenedDuringTask;
+    private int? _activeTaskId;
+    private StateView _view = StateView.Visual;
+    private ResultPopupTab _popupTab = ResultPopupTab.Action;
+    private SelectionSortVariant _variant = SelectionSortVariant.Classic;
+
+    private bool IsBusy => SimulationState.IsRunning;
+    private SelectionSortSnapshot Current => SelectionSort.CreateSnapshot();
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_frames.Count > 0 && _frameIndex < _frames.Count - 1) || SimulationState.IsRunning;
+    private int TimelineCount => _frames.Count;
+    private int TimelinePosition => _frameIndex >= 0 ? _frameIndex + 1 : 0;
+    private RunFrame? DisplayedFrame => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex] : null;
+    private string DisplayedStepText => DisplayedFrame?.StepText ?? SimulationState.CurrentStepText;
+    private SelectionSortSnapshot DisplayedSnapshot => DisplayedFrame?.Snapshot ?? SelectionSort.CreateSnapshot();
+    private string PassMetric => DisplayedSnapshot.CurrentPass == 0 ? "—" : DisplayedSnapshot.CurrentPass.ToString();
+    private string RoleDestination => DisplayedSnapshot.TargetIndex >= 0 ? $"index {DisplayedSnapshot.TargetIndex}" : "—";
+    private string RoleMinimum => DisplayedSnapshot.MinimumIndex >= 0 ? $"{DisplayedSnapshot.Elements[DisplayedSnapshot.MinimumIndex].Value} @ {DisplayedSnapshot.MinimumIndex}" : "—";
+    private string RoleScan => DisplayedSnapshot.ScanIndex >= 0 ? $"{DisplayedSnapshot.Elements[DisplayedSnapshot.ScanIndex].Value} @ {DisplayedSnapshot.ScanIndex}" : "—";
+
+    private string PredictionFeedback
+    {
+        get
+        {
+            if (_predictedMinimumIndex is null || Current.Count < 2) return string.Empty;
+            var correctIndex = FindFirstMinimumIndex(Current.Elements);
+            var correctValue = Current.Elements[correctIndex].Value;
+            return _predictionCorrect
+                ? $"Correct. {correctValue} at index {correctIndex} is the smallest value in the entire array, so the first pass will select it for index 0."
+                : $"Keep scanning. The first pass cannot stop at your choice: {correctValue} at index {correctIndex} is smaller and becomes the final minimum candidate.";
+        }
+    }
+
+    private string VariantLabel => VariantLabelFor(_variant);
+    private string VariantTradeoffNote => _variant == SelectionSortVariant.StableShift ? "stable, but uses more writes" : "few swaps, but not stable";
+    private static string VariantLabelFor(SelectionSortVariant variant) => variant == SelectionSortVariant.StableShift ? "Stable Shift" : "Classic";
+
+    private string RunHeadline => _lastResult is null ? "Selection Sort run complete" : $"{VariantLabelFor(_lastResult.Variant)} Selection Sort finished after {_lastResult.Passes} passes";
+    private string RunActionExplanation => _lastResult is null
+        ? string.Empty
+        : _lastResult.Variant == SelectionSortVariant.StableShift
+            ? $"The algorithm preserved duplicate order by using {_lastResult.Moves} array-slot move{(_lastResult.Moves == 1 ? string.Empty : "s")} instead of distant swaps."
+            : _lastResult.Swaps == 0
+                ? "Every destination already contained the minimum of its remaining suffix, so the algorithm scanned fully but skipped all self-swaps."
+                : $"The algorithm performed {_lastResult.Swaps} direct swap{(_lastResult.Swaps == 1 ? string.Empty : "s")}; each one happened only after a complete minimum search for that pass.";
+
+    private string MemoryPopupExplanation => _lastResult is null
+        ? string.Empty
+        : _lastResult.Variant == SelectionSortVariant.StableShift
+            ? $"Stable Shift still uses one fixed element array and O(1) temporary storage, but it shifts a block and inserts the minimum instead of swapping across it. This run used {_lastResult.Moves} array-slot writes, and equal-item order was {(_lastResult.PreservedEqualValueOrder ? "preserved" : "changed")}."
+            : $"Classic mode uses one fixed element array and one temporary reference for a direct swap, so extra algorithmic space is O(1). A far swap can jump one equal item across another. In this run, equal-item order was {(_lastResult.PreservedEqualValueOrder ? "preserved" : "changed")}.";
+
+    protected override void OnInitialized()
+    {
+        SelectionSort.LoadValues([64, 25, 12, 22, 11]);
+        SimulationState.Changed += HandleSimulationChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _storageLoaded) return;
+        _storageLoaded = true;
+        try
+        {
+            var completedJson = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { CompletedTasksStorageKey });
+            if (!string.IsNullOrWhiteSpace(completedJson))
+            {
+                var completed = System.Text.Json.JsonSerializer.Deserialize<int[]>(completedJson) ?? [];
+                foreach (var id in completed.Where(id => PracticeTasks.Any(task => task.Id == id))) _completedTaskIds.Add(id);
+            }
+            var popupSetting = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { PopupSettingStorageKey });
+            if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
+        }
+        catch { }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ArrayTextChanged(ChangeEventArgs args) { _arrayText = args.Value?.ToString() ?? string.Empty; _inputError = null; }
+
+    private void ApplyArray()
+    {
+        if (IsBusy) return;
+        if (!TryParseArray(_arrayText, out var values, out var error)) { _inputError = error; return; }
+        LoadValues(values);
+    }
+
+    private void LoadPreset(Preset preset)
+    {
+        if (IsBusy) return;
+        var values = preset switch
+        {
+            Preset.NearlySorted => new[] { 1, 2, 3, 5, 4, 6 },
+            Preset.Reverse => new[] { 6, 5, 4, 3, 2, 1 },
+            Preset.Duplicates => new[] { 2, 2, 1 },
+            Preset.Sorted => new[] { 1, 2, 3, 4, 5, 6 },
+            _ => new[] { 64, 25, 12, 22, 11 }
+        };
+        LoadValues(values);
+    }
+
+    private void LoadRandom()
+    {
+        if (IsBusy) return;
+        var values = new int[7];
+        for (var index = 0; index < values.Length; index++) values[index] = Random.Shared.Next(-5, 16);
+        LoadValues(values);
+    }
+
+    private void LoadValues(int[] values)
+    {
+        ClearReview();
+        SelectionSort.LoadValues(values);
+        _arrayText = FormatValues(values);
+        _inputError = null;
+        _predictedMinimumIndex = null;
+        _predictionCorrect = false;
+    }
+
+    private static bool TryParseArray(string input, out int[] values, out string error)
+    {
+        var parts = (input ?? string.Empty).Split([',', ';', ' ', '\n', '\r', '\t'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length == 0) { values = []; error = "Enter at least one integer."; return false; }
+        if (parts.Length > 12) { values = []; error = "Keep this learning view to at most 12 values so every minimum scan stays readable."; return false; }
+        values = new int[parts.Length];
+        for (var index = 0; index < parts.Length; index++)
+        {
+            if (!int.TryParse(parts[index], out values[index])) { values = []; error = $"“{parts[index]}” is not a whole number."; return false; }
+        }
+        error = string.Empty;
+        return true;
+    }
+
+    private void AnswerPrediction(int index)
+    {
+        if (Current.Count < 2 || IsBusy || index < 0 || index >= Current.Count) return;
+        _predictedMinimumIndex = index;
+        _predictionCorrect = index == FindFirstMinimumIndex(Current.Elements);
+    }
+
+    private static int FindFirstMinimumIndex(SelectionSortElementSnapshot[] elements)
+    {
+        var minimumIndex = 0;
+        for (var index = 1; index < elements.Length; index++) if (elements[index].Value < elements[minimumIndex].Value) minimumIndex = index;
+        return minimumIndex;
+    }
+
+    private async Task RunSortAsync()
+    {
+        if (IsBusy || Current.Count == 0) return;
+        PrepareRun();
+        SelectionSort.ResetVisualState();
+        var token = SimulationState.Start("Selection Sort is ready to choose destination index 0 and search for its minimum.");
+        try
+        {
+            var result = await SelectionSort.SortAsync(_variant, token);
+            if (!IsCurrent(token)) return;
+            FinishRun(result);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception ex)
+        {
+            _inputError = $"The sorting run stopped: {ex.Message}";
+            if (IsCurrent(token)) SimulationState.Complete("The run stopped because of an error.");
+        }
+    }
+
+    private void FinishRun(SelectionSortResult result)
+    {
+        _lastResult = result;
+        RecordPracticeResult(result);
+        SimulationState.Complete(result.Variant == SelectionSortVariant.StableShift
+            ? $"Sorted. {result.Comparisons} comparisons, {result.Moves} moves, {result.Passes} passes."
+            : $"Sorted. {result.Comparisons} comparisons, {result.Swaps} swaps, {result.Passes} passes.");
+        _popupTab = ResultPopupTab.Action;
+        _lastRunPopupOpen = _showRunPopups;
+    }
+
+    private void PrepareRun() { _inputError = null; _lastRunPopupOpen = false; _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; }
+
+    private void Capture()
+    {
+        var step = SimulationState.CurrentStepText;
+        if (step == _lastCapturedStep) return;
+        var tail = _frameIndex < 0 || _frameIndex == _frames.Count - 1;
+        _frames.Add(new RunFrame(step, SelectionSort.CreateSnapshot()));
+        _lastCapturedStep = step;
+        if (tail) _frameIndex = _frames.Count - 1;
+    }
+
+    private void HandleSimulationChanged() { if (SimulationState.IsRunning) Capture(); _ = InvokeAsync(StateHasChanged); }
+    private bool IsCurrent(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;
+
+    private void ClearReview()
+    {
+        SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; _lastResult = null; _lastRunPopupOpen = false;
+    }
+
+    private Task PlayTimelineAsync() { if (_frames.Count > 0) _frameIndex = _frames.Count - 1; SimulationState.Resume(); return InvokeAsync(StateHasChanged); }
+    private Task PauseTimelineAsync() { SimulationState.Pause(); return Task.CompletedTask; }
+    private Task StepBackAsync() { if (SimulationState.IsRunning && !SimulationState.IsPaused) SimulationState.Pause(); if (_frameIndex > 0) _frameIndex--; return InvokeAsync(StateHasChanged); }
+    private Task StepForwardAsync() { if (_frameIndex >= 0 && _frameIndex < _frames.Count - 1) { _frameIndex++; return InvokeAsync(StateHasChanged); } if (SimulationState.IsRunning) SimulationState.Step(); return Task.CompletedTask; }
+    private Task ResetPlaybackAsync() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; return InvokeAsync(StateHasChanged); }
+
+    private void SetStateView(StateView view)
+    {
+        _view = view;
+        if (view == StateView.Memory && _activeTaskId is not null && _practiceResults.Count > 0) { _memoryOpenedDuringTask = true; CheckActiveTaskCompletion(); }
+    }
+
+    private void StartTask(int taskId)
+    {
+        if (IsBusy) return;
+        var task = PracticeTasks.First(item => item.Id == taskId);
+        _activeTaskId = taskId;
+        _practiceResults.Clear();
+        _memoryOpenedDuringTask = false;
+        _variant = task.Variant;
+        LoadValues(CloneValues(task.Input));
+    }
+
+    private void RecordPracticeResult(SelectionSortResult result) { if (_activeTaskId is null) return; _practiceResults.Add(result); CheckActiveTaskCompletion(); }
+
+    private void CheckActiveTaskCompletion()
+    {
+        if (_activeTaskId is null || _practiceResults.Count == 0) return;
+        var result = _practiceResults[^1];
+        var completed = _activeTaskId.Value switch
+        {
+            1 => result.Variant == SelectionSortVariant.Classic && SameValues(result.InitialValues, [64,25,12,22,11]) && SameValues(result.SortedValues, [11,12,22,25,64]) && result.Comparisons == 10 && result.Swaps == 3 && result.Passes == 4,
+            2 => result.Variant == SelectionSortVariant.Classic && SameValues(result.InitialValues, [1,2,3,4,5]) && result.Comparisons == 10 && result.Swaps == 0 && result.Passes == 4,
+            3 => result.Variant == SelectionSortVariant.Classic && SameValues(result.InitialValues, [5,4,3,2,1]) && result.Comparisons == 10 && result.Swaps == 2,
+            4 => result.Variant == SelectionSortVariant.Classic && SameValues(result.InitialValues, [2,2,1]) && !result.PreservedEqualValueOrder && _memoryOpenedDuringTask,
+            5 => result.Variant == SelectionSortVariant.StableShift && SameValues(result.InitialValues, [2,2,1]) && result.PreservedEqualValueOrder && result.StableAlgorithm && _memoryOpenedDuringTask,
+            6 => result.Variant == SelectionSortVariant.Classic && SameValues(result.InitialValues, [42]) && result.Comparisons == 0 && result.Swaps == 0 && result.Moves == 0 && result.Passes == 0,
+            _ => false
+        };
+        if (!completed) return;
+        _completedTaskIds.Add(_activeTaskId.Value); _activeTaskId = null; _practiceResults.Clear(); _memoryOpenedDuringTask = false; _ = PersistCompletedTasksAsync();
+    }
+
+    private string GetActiveTaskProgressText(int taskId)
+    {
+        if (_practiceResults.Count == 0) return taskId is 4 or 5
+            ? $"Input is loaded in {VariantLabel}. Run Selection Sort, then open Memory state after the run to inspect the two 2-items."
+            : $"Input is loaded in {VariantLabel}. Predict the first minimum if you want, then run Selection Sort.";
+        var result = _practiceResults[^1];
+        return taskId switch
+        {
+            1 => $"Need 10 comparisons and 3 swaps. Last run: {result.Comparisons} comparisons, {result.Swaps} swaps.",
+            2 => $"Need all 10 comparisons and zero swaps. Last run: {result.Comparisons} comparisons, {result.Swaps} swaps.",
+            3 => $"Need 10 comparisons but only 2 swaps. Last run: {result.Comparisons} comparisons, {result.Swaps} swaps.",
+            4 => $"Classic instability visible={(!result.PreservedEqualValueOrder ? "yes" : "no")}; Memory state opened={(_memoryOpenedDuringTask ? "yes" : "no")}.",
+            5 => $"Stable order preserved={(result.PreservedEqualValueOrder ? "yes" : "no")}; moves={result.Moves}; Memory state opened={(_memoryOpenedDuringTask ? "yes" : "no")}.",
+            6 => $"Need zero work. Last run: {result.Comparisons} comparisons, {result.Swaps} swaps, {result.Moves} moves.",
+            _ => string.Empty
+        };
+    }
+
+    private async Task PersistCompletedTasksAsync()
+    {
+        try { var json = System.Text.Json.JsonSerializer.Serialize(_completedTaskIds.OrderBy(id => id).ToArray()); await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { CompletedTasksStorageKey, json }); } catch { }
+    }
+
+    private async Task ToggleRunPopupsAsync(ChangeEventArgs args)
+    {
+        _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed;
+        try { await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { PopupSettingStorageKey, _showRunPopups.ToString() }); } catch { }
+    }
+
+    private void OpenLastRunPopup() { if (_lastResult is null) return; _popupTab = ResultPopupTab.Action; _lastRunPopupOpen = true; }
+    private void CloseLastRunPopup() => _lastRunPopupOpen = false;
+    private static void IgnorePopupClick() { }
+
+    private static int[] CloneValues(int[] source) { var copy = new int[source.Length]; for (var index = 0; index < source.Length; index++) copy[index] = source[index]; return copy; }
+    private static bool SameValues(int[] left, int[] right) { if (left.Length != right.Length) return false; for (var index = 0; index < left.Length; index++) if (left[index] != right[index]) return false; return true; }
+    private void SetVariant(SelectionSortVariant variant)
+    {
+        if (IsBusy || _variant == variant) return;
+        _variant = variant;
+        ClearReview();
+    }
+
+    private static string FormatValues(int[] values) => string.Join(", ", values);
+
+    public void Dispose() => SimulationState.Changed -= HandleSimulationChanged;
+
+    private sealed record RunFrame(string StepText, SelectionSortSnapshot Snapshot);
+    private sealed record PracticeTaskDefinition(int Id, string Title, string Goal, int[] Input, SelectionSortVariant Variant);
+    private enum StateView { Visual, Memory }
+    private enum ResultPopupTab { Action, Complexity, Memory }
+    private enum Preset { Classic, NearlySorted, Reverse, Duplicates, Sorted }
+}

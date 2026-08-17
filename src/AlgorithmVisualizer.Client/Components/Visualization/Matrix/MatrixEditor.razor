@@ -4,17 +4,25 @@
 <div class="matrix-editor-shell">
     <div class="matrix-bracket left" aria-hidden="true"></div>
     <div class="matrix-editor-grid" style="--matrix-columns:@Snapshot.Columns">
+        <span class="axis-corner" aria-hidden="true"></span>
+        @for (var column = 0; column < Snapshot.Columns; column++)
+        {
+            <span class="axis-label column-label">c@(column + 1)</span>
+        }
+
         @for (var row = 0; row < Snapshot.Rows; row++)
         {
             var currentRow = row;
+            <span class="axis-label row-label">r@(currentRow + 1)</span>
             @for (var column = 0; column < Snapshot.Columns; column++)
             {
                 var currentColumn = column;
                 <label class="matrix-edit-cell">
                     <span class="sr-only">Row @(currentRow + 1), column @(currentColumn + 1)</span>
                     <input type="number" step="any" value="@Format(Snapshot.GetValue(currentRow, currentColumn))"
+                           aria-label="Row @(currentRow + 1), column @(currentColumn + 1)"
                            disabled="@Disabled" @onchange="args => ChangeCellAsync(currentRow, currentColumn, args)" />
-                    <small>r@(currentRow + 1)c@(currentColumn + 1)</small>
+                    <small>[@(currentRow + 1),@(currentColumn + 1)]</small>
                 </label>
             }
         }

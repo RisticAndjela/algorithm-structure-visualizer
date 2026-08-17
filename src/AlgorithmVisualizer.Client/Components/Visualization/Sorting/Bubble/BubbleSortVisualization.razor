@@ -1,0 +1,80 @@
+@using AlgorithmVisualizer.Core.Algorithms.Sorting.Bubble
+
+<section class="bubble-visualization" aria-label="Bubble Sort visual state">
+    @if (Snapshot.Count == 0)
+    {
+        <div class="empty-state">
+            <strong>No values yet.</strong>
+            <span>Enter an array above, then Bubble Sort can compare neighboring values.</span>
+        </div>
+    }
+    else
+    {
+        <div class="array-track" role="list" aria-label="Current array order">
+            @for (var index = 0; index < Snapshot.Elements.Length; index++)
+            {
+                var element = Snapshot.Elements[index];
+                <div @key="element.OriginalIndex" class="sort-item @StateClass(element.VisualState)" role="listitem">
+                    <span class="index-label">index @index</span>
+                    <strong>@element.Value</strong>
+                    <span class="identity-label">item #@(element.OriginalIndex + 1)</span>
+                    <span class="state-label">@StateLabel(element.VisualState)</span>
+                </div>
+            }
+        </div>
+
+        <div class="visual-guide">
+            <div class="guide-part active-pair @(Snapshot.ActiveLeftIndex >= 0 ? "visible" : string.Empty)">
+                <span>ACTIVE PAIR</span>
+                <strong>@ActivePairText</strong>
+                <small>Bubble Sort only decides between neighboring positions.</small>
+            </div>
+            <div class="guide-part suffix">
+                <span>SORTED SUFFIX</span>
+                <strong>@SortedSuffixText</strong>
+                <small>The right side that later passes never need to inspect again.</small>
+            </div>
+        </div>
+
+        <div class="legend" aria-label="Visualization legend">
+            <span><i class="swatch compare"></i>Comparing</span>
+            <span><i class="swatch swap"></i>Swap needed / moved</span>
+            <span><i class="swatch keep"></i>Keep order</span>
+            <span><i class="swatch sorted"></i>Fixed / sorted</span>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public BubbleSortSnapshot Snapshot { get; set; } = default!;
+
+    private string ActivePairText => Snapshot.ActiveLeftIndex >= 0 && Snapshot.ActiveRightIndex >= 0
+        ? $"indexes {Snapshot.ActiveLeftIndex} & {Snapshot.ActiveRightIndex}"
+        : "No pair selected";
+
+    private string SortedSuffixText => Snapshot.SortedCount == 0
+        ? "Nothing fixed yet"
+        : Snapshot.SortedCount == Snapshot.Count
+            ? "Whole array"
+            : $"{Snapshot.SortedCount} rightmost item{(Snapshot.SortedCount == 1 ? string.Empty : "s")}";
+
+    private static string StateClass(BubbleSortElementVisualState state) => state switch
+    {
+        BubbleSortElementVisualState.Comparing => "is-comparing",
+        BubbleSortElementVisualState.SwapRequired => "is-swap-required",
+        BubbleSortElementVisualState.Kept => "is-kept",
+        BubbleSortElementVisualState.Swapped => "is-swapped",
+        BubbleSortElementVisualState.Sorted => "is-sorted",
+        _ => string.Empty
+    };
+
+    private static string StateLabel(BubbleSortElementVisualState state) => state switch
+    {
+        BubbleSortElementVisualState.Comparing => "COMPARE",
+        BubbleSortElementVisualState.SwapRequired => "SWAP? YES",
+        BubbleSortElementVisualState.Kept => "KEEP",
+        BubbleSortElementVisualState.Swapped => "MOVED",
+        BubbleSortElementVisualState.Sorted => "SORTED",
+        _ => "WAITING"
+    };
+}
