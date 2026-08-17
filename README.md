@@ -82,7 +82,8 @@ The application now has eight fully implemented learning modules: **Queue & Stac
 - REF, RREF, rank, inverse through Gauss-Jordan elimination, and `A·X=B` solving;
 - matrix property analysis (square, zero, identity, diagonal, triangular, symmetric);
 - Matrix Visual/Memory views showing cell states, a list-of-row-lists memory explanation, and an expandable actual backing-array view with `index = row * columns + column`;
-- matrix guided practice and persistent progress;
+- Matrix guided practice with explicit Start/Restart flow, live task-condition verification, active-task progress, and persistent completion;
+- Matrix Last Run explanations with Action / Memory / Why-it-matters tabs and a persisted automatic-popup preference, matching the other mature structure labs;
 - Graph directed/undirected and weighted/unweighted modes;
 - Graph add/search/remove vertex and add/search/remove edge operations;
 - direct-neighbor inspection with semantic playback states;
@@ -1219,6 +1220,8 @@ Run them with:
 dotnet test tests/AlgorithmVisualizer.Core.Tests/AlgorithmVisualizer.Core.Tests.csproj
 ```
 
+The Queue/Stack test suite now covers true LIFO/FIFO removal order, duplicate-value traversal direction, short displayed-ID lookup, manual array compaction after keyed deletion, and the Count-versus-Capacity behavior of the custom backing array after Clear.
+
 The BST test suite covers insertion shape, duplicate rejection, search success/miss, all three delete cases, successor-node identity, skewed-tree height, DSW balancing of right- and left-skewed trees, height reduction, rotation counts, parent-link/BST invariants, and preservation of node identity across balancing.
 
 The AVL test suite covers LL/RR/LR/RL repairs, increasing-order height control, duplicate rejection, found/missing search, leaf/one-child/two-child deletion, delete-triggered rebalancing, successor/promoted-node identity, clear/reset behavior, and recursive validation of BST order, parent links, cached heights, balance factors, and the AVL balance invariant.
@@ -1297,7 +1300,7 @@ The structure foundation now includes our custom Queue, Stack, BST, AVL, Red-Bla
 
 **Binary Heap: implemented as the focused d = 2 complete-tree / custom-array module with Min/Max modes, bubble-up, bubble-down, extract-root, linear search, arbitrary delete repair, Visual/Memory views, capacity teaching, run explanations, and guided practice.**
 
-**Matrix: implemented as the pre-Graph row-major module with direct cell editing, bulk custom-value input with automatic dimension detection, arithmetic, multiplication, transpose, powers, determinant, minors/cofactors, elementary row operations, REF/RREF/rank, inverse, equation solving, graph-adjacency presets, Visual/Memory views, a row-list-first memory explanation with expandable real `double[]` backing storage, and guided practice.**
+**Matrix: implemented as the pre-Graph row-major module with direct cell editing, bulk custom-value input with automatic dimension detection, arithmetic, multiplication, transpose, powers, determinant, minors/cofactors, elementary row operations, REF/RREF/rank, inverse, equation solving, graph-adjacency presets, Visual/Memory views, a row-list-first memory explanation with expandable real `double[]` backing storage, verified Start/Restart guided practice with active progress, and automatic three-view Last Run explanations.**
 
 The project now has reusable manual linear structures, three reusable manual tree foundations, two reusable heap views of the same family, a reusable Matrix foundation, and a live reusable Graph structure ready for BFS/DFS and later path/MST algorithms.
 

@@ -40,6 +40,16 @@ The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctnes
 - root-black, BST ordering, parent-link, no-red-red, and equal-black-height invariants after mutations;
 - clear/reset behavior.
 
+## Linear Stack / Queue coverage
+
+`DataStructures/Linear/StackQueueSimulationTests.cs` verifies:
+
+- true LIFO stack removal and FIFO queue removal;
+- duplicate-value lookup in each structure's real traversal direction;
+- stable short displayed-ID lookup;
+- delete-by-value compaction in the custom raw array without changing reserved capacity;
+- `Count`/`Capacity` behavior after clear.
+
 ## Heap coverage
 
 `DataStructures/Heap/HeapSimulationTests.cs` verifies both Min Heap and Max Heap ordering, bubble-up, extract-root bubble-down, arbitrary search, delete repair, duplicate element identities, heap-kind switching rules, and manual backing-array capacity behavior.
