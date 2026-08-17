@@ -20,7 +20,7 @@
             </p>
             <div class="learn-actions">
                 <a class="primary-link" href="#matrix-workspace">Start with the matrices ↓</a>
-                <a href="/learn/concepts#matrices">Matrix concepts &amp; memory →</a>
+                <a href="/learn/concepts#matrix">Matrix concepts &amp; memory →</a>
             </div>
         </div>
         <div class="matrix-intuition" aria-label="Simple 2 by 3 matrix example">
@@ -290,7 +290,7 @@
 
         <div class="state-tabs-row">
             <div class="state-tabs" role="tablist"><button class="@(_activeView == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetView(StateView.Visual)">Visual state</button><button class="@(_activeView == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetView(StateView.Memory)">Memory state</button></div>
-            <div class="state-context"><p>@DisplayedSnapshot.FocusText</p><div class="concept-links"><a href="/learn/concepts#matrices">Matrix concepts →</a><a href="/learn/concepts#visual-vs-memory">Concepts &amp; memory →</a></div></div>
+            <div class="state-context"><p>@DisplayedSnapshot.FocusText</p><div class="lesson-reference-links"><a href="/learn/concepts#matrix">Matrix concepts →</a><a href="/learn/concepts#visual-vs-memory">Concepts &amp; memory →</a></div></div>
         </div>
 
         @if (_activeView == StateView.Visual)
@@ -344,6 +344,12 @@
             }
         </div>
     </section>
+    <NextLessonCard Title="Graph"
+                    Description="Reuse the matrix idea as one graph representation, then compare it with adjacency lists."
+                    Href="/structures/graph"
+                    Level="07 · Intermediate"
+                    LinkLabel="Open Graph lesson" />
+
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)
@@ -362,7 +368,7 @@
             }
             else
             {
-                <div class="popup-body"><h3>@GetWhyHeadline(_lastResult)</h3><p>@GetWhyExplanation(_lastResult)</p><a class="popup-concept-link" href="/learn/concepts#matrices">Open the Matrix concept guide →</a></div>
+                <div class="popup-body"><h3>@GetWhyHeadline(_lastResult)</h3><p>@GetWhyExplanation(_lastResult)</p><a class="popup-concept-link" href="/learn/concepts#matrix">Open the Matrix concept guide →</a></div>
             }
             <footer><label class="popup-toggle inside"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopupsAsync" /><span>Show automatically after future Matrix runs</span></label></footer>
         </section>

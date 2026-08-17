@@ -142,6 +142,11 @@
                 : "Memory state shows used versus reserved array slots, stable element IDs, capacity, and the index formulas that create parent/child relationships.")</p>
         </div>
 
+        <div class="lesson-reference-links" aria-label="Concepts and memory links">
+            <a href="/learn/concepts#binary-heap">Binary Heap concepts →</a>
+            <a href="/learn/concepts#memory">Heap array memory →</a>
+        </div>
+
         @if (_activeStateView == StateView.Visual)
         {
             <HeapVisualization Snapshot="@DisplayedSnapshot" />
@@ -183,6 +188,12 @@
             }
         </div>
     </section>
+    <NextLessonCard Title="Generalized d-ary Heap"
+                    Description="Generalize the binary heap from two children per parent to d children while keeping the same priority invariant."
+                    Href="/structures/heap"
+                    Level="04 · Intermediate"
+                    LinkLabel="Open d-ary Heap lesson" />
+
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)

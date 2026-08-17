@@ -1,0 +1,639 @@
+/*
+   Shared learning-module design system.
+   Reference: Queue & Stack, BST, Matrix and Graph live data-structure labs.
+   Sorting pages opt into this shell with:
+     class="... learning-module-page learning-module-shell"
+   Keep module-specific visualizations in scoped CSS; keep repeated learning chrome here.
+*/
+
+body .learning-module-page.learning-module-shell {
+    display: grid;
+    gap: 1.35rem;
+    padding-bottom: 3rem;
+}
+
+.learning-module-page.learning-module-shell .section-kicker,
+.learning-module-page.learning-module-shell .control-label {
+    color: var(--color-text-muted);
+    font-size: .68rem;
+    font-weight: 880;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+}
+
+/* LEARN FIRST: same visual grammar as the mature data-structure launchpads. */
+.learning-module-page.learning-module-shell > .learn-launchpad {
+    display: grid;
+    grid-template-columns: minmax(16rem, .95fr) minmax(0, 1.45fr);
+    gap: 1rem;
+    padding: 1.1rem;
+    border: 1px solid #e4ddff;
+    border-radius: 1.25rem;
+    background:
+        radial-gradient(circle at top left, rgba(255, 221, 127, .32), transparent 26%),
+        radial-gradient(circle at top right, rgba(103, 87, 229, .18), transparent 24%),
+        linear-gradient(135deg, #fff7ea, #f7f3ff 55%, #eef8ff);
+    box-shadow: var(--shadow-sm);
+}
+
+.learning-module-page.learning-module-shell .learn-copy {
+    display: grid;
+    align-content: start;
+    gap: .55rem;
+    min-width: 0;
+}
+
+.learning-module-page.learning-module-shell .learn-copy h2 {
+    margin: 0;
+    font-size: clamp(1.6rem, 2.4vw, 2.2rem);
+    line-height: 1.05;
+    letter-spacing: -.04em;
+}
+
+.learning-module-page.learning-module-shell .learn-copy > p {
+    max-width: 34rem;
+    margin: 0;
+    color: #5f6574;
+    font-size: .92rem;
+    line-height: 1.55;
+}
+
+.learning-module-page.learning-module-shell .learn-copy > a,
+.learning-module-page.learning-module-shell .learn-copy .learn-launchpad-link {
+    width: fit-content;
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    margin-top: .1rem;
+    padding: .72rem .95rem;
+    border: 1px solid rgba(103, 87, 229, .16);
+    border-radius: .85rem;
+    color: #4332ab;
+    background: rgba(255, 255, 255, .86);
+    text-decoration: none;
+    font-size: .88rem;
+    font-weight: 800;
+    box-shadow: 0 8px 24px rgba(103, 87, 229, .08);
+}
+
+.learning-module-page.learning-module-shell .learn-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .8rem;
+}
+
+.learning-module-page.learning-module-shell .learn-card {
+    min-width: 0;
+    display: grid;
+    align-content: start;
+    gap: .35rem;
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, .74);
+    border-radius: 1rem;
+    color: #2f3340;
+    background: rgba(255, 255, 255, .88);
+    box-shadow: 0 12px 24px rgba(49, 57, 87, .06);
+}
+
+.learning-module-page.learning-module-shell .learn-card > span {
+    width: fit-content;
+    padding: .28rem .5rem;
+    border-radius: 999px;
+    font-size: .65rem;
+    font-weight: 900;
+    letter-spacing: .07em;
+    background: rgba(255, 255, 255, .9);
+}
+
+.learning-module-page.learning-module-shell .learn-card > strong {
+    font-size: 1.14rem;
+    line-height: 1.12;
+    letter-spacing: -.02em;
+}
+
+.learning-module-page.learning-module-shell .learn-card > small {
+    color: #666c79;
+    font-size: .82rem;
+    line-height: 1.45;
+}
+
+.learning-module-page.learning-module-shell .learn-card.purple { background: linear-gradient(135deg, rgba(250,239,255,.95), rgba(242,245,255,.95)); }
+.learning-module-page.learning-module-shell .learn-card.mint { background: linear-gradient(135deg, rgba(235,249,255,.98), rgba(241,255,250,.98)); }
+.learning-module-page.learning-module-shell .learn-card.blue { background: linear-gradient(135deg, rgba(255,247,231,.98), rgba(255,252,241,.98)); }
+.learning-module-page.learning-module-shell .learn-card.gold { background: linear-gradient(135deg, rgba(240,246,255,.98), rgba(244,242,255,.98)); }
+
+/* Header and summary: same proportion and border rhythm as BST/Graph. */
+.learning-module-page.learning-module-shell > .module-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(24rem, .85fr);
+    align-items: end;
+    gap: 2rem;
+    padding: 0 0 1.35rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.learning-module-page.learning-module-shell .module-eyebrow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .45rem;
+    color: var(--color-text-muted);
+    font-size: .72rem;
+    font-weight: 820;
+    letter-spacing: .08em;
+}
+
+.learning-module-page.learning-module-shell .module-header h1 {
+    margin: .62rem 0 .55rem;
+    font-size: clamp(2.4rem, 4.7vw, 4.6rem);
+    line-height: .98;
+    letter-spacing: -.058em;
+}
+
+.learning-module-page.learning-module-shell .module-header p {
+    max-width: 43rem;
+    margin: 0;
+    color: var(--color-text-soft);
+    font-size: .98rem;
+    line-height: 1.68;
+}
+
+.learning-module-page.learning-module-shell .complexity-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    background: #fff;
+    box-shadow: var(--shadow-sm);
+}
+
+.learning-module-page.learning-module-shell .complexity-summary > div {
+    min-height: 6rem;
+    display: grid;
+    align-content: center;
+    gap: .18rem;
+    padding: .8rem;
+}
+
+.learning-module-page.learning-module-shell .complexity-summary > div + div { border-left: 1px solid var(--color-border); }
+.learning-module-page.learning-module-shell .complexity-summary span { color: var(--color-text-muted); font-size: .62rem; font-weight: 880; letter-spacing: .08em; }
+.learning-module-page.learning-module-shell .complexity-summary strong { color: var(--color-primary); font-size: 1.08rem; }
+.learning-module-page.learning-module-shell .complexity-summary small { color: var(--color-text-muted); font-size: .68rem; line-height: 1.4; }
+
+.learning-module-page.learning-module-shell > .smart-tip {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .8rem;
+    padding: .82rem .95rem;
+    border: 1px solid #e4e0ff;
+    border-radius: .9rem;
+    background: linear-gradient(135deg, rgba(251,250,255,.95), rgba(245,243,255,.9));
+}
+
+.learning-module-page.learning-module-shell .smart-tip .tip-icon {
+    width: 2rem;
+    height: 2rem;
+    display: grid;
+    place-items: center;
+    border-radius: .65rem;
+    color: #fff;
+    background: var(--color-primary);
+    font-size: .72rem;
+}
+
+.learning-module-page.learning-module-shell .smart-tip > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: .3rem .5rem; }
+.learning-module-page.learning-module-shell .smart-tip strong { font-size: .78rem; }
+.learning-module-page.learning-module-shell .smart-tip p { margin: 0; color: var(--color-text-soft); font-size: .72rem; line-height: 1.5; }
+.learning-module-page.learning-module-shell .smart-tip a { color: #5141c4; text-decoration: none; font-size: .78rem; font-weight: 780; }
+
+/* Repeated teaching panels should feel like one lab, not unrelated landing-page sections. */
+.learning-module-page.learning-module-shell > .implementation-section,
+.learning-module-page.learning-module-shell > .builder-section,
+.learning-module-page.learning-module-shell > .predict-section,
+.learning-module-page.learning-module-shell > .lab-section,
+.learning-module-page.learning-module-shell > .fit-section,
+.learning-module-page.learning-module-shell > .practice-section,
+.learning-module-page.learning-module-shell > .algorithm-map {
+    display: grid;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 1.25rem;
+    background: rgba(255, 255, 255, .8);
+    box-shadow: var(--shadow-sm);
+}
+
+.learning-module-page.learning-module-shell .section-heading-row,
+.learning-module-page.learning-module-shell .practice-heading,
+.learning-module-page.learning-module-shell .lab-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .15rem;
+}
+
+.learning-module-page.learning-module-shell .section-heading-row h2,
+.learning-module-page.learning-module-shell .practice-heading h2,
+.learning-module-page.learning-module-shell .lab-heading h2,
+.learning-module-page.learning-module-shell .predict-section h2 {
+    margin: .3rem 0 0;
+    font-size: 1.08rem;
+    line-height: 1.25;
+    letter-spacing: -.025em;
+}
+
+.learning-module-page.learning-module-shell .section-heading-row p {
+    max-width: 52rem;
+    margin: .4rem 0 0;
+    color: var(--color-text-soft);
+    font-size: .78rem;
+    line-height: 1.55;
+}
+
+.learning-module-page.learning-module-shell .variant-grid,
+.learning-module-page.learning-module-shell .fit-grid,
+.learning-module-page.learning-module-shell .practice-grid {
+    gap: .7rem;
+}
+
+.learning-module-page.learning-module-shell .variant-card,
+.learning-module-page.learning-module-shell .fit-card,
+.learning-module-page.learning-module-shell .task-card,
+.learning-module-page.learning-module-shell .prediction-card,
+.learning-module-page.learning-module-shell .live-data-card,
+.learning-module-page.learning-module-shell .array-builder,
+.learning-module-page.learning-module-shell .current-array,
+.learning-module-page.learning-module-shell .pseudo-code,
+.learning-module-page.learning-module-shell .why-cards > article,
+.learning-module-page.learning-module-shell .invariant-panel,
+.learning-module-page.learning-module-shell .run-dashboard {
+    border-radius: .85rem;
+    box-shadow: none;
+}
+
+.learning-module-page.learning-module-shell .variant-card {
+    border: 1px solid var(--color-border);
+    background: #fbfbfd;
+}
+
+.learning-module-page.learning-module-shell .variant-card.active {
+    border-color: #cfc7ff;
+    background: #f5f3ff;
+    box-shadow: inset 0 0 0 1px rgba(103,87,229,.08);
+}
+
+.learning-module-page.learning-module-shell .primary-action,
+.learning-module-page.learning-module-shell .sort-button {
+    border-radius: .72rem;
+}
+
+.learning-module-page.learning-module-shell .fit-card,
+.learning-module-page.learning-module-shell .task-card {
+    border: 1px solid var(--color-border);
+    background: #fbfbfd;
+}
+
+.learning-module-page.learning-module-shell .task-card.active {
+    border-color: #cfc7ff;
+    background: #f7f5ff;
+}
+
+.learning-module-page.learning-module-shell .task-card.completed {
+    border-color: #b7ddd5;
+    background: #f2fbf9;
+}
+
+/* Exact concept/memory links near the state switch. */
+.lesson-reference-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+}
+
+.lesson-reference-links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2rem;
+    padding: .4rem .62rem;
+    border: 1px solid #e4e0ff;
+    border-radius: .65rem;
+    color: #5141c4;
+    background: #fbfaff;
+    text-decoration: none;
+    font-size: .72rem;
+    font-weight: 780;
+}
+
+.lesson-reference-links a:hover { text-decoration: underline; }
+
+/* Shared lesson progression card. */
+.next-lesson-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid #ded9fb;
+    border-radius: 1rem;
+    background:
+        radial-gradient(circle at right top, rgba(103,87,229,.12), transparent 18rem),
+        linear-gradient(135deg, #fff, #f7f5ff);
+    box-shadow: var(--shadow-sm);
+}
+
+.next-lesson-copy {
+    min-width: 0;
+    display: grid;
+    gap: .24rem;
+}
+
+.next-lesson-topline {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .5rem;
+    color: var(--color-text-muted);
+    font-size: .66rem;
+    font-weight: 850;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.next-lesson-level {
+    padding: .24rem .45rem;
+    border-radius: 999px;
+    color: #5141c4;
+    background: #efedff;
+    letter-spacing: .04em;
+}
+
+.next-lesson-card h2 {
+    margin: 0;
+    font-size: 1.15rem;
+    letter-spacing: -.025em;
+}
+
+.next-lesson-card p {
+    max-width: 52rem;
+    margin: 0;
+    color: var(--color-text-soft);
+    font-size: .78rem;
+    line-height: 1.5;
+}
+
+.next-lesson-card > a {
+    min-height: 2.55rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    padding: .65rem .85rem;
+    border-radius: .72rem;
+    color: #fff;
+    background: var(--color-primary);
+    text-decoration: none;
+    font-size: .8rem;
+    font-weight: 820;
+    white-space: nowrap;
+}
+
+.anchor-target {
+    position: relative;
+    top: -5rem;
+    display: block;
+    width: 0;
+    height: 0;
+    visibility: hidden;
+}
+
+.concept-lesson-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-top: .85rem;
+}
+
+.concept-lesson-links a {
+    display: inline-flex;
+    align-items: center;
+    padding: .55rem .72rem;
+    border: 1px solid #e4e0ff;
+    border-radius: .68rem;
+    color: #5141c4;
+    background: #fbfaff;
+    text-decoration: none;
+    font-size: .78rem;
+    font-weight: 790;
+}
+
+@media (max-width: 1000px) {
+    .learning-module-page.learning-module-shell > .learn-launchpad,
+    .learning-module-page.learning-module-shell > .module-header {
+        grid-template-columns: 1fr;
+    }
+
+    .learning-module-page.learning-module-shell .complexity-summary {
+        max-width: none;
+    }
+}
+
+@media (max-width: 720px) {
+    .learning-module-page.learning-module-shell { gap: 1rem; }
+
+    .learning-module-page.learning-module-shell > .learn-launchpad,
+    .learning-module-page.learning-module-shell > .implementation-section,
+    .learning-module-page.learning-module-shell > .builder-section,
+    .learning-module-page.learning-module-shell > .predict-section,
+    .learning-module-page.learning-module-shell > .lab-section,
+    .learning-module-page.learning-module-shell > .fit-section,
+    .learning-module-page.learning-module-shell > .practice-section,
+    .learning-module-page.learning-module-shell > .algorithm-map {
+        padding: .85rem;
+        border-radius: 1rem;
+    }
+
+    .learning-module-page.learning-module-shell .learn-grid,
+    .learning-module-page.learning-module-shell .complexity-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .learning-module-page.learning-module-shell .complexity-summary > div + div {
+        border-left: 0;
+        border-top: 1px solid var(--color-border);
+    }
+
+    .learning-module-page.learning-module-shell > .smart-tip {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .learning-module-page.learning-module-shell > .smart-tip > a {
+        grid-column: 1 / -1;
+        padding-left: 2.8rem;
+    }
+
+    .learning-module-page.learning-module-shell .section-heading-row,
+    .learning-module-page.learning-module-shell .practice-heading,
+    .learning-module-page.learning-module-shell .lab-heading,
+    .next-lesson-card {
+        grid-template-columns: 1fr;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .next-lesson-card > a { width: 100%; }
+}
+
+/* Compact Visual / Memory switch: intentionally matches the data-structure labs. */
+.learning-module-page.learning-module-shell .state-tabs-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .15rem .05rem;
+    border: 0;
+    background: transparent;
+}
+
+.learning-module-page.learning-module-shell .state-tabs-row .state-tabs {
+    flex: 0 0 auto;
+    display: flex;
+    grid-template-columns: none;
+    gap: .25rem;
+    padding: .25rem;
+    border: 0;
+    border-radius: .7rem;
+    background: #f0f1f5;
+}
+
+.learning-module-page.learning-module-shell .state-tabs-row .state-tabs button {
+    min-height: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: .52rem .74rem;
+    border: 0;
+    border-radius: .55rem;
+    color: #707684;
+    background: transparent;
+    cursor: pointer;
+    font-size: .82rem;
+    font-weight: 760;
+}
+
+.learning-module-page.learning-module-shell .state-tabs-row .state-tabs button + button {
+    border-left: 0;
+}
+
+.learning-module-page.learning-module-shell .state-tabs-row .state-tabs button.active {
+    border-bottom: 0;
+    color: #4e40bd;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(47, 51, 65, .08);
+}
+
+.learning-module-page.learning-module-shell .state-tabs-row > p {
+    max-width: 48rem;
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: .84rem;
+    line-height: 1.5;
+    text-align: right;
+}
+
+/* Practice follows the same card hierarchy as Queue/Stack and BST. */
+.learning-module-page.learning-module-shell > .practice-section {
+    border-radius: 1.15rem;
+    background: #fff;
+}
+
+.learning-module-page.learning-module-shell .task-score {
+    display: grid;
+    justify-items: end;
+    gap: .08rem;
+}
+
+.learning-module-page.learning-module-shell .task-score strong {
+    color: var(--color-primary);
+    font-size: 1.2rem;
+}
+
+.learning-module-page.learning-module-shell .task-score span {
+    color: var(--color-text-muted);
+    font-size: .72rem;
+}
+
+.learning-module-page.learning-module-shell .task-grid,
+.learning-module-page.learning-module-shell .practice-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .7rem;
+}
+
+.learning-module-page.learning-module-shell .task-card {
+    display: grid;
+    align-content: start;
+    gap: .65rem;
+    padding: .9rem;
+    border: 1px solid var(--color-border);
+    border-radius: .9rem;
+    background: #fcfcfe;
+}
+
+.learning-module-page.learning-module-shell .task-card.active {
+    border-color: #bcb3f5;
+    background: #faf9ff;
+    box-shadow: none;
+}
+
+.learning-module-page.learning-module-shell .task-card.completed {
+    border-color: #b8ded7;
+    background: #f7fcfa;
+}
+
+/* These are learning copy, not metadata: keep them comfortably readable. */
+.learning-module-page.learning-module-shell .learn-copy > p,
+.learning-module-page.learning-module-shell .learn-card > small,
+.learning-module-page.learning-module-shell .section-heading-row p,
+.learning-module-page.learning-module-shell .task-card p,
+.learning-module-page.learning-module-shell .live-data-card p {
+    font-size: .95rem;
+}
+
+.lesson-reference-links a,
+.concept-lesson-links a {
+    font-size: .82rem;
+}
+
+.next-lesson-card p {
+    font-size: .9rem;
+}
+
+.next-lesson-card > a {
+    font-size: .86rem;
+}
+
+@media (max-width: 900px) {
+    .learning-module-page.learning-module-shell .task-grid,
+    .learning-module-page.learning-module-shell .practice-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .learning-module-page.learning-module-shell .state-tabs-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .learning-module-page.learning-module-shell .state-tabs-row > p {
+        text-align: left;
+    }
+
+    .learning-module-page.learning-module-shell .task-grid,
+    .learning-module-page.learning-module-shell .practice-grid {
+        grid-template-columns: 1fr;
+    }
+}

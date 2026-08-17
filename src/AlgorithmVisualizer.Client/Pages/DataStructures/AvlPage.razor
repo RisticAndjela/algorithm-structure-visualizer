@@ -138,6 +138,11 @@
                 : "Memory state shows the root reference, parent/left/right links, cached height, and how rotations rewire real node objects.")</p>
         </div>
 
+        <div class="lesson-reference-links" aria-label="Concepts and memory links">
+            <a href="/learn/concepts#avl-balance">AVL concepts →</a>
+            <a href="/learn/concepts#visual-vs-memory">AVL links & memory →</a>
+        </div>
+
         @if (_activeStateView == StateView.Visual)
         {
             <AvlVisualization Root="@DisplayedRoot" Count="@DisplayedCount" Height="@DisplayedHeight" />
@@ -189,6 +194,12 @@
             }
         </div>
     </section>
+    <NextLessonCard Title="Matrix"
+                    Description="Switch from linked tree references to indexed row/column storage and shape-dependent operations."
+                    Href="/structures/matrix"
+                    Level="06 · Intermediate"
+                    LinkLabel="Open Matrix lesson" />
+
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)

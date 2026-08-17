@@ -144,6 +144,11 @@
                 : "Memory state shows the root reference and each node object's parent, left, and right references. During Balance BST, DSW changes these links with rotations while preserving node IDs and values.")</p>
         </div>
 
+        <div class="lesson-reference-links" aria-label="Concepts and memory links">
+            <a href="/learn/concepts#bst">BST concepts →</a>
+            <a href="/learn/concepts#visual-vs-memory">BST visual vs memory →</a>
+        </div>
+
         @if (_activeStateView == StateView.Visual)
         {
             <BstVisualization Root="@DisplayedRoot" Count="@DisplayedCount" Height="@DisplayedHeight" />
@@ -195,6 +200,12 @@
             }
         </div>
     </section>
+    <NextLessonCard Title="Binary Heap"
+                    Description="Reuse tree thinking, then learn a complete-tree layout stored by array indexes."
+                    Href="/structures/binary-heap"
+                    Level="03 · Beginner → Intermediate"
+                    LinkLabel="Open Binary Heap lesson" />
+
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)

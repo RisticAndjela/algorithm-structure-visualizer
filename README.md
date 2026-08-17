@@ -47,6 +47,9 @@ The application now has twelve fully implemented learning modules: **Queue & Sta
 - persistent learning progress in browser storage;
 - optional result explanation popups;
 - Concepts & Memory learning page;
+- shared learner-facing module chrome in `wwwroot/css/learning-modules.css`, using the mature Queue & Stack / BST / Matrix / Graph visual language for sorting Learn First panels, module headers, tips, reference links, and lesson progression;
+- difficulty-ordered curriculum navigation with reusable `NextLessonCard` links: Queue & Stack → BST → Binary Heap → d-ary Heap → AVL → Matrix → Graph → Red-Black Tree, then Bubble → Selection → Insertion → Merge → Quick → Heap Sort;
+- exact deep links from every live lab to the relevant Concepts & Memory section, plus reverse links from the concept sections back to the matching lesson;
 - BST insert, search, delete, explicit DSW balance, and reset;
 - BST leaf / one-child / two-child deletion simulation;
 - BST Day-Stout-Warren vine + compression simulation with node-identity preservation;
@@ -118,6 +121,12 @@ The application now has twelve fully implemented learning modules: **Queue & Sta
 - reusable `O(n)` auxiliary buffer exposed directly in Memory State, with top-down recursion depth shown separately;
 - Merge Sort Visual/Memory views, first-step prediction, practical workload guidance, mutation-restart semantics, automatic Last Run explanations, Concepts integration, and verified persistent Guided Practice.
 
+### Shared lesson design and curriculum navigation
+
+All sorting pages now use the same learner-facing design language as the mature data-structure modules instead of a separate sorting-specific landing-page style. Live sorting labs opt into `learning-module-page learning-module-shell`; their **LEARN FIRST** area uses the shared explanation + 2×2 concept-card pattern, followed by the same compact module-header, smart-tip, bordered lab panels, compact Visual/Memory switch with an adjacent explanation, Guided Practice styling, exact Concepts & Memory links, and reusable Next Lesson navigation. Quick Sort and Heap Sort remain honest TODO simulations, but `LearningPlaceholder` already uses this same Learn First → header → smart-tip → TODO workspace → Next Lesson rhythm so future implementation replaces only the TODO workspace rather than inventing another design.
+
+The sidebar and Concepts & Memory page use explicit easy → hard ordering. Concepts & Memory starts with shared foundations (Visual vs Memory, memory, identity, Big-O), then presents data-structure lessons in curriculum order, then sorting lessons from Bubble through Heap Sort. Stable deep-link aliases such as `/learn/concepts#bst`, `#binary-heap`, `#matrix`, `#bubble-sort`, `#merge-sort`, `#quick-sort`, and `#heap-sort` let each module land on the exact explanation it needs. Every lesson page exposes a `NextLessonCard`, and the concept sections link back to the corresponding lab.
+
 ### Bubble Sort module details
 
 Bubble Sort is the first live sorting-algorithm module at `/sorting/bubble`. The Core implementation performs every adjacent comparison and swap explicitly; it does not call `Array.Sort`, `List.Sort`, LINQ ordering, or another sorting routine. The learner can switch between **Basic** mode (all canonical shrinking passes, best case `Θ(n²)`) and **Optimized** mode (same stable neighbor rule plus a no-swap early exit, best case `Θ(n)`).
@@ -178,8 +187,8 @@ All currently planned base data-structure modules in the specification are now r
 
 #### Sorting algorithms
 
-- Quick Sort
-- Heap Sort
+- Quick Sort (planned interactive lab; Learn First + Concepts page already structured)
+- Heap Sort (planned interactive lab; Learn First + Concepts page already structured)
 
 Future search and graph algorithms will follow the same simulation architecture.
 

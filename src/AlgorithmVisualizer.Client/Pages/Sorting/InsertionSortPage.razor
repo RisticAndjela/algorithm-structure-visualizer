@@ -8,32 +8,19 @@
 
 <PageTitle>Insertion Sort — Algorithm Visualizer</PageTitle>
 
-<div class="insertion-page">
+<div class="insertion-page learning-module-page learning-module-shell">
     <section class="learn-launchpad" aria-labelledby="insertion-learn-title">
         <div class="learn-copy">
             <span class="section-kicker">LEARN FIRST</span>
-            <h2 id="insertion-learn-title">Insertion Sort grows one sorted hand, one key at a time.</h2>
-            <p>
-                Imagine sorting playing cards in your hand. Everything on the left is already sorted. Pick the next value as the <b>key</b>,
-                hold it temporarily, shift larger values one slot right, then insert the key into the gap.
-            </p>
-            <div class="learn-rule">
-                <span>ONE PASS = HOLD KEY → FIND PLACE → SHIFT → INSERT</span>
-                <div class="rule-example"><strong>2</strong><strong>5</strong><strong>7</strong><strong class="candidate">4</strong><i>→</i><strong>2</strong><strong>4</strong><strong>5</strong><strong>7</strong></div>
-                <small>The left prefix stays sorted throughout the algorithm. Only the new key needs to find its place inside that prefix.</small>
-            </div>
-            <div class="learn-actions">
-                <a class="primary-link" href="#insertion-lab">Try Insertion Sort ↓</a>
-                <a href="/learn/concepts#insertion-sort">Insertion Sort concepts &amp; memory →</a>
-            </div>
+            <h2 id="insertion-learn-title">Insertion Sort grows one already-sorted prefix.</h2>
+            <p>Take the next value as a key, hold it temporarily, move larger values one slot right, then place the key into the gap that remains.</p>
+            <a class="learn-launchpad-link" href="/learn/concepts#insertion-sort">Open Insertion Sort concepts & memory →</a>
         </div>
-
-        <div class="pass-story" aria-label="Insertion Sort pass explanation">
-            <div class="story-heading"><span>ONE PASS</span><strong>Take one new key and repair the sorted prefix.</strong></div>
-            <div class="story-row"><span class="fixed">2</span><span class="fixed">5</span><span class="fixed">7</span><span class="candidate">4</span><span>9</span></div>
-            <div class="story-arrow">hold 4 → shift 7 → shift 5 → insert 4</div>
-            <div class="story-row result"><span class="fixed">2</span><span class="fixed">4</span><span class="fixed">5</span><span class="fixed">7</span><span>9</span></div>
-            <p>The sorted prefix grew from three values to four without sorting the entire array again.</p>
+        <div class="learn-grid">
+            <article class="learn-card purple"><span>KEY</span><strong>Hold one value outside the prefix</strong><small>The key is the new item that must be integrated into the already-sorted left side.</small></article>
+            <article class="learn-card mint"><span>SHIFT</span><strong>Move only values larger than the key</strong><small>Shifting creates a gap without disturbing the relative order of equal values.</small></article>
+            <article class="learn-card blue"><span>PREFIX</span><strong>Everything left of the boundary stays sorted</strong><small>Each pass extends the sorted prefix by one element.</small></article>
+            <article class="learn-card gold"><span>ONLINE</span><strong>New values can be inserted incrementally</strong><small>Once data is sorted, a new item can be integrated without sorting the old prefix again.</small></article>
         </div>
     </section>
 
@@ -49,6 +36,12 @@
             <div><span>Worst case</span><strong>Θ(n²)</strong><small>array shifts still dominate</small></div>
         </div>
     </header>
+
+    <section class="smart-tip" aria-label="insertion learning tip">
+        <span class="tip-icon">✦</span>
+        <div><strong>Before every step:</strong><p>Pretend the next key is a playing card in your hand: where would you insert it without re-sorting the cards already in order?</p></div>
+        <a href="/learn/concepts#insertion-sort">Why Insertion Sort is adaptive →</a>
+    </section>
 
     <section class="implementation-section" aria-labelledby="insertion-implementation-title">
         <div class="section-heading-row">
@@ -138,9 +131,19 @@
             </div>
         </div>
 
-        <div class="state-tabs" role="tablist" aria-label="Insertion Sort state view">
-            <button type="button" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state <small>key, gap, compare, shifts</small></button>
-            <button type="button" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state <small>fixed slots + temporary key</small></button>
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist" aria-label="Insertion Sort state view">
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state</button>
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
+            </div>
+            <p>@(_view == StateView.Visual
+                ? "The visual view shows the held key, the temporary gap, shifts to the right, and the sorted prefix growing one item at a time."
+                : "The memory view shows the fixed array slots, the held element identity, and every shift/write used to insert the key.")</p>
+        </div>
+
+        <div class="lesson-reference-links" aria-label="Concepts and memory links">
+            <a href="/learn/concepts#insertion-sort">Insertion Sort concepts →</a>
+            <a href="/learn/concepts#insertion-sort">Insertion Sort memory & online behavior →</a>
         </div>
 
         <div class="visualizer-shell">
@@ -234,6 +237,12 @@
             }
         </div>
     </section>
+    <NextLessonCard Title="Merge Sort"
+                    Description="Step up to divide-and-conquer and predictable Θ(n log n) sorting with an explicit auxiliary buffer."
+                    Href="/sorting/merge"
+                    Level="04 · Intermediate"
+                    LinkLabel="Open Merge Sort" />
+
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)
@@ -253,7 +262,7 @@
             }
             else
             {
-                <div class="popup-body"><h3>One temporary key is enough.</h3><p>@MemoryPopupExplanation</p><p><strong>Online property:</strong> once a collection is sorted, a newly arriving item can be treated as one more key and inserted without re-sorting all previous values.</p><a class="popup-concept-link" href="/learn/concepts#memory">Review memory concepts →</a></div>
+                <div class="popup-body"><h3>One temporary key is enough.</h3><p>@MemoryPopupExplanation</p><p><strong>Online property:</strong> once a collection is sorted, a newly arriving item can be treated as one more key and inserted without re-sorting all previous values.</p><a class="popup-concept-link" href="/learn/concepts#insertion-sort">Review insertion sort memory & online behavior →</a></div>
             }
         </section>
     </div>

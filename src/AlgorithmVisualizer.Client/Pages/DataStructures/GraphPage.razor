@@ -161,7 +161,7 @@
                 <button class="@(_view == StateView.Visual ? "active" : "")" @onclick="() => SetStateView(StateView.Visual)">Visual state</button>
                 <button class="@(_view == StateView.Memory ? "active" : "")" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
             </div>
-            <div class="concept-links" aria-label="Graph learning links">
+            <div class="lesson-reference-links" aria-label="Graph learning links">
                 <a href="/learn/concepts#graph">Graph concepts →</a>
                 <a href="/learn/concepts#visual-vs-memory">Concepts &amp; memory →</a>
             </div>
@@ -227,6 +227,12 @@
             }
         </div>
     </section>
+    <NextLessonCard Title="Red-Black Tree"
+                    Description="Finish the structure track with the most rule-heavy self-balancing tree in the current curriculum."
+                    Href="/structures/red-black"
+                    Level="08 · Advanced"
+                    LinkLabel="Open Red-Black lesson" />
+
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)

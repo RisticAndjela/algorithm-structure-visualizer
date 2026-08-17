@@ -1,4 +1,23 @@
-<section class="learning-module-page">
+<section class="learning-module-page learning-module-shell">
+    <section class="learn-launchpad" aria-label="Learn first">
+        <div class="learn-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2>@LearnTitle</h2>
+            <p>@LearnSummary</p>
+            <a class="learn-launchpad-link" href="@ConceptHref">Open concepts &amp; memory →</a>
+        </div>
+        <div class="learn-grid">
+            @foreach (var card in ParsedLearnCards)
+            {
+                <article class="learn-card @card.Tone">
+                    <span>@card.Badge</span>
+                    <strong>@card.Title</strong>
+                    <small>@card.Body</small>
+                </article>
+            }
+        </div>
+    </section>
+
     <header class="module-header">
         <div class="module-header-copy">
             <div class="module-eyebrow">
@@ -10,18 +29,28 @@
             <p>@Description</p>
         </div>
 
-        <div class="complexity-card" aria-label="Complexity summary">
-            <span>COMPLEXITY SNAPSHOT</span>
-            <strong>@Complexity</strong>
-            <small>@ComplexityNote</small>
+        <div class="complexity-summary" aria-label="Lesson summary">
+            <div><span>COMPLEXITY</span><strong>@Complexity</strong><small>@ComplexityNote</small></div>
+            <div><span>LAB STATUS</span><strong>PLANNED</strong><small>The simulation is intentionally still marked TODO.</small></div>
+            <div><span>LEARN FIRST</span><strong>READY</strong><small>Concepts and curriculum navigation are available now.</small></div>
         </div>
     </header>
+
+    <section class="smart-tip" aria-label="Learning tip">
+        <span class="tip-icon">✦</span>
+        <div><strong>@TipTitle</strong><p>@TipText</p></div>
+        <a href="@ConceptHref">Open the exact concept →</a>
+    </section>
 
     <div class="concept-strip" aria-label="Key concepts">
         @foreach (var concept in ParsedConcepts)
         {
             <span>@concept</span>
         }
+    </div>
+
+    <div class="lesson-reference-links" aria-label="Concepts and memory links">
+        <a href="@ConceptHref">Concepts &amp; memory for @Title →</a>
     </div>
 
     <div class="module-grid">
@@ -50,12 +79,6 @@
         </section>
 
         <aside class="learning-sidebar">
-            <section class="tip-card">
-                <div class="tip-heading"><span>✦</span><strong>Learning tip</strong></div>
-                <h2>@TipTitle</h2>
-                <p>@TipText</p>
-            </section>
-
             <section class="focus-card">
                 <span class="card-kicker">WHEN THE LAB IS BUILT</span>
                 <h2>Focus on the invariant.</h2>
@@ -80,6 +103,17 @@
             <article><span>04</span><strong>Challenge</strong><p>Try an edge case and test whether your mental model still holds.</p></article>
         </div>
     </section>
+
+
+    @if (!string.IsNullOrWhiteSpace(NextLessonHref))
+    {
+        <NextLessonCard Eyebrow="@NextLessonEyebrow"
+                        Title="@NextLessonTitle"
+                        Description="@NextLessonDescription"
+                        Href="@NextLessonHref"
+                        Level="@NextLessonLevel"
+                        LinkLabel="@NextLessonLinkLabel" />
+    }
 </section>
 
 @code {
@@ -112,6 +146,66 @@
 
     [Parameter]
     public string PromptText { get; set; } = "What must still be true after this step?";
+
+    [Parameter]
+    public string LearnTitle { get; set; } = "Learn the mental model before the controls.";
+
+    [Parameter]
+    public string LearnSummary { get; set; } = "Read the invariant first, then use the future simulator to test it step by step.";
+
+    [Parameter]
+    public string ConceptHref { get; set; } = "/learn/concepts";
+
+    [Parameter]
+    public string LearnCards { get; set; } = string.Empty;
+
+
+    [Parameter]
+    public string NextLessonEyebrow { get; set; } = "NEXT LESSON";
+
+    [Parameter]
+    public string NextLessonTitle { get; set; } = string.Empty;
+
+    [Parameter]
+    public string NextLessonDescription { get; set; } = string.Empty;
+
+    [Parameter]
+    public string NextLessonHref { get; set; } = string.Empty;
+
+    [Parameter]
+    public string NextLessonLevel { get; set; } = string.Empty;
+
+    [Parameter]
+    public string NextLessonLinkLabel { get; set; } = "Open next lesson";
+
+    private IReadOnlyList<LearnCard> ParsedLearnCards
+    {
+        get
+        {
+            var tones = new[] { "purple", "mint", "blue", "gold" };
+            var raw = LearnCards.Split(";;", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var cards = new List<LearnCard>();
+            for (var index = 0; index < raw.Length && index < 4; index++)
+            {
+                var parts = raw[index].Split('|', 3, StringSplitOptions.TrimEntries);
+                if (parts.Length == 3)
+                {
+                    cards.Add(new LearnCard(parts[0], parts[1], parts[2], tones[index]));
+                }
+            }
+
+            if (cards.Count > 0)
+            {
+                return cards;
+            }
+
+            return ParsedConcepts.Take(4)
+                .Select((concept, index) => new LearnCard("KEY IDEA", concept, "This idea will stay visible in the interactive lab.", tones[index]))
+                .ToArray();
+        }
+    }
+
+    private sealed record LearnCard(string Badge, string Title, string Body, string Tone);
 
     private IEnumerable<string> ParsedConcepts =>
         Concepts.Split('·', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);

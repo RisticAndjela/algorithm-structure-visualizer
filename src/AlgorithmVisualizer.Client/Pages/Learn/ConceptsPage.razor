@@ -7,63 +7,147 @@
         <div>
             <span class="page-kicker">LEARN THE BASICS</span>
             <h1>Words and ideas used in every simulation</h1>
-            <p>Start with the simple version here. Open the outside links only when you want more detail.</p>
+            <p>Start with foundations, then follow each track from easier to harder. Every module link lands on its exact concept section and every lesson section links back to the matching lab.</p>
         </div>
         <a class="back-to-lab" href="/structures/queue-stack">Open Queue &amp; Stack lab <span>→</span></a>
     </header>
 
     <nav class="concept-jump" aria-label="Concept shortcuts">
-        <a href="#lifo-fifo">LIFO &amp; FIFO</a>
-        <a href="#big-o">O(1), O(n), k</a>
-        <a href="#tree-height">Tree height h</a>
-        <a href="#bst-balancing">BST balancing</a>
-        <a href="#avl-balance">AVL balance &amp; rotations</a>
-        <a href="#red-black">Red-Black invariants</a>
-        <a href="#heap">Heap property &amp; indexes</a>
-        <a href="#matrices">Matrix</a>
-        <a href="#bubble-sort">Bubble Sort</a>
-        <a href="#selection-sort">Selection Sort</a>
-        <a href="#insertion-sort">Insertion Sort</a>
-        <a href="#merge-sort">Merge Sort</a>
-        <a href="#identity">Value vs ID</a>
-        <a href="#memory">Memory</a>
-        <a href="#visual-vs-memory">Visual vs memory</a>
+        <div class="concept-jump-group">
+            <span>FOUNDATIONS</span>
+            <a href="#visual-vs-memory">Visual vs memory</a>
+            <a href="#memory">Memory</a>
+            <a href="#identity">Value vs ID</a>
+            <a href="#big-o">Big-O</a>
+        </div>
+        <div class="concept-jump-group">
+            <span>DATA STRUCTURES · EASY → HARD</span>
+            <a href="#queue-stack">Queue &amp; Stack</a>
+            <a href="#bst">BST</a>
+            <a href="#binary-heap">Binary Heap</a>
+            <a href="#general-heap">d-ary Heap</a>
+            <a href="#avl-balance">AVL</a>
+            <a href="#matrix">Matrix</a>
+            <a href="#graph">Graph</a>
+            <a href="#red-black">Red-Black Tree</a>
+        </div>
+        <div class="concept-jump-group">
+            <span>SORTING · EASY → HARD</span>
+            <a href="#bubble-sort">Bubble</a>
+            <a href="#selection-sort">Selection</a>
+            <a href="#insertion-sort">Insertion</a>
+            <a href="#merge-sort">Merge</a>
+            <a href="#quick-sort">Quick</a>
+            <a href="#heap-sort">Heap Sort</a>
+        </div>
     </nav>
 
-    <section class="concepts-start" aria-label="Quick start concepts">
-        <a class="start-card purple" href="#lifo-fifo"><span>START HERE</span><strong>LIFO & FIFO</strong><small>Learn who leaves first.</small></a>
-        <a class="start-card blue" href="#big-o"><span>BIG-O</span><strong>O(1), O(n), k</strong><small>Learn how work grows.</small></a>
-        <a class="start-card gold" href="#identity"><span>ID</span><strong>Value vs ID</strong><small>Same number can be two items.</small></a>
-        <a class="start-card mint" href="#memory"><span>MEMORY</span><strong>References and slots</strong><small>Learn how the app stores items.</small></a>
+        <section class="concepts-start" aria-label="Quick start concepts">
+        <a class="start-card purple" href="#visual-vs-memory"><span>01 · START HERE</span><strong>Visual vs memory</strong><small>Separate the teaching picture from how data is actually stored.</small></a>
+        <a class="start-card mint" href="#memory"><span>02 · MEMORY</span><strong>Objects, references &amp; slots</strong><small>Understand what a stored element and a reference mean.</small></a>
+        <a class="start-card gold" href="#identity"><span>03 · IDENTITY</span><strong>Value vs ID</strong><small>Equal values can still be different elements.</small></a>
+        <a class="start-card blue" href="#big-o"><span>04 · BIG-O</span><strong>How work grows</strong><small>Read O(1), O(n), Θ(n²) and Θ(n log n) without guessing.</small></a>
     </section>
 
-
-    <section id="lifo-fifo" class="concept-section">
+    <section id="visual-vs-memory" class="concept-section">
         <div class="section-heading">
-            <span>01</span>
-            <div><h2>LIFO and FIFO</h2><p>These words only describe which item is allowed to leave first.</p></div>
+            <span>F1</span>
+            <div><h2>Visual state vs memory state</h2><p>The picture we draw for learning is not necessarily the shape of RAM.</p></div>
+        </div>
+        <div class="split-demo">
+            <article>
+                <span>VISUAL STATE</span>
+                <strong>What helps you understand the rule</strong>
+                <p>A Stack is drawn vertically because “top” is easy to understand. A graph may later be drawn as circles connected by lines.</p>
+            </article>
+            <div class="split-arrow">→</div>
+            <article>
+                <span>MEMORY STATE</span>
+                <strong>How the program stores data</strong>
+                <p>The same graph might be stored as objects, arrays, dictionaries, lists of neighbors, or indexes. The screen position of a node is not its memory address.</p>
+            </article>
+        </div>
+        <div class="plain-note warning">
+            <strong>Important for future graph simulations</strong>
+            <p>Two nodes can look far apart on screen but be next to each other in an array. Or they can look next to each other on screen while their objects live in unrelated places in managed memory. The app will keep these two views separate.</p>
+        </div>
+
+        <div class="concept-lesson-links"><a href="/structures/graph">Compare both views in Graph →</a><a href="/sorting/merge">Compare main array and buffer in Merge Sort →</a></div>
+    </section>
+
+    <section id="memory" class="concept-section">
+        <div class="section-heading">
+            <span>F2</span>
+            <div><h2>Memory, references, Count and Capacity</h2><p>A simple model for what the C# version of this lab is doing.</p></div>
         </div>
         <div class="concept-grid two">
             <article class="concept-card">
-                <span class="term">LIFO</span>
-                <h3>Last In, First Out</h3>
-                <p>Imagine a stack of plates. The last plate placed on top is the first one you can take away.</p>
-                <div class="example"><strong>Stack:</strong> push 3, then 7, then 2 → pop removes 2 first.</div>
-                <a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.stack-1?view=net-10.0" target="_blank" rel="noreferrer">Microsoft: Stack&lt;T&gt; explanation ↗</a>
+                <span class="term">OBJECT</span>
+                <h3>The element itself</h3>
+                <p>Each <code>LinearElement</code> is a separate object. It stores its value and ID. In .NET, reference-type objects live on the managed heap.</p>
+                <a href="https://learn.microsoft.com/en-us/dotnet/standard/garbage-collection/fundamentals" target="_blank" rel="noreferrer">Microsoft: .NET garbage collection basics ↗</a>
             </article>
             <article class="concept-card">
-                <span class="term queue">FIFO</span>
-                <h3>First In, First Out</h3>
-                <p>Imagine a line at a checkout. The person who joined first is the first person served.</p>
-                <div class="example"><strong>Queue:</strong> enqueue 3, then 7, then 2 → dequeue removes 3 first.</div>
-                <a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.queue-1?view=net-10.0" target="_blank" rel="noreferrer">Microsoft: Queue&lt;T&gt; explanation ↗</a>
+                <span class="term">REFERENCE</span>
+                <h3>A way to reach that object</h3>
+                <p>Our own dynamic array stores references to the element objects. A slot is not the object itself; it points to the object.</p>
+                <a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/arrays" target="_blank" rel="noreferrer">Microsoft: C# arrays ↗</a>
+            </article>
+            <article class="concept-card">
+                <span class="term">COUNT</span>
+                <h3>How many items are being used?</h3>
+                <p>If Count is 4, the structure currently uses four element references.</p>
+            </article>
+            <article class="concept-card">
+                <span class="term">CAPACITY</span>
+                <h3>How many slots are already reserved?</h3>
+                <p>Capacity can be larger than Count. That does not mean there are hidden elements; it means our custom array has reserved space before it must grow.</p>
+                <a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/arrays" target="_blank" rel="noreferrer">Microsoft: C# arrays ↗</a>
+            </article>
+            <article class="concept-card">
+                <span class="term">TREE LINKS</span>
+                <h3>BST nodes are connected by references</h3>
+                <p>The BST implementation does not store nodes in visual left-to-right screen order. The tree is formed by a root reference plus each node's <code>parent</code>, <code>left</code>, and <code>right</code> references.</p>
+                <div class="mini-example">Visual position ≠ memory address</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">BALANCE</span>
+                <h3>Rotations rewire links</h3>
+                <p>DSW balancing keeps the same node objects and values. It changes which object each tree reference points to. That is why Memory state is especially useful while stepping through Balance BST.</p>
+                <div class="mini-example">same IDs · new parent/left/right links</div>
             </article>
         </div>
+
+        <div class="plain-note">
+            <strong>What happens after our manual RemoveAt?</strong>
+            <p>Our code moves later references left with a loop to close the removed index. Count decreases. Capacity stays the same. The removed object is not manually “freed”; if nothing references it anymore, .NET can reclaim it later with garbage collection.</p>
+            <a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/arrays" target="_blank" rel="noreferrer">Microsoft: C# arrays ↗</a>
+        </div>
+
+        <div class="concept-lesson-links"><a href="/structures/queue-stack">Open linear Memory state →</a><a href="/structures/matrix">Open Matrix Memory state →</a></div>
+    </section>
+
+    <section id="identity" class="concept-section">
+        <div class="section-heading">
+            <span>F3</span>
+            <div><h2>Value is not the same as identity</h2><p>Structures that allow duplicate values can still store them as different element objects. Heap allows duplicates and gives each element its own ID; BST, AVL, and Red-Black Tree intentionally use unique keys.</p></div>
+        </div>
+        <div class="identity-demo">
+            <div class="identity-object"><span>MEM-#A1B2C3</span><strong>value = 7</strong><small>ID #A1B2C3</small></div>
+            <div class="identity-symbol">≠</div>
+            <div class="identity-object"><span>MEM-#F4E5D6</span><strong>value = 7</strong><small>ID #F4E5D6</small></div>
+        </div>
+        <div class="plain-note">
+            <strong>Both values are 7, but these are two different elements.</strong>
+            <p>Think of two students who both scored 7 points. The score is the same, but the students are not the same person. In the simulator, the value is the data; the short ID identifies one exact element.</p>
+        </div>
+
+        <div class="concept-lesson-links"><a href="/structures/queue-stack">See duplicate identity in Queue & Stack →</a><a href="/sorting/bubble">See stable duplicate identity in Bubble Sort →</a></div>
     </section>
 
     <section id="big-o" class="concept-section">
         <div class="section-heading">
-            <span>02</span>
+            <span>F4</span>
             <div><h2>O(1), O(n), Θ(n) and k</h2><p>They describe how the amount of work grows. They are not a stopwatch.</p></div>
         </div>
         <div class="concept-grid four">
@@ -99,9 +183,296 @@
         </div>
     </section>
 
+    <section class="concept-section">
+        <div class="section-heading">
+            <span>05</span>
+            <div><h2>Does delete work the same in every language?</h2><p>The idea is similar, but the details depend on the container and memory model.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class="concept-card"><span class="term">C# / JAVA</span><h3>Dynamic list</h3><p>Removing from the middle of a List/ArrayList moves later references left. The object itself is cleaned up later when it is no longer reachable.</p><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/ArrayList.html" target="_blank" rel="noreferrer">Oracle: Java ArrayList ↗</a></article>
+            <article class="concept-card"><span class="term">PYTHON</span><h3>Python list</h3><p>A list keeps object references. Removing an item closes the list position; object lifetime depends on whether other references still exist.</p><a href="https://docs.python.org/3/tutorial/datastructures.html" target="_blank" rel="noreferrer">Python docs: data structures ↗</a></article>
+            <article class="concept-card"><span class="term">JAVASCRIPT</span><h3>Array: splice vs delete</h3><p><code>splice</code> removes an array item and closes the gap. The <code>delete</code> operator is different: it can leave an empty slot.</p><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/splice" target="_blank" rel="noreferrer">MDN: Array.splice ↗</a></article>
+            <article class="concept-card"><span class="term">RUST / C++</span><h3>Vector-style storage</h3><p>Removing from a vector usually moves later values left. Rust also offers <code>swap_remove</code> when order does not matter.</p><a href="https://doc.rust-lang.org/std/vec/struct.Vec.html#method.remove" target="_blank" rel="noreferrer">Rust docs: Vec.remove ↗</a></article>
+        </div>
+        <div class="plain-note"><strong>C is more manual.</strong><p>A plain C array does not have a built-in “delete item” operation. Your code decides whether to shift values, keep a logical length, or manage separate nodes and call <code>free</code>. That is why the app always names the storage type instead of saying “delete always works this way”.</p></div>
+    </section>
+
+    <section id="lifo-fifo" class="concept-section">
+        <span id="queue-stack" class="anchor-target"></span>
+        <div class="section-heading">
+            <span>S1</span>
+            <div><h2>LIFO and FIFO</h2><p>These words only describe which item is allowed to leave first.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class="concept-card">
+                <span class="term">LIFO</span>
+                <h3>Last In, First Out</h3>
+                <p>Imagine a stack of plates. The last plate placed on top is the first one you can take away.</p>
+                <div class="example"><strong>Stack:</strong> push 3, then 7, then 2 → pop removes 2 first.</div>
+                <a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.stack-1?view=net-10.0" target="_blank" rel="noreferrer">Microsoft: Stack&lt;T&gt; explanation ↗</a>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">FIFO</span>
+                <h3>First In, First Out</h3>
+                <p>Imagine a line at a checkout. The person who joined first is the first person served.</p>
+                <div class="example"><strong>Queue:</strong> enqueue 3, then 7, then 2 → dequeue removes 3 first.</div>
+                <a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.queue-1?view=net-10.0" target="_blank" rel="noreferrer">Microsoft: Queue&lt;T&gt; explanation ↗</a>
+            </article>
+        </div>
+
+        <div class="concept-lesson-links"><a href="/structures/queue-stack">Open Queue & Stack lab →</a></div>
+    </section>
+
+    <section id="tree-height" class="concept-section">
+        <span id="bst" class="anchor-target"></span>
+        <div class="section-heading">
+            <span>S2</span>
+            <div><h2>Tree height h</h2><p>For a Binary Search Tree, the length of the path matters more than the total node count by itself.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class="concept-card">
+                <span class="term">h</span>
+                <h3>How many levels can one path cross?</h3>
+                <p><code>h</code> is the height of the tree. Search, insert, and delete follow a root-to-node path, so their work is <code>O(h)</code>.</p>
+                <div class="example"><strong>Short tree:</strong> fewer decisions from root to target.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">SHAPE</span>
+                <h3>Insertion order changes the cost</h3>
+                <p>A roughly balanced BST keeps its height near <code>log n</code>. A highly skewed BST can have height <code>n</code>, so its search can behave like a linear scan.</p>
+                <div class="example"><strong>Try it:</strong> compare 4,2,6,1,3 with 1,2,3,4,5.</div>
+            </article>
+        </div>
+        <div class="plain-note">
+            <strong>Why does the simulator show both n and h?</strong>
+            <p><code>n</code> tells you how many nodes exist. <code>h</code> tells you how long the worst root-to-leaf path is. Two BSTs can contain the same values and still have very different heights because the insertion order created different shapes.</p>
+        </div>
+
+        <div class="concept-lesson-links"><a href="/structures/bst">Open BST lab →</a></div>
+    </section>
+
+    <section id="bst-balancing" class="concept-section">
+        <div class="section-heading">
+            <span>S2+</span>
+            <div><h2>What does balancing a BST mean?</h2><p>Balancing changes the tree's shape so root-to-leaf paths are shorter, while preserving the same sorted-key rule and the same node objects.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class="concept-card">
+                <span class="term">BALANCED</span>
+                <h3>Shorter paths, not a different ordering</h3>
+                <p>A balanced BST is shaped so one side does not grow into a long chain while the other stays short. The exact shape does not have to be perfect; the goal is to keep height close to the smallest useful height for the same keys.</p>
+                <div class="example"><strong>Example:</strong> 10 → 20 → 30 → 40 → 50 has height 5. Rewiring the same nodes can reduce the height to about 3.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">IMPORTANT</span>
+                <h3>A normal BST does not self-balance</h3>
+                <p>Insert and delete in the BST lab keep only the ordering invariant. They do not automatically repair tree height. <b>Balance BST</b> is a separate learner-triggered operation so you can see the difference before moving to AVL, which maintains balance after mutations.</p>
+                <div class="example"><strong>Contrast:</strong> BST → balance only when you explicitly request it. AVL → checks and repairs balance after insert/delete.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term">DSW 1</span>
+                <h3>Tree → vine</h3>
+                <p>The Day-Stout-Warren algorithm scans the tree and performs right rotations until no left links remain. The result is a sorted right-only backbone, often called a vine.</p>
+                <div class="example"><strong>Why:</strong> once every node is on one ordered backbone, the algorithm can rebuild a short shape predictably.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">DSW 2</span>
+                <h3>Vine → shorter tree</h3>
+                <p>DSW then performs carefully spaced left rotations in compression passes. Each pass shortens the backbone and creates tree levels until the result is near-complete.</p>
+                <div class="example"><strong>Cost:</strong> O(n) time and O(1) algorithmic extra space because existing nodes are rotated instead of copied into an auxiliary array.</div>
+            </article>
+        </div>
+        <div class="plain-note">
+            <strong>What a rotation changes in memory</strong>
+            <p>Values and short IDs stay attached to the same node objects. A rotation changes the <code>root</code>, <code>parent</code>, <code>left</code>, and <code>right</code> references that connect those objects. In-order traversal still returns the same keys in the same sorted order.</p>
+            <a href="/structures/bst">Open the BST lab and run Balance BST →</a>
+        </div>
+    </section>
+
+    <section id="heap" class="concept-section">
+        <div class="section-heading">
+            <span>S3–4</span>
+            <div><h2>Heap vs Binary Heap: family versus one concrete implementation</h2><p>The word <strong>heap</strong> describes a family of priority-ordered data structures. <strong>Binary Heap</strong> is one specific heap whose complete tree allows at most two children per parent.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class="concept-card">
+                <span class="term">HEAP FAMILY</span>
+                <h3>The invariant is the important idea</h3>
+                <p>In a Min Heap, each parent has priority over its children; in a Max Heap, the rule is reversed. The family can be implemented with different branching factors and specialized structures.</p>
+                <div class="example"><strong>Min rule:</strong> parent ≤ every child. <strong>Max rule:</strong> parent ≥ every child.</div>
+            </article>
+            <article id="binary-heap" class="concept-card anchor-card">
+                <span class="term queue">BINARY HEAP</span>
+                <h3>d = 2: at most two children</h3>
+                <p>The classic Binary Heap is a complete binary tree stored compactly in an array. Its index formulas are <code>parent=(i-1)/2</code>, <code>left=2i+1</code>, and <code>right=2i+2</code>.</p>
+                <a href="/structures/binary-heap">Open Binary Heap lab →</a>
+            </article>
+            <article id="general-heap" class="concept-card anchor-card">
+                <span class="term">D-ARY HEAP</span>
+                <h3>Generalize the same idea to d children</h3>
+                <p>For a complete d-ary heap, <code>parent=(i-1)/d</code> and a node's possible children occupy <code>di+1</code> through <code>di+d</code>. Binary Heap is exactly the d=2 case.</p>
+                <a href="/structures/heap">Open generalized Heap lab →</a>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">WHY USE IT?</span>
+                <h3>When the next minimum or maximum matters repeatedly</h3>
+                <p>Heaps are useful for priority queues, schedulers, Dijkstra, Prim, Top-K, event simulation, and streaming problems. They avoid fully sorting the collection every time a new value arrives.</p>
+                <div class="example"><strong>Root:</strong> O(1) · <strong>insert/extract:</strong> logarithmic height · <strong>arbitrary search:</strong> O(n).</div>
+            </article>
+        </div>
+        <div class="plain-note">
+            <strong>Why “ordinary Heap” is not a second structure beside Binary Heap</strong>
+            <p>“Heap” is the umbrella concept, so implementing a second lab called ordinary Heap without choosing a concrete representation would be misleading. This project therefore makes the distinction executable with a generalized <strong>d-ary heap</strong>, while keeping the existing Binary Heap as the familiar <strong>d = 2</strong> specialization.</p>
+        </div>
+        <div class="plain-note">
+            <strong>Branching factor changes the trade-off</strong>
+            <p>A larger d usually reduces tree height, so bubble-up crosses fewer levels. Bubble-down, however, may need to compare more children at each level before choosing the best candidate. The generalized lab exposes those comparisons step by step.</p>
+        </div>
+        <div class="plain-note">
+            <strong>Why the practical lab starts at d = 2</strong>
+            <p>A unary <code>d = 1</code> heap is a degenerate chain: every node has at most one child, so height grows toward <code>n</code> and bubble-up/down can become linear. Practical d-ary heaps therefore use <code>d ≥ 2</code>. The generalized lab now includes d = 2, 3, 4 and 5 so you can see the Binary Heap case directly.</p>
+        </div>
+        <div class="plain-note">
+            <strong>What a heap swap means in memory</strong>
+            <p>Both heap labs reuse stable <code>HeapElement</code> objects inside our manually grown raw array. A swap exchanges references between array indexes. IDs and values remain attached to the same objects; only their indexes — and therefore their derived parent/child relationships — change.</p>
+        </div>
+    </section>
+
+    <section id="avl-balance" class="concept-section">
+        <div class="section-heading">
+            <span>S5</span>
+            <div><h2>Balance factor and rotations</h2><p>AVL keeps the BST ordering rule, then repairs shape whenever one side becomes more than one level taller.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class="concept-card">
+                <span class="term">BF</span>
+                <h3>Measure left height minus right height</h3>
+                <p><code>BF = height(left) - height(right)</code>. A node is AVL-balanced when BF is <code>-1</code>, <code>0</code>, or <code>+1</code>. Values below -1 are too right-heavy; values above +1 are too left-heavy.</p>
+                <div class="example"><strong>Example:</strong> left height 3 and right height 1 → BF = +2 → repair required.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">CASE</span>
+                <h3>Read the heavy path before rotating</h3>
+                <p><b>LL</b> and <b>RR</b> are outside-heavy cases and need one primitive rotation. <b>LR</b> and <b>RL</b> bend inward and need two primitive rotations.</p>
+                <div class="example"><strong>Recipes:</strong> 30,20,10 → LL · 10,20,30 → RR · 30,10,20 → LR · 10,30,20 → RL.</div>
+            </article>
+        </div>
+        <div class="plain-note">
+            <strong>Rotations change links, not the sorted order.</strong>
+            <p>The same node objects remain in the tree. A rotation rewires parent, left, and right references and then updates cached heights. In-order traversal still produces the same sorted keys before and after the repair.</p>
+            <a href="/structures/avl">Open the AVL lab →</a>
+        </div>
+    </section>
+
+    <section id="matrices" class="concept-section">
+        <span id="matrix" class="anchor-target"></span>
+        <div class="section-heading">
+            <span>S6</span>
+            <div><h2>Matrix: dimensions, memory and why it matters</h2><p>A matrix is a rectangular grid of values. The shape is part of the data, and many operations are legal only when dimensions are compatible.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class="concept-card">
+                <span class="term">ROWS × COLS</span>
+                <h3>Dimensions describe the shape</h3>
+                <p>A <code>2×3</code> matrix has 2 rows and 3 columns. Transpose swaps those dimensions: a <code>2×3</code> matrix becomes <code>3×2</code>.</p>
+                <div class="example"><strong>Think first:</strong> dimensions usually tell you whether an operation is even possible before you calculate any number.</div>
+            </article>
+            <article id="matrix-compatibility" class="concept-card">
+                <span class="term queue">COMPATIBILITY</span>
+                <h3>Different operations have different shape rules</h3>
+                <p>Addition, subtraction and Hadamard multiplication require the same dimensions. For <code>A×B</code>, the number of columns in A must equal the number of rows in B.</p>
+                <div class="example"><strong>Example:</strong> <code>(2×3) · (3×4) → 2×4</code>.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term">ROW-MAJOR</span>
+                <h3>The 2D picture can live in one 1D array</h3>
+                <p>Our implementation stores matrix cells in one raw <code>double[]</code>. For zero-based indexes, <code>flatIndex = row × columns + column</code>.</p>
+                <div class="example"><strong>3 columns:</strong> cell [row 2, col 1] uses flat index <code>2×3+1 = 7</code>.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">GRAPH BRIDGE</span>
+                <h3>An adjacency matrix can store a graph</h3>
+                <p>Rows and columns can represent the same set of graph nodes. Cell <code>[i,j]</code> can store 1/0 for an edge, or a weight for a weighted edge.</p>
+                <div class="example"><strong>Undirected graph:</strong> its simple adjacency matrix is symmetric because edge i↔j appears in both mirrored cells.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term">ROW OPS</span>
+                <h3>Gaussian elimination is repeated row rewiring</h3>
+                <p>Three elementary moves are enough: swap two rows, multiply a row by a non-zero scalar, or add a scalar multiple of one row to another.</p>
+                <div class="example"><strong>These power:</strong> REF, RREF, rank, determinant workflows, inverse and solving <code>A·X=B</code>.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">PIVOT</span>
+                <h3>Pivots reveal independent information</h3>
+                <p>During row reduction, each pivot establishes a new independent row/column direction. The number of pivot rows in RREF is the matrix rank.</p>
+                <div class="example"><strong>Missing pivot:</strong> for square A, that can mean <code>det(A)=0</code> and no inverse exists.</div>
+            </article>
+        </div>
+        <div class="plain-note">
+            <strong>Why Matrix comes before Graph</strong>
+            <p>The Graph lab is now live and reuses this Matrix implementation for its adjacency-matrix representation, while adding its own manually stored adjacency lists.</p>
+        </div>
+
+        <div class="concept-lesson-links"><a href="/structures/matrix">Open Matrix lab →</a></div>
+    </section>
+
+    <section id="graph" class="concept-section">
+        <div class="section-heading">
+            <span>S7</span>
+            <div><h2>Graph: vertices, edges and adjacency</h2><p>A graph models relationships. Vertices are entities; edges describe which entities are connected and may also carry direction or weight.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class="concept-card"><span class="term">VERTEX + EDGE</span><h3>Separate entities from relationships</h3><p>A city can be a vertex and a road an edge. A task can be a vertex and a prerequisite a directed edge. The same graph abstraction fits many domains.</p><a href="/structures/graph">Open Graph lab →</a></article>
+            <article class="concept-card"><span class="term queue">DIRECTED</span><h3>A → B does not imply B → A</h3><p>Direction matters for one-way roads, web links and dependencies. In an undirected graph, one logical A—B edge makes each endpoint a neighbor of the other.</p></article>
+            <article class="concept-card"><span class="term">WEIGHTED</span><h3>An edge can store a cost</h3><p>Weights can represent distance, time, price or another numeric relationship. This generic graph lab allows any finite weight; later algorithms impose their own validity rules.</p></article>
+            <article class="concept-card"><span class="term queue">ADJACENCY</span><h3>Direct neighbor is not the same as reachable</h3><p>Adjacency means one edge away. Reachability may require several edges and belongs to traversal/path algorithms such as BFS, DFS and Dijkstra.</p></article>
+            <article class="concept-card"><span class="term">ADJACENCY LIST</span><h3>Store only the neighbors that exist</h3><p>Each vertex owns a list of outgoing/direct neighbors. It typically uses O(V+E) space and is especially natural for sparse graphs.</p></article>
+            <article class="concept-card"><span class="term queue">ADJACENCY MATRIX</span><h3>Reserve one cell for every ordered pair</h3><p>A V×V table gives direct [u,v] edge lookup but reserves O(V²) cells. Our Graph lab reuses the existing ManualMatrix implementation for this representation.</p></article>
+        </div>
+        <div class="plain-note"><strong>Graph structure vs graph algorithm</strong><p>Adding/removing vertices and edges changes the graph. BFS or DFS should not mutate those structural edges; they add temporary traversal state such as frontier, visited and parent on top of the same graph.</p></div>
+    </section>
+
+    <section id="red-black" class="concept-section">
+        <div class="section-heading">
+            <span>S8</span>
+            <div><h2>Red-Black invariants and black-height</h2><p>Red-Black Tree keeps the same BST ordering, but it controls shape indirectly through color rules instead of AVL's exact balance factor.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class="concept-card">
+                <span class="term">COLORS</span>
+                <h3>Root black, no red-red edge</h3>
+                <p>Every real node is red or black. The root must finish black, and a red node cannot have a red parent or red child. Missing child links are treated as conceptual black <b>NIL</b> leaves.</p>
+                <div class="example"><strong>Important:</strong> red by itself is valid. A red node becomes a problem only when its parent is also red.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">BLACK-HEIGHT</span>
+                <h3>Every path gets the same black count</h3>
+                <p>From any node, every path down to a NIL leaf must contain the same number of black nodes. This shared count is the idea behind <b>black-height</b>.</p>
+                <div class="example"><strong>Why it matters:</strong> the longest root-to-leaf path can be at most about twice the shortest, so height remains O(log n).</div>
+            </article>
+            <article class="concept-card">
+                <span class="term">INSERT</span>
+                <h3>New nodes start red</h3>
+                <p>Starting red does not immediately add a black node to one path, so black-height stays unchanged. If the parent is also red, the algorithm inspects the uncle: a red uncle usually means recoloring; a black uncle leads to triangle/line rotations.</p>
+                <div class="example"><strong>Try:</strong> 10,5,15,1 → red-uncle recolor · 10,30,20 → triangle then line repair.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">DELETE</span>
+                <h3>Removing black is the hard case</h3>
+                <p>Removing a red node does not change black-height. Removing a black contribution can make one path short by one black node, so delete fix-up inspects the sibling and its near/far children, recoloring or rotating until the extra-black situation is absorbed.</p>
+                <div class="example"><strong>Mental model:</strong> follow the missing black upward until a red node, the root, or a rotation can absorb it.</div>
+            </article>
+        </div>
+        <div class="plain-note">
+            <strong>Red-Black is balanced, but not in the AVL sense.</strong>
+            <p>AVL requires each node's left/right heights to differ by at most one. Red-Black allows looser shapes, but its color and black-height invariants still guarantee logarithmic height. Rotations preserve node identity and BST order; recoloring changes only the node's <code>Color</code> field.</p>
+            <a href="/structures/red-black">Open the Red-Black Tree lab →</a>
+        </div>
+    </section>
+
     <section id="bubble-sort" class="concept-section">
         <div class="section-heading">
-            <span>SORT</span>
+            <span>A1</span>
             <div><h2>Bubble Sort: neighbors, passes, and a sorted suffix</h2><p>Bubble Sort is a simple place to learn what a sorting algorithm actually does one decision at a time.</p></div>
         </div>
         <div class="concept-grid two">
@@ -151,7 +522,7 @@
 
     <section id="selection-sort" class="concept-section">
         <div class="section-heading">
-            <span>SORT</span>
+            <span>A2</span>
             <div><h2>Selection Sort: scan, remember, then swap</h2><p>Selection Sort separates finding the next value from moving it into place.</p></div>
         </div>
         <div class="concept-grid two">
@@ -201,7 +572,7 @@
 
     <section id="insertion-sort" class="concept-section">
         <div class="section-heading">
-            <span>SORT</span>
+            <span>A3</span>
             <div><h2>Insertion Sort: key, sorted prefix, gap, and insertion point</h2><p>Insertion Sort keeps a sorted prefix and integrates one new value at a time instead of repeatedly sorting everything again.</p></div>
         </div>
         <div class="concept-grid two">
@@ -249,10 +620,9 @@
         </div>
     </section>
 
-
     <section id="merge-sort" class="concept-section">
         <div class="section-heading">
-            <span>SORT</span>
+            <span>A4</span>
             <div><h2>Merge Sort: divide, runs, merge fronts, and auxiliary memory</h2><p>Merge Sort becomes simple once you trust one invariant: every merge combines two runs that are already sorted.</p></div>
         </div>
         <div class="concept-grid two">
@@ -300,316 +670,33 @@
         </div>
     </section>
 
-    <section id="tree-height" class="concept-section">
+
+    <section id="quick-sort" class="concept-section">
         <div class="section-heading">
-            <span>BST</span>
-            <div><h2>Tree height h</h2><p>For a Binary Search Tree, the length of the path matters more than the total node count by itself.</p></div>
+            <span>A5</span>
+            <div><h2>Quick Sort: pivot, partition, then recurse</h2><p>Quick Sort earns its speed by putting one pivot into its final position and recursively solving the unfinished regions around it.</p></div>
         </div>
         <div class="concept-grid two">
-            <article class="concept-card">
-                <span class="term">h</span>
-                <h3>How many levels can one path cross?</h3>
-                <p><code>h</code> is the height of the tree. Search, insert, and delete follow a root-to-node path, so their work is <code>O(h)</code>.</p>
-                <div class="example"><strong>Short tree:</strong> fewer decisions from root to target.</div>
-            </article>
-            <article class="concept-card">
-                <span class="term queue">SHAPE</span>
-                <h3>Insertion order changes the cost</h3>
-                <p>A roughly balanced BST keeps its height near <code>log n</code>. A highly skewed BST can have height <code>n</code>, so its search can behave like a linear scan.</p>
-                <div class="example"><strong>Try it:</strong> compare 4,2,6,1,3 with 1,2,3,4,5.</div>
-            </article>
+            <article class="concept-card"><span class="term">PIVOT</span><h3>Choose one value to organize the range around</h3><p>The pivot is a reference for partitioning. It is not automatically the median and a poor pivot can create very uneven subproblems.</p></article>
+            <article class="concept-card"><span class="term queue">PARTITION</span><h3>Partitioning is not the same as fully sorting</h3><p>After partitioning, the pivot is final and values belong on the correct side of it, but each side can still be internally unsorted.</p></article>
+            <article class="concept-card"><span class="term">COMPLEXITY</span><h3>Balanced partitions give the useful case</h3><p>Average behavior is Θ(n log n). Repeatedly extreme pivots can create Θ(n²) work and a deep recursion stack.</p></article>
+            <article class="concept-card"><span class="term queue">MEMORY + CRUD</span><h3>Usually in-place, but an active trace still needs a fixed snapshot</h3><p>A typical array implementation uses swaps plus recursion rather than an O(n) merge buffer. CREATE/UPDATE/DELETE during partitioning invalidates boundaries and requires a new run.</p></article>
         </div>
-        <div class="plain-note">
-            <strong>Why does the simulator show both n and h?</strong>
-            <p><code>n</code> tells you how many nodes exist. <code>h</code> tells you how long the worst root-to-leaf path is. Two BSTs can contain the same values and still have very different heights because the insertion order created different shapes.</p>
-        </div>
+        <div class="concept-lesson-links"><a href="/sorting/quick">Open the planned Quick Sort lesson →</a><a href="/sorting/merge">Compare with Merge Sort →</a></div>
     </section>
 
-
-    <section id="bst-balancing" class="concept-section">
+    <section id="heap-sort" class="concept-section">
         <div class="section-heading">
-            <span>BST+</span>
-            <div><h2>What does balancing a BST mean?</h2><p>Balancing changes the tree's shape so root-to-leaf paths are shorter, while preserving the same sorted-key rule and the same node objects.</p></div>
+            <span>A6</span>
+            <div><h2>Heap Sort: heapify, extract the root, shrink the heap</h2><p>Heap Sort reuses the array as two logical regions: an active Max Heap and a finished sorted suffix.</p></div>
         </div>
         <div class="concept-grid two">
-            <article class="concept-card">
-                <span class="term">BALANCED</span>
-                <h3>Shorter paths, not a different ordering</h3>
-                <p>A balanced BST is shaped so one side does not grow into a long chain while the other stays short. The exact shape does not have to be perfect; the goal is to keep height close to the smallest useful height for the same keys.</p>
-                <div class="example"><strong>Example:</strong> 10 → 20 → 30 → 40 → 50 has height 5. Rewiring the same nodes can reduce the height to about 3.</div>
-            </article>
-            <article class="concept-card">
-                <span class="term queue">IMPORTANT</span>
-                <h3>A normal BST does not self-balance</h3>
-                <p>Insert and delete in the BST lab keep only the ordering invariant. They do not automatically repair tree height. <b>Balance BST</b> is a separate learner-triggered operation so you can see the difference before moving to AVL, which maintains balance after mutations.</p>
-                <div class="example"><strong>Contrast:</strong> BST → balance only when you explicitly request it. AVL → checks and repairs balance after insert/delete.</div>
-            </article>
-            <article class="concept-card">
-                <span class="term">DSW 1</span>
-                <h3>Tree → vine</h3>
-                <p>The Day-Stout-Warren algorithm scans the tree and performs right rotations until no left links remain. The result is a sorted right-only backbone, often called a vine.</p>
-                <div class="example"><strong>Why:</strong> once every node is on one ordered backbone, the algorithm can rebuild a short shape predictably.</div>
-            </article>
-            <article class="concept-card">
-                <span class="term queue">DSW 2</span>
-                <h3>Vine → shorter tree</h3>
-                <p>DSW then performs carefully spaced left rotations in compression passes. Each pass shortens the backbone and creates tree levels until the result is near-complete.</p>
-                <div class="example"><strong>Cost:</strong> O(n) time and O(1) algorithmic extra space because existing nodes are rotated instead of copied into an auxiliary array.</div>
-            </article>
+            <article class="concept-card"><span class="term">HEAPIFY</span><h3>Build a Max Heap before extraction</h3><p>The largest active value must be at the root so it can be moved directly into the next final position.</p></article>
+            <article class="concept-card"><span class="term queue">BOUNDARY</span><h3>The sorted suffix is no longer part of the heap</h3><p>After swapping the root with the last active element, reduce the heap size before sifting the new root down.</p></article>
+            <article class="concept-card"><span class="term">TRADE-OFF</span><h3>Predictable Θ(n log n) with O(1) auxiliary array space</h3><p>Heap Sort avoids Merge Sort's O(n) buffer, but its long-distance swaps mean the standard algorithm is not stable.</p></article>
+            <article class="concept-card"><span class="term queue">CRUD</span><h3>Sorting and maintaining a heap are different jobs</h3><p>While Heap Sort is extracting into the final suffix, CREATE/UPDATE/DELETE invalidates the active heap boundary and requires restart. A standalone Heap structure can support its own mutations separately.</p></article>
         </div>
-        <div class="plain-note">
-            <strong>What a rotation changes in memory</strong>
-            <p>Values and short IDs stay attached to the same node objects. A rotation changes the <code>root</code>, <code>parent</code>, <code>left</code>, and <code>right</code> references that connect those objects. In-order traversal still returns the same keys in the same sorted order.</p>
-            <a href="/structures/bst">Open the BST lab and run Balance BST →</a>
-        </div>
-    </section>
-
-
-    <section id="avl-balance" class="concept-section">
-        <div class="section-heading">
-            <span>AVL</span>
-            <div><h2>Balance factor and rotations</h2><p>AVL keeps the BST ordering rule, then repairs shape whenever one side becomes more than one level taller.</p></div>
-        </div>
-        <div class="concept-grid two">
-            <article class="concept-card">
-                <span class="term">BF</span>
-                <h3>Measure left height minus right height</h3>
-                <p><code>BF = height(left) - height(right)</code>. A node is AVL-balanced when BF is <code>-1</code>, <code>0</code>, or <code>+1</code>. Values below -1 are too right-heavy; values above +1 are too left-heavy.</p>
-                <div class="example"><strong>Example:</strong> left height 3 and right height 1 → BF = +2 → repair required.</div>
-            </article>
-            <article class="concept-card">
-                <span class="term queue">CASE</span>
-                <h3>Read the heavy path before rotating</h3>
-                <p><b>LL</b> and <b>RR</b> are outside-heavy cases and need one primitive rotation. <b>LR</b> and <b>RL</b> bend inward and need two primitive rotations.</p>
-                <div class="example"><strong>Recipes:</strong> 30,20,10 → LL · 10,20,30 → RR · 30,10,20 → LR · 10,30,20 → RL.</div>
-            </article>
-        </div>
-        <div class="plain-note">
-            <strong>Rotations change links, not the sorted order.</strong>
-            <p>The same node objects remain in the tree. A rotation rewires parent, left, and right references and then updates cached heights. In-order traversal still produces the same sorted keys before and after the repair.</p>
-            <a href="/structures/avl">Open the AVL lab →</a>
-        </div>
-    </section>
-
-    <section id="red-black" class="concept-section">
-        <div class="section-heading">
-            <span>RBT</span>
-            <div><h2>Red-Black invariants and black-height</h2><p>Red-Black Tree keeps the same BST ordering, but it controls shape indirectly through color rules instead of AVL's exact balance factor.</p></div>
-        </div>
-        <div class="concept-grid two">
-            <article class="concept-card">
-                <span class="term">COLORS</span>
-                <h3>Root black, no red-red edge</h3>
-                <p>Every real node is red or black. The root must finish black, and a red node cannot have a red parent or red child. Missing child links are treated as conceptual black <b>NIL</b> leaves.</p>
-                <div class="example"><strong>Important:</strong> red by itself is valid. A red node becomes a problem only when its parent is also red.</div>
-            </article>
-            <article class="concept-card">
-                <span class="term queue">BLACK-HEIGHT</span>
-                <h3>Every path gets the same black count</h3>
-                <p>From any node, every path down to a NIL leaf must contain the same number of black nodes. This shared count is the idea behind <b>black-height</b>.</p>
-                <div class="example"><strong>Why it matters:</strong> the longest root-to-leaf path can be at most about twice the shortest, so height remains O(log n).</div>
-            </article>
-            <article class="concept-card">
-                <span class="term">INSERT</span>
-                <h3>New nodes start red</h3>
-                <p>Starting red does not immediately add a black node to one path, so black-height stays unchanged. If the parent is also red, the algorithm inspects the uncle: a red uncle usually means recoloring; a black uncle leads to triangle/line rotations.</p>
-                <div class="example"><strong>Try:</strong> 10,5,15,1 → red-uncle recolor · 10,30,20 → triangle then line repair.</div>
-            </article>
-            <article class="concept-card">
-                <span class="term queue">DELETE</span>
-                <h3>Removing black is the hard case</h3>
-                <p>Removing a red node does not change black-height. Removing a black contribution can make one path short by one black node, so delete fix-up inspects the sibling and its near/far children, recoloring or rotating until the extra-black situation is absorbed.</p>
-                <div class="example"><strong>Mental model:</strong> follow the missing black upward until a red node, the root, or a rotation can absorb it.</div>
-            </article>
-        </div>
-        <div class="plain-note">
-            <strong>Red-Black is balanced, but not in the AVL sense.</strong>
-            <p>AVL requires each node's left/right heights to differ by at most one. Red-Black allows looser shapes, but its color and black-height invariants still guarantee logarithmic height. Rotations preserve node identity and BST order; recoloring changes only the node's <code>Color</code> field.</p>
-            <a href="/structures/red-black">Open the Red-Black Tree lab →</a>
-        </div>
-    </section>
-
-
-    <section id="heap" class="concept-section">
-        <div class="section-heading">
-            <span>HEAP</span>
-            <div><h2>Heap vs Binary Heap: family versus one concrete implementation</h2><p>The word <strong>heap</strong> describes a family of priority-ordered data structures. <strong>Binary Heap</strong> is one specific heap whose complete tree allows at most two children per parent.</p></div>
-        </div>
-        <div class="concept-grid two">
-            <article class="concept-card">
-                <span class="term">HEAP FAMILY</span>
-                <h3>The invariant is the important idea</h3>
-                <p>In a Min Heap, each parent has priority over its children; in a Max Heap, the rule is reversed. The family can be implemented with different branching factors and specialized structures.</p>
-                <div class="example"><strong>Min rule:</strong> parent ≤ every child. <strong>Max rule:</strong> parent ≥ every child.</div>
-            </article>
-            <article class="concept-card">
-                <span class="term queue">BINARY HEAP</span>
-                <h3>d = 2: at most two children</h3>
-                <p>The classic Binary Heap is a complete binary tree stored compactly in an array. Its index formulas are <code>parent=(i-1)/2</code>, <code>left=2i+1</code>, and <code>right=2i+2</code>.</p>
-                <a href="/structures/binary-heap">Open Binary Heap lab →</a>
-            </article>
-            <article class="concept-card">
-                <span class="term">D-ARY HEAP</span>
-                <h3>Generalize the same idea to d children</h3>
-                <p>For a complete d-ary heap, <code>parent=(i-1)/d</code> and a node's possible children occupy <code>di+1</code> through <code>di+d</code>. Binary Heap is exactly the d=2 case.</p>
-                <a href="/structures/heap">Open generalized Heap lab →</a>
-            </article>
-            <article class="concept-card">
-                <span class="term queue">WHY USE IT?</span>
-                <h3>When the next minimum or maximum matters repeatedly</h3>
-                <p>Heaps are useful for priority queues, schedulers, Dijkstra, Prim, Top-K, event simulation, and streaming problems. They avoid fully sorting the collection every time a new value arrives.</p>
-                <div class="example"><strong>Root:</strong> O(1) · <strong>insert/extract:</strong> logarithmic height · <strong>arbitrary search:</strong> O(n).</div>
-            </article>
-        </div>
-        <div class="plain-note">
-            <strong>Why “ordinary Heap” is not a second structure beside Binary Heap</strong>
-            <p>“Heap” is the umbrella concept, so implementing a second lab called ordinary Heap without choosing a concrete representation would be misleading. This project therefore makes the distinction executable with a generalized <strong>d-ary heap</strong>, while keeping the existing Binary Heap as the familiar <strong>d = 2</strong> specialization.</p>
-        </div>
-        <div class="plain-note">
-            <strong>Branching factor changes the trade-off</strong>
-            <p>A larger d usually reduces tree height, so bubble-up crosses fewer levels. Bubble-down, however, may need to compare more children at each level before choosing the best candidate. The generalized lab exposes those comparisons step by step.</p>
-        </div>
-        <div class="plain-note">
-            <strong>Why the practical lab starts at d = 2</strong>
-            <p>A unary <code>d = 1</code> heap is a degenerate chain: every node has at most one child, so height grows toward <code>n</code> and bubble-up/down can become linear. Practical d-ary heaps therefore use <code>d ≥ 2</code>. The generalized lab now includes d = 2, 3, 4 and 5 so you can see the Binary Heap case directly.</p>
-        </div>
-        <div class="plain-note">
-            <strong>What a heap swap means in memory</strong>
-            <p>Both heap labs reuse stable <code>HeapElement</code> objects inside our manually grown raw array. A swap exchanges references between array indexes. IDs and values remain attached to the same objects; only their indexes — and therefore their derived parent/child relationships — change.</p>
-        </div>
-    </section>
-
-
-
-    <section id="matrices" class="concept-section">
-        <div class="section-heading">
-            <span>M×N</span>
-            <div><h2>Matrix: dimensions, memory and why it matters</h2><p>A matrix is a rectangular grid of values. The shape is part of the data, and many operations are legal only when dimensions are compatible.</p></div>
-        </div>
-        <div class="concept-grid two">
-            <article class="concept-card">
-                <span class="term">ROWS × COLS</span>
-                <h3>Dimensions describe the shape</h3>
-                <p>A <code>2×3</code> matrix has 2 rows and 3 columns. Transpose swaps those dimensions: a <code>2×3</code> matrix becomes <code>3×2</code>.</p>
-                <div class="example"><strong>Think first:</strong> dimensions usually tell you whether an operation is even possible before you calculate any number.</div>
-            </article>
-            <article id="matrix-compatibility" class="concept-card">
-                <span class="term queue">COMPATIBILITY</span>
-                <h3>Different operations have different shape rules</h3>
-                <p>Addition, subtraction and Hadamard multiplication require the same dimensions. For <code>A×B</code>, the number of columns in A must equal the number of rows in B.</p>
-                <div class="example"><strong>Example:</strong> <code>(2×3) · (3×4) → 2×4</code>.</div>
-            </article>
-            <article class="concept-card">
-                <span class="term">ROW-MAJOR</span>
-                <h3>The 2D picture can live in one 1D array</h3>
-                <p>Our implementation stores matrix cells in one raw <code>double[]</code>. For zero-based indexes, <code>flatIndex = row × columns + column</code>.</p>
-                <div class="example"><strong>3 columns:</strong> cell [row 2, col 1] uses flat index <code>2×3+1 = 7</code>.</div>
-            </article>
-            <article class="concept-card">
-                <span class="term queue">GRAPH BRIDGE</span>
-                <h3>An adjacency matrix can store a graph</h3>
-                <p>Rows and columns can represent the same set of graph nodes. Cell <code>[i,j]</code> can store 1/0 for an edge, or a weight for a weighted edge.</p>
-                <div class="example"><strong>Undirected graph:</strong> its simple adjacency matrix is symmetric because edge i↔j appears in both mirrored cells.</div>
-            </article>
-            <article class="concept-card">
-                <span class="term">ROW OPS</span>
-                <h3>Gaussian elimination is repeated row rewiring</h3>
-                <p>Three elementary moves are enough: swap two rows, multiply a row by a non-zero scalar, or add a scalar multiple of one row to another.</p>
-                <div class="example"><strong>These power:</strong> REF, RREF, rank, determinant workflows, inverse and solving <code>A·X=B</code>.</div>
-            </article>
-            <article class="concept-card">
-                <span class="term queue">PIVOT</span>
-                <h3>Pivots reveal independent information</h3>
-                <p>During row reduction, each pivot establishes a new independent row/column direction. The number of pivot rows in RREF is the matrix rank.</p>
-                <div class="example"><strong>Missing pivot:</strong> for square A, that can mean <code>det(A)=0</code> and no inverse exists.</div>
-            </article>
-        </div>
-        <div class="plain-note">
-            <strong>Why Matrix comes before Graph</strong>
-            <p>The Graph lab is now live and reuses this Matrix implementation for its adjacency-matrix representation, while adding its own manually stored adjacency lists.</p>
-        </div>
-    </section>
-
-    <section id="graph" class="concept-section">
-        <div class="section-heading">
-            <span>G</span>
-            <div><h2>Graph: vertices, edges and adjacency</h2><p>A graph models relationships. Vertices are entities; edges describe which entities are connected and may also carry direction or weight.</p></div>
-        </div>
-        <div class="concept-grid two">
-            <article class="concept-card"><span class="term">VERTEX + EDGE</span><h3>Separate entities from relationships</h3><p>A city can be a vertex and a road an edge. A task can be a vertex and a prerequisite a directed edge. The same graph abstraction fits many domains.</p><a href="/structures/graph">Open Graph lab →</a></article>
-            <article class="concept-card"><span class="term queue">DIRECTED</span><h3>A → B does not imply B → A</h3><p>Direction matters for one-way roads, web links and dependencies. In an undirected graph, one logical A—B edge makes each endpoint a neighbor of the other.</p></article>
-            <article class="concept-card"><span class="term">WEIGHTED</span><h3>An edge can store a cost</h3><p>Weights can represent distance, time, price or another numeric relationship. This generic graph lab allows any finite weight; later algorithms impose their own validity rules.</p></article>
-            <article class="concept-card"><span class="term queue">ADJACENCY</span><h3>Direct neighbor is not the same as reachable</h3><p>Adjacency means one edge away. Reachability may require several edges and belongs to traversal/path algorithms such as BFS, DFS and Dijkstra.</p></article>
-            <article class="concept-card"><span class="term">ADJACENCY LIST</span><h3>Store only the neighbors that exist</h3><p>Each vertex owns a list of outgoing/direct neighbors. It typically uses O(V+E) space and is especially natural for sparse graphs.</p></article>
-            <article class="concept-card"><span class="term queue">ADJACENCY MATRIX</span><h3>Reserve one cell for every ordered pair</h3><p>A V×V table gives direct [u,v] edge lookup but reserves O(V²) cells. Our Graph lab reuses the existing ManualMatrix implementation for this representation.</p></article>
-        </div>
-        <div class="plain-note"><strong>Graph structure vs graph algorithm</strong><p>Adding/removing vertices and edges changes the graph. BFS or DFS should not mutate those structural edges; they add temporary traversal state such as frontier, visited and parent on top of the same graph.</p></div>
-    </section>
-
-    <section id="identity" class="concept-section">
-        <div class="section-heading">
-            <span>03</span>
-            <div><h2>Value is not the same as identity</h2><p>Structures that allow duplicate values can still store them as different element objects. Heap allows duplicates and gives each element its own ID; BST, AVL, and Red-Black Tree intentionally use unique keys.</p></div>
-        </div>
-        <div class="identity-demo">
-            <div class="identity-object"><span>MEM-#A1B2C3</span><strong>value = 7</strong><small>ID #A1B2C3</small></div>
-            <div class="identity-symbol">≠</div>
-            <div class="identity-object"><span>MEM-#F4E5D6</span><strong>value = 7</strong><small>ID #F4E5D6</small></div>
-        </div>
-        <div class="plain-note">
-            <strong>Both values are 7, but these are two different elements.</strong>
-            <p>Think of two students who both scored 7 points. The score is the same, but the students are not the same person. In the simulator, the value is the data; the short ID identifies one exact element.</p>
-        </div>
-    </section>
-
-    <section id="memory" class="concept-section">
-        <div class="section-heading">
-            <span>04</span>
-            <div><h2>Memory, references, Count and Capacity</h2><p>A simple model for what the C# version of this lab is doing.</p></div>
-        </div>
-        <div class="concept-grid two">
-            <article class="concept-card">
-                <span class="term">OBJECT</span>
-                <h3>The element itself</h3>
-                <p>Each <code>LinearElement</code> is a separate object. It stores its value and ID. In .NET, reference-type objects live on the managed heap.</p>
-                <a href="https://learn.microsoft.com/en-us/dotnet/standard/garbage-collection/fundamentals" target="_blank" rel="noreferrer">Microsoft: .NET garbage collection basics ↗</a>
-            </article>
-            <article class="concept-card">
-                <span class="term">REFERENCE</span>
-                <h3>A way to reach that object</h3>
-                <p>Our own dynamic array stores references to the element objects. A slot is not the object itself; it points to the object.</p>
-                <a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/arrays" target="_blank" rel="noreferrer">Microsoft: C# arrays ↗</a>
-            </article>
-            <article class="concept-card">
-                <span class="term">COUNT</span>
-                <h3>How many items are being used?</h3>
-                <p>If Count is 4, the structure currently uses four element references.</p>
-            </article>
-            <article class="concept-card">
-                <span class="term">CAPACITY</span>
-                <h3>How many slots are already reserved?</h3>
-                <p>Capacity can be larger than Count. That does not mean there are hidden elements; it means our custom array has reserved space before it must grow.</p>
-                <a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/arrays" target="_blank" rel="noreferrer">Microsoft: C# arrays ↗</a>
-            </article>
-            <article class="concept-card">
-                <span class="term">TREE LINKS</span>
-                <h3>BST nodes are connected by references</h3>
-                <p>The BST implementation does not store nodes in visual left-to-right screen order. The tree is formed by a root reference plus each node's <code>parent</code>, <code>left</code>, and <code>right</code> references.</p>
-                <div class="mini-example">Visual position ≠ memory address</div>
-            </article>
-            <article class="concept-card">
-                <span class="term queue">BALANCE</span>
-                <h3>Rotations rewire links</h3>
-                <p>DSW balancing keeps the same node objects and values. It changes which object each tree reference points to. That is why Memory state is especially useful while stepping through Balance BST.</p>
-                <div class="mini-example">same IDs · new parent/left/right links</div>
-            </article>
-        </div>
-
-        <div class="plain-note">
-            <strong>What happens after our manual RemoveAt?</strong>
-            <p>Our code moves later references left with a loop to close the removed index. Count decreases. Capacity stays the same. The removed object is not manually “freed”; if nothing references it anymore, .NET can reclaim it later with garbage collection.</p>
-            <a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/arrays" target="_blank" rel="noreferrer">Microsoft: C# arrays ↗</a>
-        </div>
+        <div class="concept-lesson-links"><a href="/sorting/heap">Open the planned Heap Sort lesson →</a><a href="/structures/binary-heap">Learn Binary Heap first →</a></div>
     </section>
 
     <section class="concept-section implementation-note">
@@ -620,44 +707,6 @@
         <div class="plain-note">
             <strong>What our code does itself</strong>
             <p>Linear structures keep and grow their own raw array and move references with manual loops. BST, AVL, and Red-Black Tree keep explicit node links and perform their own comparisons, transplants, recoloring, and rotations. BST Balance uses our own Day-Stout-Warren vine/compression logic over those same node references. Heap uses its own growable raw array and manual index swaps for bubble-up/bubble-down instead of PriorityQueue or a library heap. Matrix uses its own row-major <code>double[]</code>, manual cell/index loops, row operations, multiplication and elimination instead of a numerical or linear-algebra library. Graph keeps canonical vertex/edge objects, manual adjacency lists over our own dynamic-array storage, and reuses ManualMatrix for the synchronized adjacency table instead of a graph package or dictionary-backed graph. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the taught data-structure algorithms for us.</p>
-        </div>
-    </section>
-
-    <section class="concept-section">
-        <div class="section-heading">
-            <span>05</span>
-            <div><h2>Does delete work the same in every language?</h2><p>The idea is similar, but the details depend on the container and memory model.</p></div>
-        </div>
-        <div class="concept-grid two">
-            <article class="concept-card"><span class="term">C# / JAVA</span><h3>Dynamic list</h3><p>Removing from the middle of a List/ArrayList moves later references left. The object itself is cleaned up later when it is no longer reachable.</p><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/ArrayList.html" target="_blank" rel="noreferrer">Oracle: Java ArrayList ↗</a></article>
-            <article class="concept-card"><span class="term">PYTHON</span><h3>Python list</h3><p>A list keeps object references. Removing an item closes the list position; object lifetime depends on whether other references still exist.</p><a href="https://docs.python.org/3/tutorial/datastructures.html" target="_blank" rel="noreferrer">Python docs: data structures ↗</a></article>
-            <article class="concept-card"><span class="term">JAVASCRIPT</span><h3>Array: splice vs delete</h3><p><code>splice</code> removes an array item and closes the gap. The <code>delete</code> operator is different: it can leave an empty slot.</p><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/splice" target="_blank" rel="noreferrer">MDN: Array.splice ↗</a></article>
-            <article class="concept-card"><span class="term">RUST / C++</span><h3>Vector-style storage</h3><p>Removing from a vector usually moves later values left. Rust also offers <code>swap_remove</code> when order does not matter.</p><a href="https://doc.rust-lang.org/std/vec/struct.Vec.html#method.remove" target="_blank" rel="noreferrer">Rust docs: Vec.remove ↗</a></article>
-        </div>
-        <div class="plain-note"><strong>C is more manual.</strong><p>A plain C array does not have a built-in “delete item” operation. Your code decides whether to shift values, keep a logical length, or manage separate nodes and call <code>free</code>. That is why the app always names the storage type instead of saying “delete always works this way”.</p></div>
-    </section>
-
-    <section id="visual-vs-memory" class="concept-section">
-        <div class="section-heading">
-            <span>06</span>
-            <div><h2>Visual state vs memory state</h2><p>The picture we draw for learning is not necessarily the shape of RAM.</p></div>
-        </div>
-        <div class="split-demo">
-            <article>
-                <span>VISUAL STATE</span>
-                <strong>What helps you understand the rule</strong>
-                <p>A Stack is drawn vertically because “top” is easy to understand. A graph may later be drawn as circles connected by lines.</p>
-            </article>
-            <div class="split-arrow">→</div>
-            <article>
-                <span>MEMORY STATE</span>
-                <strong>How the program stores data</strong>
-                <p>The same graph might be stored as objects, arrays, dictionaries, lists of neighbors, or indexes. The screen position of a node is not its memory address.</p>
-            </article>
-        </div>
-        <div class="plain-note warning">
-            <strong>Important for future graph simulations</strong>
-            <p>Two nodes can look far apart on screen but be next to each other in an array. Or they can look next to each other on screen while their objects live in unrelated places in managed memory. The app will keep these two views separate.</p>
         </div>
     </section>
 

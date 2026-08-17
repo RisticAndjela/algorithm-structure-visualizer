@@ -138,6 +138,11 @@
                 : "Memory state shows root, parent/left/right references, node identity, and color. Null child references are the conceptual black NIL leaves used by the algorithm.")</p>
         </div>
 
+        <div class="lesson-reference-links" aria-label="Concepts and memory links">
+            <a href="/learn/concepts#red-black">Red-Black concepts →</a>
+            <a href="/learn/concepts#visual-vs-memory">Red-Black links & memory →</a>
+        </div>
+
         @if (_activeStateView == StateView.Visual)
         {
             <RedBlackVisualization Root="@DisplayedRoot" Count="@DisplayedCount" Height="@DisplayedHeight" BlackHeight="@DisplayedBlackHeight" />
@@ -189,6 +194,12 @@
             }
         </div>
     </section>
+    <NextLessonCard Title="Bubble Sort"
+                    Description="Start the sorting track with the simplest compare-and-swap algorithm."
+                    Href="/sorting/bubble"
+                    Level="NEXT TRACK · Beginner"
+                    LinkLabel="Start sorting" />
+
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)

@@ -8,38 +8,19 @@
 
 <PageTitle>Merge Sort — Algorithm Visualizer</PageTitle>
 
-<div class="merge-page">
+<div class="merge-page learning-module-page learning-module-shell">
     <section class="learn-launchpad" aria-labelledby="merge-learn-title">
         <div class="learn-copy">
             <span class="section-kicker">LEARN FIRST</span>
-            <h2 id="merge-learn-title">Merge Sort solves one large sort by combining smaller sorted runs.</h2>
-            <p>
-                The important idea is not “compare every pair.” First make smaller sorting problems. Once two neighboring pieces are sorted,
-                compare only the <b>front unread value</b> of each piece and build one larger sorted result in a temporary buffer.
-            </p>
-            <div class="learn-rule">
-                <span>DIVIDE → SORT SMALL PIECES → MERGE</span>
-                <div class="rule-example"><strong>8</strong><strong>3</strong><i>|</i><strong>5</strong><strong>1</strong><i>→</i><strong>1</strong><strong>3</strong><strong>5</strong><strong>8</strong></div>
-                <small>The merge step is efficient because both input runs are already sorted. You only need to inspect their fronts.</small>
-            </div>
-            <div class="learn-actions">
-                <a class="primary-link" href="#merge-lab">Try Merge Sort ↓</a>
-                <a href="/learn/concepts#merge-sort">Merge Sort concepts &amp; memory →</a>
-            </div>
+            <h2 id="merge-learn-title">Merge Sort divides first and orders while merging back.</h2>
+            <p>Split one range into smaller ranges until a single item is the base case. Then combine two already-sorted child ranges by comparing only their unread fronts.</p>
+            <a class="learn-launchpad-link" href="/learn/concepts#merge-sort">Open Merge Sort concepts & memory →</a>
         </div>
-
-        <div class="pass-story" aria-label="Merge Sort divide and merge explanation">
-            <div class="story-heading"><span>CLASSIC MERGE SORT</span><strong>First go down the recursion tree. Then merge back up.</strong></div>
-            <div class="story-row"><span>8</span><span>3</span><span>5</span><span>1</span></div>
-            <div class="story-arrow">↓ divide in half ↓</div>
-            <div class="story-group-row"><span>[8, 3]</span><span>[5, 1]</span></div>
-            <div class="story-arrow">↓ divide again until one item remains ↓</div>
-            <div class="story-group-row singles"><span>[8]</span><span>[3]</span><span>[5]</span><span>[1]</span></div>
-            <div class="story-arrow">↑ merge sorted children back into their parent ↑</div>
-            <div class="story-group-row"><span>[3, 8]</span><span>[1, 5]</span></div>
-            <div class="story-arrow">↑ final merge ↑</div>
-            <div class="story-row result"><span class="fixed">1</span><span class="fixed">3</span><span class="fixed">5</span><span class="fixed">8</span></div>
-            <p>The split phase does not move values. Ordering happens while two already-sorted child ranges are merged through the temporary buffer.</p>
+        <div class="learn-grid">
+            <article class="learn-card purple"><span>DIVIDE</span><strong>Split the current range in half</strong><small>Top-down Merge Sort keeps dividing the problem before it tries to combine anything.</small></article>
+            <article class="learn-card mint"><span>BASE CASE</span><strong>One item is already sorted</strong><small>Single-item ranges stop the recursion and give the merge phase something correct to build from.</small></article>
+            <article class="learn-card blue"><span>MERGE BACK</span><strong>Combine two sorted child ranges</strong><small>Compare only the two unread fronts, write the smaller one to the buffer, and continue.</small></article>
+            <article class="learn-card gold"><span>MEMORY</span><strong>Use one visible O(n) buffer</strong><small>The temporary array makes stable merging straightforward, then values are copied back to the main array.</small></article>
         </div>
     </section>
 
@@ -55,6 +36,12 @@
             <div><span>Extra memory</span><strong>O(n)</strong><small>temporary merge buffer</small></div>
         </div>
     </header>
+
+    <section class="smart-tip" aria-label="merge learning tip">
+        <span class="tip-icon">✦</span>
+        <div><strong>Before every step:</strong><p>During the divide phase, do not expect values to move. Sorting becomes visible only when already-sorted child ranges merge back upward.</p></div>
+        <a href="/learn/concepts#merge-sort">See the recursion and buffer model →</a>
+    </section>
 
     <section class="implementation-section" aria-labelledby="merge-implementation-title">
         <div class="section-heading-row">
@@ -141,9 +128,19 @@
             </div>
         </div>
 
-        <div class="state-tabs" role="tablist" aria-label="Merge Sort state view">
-            <button type="button" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state <small>recursion tree → sorted runs → buffer → merge back</small></button>
-            <button type="button" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state <small>main array + O(n) auxiliary buffer</small></button>
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist" aria-label="Merge Sort state view">
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state</button>
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
+            </div>
+            <p>@(_view == StateView.Visual
+                ? "The visual view separates recursive splitting from merge-back, so the recursion tree and the two sorted input runs stay easy to follow."
+                : "The memory view shows the main array beside the O(n) auxiliary buffer and makes copy-back writes explicit.")</p>
+        </div>
+
+        <div class="lesson-reference-links" aria-label="Concepts and memory links">
+            <a href="/learn/concepts#merge-sort">Merge Sort concepts →</a>
+            <a href="/learn/concepts#merge-sort">Merge Sort buffer & stability →</a>
         </div>
 
         <div class="visualizer-shell">
@@ -232,6 +229,12 @@
             }
         </div>
     </section>
+    <NextLessonCard Title="Quick Sort"
+                    Description="Next, compare merge-based divide-and-conquer with pivot partitioning. The Quick Sort lab is the next planned implementation."
+                    Href="/sorting/quick"
+                    Level="05 · Intermediate · Planned"
+                    LinkLabel="Preview Quick Sort" />
+
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)
@@ -250,7 +253,7 @@
             }
             else
             {
-                <div class="popup-body"><h3>The O(n) buffer is part of the algorithmic trade-off.</h3><p>This run performed <strong>@_lastResult.Writes writes</strong> across the temporary buffer and main array. Equal-item order was <strong>@(_lastResult.PreservedEqualValueOrder ? "preserved" : "changed")</strong>.</p><p>During an active Merge Sort, CREATE/UPDATE/DELETE invalidates run boundaries and buffer state, so the run must restart from the changed dataset.</p><a class="popup-concept-link" href="/learn/concepts#memory">Review memory concepts →</a></div>
+                <div class="popup-body"><h3>The O(n) buffer is part of the algorithmic trade-off.</h3><p>This run performed <strong>@_lastResult.Writes writes</strong> across the temporary buffer and main array. Equal-item order was <strong>@(_lastResult.PreservedEqualValueOrder ? "preserved" : "changed")</strong>.</p><p>During an active Merge Sort, CREATE/UPDATE/DELETE invalidates run boundaries and buffer state, so the run must restart from the changed dataset.</p><a class="popup-concept-link" href="/learn/concepts#merge-sort">Review merge sort buffer & stability →</a></div>
             }
         </section>
     </div>

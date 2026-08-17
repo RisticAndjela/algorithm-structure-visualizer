@@ -15,7 +15,7 @@
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="learn-launchpad-title">Start with the big idea, then practice it.</h2>
             <p>Use this page like a lab: learn one simple rule, try it, then check the visual and memory views.</p>
-            <a class="learn-launchpad-link" href="/learn/concepts">Open the Concepts guide →</a>
+            <a class="learn-launchpad-link" href="/learn/concepts#queue-stack">Open Queue & Stack concepts →</a>
         </div>
         <div class="learn-launchpad-grid">
             <a class="launch-card lifo" href="/learn/concepts#lifo-fifo">
@@ -51,7 +51,7 @@
             <h1>Queue &amp; Stack</h1>
             <p>Build, search, delete, and compare what you see on screen with a simple memory view.</p>
         </div>
-        <a class="header-concepts-link" href="/learn/concepts">Open concepts guide →</a>
+        <a class="header-concepts-link" href="/learn/concepts#queue-stack">Open Queue & Stack concepts →</a>
     </header>
 
     <section class="smart-tip" aria-label="Learning tip">
@@ -198,6 +198,11 @@
                 : "Memory state shows a simple model of how the app stores items and references.")</p>
         </div>
 
+        <div class="lesson-reference-links" aria-label="Concepts and memory links">
+            <a href="/learn/concepts#queue-stack">Queue & Stack concepts →</a>
+            <a href="/learn/concepts#memory">Memory basics →</a>
+        </div>
+
         @if (_activeStateView == StateView.Visual)
         {
             <SimulationViewport>
@@ -271,6 +276,12 @@
             }
         </div>
     </section>
+    <NextLessonCard Title="Binary Search Tree"
+                    Description="Move from linear order to branching: one comparison chooses left or right."
+                    Href="/structures/bst"
+                    Level="02 · Beginner"
+                    LinkLabel="Open BST lesson" />
+
 </div>
 
 @if (_lastRunPopupOpen && _lastTraversalResult is not null)

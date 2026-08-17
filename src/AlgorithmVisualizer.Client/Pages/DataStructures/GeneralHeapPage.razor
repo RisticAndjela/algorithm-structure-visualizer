@@ -157,6 +157,11 @@
                 : $"Memory state shows the raw array and the d = {Heap.Arity} formulas that derive parent/child relationships without pointer fields.")</p>
         </div>
 
+        <div class="lesson-reference-links" aria-label="Concepts and memory links">
+            <a href="/learn/concepts#general-heap">d-ary Heap concepts →</a>
+            <a href="/learn/concepts#memory">Heap array memory →</a>
+        </div>
+
         @if (_activeStateView == StateView.Visual)
         {
             <DaryHeapVisualization Snapshot="@DisplayedSnapshot" />
@@ -198,6 +203,12 @@
             }
         </div>
     </section>
+    <NextLessonCard Title="AVL Tree"
+                    Description="Move from priority ordering to a BST that automatically repairs its height with rotations."
+                    Href="/structures/avl"
+                    Level="05 · Intermediate"
+                    LinkLabel="Open AVL lesson" />
+
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)

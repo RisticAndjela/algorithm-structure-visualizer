@@ -8,32 +8,19 @@
 
 <PageTitle>Selection Sort — Algorithm Visualizer</PageTitle>
 
-<div class="selection-page">
+<div class="selection-page learning-module-page learning-module-shell">
     <section class="learn-launchpad" aria-labelledby="selection-learn-title">
         <div class="learn-copy">
             <span class="section-kicker">LEARN FIRST</span>
-            <h2 id="selection-learn-title">Selection Sort searches first and swaps second.</h2>
-            <p>
-                Pick the next empty position on the left. Then inspect <b>every value that is still unsorted</b>, remember the smallest one,
-                and only after the scan is finished move that minimum into the chosen position.
-            </p>
-            <div class="learn-rule">
-                <span>ONE PASS = SEARCH → SELECT → SWAP</span>
-                <div class="rule-example"><strong>29</strong><strong>10</strong><strong>14</strong><strong>7</strong><i>→</i><strong>7</strong></div>
-                <small>The minimum is not known after one comparison. Keep scanning until the whole unsorted region has been checked.</small>
-            </div>
-            <div class="learn-actions">
-                <a class="primary-link" href="#selection-lab">Try Selection Sort ↓</a>
-                <a href="/learn/concepts#selection-sort">Selection Sort concepts &amp; memory →</a>
-            </div>
+            <h2 id="selection-learn-title">Selection Sort searches first, then places one value.</h2>
+            <p>Choose the next destination on the left, scan the entire unsorted region, remember the smallest value, and only then place that minimum into the destination.</p>
+            <a class="learn-launchpad-link" href="/learn/concepts#selection-sort">Open Selection Sort concepts & memory →</a>
         </div>
-
-        <div class="pass-story" aria-label="Selection Sort pass explanation">
-            <div class="story-heading"><span>ONE PASS</span><strong>Separate searching from swapping.</strong></div>
-            <div class="story-row"><span class="target">29</span><span>10</span><span>14</span><span class="candidate">7</span><span>18</span></div>
-            <div class="story-arrow">scan all remaining values → minimum = 7 → one direct swap</div>
-            <div class="story-row result"><span class="fixed">7</span><span>10</span><span>14</span><span>29</span><span>18</span></div>
-            <p>Only index 0 is guaranteed finished after this pass. The next pass starts at index 1.</p>
+        <div class="learn-grid">
+            <article class="learn-card purple"><span>DESTINATION</span><strong>Choose the next position to finish</strong><small>The left prefix grows by exactly one finished position per pass.</small></article>
+            <article class="learn-card mint"><span>SCAN</span><strong>Inspect every remaining value</strong><small>Do not swap as soon as a smaller value appears; keep searching for the true minimum.</small></article>
+            <article class="learn-card blue"><span>PLACE</span><strong>Move the minimum only after scanning</strong><small>Classic mode swaps once; Stable Shift moves a block and inserts the minimum.</small></article>
+            <article class="learn-card gold"><span>STABILITY</span><strong>Placement strategy matters</strong><small>Classic Selection Sort is not stable. The advanced shift variant preserves equal-item order.</small></article>
         </div>
     </section>
 
@@ -49,6 +36,12 @@
             <div><span>Extra space</span><strong>O(1)</strong><small>@(_variant == SelectionSortVariant.StableShift ? "stable shifting" : "few direct swaps")</small></div>
         </div>
     </header>
+
+    <section class="smart-tip" aria-label="selection learning tip">
+        <span class="tip-icon">✦</span>
+        <div><strong>Before every step:</strong><p>Before a pass finishes, point to the smallest value in the entire unsorted region — not just the smallest value seen so far.</p></div>
+        <a href="/learn/concepts#selection-sort">Why Selection still does Θ(n²) comparisons →</a>
+    </section>
 
     <section class="implementation-section" aria-labelledby="selection-implementation-title">
         <div class="section-heading-row">
@@ -154,9 +147,19 @@
             </div>
         </div>
 
-        <div class="state-tabs" role="tablist" aria-label="Selection Sort state view">
-            <button type="button" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state <small>where the search is looking</small></button>
-            <button type="button" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state <small>what the direct swap changes</small></button>
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist" aria-label="Selection Sort state view">
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state</button>
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
+            </div>
+            <p>@(_view == StateView.Visual
+                ? "The visual view shows the destination index, current minimum candidate, scan position, and the sorted prefix growing on the left."
+                : "The memory view keeps array indexes and element identities visible so you can see classic swaps versus stable shifting.")</p>
+        </div>
+
+        <div class="lesson-reference-links" aria-label="Concepts and memory links">
+            <a href="/learn/concepts#selection-sort">Selection Sort concepts →</a>
+            <a href="/learn/concepts#selection-sort">Selection Sort memory & stability →</a>
         </div>
 
         <div class="visualizer-shell">
@@ -268,6 +271,12 @@
             }
         </div>
     </section>
+    <NextLessonCard Title="Insertion Sort"
+                    Description="Move from selecting a global minimum to incrementally growing a sorted prefix."
+                    Href="/sorting/insertion"
+                    Level="03 · Beginner"
+                    LinkLabel="Open Insertion Sort" />
+
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)

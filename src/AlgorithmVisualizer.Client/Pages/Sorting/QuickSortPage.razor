@@ -12,4 +12,13 @@
     TipTitle="Partition first, recursion second."
     TipText="A partition does not fully sort the array. It only guarantees that the pivot is in its final place and values are separated into the correct side regions."
     FocusText="The future visualization should expose pivot position, scanning pointers, and the partition invariant throughout the pass."
-    PromptText="What is already guaranteed about values on each side of the pivot?" />
+    PromptText="What is already guaranteed about values on each side of the pivot?"
+    LearnTitle="Quick Sort gives one pivot its final position, then solves the two sides."
+    LearnSummary="Partitioning is the core idea: choose a pivot, rearrange values around it, then recurse only on the unfinished left and right regions."
+    ConceptHref="/learn/concepts#quick-sort"
+    LearnCards="PIVOT|Choose one reference value|The pivot is used to split the current range into values that belong on different sides.;;PARTITION|Rearrange before recursing|A partition does not fully sort the range; it establishes the side invariant around the pivot.;;RECURSION|Solve smaller ranges next|After partitioning, only the left and right unfinished regions need recursive work.;;RISK|Bad pivots create deep recursion|Highly unbalanced partitions can degrade the run from average Θ(n log n) to Θ(n²)."
+    NextLessonTitle="Heap Sort"
+    NextLessonDescription="Finish the sorting track by combining heap construction with repeated root extraction."
+    NextLessonHref="/sorting/heap"
+    NextLessonLevel="06 · Advanced · Planned"
+    NextLessonLinkLabel="Preview Heap Sort" />

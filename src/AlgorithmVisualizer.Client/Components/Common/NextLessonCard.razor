@@ -1,0 +1,23 @@
+<section class="next-lesson-card" aria-label="Next lesson">
+    <div class="next-lesson-copy">
+        <div class="next-lesson-topline">
+            <span>@Eyebrow</span>
+            @if (!string.IsNullOrWhiteSpace(Level))
+            {
+                <span class="next-lesson-level">@Level</span>
+            }
+        </div>
+        <h2>@Title</h2>
+        <p>@Description</p>
+    </div>
+    <a href="@Href">@LinkLabel <span aria-hidden="true">→</span></a>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Description { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Href { get; set; } = string.Empty;
+    [Parameter] public string Eyebrow { get; set; } = "NEXT LESSON";
+    [Parameter] public string Level { get; set; } = string.Empty;
+    [Parameter] public string LinkLabel { get; set; } = "Open next lesson";
+}

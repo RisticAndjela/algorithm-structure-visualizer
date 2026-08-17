@@ -378,3 +378,63 @@
 @media (max-width: 680px) {
     .concepts-start { grid-template-columns: 1fr; }
 }
+
+/* Difficulty-ordered Concepts & Memory navigation. */
+.concept-jump {
+    display: grid;
+    gap: .75rem;
+}
+
+.concept-jump-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .45rem;
+}
+
+.concept-jump-group > span {
+    min-width: 12rem;
+    color: var(--color-text-muted);
+    font-size: .68rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+}
+
+.concept-jump-group + .concept-jump-group {
+    padding-top: .7rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.concept-lesson-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+.concept-lesson-links a {
+    display: inline-flex;
+    align-items: center;
+    padding: .55rem .72rem;
+    border: 1px solid #e4e0ff;
+    border-radius: .68rem;
+    color: #5141c4;
+    background: #fbfaff;
+    text-decoration: none;
+    font-size: .78rem;
+    font-weight: 790;
+}
+
+@media (max-width: 720px) {
+    .concept-jump-group {
+        align-items: stretch;
+    }
+
+    .concept-jump-group > span {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
+.anchor-card {
+    scroll-margin-top: 5rem;
+}

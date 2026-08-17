@@ -12,4 +12,14 @@
     TipTitle="Keep the heap boundary visible."
     TipText="The same array contains two logical regions: an active heap and a finished sorted suffix. The boundary moves after every extraction."
     FocusText="The simulation should make the active heap size explicit so swaps in the sorted suffix can never be mistaken for heap members."
-    PromptText="Which region is still a heap, and which region is already final?" />
+    PromptText="Which region is still a heap, and which region is already final?"
+    LearnTitle="Heap Sort turns one array into an active heap plus a sorted suffix."
+    LearnSummary="Build a Max Heap, move its root to the end, shrink the heap boundary, and repair the remaining heap with sift-down."
+    ConceptHref="/learn/concepts#heap-sort"
+    LearnCards="BUILD|Create the heap first|Heapify establishes the parent ≥ child rule before repeated extraction begins.;;ROOT|The maximum lives at index 0|In a Max Heap, the root is the next value that belongs at the end of the sorted array.;;BOUNDARY|Shrink the active heap|After moving the root to the end, that suffix position is final and leaves the heap.;;REPAIR|Sift the new root down|Restore the heap property only inside the reduced active heap."
+    NextLessonEyebrow="NEXT TRACK PREP"
+    NextLessonTitle="Review complexity before search algorithms"
+    NextLessonDescription="Use Concepts & Memory to review Big-O and representation trade-offs before the search-algorithm track is implemented."
+    NextLessonHref="/learn/concepts#big-o"
+    NextLessonLevel="Sorting track complete"
+    NextLessonLinkLabel="Review Big-O" />

@@ -8,32 +8,19 @@
 
 <PageTitle>Bubble Sort — Algorithm Visualizer</PageTitle>
 
-<div class="bubble-page">
+<div class="bubble-page learning-module-page learning-module-shell">
     <section class="learn-launchpad" aria-labelledby="bubble-learn-title">
         <div class="learn-copy">
             <span class="section-kicker">LEARN FIRST</span>
-            <h2 id="bubble-learn-title">Bubble Sort fixes one neighbor pair at a time.</h2>
-            <p>
-                Look at two values next to each other. If the left value is larger, swap them.
-                Keep moving right. A large value can move several times in one pass until it reaches the part of the array where it belongs.
-            </p>
-            <div class="learn-rule">
-                <span>THE ONLY DECISION</span>
-                <div class="rule-example"><strong>7</strong><span>&gt;</span><strong>3</strong><i>→</i><strong>3</strong><strong>7</strong></div>
-                <small><b>7 &gt; 3</b>, so swap. If left ≤ right, keep the pair.</small>
-            </div>
-            <div class="learn-actions">
-                <a class="primary-link" href="#bubble-lab">Try Bubble Sort ↓</a>
-                <a href="/learn/concepts#bubble-sort">Bubble Sort concepts &amp; memory →</a>
-            </div>
+            <h2 id="bubble-learn-title">Bubble Sort repeats one tiny rule: compare neighbors.</h2>
+            <p>If the left neighbor is larger than the right neighbor, swap them. Repeat that local decision across the unsorted region until the array is ordered.</p>
+            <a class="learn-launchpad-link" href="/learn/concepts#bubble-sort">Open Bubble Sort concepts & memory →</a>
         </div>
-
-        <div class="pass-story" aria-label="Bubble Sort pass explanation">
-            <div class="story-heading"><span>ONE PASS</span><strong>Why does the largest value end on the right?</strong></div>
-            <div class="story-row"><span>5</span><span>1</span><span>4</span><span>2</span><span>8</span></div>
-            <div class="story-arrow">compare → swap when needed → keep moving right</div>
-            <div class="story-row result"><span>1</span><span>4</span><span>2</span><span>5</span><span class="fixed">8</span></div>
-            <p>After the pass, the largest remaining value is fixed. The next pass can stop one position earlier.</p>
+        <div class="learn-grid">
+            <article class="learn-card purple"><span>NEIGHBORS</span><strong>Compare only a[j] and a[j+1]</strong><small>Bubble Sort never jumps across the array to compare distant values.</small></article>
+            <article class="learn-card mint"><span>PASS</span><strong>Largest remaining value moves right</strong><small>After one complete pass, one more position at the end is final.</small></article>
+            <article class="learn-card blue"><span>STABLE</span><strong>Equal values keep their order</strong><small>The implementation swaps only when left > right, never merely because values are equal.</small></article>
+            <article class="learn-card gold"><span>MEMORY</span><strong>In-place with O(1) extra space</strong><small>The same array is updated through adjacent swaps; no second array is needed.</small></article>
         </div>
     </section>
 
@@ -49,6 +36,12 @@
             <div><span>Extra space</span><strong>O(1)</strong><small>stable, in-place neighbor swaps</small></div>
         </div>
     </header>
+
+    <section class="smart-tip" aria-label="bubble learning tip">
+        <span class="tip-icon">✦</span>
+        <div><strong>Before every step:</strong><p>Before each comparison, predict whether the highlighted neighbors should swap or stay.</p></div>
+        <a href="/learn/concepts#bubble-sort">Why the sorted suffix is safe →</a>
+    </section>
 
     <section class="implementation-section" aria-labelledby="bubble-implementation-title">
         <div class="section-heading-row">
@@ -155,9 +148,19 @@
             </div>
         </div>
 
-        <div class="state-tabs" role="tablist" aria-label="Bubble Sort state view">
-            <button type="button" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state <small>what the algorithm is doing</small></button>
-            <button type="button" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state <small>what swaps change in the array</small></button>
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist" aria-label="Bubble Sort state view">
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state</button>
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
+            </div>
+            <p>@(_view == StateView.Visual
+                ? "The visual view shows adjacent comparisons, swaps, and the sorted suffix growing on the right."
+                : "The memory view shows the same fixed array slots and element identities, so duplicate stability and in-place swaps are explicit.")</p>
+        </div>
+
+        <div class="lesson-reference-links" aria-label="Concepts and memory links">
+            <a href="/learn/concepts#bubble-sort">Bubble Sort concepts →</a>
+            <a href="/learn/concepts#bubble-sort">Bubble Sort memory & stability →</a>
         </div>
 
         <div class="visualizer-shell">
@@ -269,6 +272,12 @@
             }
         </div>
     </section>
+    <NextLessonCard Title="Selection Sort"
+                    Description="Keep quadratic time, but separate searching for the next minimum from moving it into place."
+                    Href="/sorting/selection"
+                    Level="02 · Beginner"
+                    LinkLabel="Open Selection Sort" />
+
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)
