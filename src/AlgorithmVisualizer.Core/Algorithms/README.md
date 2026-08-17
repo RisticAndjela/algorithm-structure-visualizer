@@ -57,4 +57,22 @@ Complexity taught by the module:
 
 Insertion Sort is also taught as an online algorithm: after the collection is sorted, a new item can be inserted incrementally, delete preserves order, and update can be repaired by remove + reinsert. UI playback frames are still snapshot-specific and restart after mutation.
 
-Merge Sort, Quick Sort, and Heap Sort are still planned and must not be presented as interactive until their Core logic exists.
+### Merge Sort
+
+Route: `/sorting/merge`
+
+Core namespace: `AlgorithmVisualizer.Core.Algorithms.Sorting.Merge`
+
+The implementation is written from scratch over stable teaching elements plus one reusable auxiliary array. **TopDownRecursive** performs canonical midpoint splitting and recursive merge-up. **NaturalRuns** scans for maximal nondecreasing runs and merges neighboring runs directly, allowing a fully sorted input to finish after one `Θ(n)` run-detection scan with zero merges. Both variants merge stably by choosing the left-run item first when values are equal.
+
+Complexity taught by the module:
+
+- Top-down best/average/worst: `Θ(n log n)`;
+- Natural Merge best case on one existing run: `Θ(n)`;
+- Natural Merge worst case: `Θ(n log n)`;
+- reusable auxiliary buffer: `O(n)`;
+- top-down recursion stack: `O(log n)`.
+
+Active create/update/delete mutations require restart because range boundaries, run boundaries, and buffer contents belong to the old snapshot.
+
+Quick Sort and Heap Sort are still planned and must not be presented as interactive until their Core logic exists.

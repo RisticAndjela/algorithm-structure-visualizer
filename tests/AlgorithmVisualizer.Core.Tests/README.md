@@ -95,3 +95,13 @@ The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctnes
 - Binary Insertion reducing key comparisons while preserving the same shifts;
 - stable upper-bound behavior for duplicates;
 - the one-element boundary and online-maintenance capability flags.
+
+
+`Algorithms/Sorting/Merge/MergeSortSimulationTests.cs` verifies:
+
+- canonical Top-down split/merge counts and exact work on a small classic example;
+- already-sorted Top-down input still follows the canonical recursion tree;
+- Natural Merge recognizes one sorted run and skips merging;
+- two existing natural runs collapse in one merge pass;
+- stable duplicate identity through left-first equality handling;
+- the one-item zero-work boundary and mutation-restart capability flag.

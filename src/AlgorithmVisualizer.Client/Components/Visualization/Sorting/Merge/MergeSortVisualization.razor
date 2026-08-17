@@ -1,0 +1,99 @@
+@using AlgorithmVisualizer.Core.Algorithms.Sorting.Merge
+
+<section class="merge-visualization" aria-label="Merge Sort visual state">
+    @if (Snapshot.Count == 0)
+    {
+        <div class="empty-state"><strong>No values yet.</strong><span>Load an array to see how Merge Sort divides it into runs and merges them back.</span></div>
+    }
+    else
+    {
+        <div class="range-story">
+            <div><span>ACTIVE RANGE</span><strong>@ActiveRangeText</strong></div>
+            <div><span>LEFT RUN</span><strong>@LeftRunText</strong></div>
+            <div><span>RIGHT RUN</span><strong>@RightRunText</strong></div>
+            <div><span>PHASE</span><strong>@PhaseText</strong></div>
+        </div>
+
+        <div class="array-track" role="list" aria-label="Current main array">
+            @for (var index = 0; index < Snapshot.Elements.Length; index++)
+            {
+                var element = Snapshot.Elements[index];
+                <article class="sort-item @StateClass(index, element)" role="listitem">
+                    <span class="index-label">index @index</span>
+                    <strong>@element.Value</strong>
+                    <span class="identity-label">item #@(element.OriginalIndex + 1)</span>
+                    <span class="state-label">@StateLabel(index, element)</span>
+                </article>
+            }
+        </div>
+
+        <div class="merge-direction" aria-hidden="true">main array ↓ compare fronts ↓ temporary buffer ↓ copy back</div>
+
+        <div class="buffer-track" role="list" aria-label="Temporary merge buffer">
+            @for (var index = 0; index < Snapshot.Buffer.Length; index++)
+            {
+                var slot = Snapshot.Buffer[index];
+                <article class="buffer-slot @(slot.IsWriteTarget ? "write-target" : string.Empty) @(slot.Occupied ? "occupied" : string.Empty)" role="listitem">
+                    <span>buffer[@index]</span>
+                    <strong>@(slot.Occupied ? slot.Value.ToString() : "·")</strong>
+                    <small>@(slot.Occupied ? $"item #{slot.OriginalIndex + 1}" : "empty")</small>
+                </article>
+            }
+        </div>
+
+        <div class="legend">
+            <span><i class="swatch left"></i>Left run</span>
+            <span><i class="swatch right"></i>Right run</span>
+            <span><i class="swatch compare"></i>Front values compared</span>
+            <span><i class="swatch write"></i>Copy-back target</span>
+            <span><i class="swatch sorted"></i>Finished</span>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public MergeSortSnapshot Snapshot { get; set; } = default!;
+
+    private string ActiveRangeText => Snapshot.ActiveStart < 0 ? "—" : $"[{Snapshot.ActiveStart}..{Snapshot.ActiveEnd}]";
+    private string LeftRunText => Snapshot.ActiveStart < 0 || Snapshot.LeftEnd < 0 ? "—" : $"[{Snapshot.ActiveStart}..{Snapshot.LeftEnd}]";
+    private string RightRunText => Snapshot.RightStart < 0 ? "—" : $"[{Snapshot.RightStart}..{Snapshot.ActiveEnd}]";
+    private string PhaseText => Snapshot.Phase switch
+    {
+        MergeSortPhase.Splitting => "DIVIDE",
+        MergeSortPhase.DetectingRuns => "DETECT RUNS",
+        MergeSortPhase.Comparing => "COMPARE FRONTS",
+        MergeSortPhase.FillingBuffer => "WRITE BUFFER",
+        MergeSortPhase.CopyingBack => "COPY BACK",
+        MergeSortPhase.MergeComplete => "RUN MERGED",
+        MergeSortPhase.Complete => "SORTED",
+        _ => "READY"
+    };
+
+    private string StateClass(int index, MergeSortElementSnapshot element)
+    {
+        var classes = new List<string>();
+        if (index == Snapshot.LeftReadIndex || index == Snapshot.RightReadIndex) classes.Add("is-comparing");
+        if (Snapshot.Phase == MergeSortPhase.CopyingBack && index == Snapshot.WriteIndex) classes.Add("is-writing");
+        classes.Add(element.VisualState switch
+        {
+            MergeSortElementVisualState.LeftRun => "is-left",
+            MergeSortElementVisualState.RightRun => "is-right",
+            MergeSortElementVisualState.Comparing => "is-comparing",
+            MergeSortElementVisualState.Writing => "is-writing",
+            MergeSortElementVisualState.Sorted => "is-sorted",
+            _ => string.Empty
+        });
+        return string.Join(" ", classes.Where(value => !string.IsNullOrWhiteSpace(value)));
+    }
+
+    private string StateLabel(int index, MergeSortElementSnapshot element)
+    {
+        if (Snapshot.Phase == MergeSortPhase.Complete) return "SORTED";
+        if (index == Snapshot.LeftReadIndex) return "LEFT FRONT";
+        if (index == Snapshot.RightReadIndex) return "RIGHT FRONT";
+        if (Snapshot.Phase == MergeSortPhase.CopyingBack && index == Snapshot.WriteIndex) return "WRITE BACK";
+        if (element.VisualState == MergeSortElementVisualState.LeftRun) return "LEFT RUN";
+        if (element.VisualState == MergeSortElementVisualState.RightRun) return "RIGHT RUN";
+        return "WAITING";
+    }
+}

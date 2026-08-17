@@ -37,4 +37,13 @@ Insertion Sort exposes two real Core modes:
 
 The page makes the held key and temporary gap explicit in both Visual and Memory views. It teaches the sorted-prefix invariant, adaptive behavior, duplicate stability, practical workload fit, and the online CRUD property: a sorted collection can accept incremental insertions without a full re-sort, delete preserves order, and update can be repaired by remove + reinsert. Recorded playback frames remain snapshot based and restart after mutation.
 
-Merge, Quick, and Heap Sort remain TODO placeholders until their Core implementations are added.
+## Merge Sort — live
+
+Merge Sort exposes two real Core modes:
+
+- **Top-down Recursive** — canonical divide-and-conquer midpoint splitting and recursive merge-up; `Θ(n log n)` best/average/worst;
+- **Natural Merge** — detects maximal nondecreasing runs already present in the input; adaptive `Θ(n)` best case for one sorted run and `Θ(n log n)` worst case.
+
+Both modes use one reusable `O(n)` auxiliary buffer and preserve duplicate identity by selecting from the left run on equality. Visual State exposes active ranges, run fronts, buffer writes, and copy-back. Memory State shows the main array and auxiliary buffer side by side. Reads are safe during analysis, but active create/update/delete mutations require a new run because range/run boundaries and playback frames belong to the previous snapshot.
+
+Quick and Heap Sort remain TODO placeholders until their Core implementations are added.

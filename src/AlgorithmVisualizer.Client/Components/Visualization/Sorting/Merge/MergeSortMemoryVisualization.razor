@@ -1,0 +1,55 @@
+@using AlgorithmVisualizer.Core.Algorithms.Sorting.Merge
+
+<section class="merge-memory" aria-label="Merge Sort memory state">
+    <div class="memory-note">
+        <div><span>ACTUAL TEACHING STORAGE</span><strong>Main <code>MergeSortElement[]</code> + temporary <code>MergeSortElement?[]</code></strong></div>
+        <p>Unlike the first three sorting labs, Merge Sort uses an auxiliary buffer. During each merge, stable element references are written into the buffer and then copied back into the main array.</p>
+    </div>
+
+    @if (Snapshot.Count == 0)
+    {
+        <div class="empty-memory">Load an array to inspect the two storage regions.</div>
+    }
+    else
+    {
+        <div class="memory-block">
+            <header><span>MAIN ARRAY</span><strong>@Snapshot.Count fixed slots</strong></header>
+            <div class="slot-strip">
+                @for (var index = 0; index < Snapshot.Elements.Length; index++)
+                {
+                    var element = Snapshot.Elements[index];
+                    <article class="memory-slot @(index == Snapshot.LeftReadIndex || index == Snapshot.RightReadIndex ? "active-read" : string.Empty)">
+                        <span>[@index]</span><strong>@element.Value</strong><small>item #@(element.OriginalIndex + 1)</small>
+                    </article>
+                }
+            </div>
+        </div>
+
+        <div class="copy-arrow">↓ selected references are copied into O(n) auxiliary storage ↓</div>
+
+        <div class="memory-block buffer">
+            <header><span>TEMPORARY BUFFER</span><strong>reused for every merge</strong></header>
+            <div class="slot-strip">
+                @for (var index = 0; index < Snapshot.Buffer.Length; index++)
+                {
+                    var slot = Snapshot.Buffer[index];
+                    <article class="memory-slot @(slot.IsWriteTarget ? "active-write" : string.Empty) @(slot.Occupied ? "occupied" : string.Empty)">
+                        <span>[@index]</span><strong>@(slot.Occupied ? slot.Value.ToString() : "·")</strong><small>@(slot.Occupied ? $"item #{slot.OriginalIndex + 1}" : "empty")</small>
+                    </article>
+                }
+            </div>
+        </div>
+
+        <div class="memory-facts">
+            <article><span>Extra algorithmic space</span><strong>O(n)</strong><small>The buffer can hold one complete merge range, up to n elements.</small></article>
+            <article><span>Recursion stack</span><strong>@(Snapshot.Variant == MergeSortVariant.TopDownRecursive ? "O(log n)" : "O(1) control")</strong><small>@(Snapshot.Variant == MergeSortVariant.TopDownRecursive ? "Top-down recursion adds call-stack frames." : "Natural mode scans runs iteratively.")</small></article>
+            <article><span>Stability</span><strong>Preserved</strong><small>When values are equal, the left-run element is copied first.</small></article>
+        </div>
+
+        <div class="stability-note"><strong>Duplicate identity matters.</strong><p>For equal values, the comparison uses <code>left.Value &lt;= right.Value</code>. Choosing the left item first prevents an equal item from the right run from jumping ahead of an earlier equal item.</p></div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public MergeSortSnapshot Snapshot { get; set; } = default!;
+}

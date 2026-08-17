@@ -7,12 +7,12 @@ Sorting algorithm logic belongs in this pure C# Core layer. It must remain indep
 - **Bubble Sort** — manual stable adjacent-pair sort with both Basic canonical passes and an Optimized no-swap early-exit variant.
 - **Selection Sort** — manual minimum-scan sort with Classic low-swap placement and an advanced Stable Shift placement strategy.
 - **Insertion Sort** — stable incremental prefix sort with canonical Linear search and advanced Binary Insertion search.
+- **Merge Sort** — stable auxiliary-buffer sort with Basic top-down recursion and Advanced Natural Merge run detection.
 
-Bubble and Selection runs are snapshot based: arbitrary insert/delete/update changes require restart because their active invariants refer to the old data. Insertion Sort is algorithmically online: once sorted, new values can be inserted incrementally, delete preserves order, and update can be repaired by remove + reinsert. The UI playback trace itself still restarts after mutation because recorded frames describe the old snapshot.
+Bubble, Selection, and Merge runs are snapshot based: arbitrary insert/delete/update changes require restart because their active invariants refer to the old data. Insertion Sort is algorithmically online: once sorted, new values can be inserted incrementally, delete preserves order, and update can be repaired by remove + reinsert. The UI playback trace itself still restarts after mutation because recorded frames describe the old snapshot.
 
 ## Planned
 
-- Merge Sort
 - Quick Sort
 - Heap Sort
 

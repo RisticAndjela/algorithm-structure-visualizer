@@ -1,15 +1,526 @@
 @page "/sorting/merge"
+@using AlgorithmVisualizer.Core.Algorithms.Sorting.Merge
+@using AlgorithmVisualizer.Client.Components.Visualization.Sorting.Merge
+@implements IDisposable
+@inject SimulationState SimulationState
+@inject MergeSortSimulation MergeSort
+@inject IJSRuntime JS
 
 <PageTitle>Merge Sort — Algorithm Visualizer</PageTitle>
 
-<LearningPlaceholder
-    Title="Merge Sort"
-    Eyebrow="Sorting algorithm"
-    Description="Understand divide-and-conquer by watching a problem split into trivial pieces and then rebuild through ordered merges. The merge step is where the real work happens."
-    Complexity="O(n log n)"
-    ComplexityNote="Each recursion level processes n elements across log n levels."
-    Concepts="divide · recursion tree · merge · stable ordering"
-    TipTitle="Measure work by recursion level."
-    TipText="Instead of counting recursive calls individually, notice that every level touches the full input once. Then ask how many levels are created by repeatedly halving n."
-    FocusText="The lab should keep subarray boundaries visible and make the two merge cursors explicit while the output segment is rebuilt."
-    PromptText="Which of the two front values must be copied next?" />
+<div class="merge-page">
+    <section class="learn-launchpad" aria-labelledby="merge-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="merge-learn-title">Merge Sort solves one large sort by combining smaller sorted runs.</h2>
+            <p>
+                The important idea is not “compare every pair.” First make smaller sorting problems. Once two neighboring pieces are sorted,
+                compare only the <b>front unread value</b> of each piece and build one larger sorted result in a temporary buffer.
+            </p>
+            <div class="learn-rule">
+                <span>DIVIDE → SORT SMALL PIECES → MERGE</span>
+                <div class="rule-example"><strong>8</strong><strong>3</strong><i>|</i><strong>5</strong><strong>1</strong><i>→</i><strong>1</strong><strong>3</strong><strong>5</strong><strong>8</strong></div>
+                <small>The merge step is efficient because both input runs are already sorted. You only need to inspect their fronts.</small>
+            </div>
+            <div class="learn-actions">
+                <a class="primary-link" href="#merge-lab">Try Merge Sort ↓</a>
+                <a href="/learn/concepts#merge-sort">Merge Sort concepts &amp; memory →</a>
+            </div>
+        </div>
+
+        <div class="pass-story" aria-label="Merge Sort divide and merge explanation">
+            <div class="story-heading"><span>DIVIDE &amp; MERGE</span><strong>Small sorted runs become larger sorted runs.</strong></div>
+            <div class="story-row"><span>8</span><span>3</span><span>5</span><span>1</span></div>
+            <div class="story-arrow">split → [8, 3] + [5, 1] → sort halves → merge fronts</div>
+            <div class="story-row result"><span class="fixed">1</span><span class="fixed">3</span><span class="fixed">5</span><span class="fixed">8</span></div>
+            <p>The temporary buffer is not an implementation detail to hide: it is what lets the two sorted runs be combined safely and stably.</p>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow"><span>SORTING ALGORITHMS</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <h1>Merge Sort</h1>
+            <p>Watch ranges split, compare only run fronts, fill the auxiliary buffer, and copy the merged result back into the main array.</p>
+        </div>
+        <div class="complexity-summary" aria-label="Merge Sort complexity">
+            <div><span>Selected mode</span><strong>@VariantLabel</strong><small>@VariantTradeoffNote</small></div>
+            <div><span>Best case</span><strong>@(_variant == MergeSortVariant.NaturalRuns ? "Θ(n)" : "Θ(n log n)")</strong><small>@(_variant == MergeSortVariant.NaturalRuns ? "one existing natural run" : "canonical recursive split")</small></div>
+            <div><span>Extra memory</span><strong>O(n)</strong><small>temporary merge buffer</small></div>
+        </div>
+    </header>
+
+    <section class="implementation-section" aria-labelledby="merge-implementation-title">
+        <div class="section-heading-row">
+            <div><span class="section-kicker">IMPLEMENTATION CHOICE</span><h2 id="merge-implementation-title">Learn the canonical divide-and-conquer version, then try an adaptive merge strategy.</h2><p>Both variants are stable and use the same manual merge operation. They differ in how the sorted runs are obtained.</p></div>
+        </div>
+        <div class="variant-grid">
+            <button type="button" class="variant-card @(_variant == MergeSortVariant.TopDownRecursive ? "active" : string.Empty)" @onclick="() => SetVariant(MergeSortVariant.TopDownRecursive)" disabled="@IsBusy">
+                <span>BASIC · TOP-DOWN RECURSIVE</span><strong>Split ranges in half recursively</strong><p>Keep dividing until single-item runs remain, then merge upward. This is the classic divide-and-conquer implementation students normally learn first.</p><small>Best/Average/Worst Θ(n log n) · Stable · O(n) buffer</small>
+            </button>
+            <button type="button" class="variant-card @(_variant == MergeSortVariant.NaturalRuns ? "active" : string.Empty)" @onclick="() => SetVariant(MergeSortVariant.NaturalRuns)" disabled="@IsBusy">
+                <span>ADVANCED · NATURAL MERGE</span><strong>Reuse order that already exists</strong><p>Detect maximal nondecreasing runs already present in the array and merge those runs directly. A fully sorted array is recognized in one linear scan.</p><small>Adaptive best Θ(n) · Worst Θ(n log n) · Stable · O(n) buffer</small>
+            </button>
+        </div>
+
+        <div class="live-data-card">
+            <div><span>REAL-TIME CRUD</span><strong>Mutation during an active Merge Sort requires a restart</strong></div>
+            <p><b>READ</b> is safe. <b>CREATE, UPDATE, or DELETE</b> changes range boundaries, run lengths, recursion decisions, and buffer contents, so the current Merge Sort trace is no longer valid and must restart from the new snapshot. After sorting is finished, a separate ordered insert/delete operation can maintain order, but that is not Merge Sort continuing in real time.</p>
+            <span class="compatibility-badge">Reads safe · active mutations restart</span>
+        </div>
+    </section>
+
+    <section id="merge-lab" class="builder-section" aria-labelledby="merge-build-title">
+        <div class="section-heading-row">
+            <div class="heading-with-step"><span class="step-number">1</span><div><span class="section-kicker">BUILD THE ARRAY</span><h2 id="merge-build-title">Choose the values you want to divide and merge.</h2><p>Use 1–12 integers so every recursive range and buffer write stays readable.</p></div></div>
+            <a class="concept-link" href="/learn/concepts#merge-sort">How Merge Sort works →</a>
+        </div>
+
+        <div class="array-builder">
+            <label class="array-input"><span>VALUES</span><input value="@_arrayText" @oninput="ArrayTextChanged" disabled="@IsBusy" aria-label="Merge Sort array values" placeholder="Example: 8, 3, 5, 1, 7, 4" /><small>Separate values with spaces or commas. Duplicates and negatives are allowed.</small></label>
+            <button class="primary-action" type="button" @onclick="ApplyArray" disabled="@IsBusy">Use this array</button>
+        </div>
+
+        <div class="preset-row" aria-label="Merge Sort example arrays">
+            <span>TRY AN EXAMPLE</span>
+            <button type="button" @onclick="() => LoadPreset(Preset.Classic)" disabled="@IsBusy">Classic</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.NaturalRuns)" disabled="@IsBusy">Natural runs</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Reverse)" disabled="@IsBusy">Reverse</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Duplicates)" disabled="@IsBusy">Duplicates</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Sorted)" disabled="@IsBusy">Already sorted</button>
+            <button type="button" @onclick="LoadRandom" disabled="@IsBusy">Random</button>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_inputError))
+        {
+            <div class="input-error" role="alert"><strong>Check the array.</strong><span>@_inputError</span></div>
+        }
+
+        <div class="current-array" aria-label="Current Merge Sort input">
+            <span>CURRENT INPUT</span>
+            <div>
+                @for (var index = 0; index < Current.Elements.Length; index++)
+                {
+                    <span><small>@index</small><strong>@Current.Elements[index].Value</strong></span>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="predict-section" aria-labelledby="merge-prediction-title">
+        <div class="prediction-copy"><span class="step-number">2</span><div><span class="section-kicker">PREDICT FIRST</span><h2 id="merge-prediction-title">@PredictionTitle</h2><p>@PredictionPrompt</p></div></div>
+        @if (Current.Count >= 2)
+        {
+            <div class="prediction-card insertion-prediction">
+                <div class="index-choice-row">
+                    <button type="button" class="@(_predictionChoice == 0 ? "chosen" : string.Empty)" @onclick="() => AnswerPrediction(0)" disabled="@IsBusy"><small>@PredictionOptionOneLabel</small><strong>@PredictionOptionOneValue</strong></button>
+                    <button type="button" class="@(_predictionChoice == 1 ? "chosen" : string.Empty)" @onclick="() => AnswerPrediction(1)" disabled="@IsBusy"><small>@PredictionOptionTwoLabel</small><strong>@PredictionOptionTwoValue</strong></button>
+                </div>
+                @if (_predictionChoice is not null) { <p class="prediction-feedback @(_predictionCorrect ? "correct" : "incorrect")" aria-live="polite">@PredictionFeedback</p> }
+            </div>
+        }
+        else
+        {
+            <div class="prediction-card empty"><strong>No split or merge is needed.</strong><p>One value is already one sorted run.</p></div>
+        }
+    </section>
+
+    <section class="lab-section" aria-labelledby="merge-visualizer-title">
+        <div class="lab-heading">
+            <div><span class="section-kicker">3 · WATCH THE ALGORITHM</span><h2 id="merge-visualizer-title">Follow the active ranges and the temporary buffer.</h2></div>
+            <div class="lab-actions">
+                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopupsAsync" /><span>Open explanation after run</span></label>
+                @if (_lastResult is not null) { <button class="secondary-action" type="button" @onclick="OpenLastRunPopup">Last explanation</button> }
+                <button class="sort-button" type="button" @onclick="RunSortAsync" disabled="@(IsBusy || Current.Count == 0)"><span>▶</span> Sort this array</button>
+            </div>
+        </div>
+
+        <div class="state-tabs" role="tablist" aria-label="Merge Sort state view">
+            <button type="button" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state <small>ranges, fronts, buffer, merge</small></button>
+            <button type="button" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state <small>main array + O(n) auxiliary buffer</small></button>
+        </div>
+
+        <div class="visualizer-shell">
+            @if (_view == StateView.Visual) { <MergeSortVisualization Snapshot="@DisplayedSnapshot" /> }
+            else { <MergeSortMemoryVisualization Snapshot="@DisplayedSnapshot" /> }
+        </div>
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+
+        <div class="run-dashboard" aria-label="Merge Sort live metrics">
+            <article><span>Merges</span><strong>@DisplayedSnapshot.Merges</strong><small>Two neighboring sorted runs combined into one.</small></article>
+            <article><span>Comparisons</span><strong>@DisplayedSnapshot.Comparisons</strong><small>Front-value comparisons plus natural-run detection in advanced mode.</small></article>
+            <article><span>Writes</span><strong>@DisplayedSnapshot.Writes</strong><small>Writes to the buffer and copies back to the array.</small></article>
+            <article><span>@(_variant == MergeSortVariant.TopDownRecursive ? "Depth" : "Run pass")</span><strong>@VariantProgressMetric</strong><small>@(_variant == MergeSortVariant.TopDownRecursive ? "Current recursion level / deepest level reached." : "Natural merge pass and detected run count.")</small></article>
+        </div>
+
+        <div class="role-strip" aria-label="Merge Sort current roles">
+            <article><span>LEFT FRONT</span><strong>@LeftFrontText</strong><small>The next unread candidate from the left sorted run.</small></article>
+            <article><span>RIGHT FRONT</span><strong>@RightFrontText</strong><small>The next unread candidate from the right sorted run.</small></article>
+            <article><span>BUFFER TARGET</span><strong>@BufferTargetText</strong><small>The next temporary slot, or current copy-back slot.</small></article>
+        </div>
+
+        <div class="invariant-panel">
+            <div><span>INVARIANT TO WATCH</span><h3>Merge is only called on two runs that are already sorted.</h3><p>That one guarantee is why looking only at the two front unread values is enough to choose the globally smallest remaining value for the merged range.</p></div>
+            <div class="early-exit-note"><span>STABILITY RULE</span><strong>On equality, choose from the left run first.</strong><p>The implementation uses <code>left.Value &lt;= right.Value</code>. Earlier equal items therefore stay ahead of later equal items.</p></div>
+        </div>
+    </section>
+
+    <section class="algorithm-map" aria-labelledby="merge-map-title">
+        <div class="section-heading-row"><div><span class="section-kicker">ALGORITHM MAP</span><h2 id="merge-map-title">@AlgorithmMapTitle</h2><p>The Core implementation builds every range, run, comparison, and buffer write manually.</p></div><a class="concept-link" href="/learn/concepts#big-o">Review Big-O →</a></div>
+        <div class="pseudo-grid">
+            <div class="pseudo-code" aria-label="Merge Sort pseudocode">
+                @if (_variant == MergeSortVariant.TopDownRecursive)
+                {
+                    <span>mergeSort(left, right)</span>
+                    <span class="indent">if left ≥ right: return</span>
+                    <span class="indent">mid = (left + right) / 2</span>
+                    <span class="indent">mergeSort(left, mid)</span>
+                    <span class="indent">mergeSort(mid + 1, right)</span>
+                    <span class="indent">merge(left run, right run)</span>
+                }
+                else
+                {
+                    <span>while more than one run exists</span>
+                    <span class="indent">detect maximal nondecreasing runs</span>
+                    <span class="indent">merge neighboring run pairs</span>
+                    <span class="indent">scan again for larger runs</span>
+                    <span>stop when one run covers the array</span>
+                }
+            </div>
+            <div class="why-cards">
+                <article><span>Why Θ(n log n)?</span><strong>Each merge level processes O(n) items.</strong><p>Top-down has O(log n) levels. Natural mode may use fewer levels when the input already contains long sorted runs.</p></article>
+                <article><span>Why O(n) memory?</span><strong>Stable merging needs a safe place for the next order.</strong><p>This implementation reuses one auxiliary array instead of allocating a new array for every recursive call.</p></article>
+            </div>
+        </div>
+    </section>
+
+    <section class="fit-section" aria-labelledby="merge-fit-title">
+        <div class="section-heading-row"><div><span class="section-kicker">WHEN SHOULD I USE IT?</span><h2 id="merge-fit-title">Merge Sort is a strong choice when predictable Θ(n log n) time and stability matter.</h2><p>Its main trade-off is auxiliary memory.</p></div></div>
+        <div class="fit-grid">
+            <article class="fit-card good"><span>GOOD FIT</span><strong>Large datasets, stable ordering, linked/external-style merging</strong><p>Performance does not collapse on reverse or adversarial input. Stable equal-key order is preserved, and merging sequential sorted runs maps naturally to data that is already split into chunks.</p></article>
+            <article class="fit-card avoid"><span>AVOID FOR</span><strong>Tiny arrays or strict in-place memory constraints</strong><p>For a handful of values, recursion and buffer copying can be unnecessary overhead. This teaching implementation intentionally uses O(n) auxiliary storage.</p></article>
+            <article class="fit-card better"><span>BETTER NEXT CHOICE</span><strong>Choose based on the constraint, not the name</strong><p>For tiny/nearly sorted arrays, <b>Insertion Sort</b> can be simpler and adaptive. If O(n) extra memory is unacceptable, compare the upcoming <b>Quick Sort</b> and <b>Heap Sort</b> labs.</p><div class="fit-links"><a href="/sorting/insertion">Insertion Sort →</a><a href="/sorting/quick">Quick Sort →</a><a href="/sorting/heap">Heap Sort →</a></div></article>
+        </div>
+    </section>
+
+    <section class="practice-section" aria-labelledby="merge-practice-title">
+        <div class="practice-heading"><div><span class="section-kicker">GUIDED PRACTICE</span><h2 id="merge-practice-title">Prove the divide, merge, stability, and adaptive-run behavior yourself.</h2></div><div class="task-score"><strong>@_completedTaskIds.Count / @PracticeTasks.Count</strong><span>completed</span></div></div>
+
+        @if (_activeTaskId is not null)
+        {
+            var activeTask = PracticeTasks.First(task => task.Id == _activeTaskId.Value);
+            <div class="active-task-banner"><span>ACTIVE TASK @activeTask.Id.ToString("00")</span><strong>@activeTask.Title</strong><small>@GetActiveTaskProgressText(activeTask.Id)</small></div>
+        }
+
+        <div class="practice-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                var completed = _completedTaskIds.Contains(task.Id);
+                var active = _activeTaskId == task.Id;
+                <article class="task-card @(completed ? "completed" : string.Empty) @(active ? "active" : string.Empty)">
+                    <div class="task-topline"><span>@task.Id.ToString("00")</span><span>@(completed ? "✓ Completed" : active ? "In progress" : "Practice")</span></div>
+                    <h3>@task.Title</h3><p>@task.Goal</p><div class="task-input">Input: <code>@FormatValues(task.Input)</code></div>
+                    <div class="task-actions"><a href="/learn/concepts#merge-sort">Need the concept? →</a><button type="button" @onclick="() => StartTask(task.Id)" disabled="@IsBusy">@(active ? "Restart task" : completed ? "Practice again" : "Start task")</button></div>
+                </article>
+            }
+        </div>
+    </section>
+</div>
+
+@if (_lastRunPopupOpen && _lastResult is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRunPopup">
+        <section class="run-popup" role="dialog" aria-modal="true" aria-labelledby="merge-run-popup-title" @onclick="IgnorePopupClick" @onclick:stopPropagation="true">
+            <header><div><span class="section-kicker">WHAT JUST HAPPENED?</span><h2 id="merge-run-popup-title">@RunHeadline</h2></div><button class="popup-close" type="button" @onclick="CloseLastRunPopup" aria-label="Close result explanation">×</button></header>
+            <div class="popup-tabs" role="tablist"><button type="button" class="@(_popupTab == ResultPopupTab.Action ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Action">Run</button><button type="button" class="@(_popupTab == ResultPopupTab.Complexity ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Complexity">Complexity</button><button type="button" class="@(_popupTab == ResultPopupTab.Memory ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Memory">Memory &amp; stability</button></div>
+            @if (_popupTab == ResultPopupTab.Action)
+            {
+                <div class="popup-body"><div class="popup-metrics"><div><span>Mode</span><strong>@VariantLabelFor(_lastResult.Variant)</strong></div><div><span>Merges</span><strong>@_lastResult.Merges</strong></div><div><span>Comparisons</span><strong>@_lastResult.Comparisons</strong></div><div><span>Stable</span><strong>Yes</strong></div></div><h3>@RunActionExplanation</h3><p><strong>@FormatValues(_lastResult.InitialValues)</strong> became <strong>@FormatValues(_lastResult.SortedValues)</strong>. Step backward to inspect the exact moment each run was split/detected, compared, buffered, and copied back.</p></div>
+            }
+            else if (_popupTab == ResultPopupTab.Complexity)
+            {
+                <div class="popup-body"><h3>@ComplexityPopupTitle</h3><p>@ComplexityPopupExplanation</p><a class="popup-concept-link" href="/learn/concepts#merge-sort">Review Merge Sort complexity →</a></div>
+            }
+            else
+            {
+                <div class="popup-body"><h3>The O(n) buffer is part of the algorithmic trade-off.</h3><p>This run performed <strong>@_lastResult.Writes writes</strong> across the temporary buffer and main array. Equal-item order was <strong>@(_lastResult.PreservedEqualValueOrder ? "preserved" : "changed")</strong>.</p><p>During an active Merge Sort, CREATE/UPDATE/DELETE invalidates run boundaries and buffer state, so the run must restart from the changed dataset.</p><a class="popup-concept-link" href="/learn/concepts#memory">Review memory concepts →</a></div>
+            }
+        </section>
+    </div>
+}
+
+@code {
+    private const string CompletedTasksStorageKey = "algorithm-visualizer.merge-sort.completed-tasks.v1";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.merge-sort.result-popups.v1";
+
+    private readonly List<RunFrame> _frames = [];
+    private readonly HashSet<int> _completedTaskIds = [];
+    private readonly List<MergeSortResult> _practiceResults = [];
+
+    private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
+    [
+        new(1, "Trace recursive divide & conquer", "Use Top-down mode on 8, 3, 5, 1. Verify three splits, three merges, five value comparisons, and the final sorted order.", [8, 3, 5, 1], MergeSortVariant.TopDownRecursive),
+        new(2, "Prove sorted input still recurses", "Use Top-down mode on 1, 2, 3, 4. The canonical version still performs the recursive split/merge structure even though the data begins sorted.", [1, 2, 3, 4], MergeSortVariant.TopDownRecursive),
+        new(3, "Use the Natural best case", "Use Natural mode on an already sorted array. It should detect one run in a linear scan and perform zero merges.", [1, 2, 3, 4, 5], MergeSortVariant.NaturalRuns),
+        new(4, "Merge two existing natural runs", "Use Natural mode on 1, 3, 5, 2, 4, 6. It should begin with exactly two runs and need only one actual merge pass.", [1, 3, 5, 2, 4, 6], MergeSortVariant.NaturalRuns),
+        new(5, "Prove stable duplicate merging", "Use Top-down mode on 2, 2, 1, 2, then open Memory state after the run and verify duplicate item identities remain in original order.", [2, 2, 1, 2], MergeSortVariant.TopDownRecursive),
+        new(6, "Test the one-item boundary", "Use Top-down mode on one value and prove that no split, merge, comparison, or buffer write is needed.", [42], MergeSortVariant.TopDownRecursive)
+    ];
+
+    private string _arrayText = "8, 3, 5, 1, 7, 4";
+    private string? _inputError;
+    private string? _lastCapturedStep;
+    private int _frameIndex = -1;
+    private int? _predictionChoice;
+    private bool _predictionCorrect;
+    private MergeSortResult? _lastResult;
+    private bool _lastRunPopupOpen;
+    private bool _showRunPopups = true;
+    private bool _storageLoaded;
+    private bool _memoryOpenedDuringTask;
+    private int? _activeTaskId;
+    private StateView _view = StateView.Visual;
+    private ResultPopupTab _popupTab = ResultPopupTab.Action;
+    private MergeSortVariant _variant = MergeSortVariant.TopDownRecursive;
+
+    private bool IsBusy => SimulationState.IsRunning;
+    private MergeSortSnapshot Current => MergeSort.CreateSnapshot();
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_frames.Count > 0 && _frameIndex < _frames.Count - 1) || SimulationState.IsRunning;
+    private int TimelineCount => _frames.Count;
+    private int TimelinePosition => _frameIndex >= 0 ? _frameIndex + 1 : 0;
+    private RunFrame? DisplayedFrame => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex] : null;
+    private string DisplayedStepText => DisplayedFrame?.StepText ?? SimulationState.CurrentStepText;
+    private MergeSortSnapshot DisplayedSnapshot => DisplayedFrame?.Snapshot ?? MergeSort.CreateSnapshot();
+    private string VariantLabel => VariantLabelFor(_variant);
+    private string VariantTradeoffNote => _variant == MergeSortVariant.NaturalRuns ? "adaptive to existing sorted runs" : "canonical divide & conquer";
+    private string VariantProgressMetric => _variant == MergeSortVariant.TopDownRecursive ? $"{DisplayedSnapshot.CurrentDepth} / {DisplayedSnapshot.MaxDepth}" : $"pass {DisplayedSnapshot.NaturalPass} · {DisplayedSnapshot.NaturalRunCount} runs";
+    private string LeftFrontText => RoleElementText(DisplayedSnapshot.LeftReadIndex);
+    private string RightFrontText => RoleElementText(DisplayedSnapshot.RightReadIndex);
+    private string BufferTargetText => DisplayedSnapshot.WriteIndex < 0 ? "—" : $"index {DisplayedSnapshot.WriteIndex}";
+
+    private string PredictionTitle => _variant == MergeSortVariant.TopDownRecursive ? "Where will the first top-level split happen?" : "Do the first two values belong to the same natural run?";
+    private string PredictionPrompt => _variant == MergeSortVariant.TopDownRecursive ? "Top-down mode divides the current range as evenly as integer indexes allow." : "A natural run continues while values are nondecreasing from left to right.";
+    private string PredictionOptionOneLabel => _variant == MergeSortVariant.TopDownRecursive ? "split after index" : "same run";
+    private string PredictionOptionTwoLabel => _variant == MergeSortVariant.TopDownRecursive ? "split after index" : "new run";
+    private string PredictionOptionOneValue => _variant == MergeSortVariant.TopDownRecursive ? CorrectSplitIndex.ToString() : $"{Current.Elements[0].Value} ≤ {Current.Elements[1].Value}";
+    private string PredictionOptionTwoValue => _variant == MergeSortVariant.TopDownRecursive ? AlternativeSplitIndex.ToString() : $"{Current.Elements[0].Value} > {Current.Elements[1].Value}";
+    private int CorrectSplitIndex => Current.Count < 2 ? 0 : (Current.Count - 1) / 2;
+    private int AlternativeSplitIndex => CorrectSplitIndex == 0 ? 1 : CorrectSplitIndex - 1;
+
+    private string PredictionFeedback
+    {
+        get
+        {
+            if (_predictionChoice is null || Current.Count < 2) return string.Empty;
+            if (_variant == MergeSortVariant.TopDownRecursive)
+                return _predictionCorrect ? $"Correct. Range [0..{Current.Count - 1}] splits into [0..{CorrectSplitIndex}] and [{CorrectSplitIndex + 1}..{Current.Count - 1}]." : $"Not quite. Integer midpoint gives index {CorrectSplitIndex}, so that is the last index of the left half.";
+            var sameRun = Current.Elements[0].Value <= Current.Elements[1].Value;
+            var relation = sameRun ? "≤" : ">";
+            return _predictionCorrect ? $"Correct. {Current.Elements[0].Value} {relation} {Current.Elements[1].Value}, so the natural-run scan {(sameRun ? "continues" : "starts a new run")}." : "Check the direction: a natural run continues only while previous ≤ next.";
+        }
+    }
+
+    private string AlgorithmMapTitle => _variant == MergeSortVariant.TopDownRecursive ? "Recursively solve two halves, then merge them." : "Detect work the input has already done for you, then merge only the existing runs.";
+    private string RunHeadline => _lastResult is null ? "Merge Sort run complete" : $"{VariantLabelFor(_lastResult.Variant)} finished with {_lastResult.Merges} merge{(_lastResult.Merges == 1 ? string.Empty : "s")}";
+    private string RunActionExplanation => _lastResult is null ? string.Empty : _lastResult.Merges == 0 ? "The input already formed one sorted run, so no merge was necessary." : $"The algorithm built larger sorted runs through {_lastResult.Merges} merge operation{(_lastResult.Merges == 1 ? string.Empty : "s")}.";
+    private string ComplexityPopupTitle => _lastResult?.Variant == MergeSortVariant.NaturalRuns ? "Natural Merge Sort can exploit existing order." : "Top-down Merge Sort keeps predictable Θ(n log n) structure.";
+    private string ComplexityPopupExplanation => _lastResult is null ? string.Empty : _lastResult.Variant == MergeSortVariant.NaturalRuns
+        ? $"This input started with {_lastResult.InitialNaturalRunCount} natural run{(_lastResult.InitialNaturalRunCount == 1 ? string.Empty : "s")} and required {_lastResult.NaturalPasses} merge pass{(_lastResult.NaturalPasses == 1 ? string.Empty : "es")}. A fully sorted input is recognized in Θ(n); worst-case growth remains Θ(n log n)."
+        : $"This run used {_lastResult.Merges} merges across a recursion tree with maximum depth {_lastResult.MaxDepth}. Every level processes at most all n items, producing Θ(n log n) best/average/worst growth.";
+
+    protected override void OnInitialized()
+    {
+        MergeSort.LoadValues([8, 3, 5, 1, 7, 4]);
+        SimulationState.Changed += HandleSimulationChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _storageLoaded) return;
+        _storageLoaded = true;
+        try
+        {
+            var completedJson = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { CompletedTasksStorageKey });
+            if (!string.IsNullOrWhiteSpace(completedJson))
+            {
+                var completed = System.Text.Json.JsonSerializer.Deserialize<int[]>(completedJson) ?? [];
+                foreach (var id in completed.Where(id => PracticeTasks.Any(task => task.Id == id))) _completedTaskIds.Add(id);
+            }
+            var popupSetting = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { PopupSettingStorageKey });
+            if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
+        }
+        catch { }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ArrayTextChanged(ChangeEventArgs args) { _arrayText = args.Value?.ToString() ?? string.Empty; _inputError = null; }
+    private void ApplyArray() { if (IsBusy) return; if (!TryParseArray(_arrayText, out var values, out var error)) { _inputError = error; return; } LoadValues(values); }
+
+    private void LoadPreset(Preset preset)
+    {
+        if (IsBusy) return;
+        var values = preset switch
+        {
+            Preset.NaturalRuns => new[] { 1, 4, 7, 2, 5, 8, 3, 6 },
+            Preset.Reverse => new[] { 8, 7, 6, 5, 4, 3, 2, 1 },
+            Preset.Duplicates => new[] { 4, 2, 4, 1, 4, 2 },
+            Preset.Sorted => new[] { 1, 2, 3, 4, 5, 6 },
+            _ => new[] { 8, 3, 5, 1, 7, 4 }
+        };
+        LoadValues(values);
+    }
+
+    private void LoadRandom()
+    {
+        if (IsBusy) return;
+        var values = new int[8];
+        for (var index = 0; index < values.Length; index++) values[index] = Random.Shared.Next(-5, 16);
+        LoadValues(values);
+    }
+
+    private void LoadValues(int[] values)
+    {
+        ClearReview();
+        MergeSort.LoadValues(values);
+        _arrayText = FormatValues(values);
+        _inputError = null;
+        _predictionChoice = null;
+        _predictionCorrect = false;
+    }
+
+    private static bool TryParseArray(string input, out int[] values, out string error)
+    {
+        var parts = (input ?? string.Empty).Split([',', ';', ' ', '\n', '\r', '\t'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length == 0) { values = []; error = "Enter at least one integer."; return false; }
+        if (parts.Length > 12) { values = []; error = "Keep this learning view to at most 12 values so recursive ranges and buffer writes stay readable."; return false; }
+        values = new int[parts.Length];
+        for (var index = 0; index < parts.Length; index++)
+        {
+            if (!int.TryParse(parts[index], out values[index])) { values = []; error = $"“{parts[index]}” is not a whole number."; return false; }
+        }
+        error = string.Empty;
+        return true;
+    }
+
+    private void AnswerPrediction(int choice)
+    {
+        if (Current.Count < 2 || IsBusy || choice is < 0 or > 1) return;
+        _predictionChoice = choice;
+        if (_variant == MergeSortVariant.TopDownRecursive) _predictionCorrect = choice == 0;
+        else _predictionCorrect = choice == (Current.Elements[0].Value <= Current.Elements[1].Value ? 0 : 1);
+    }
+
+    private async Task RunSortAsync()
+    {
+        if (IsBusy || Current.Count == 0) return;
+        PrepareRun();
+        MergeSort.ResetVisualState();
+        var token = SimulationState.Start(_variant == MergeSortVariant.TopDownRecursive ? "Merge Sort is ready to divide the full range." : "Natural Merge Sort is ready to scan for existing sorted runs.");
+        try
+        {
+            var result = await MergeSort.SortAsync(_variant, token);
+            if (!IsCurrent(token)) return;
+            FinishRun(result);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception ex)
+        {
+            _inputError = $"The sorting run stopped: {ex.Message}";
+            if (IsCurrent(token)) SimulationState.Complete("The run stopped because of an error.");
+        }
+    }
+
+    private void FinishRun(MergeSortResult result)
+    {
+        _lastResult = result;
+        RecordPracticeResult(result);
+        SimulationState.Complete($"Sorted. {result.Merges} merges, {result.Comparisons} comparisons, {result.Writes} writes.");
+        _popupTab = ResultPopupTab.Action;
+        _lastRunPopupOpen = _showRunPopups;
+    }
+
+    private void PrepareRun() { _inputError = null; _lastRunPopupOpen = false; _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; }
+    private void Capture() { var step = SimulationState.CurrentStepText; if (step == _lastCapturedStep) return; var tail = _frameIndex < 0 || _frameIndex == _frames.Count - 1; _frames.Add(new RunFrame(step, MergeSort.CreateSnapshot())); _lastCapturedStep = step; if (tail) _frameIndex = _frames.Count - 1; }
+    private void HandleSimulationChanged() { if (SimulationState.IsRunning) Capture(); _ = InvokeAsync(StateHasChanged); }
+    private bool IsCurrent(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;
+    private void ClearReview() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; _lastResult = null; _lastRunPopupOpen = false; }
+    private Task PlayTimelineAsync() { if (_frames.Count > 0) _frameIndex = _frames.Count - 1; SimulationState.Resume(); return InvokeAsync(StateHasChanged); }
+    private Task PauseTimelineAsync() { SimulationState.Pause(); return Task.CompletedTask; }
+    private Task StepBackAsync() { if (SimulationState.IsRunning && !SimulationState.IsPaused) SimulationState.Pause(); if (_frameIndex > 0) _frameIndex--; return InvokeAsync(StateHasChanged); }
+    private Task StepForwardAsync() { if (_frameIndex >= 0 && _frameIndex < _frames.Count - 1) { _frameIndex++; return InvokeAsync(StateHasChanged); } if (SimulationState.IsRunning) SimulationState.Step(); return Task.CompletedTask; }
+    private Task ResetPlaybackAsync() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; return InvokeAsync(StateHasChanged); }
+
+    private void SetStateView(StateView view)
+    {
+        _view = view;
+        if (view == StateView.Memory && _activeTaskId is not null && _practiceResults.Count > 0) { _memoryOpenedDuringTask = true; CheckActiveTaskCompletion(); }
+    }
+
+    private void StartTask(int taskId)
+    {
+        if (IsBusy) return;
+        var task = PracticeTasks.First(item => item.Id == taskId);
+        _activeTaskId = taskId;
+        _practiceResults.Clear();
+        _memoryOpenedDuringTask = false;
+        _variant = task.Variant;
+        LoadValues(CloneValues(task.Input));
+    }
+
+    private void RecordPracticeResult(MergeSortResult result) { if (_activeTaskId is null) return; _practiceResults.Add(result); CheckActiveTaskCompletion(); }
+
+    private void CheckActiveTaskCompletion()
+    {
+        if (_activeTaskId is null || _practiceResults.Count == 0) return;
+        var result = _practiceResults[^1];
+        var completed = _activeTaskId.Value switch
+        {
+            1 => result.Variant == MergeSortVariant.TopDownRecursive && SameValues(result.InitialValues, [8,3,5,1]) && SameValues(result.SortedValues, [1,3,5,8]) && result.Splits == 3 && result.Merges == 3 && result.Comparisons == 5,
+            2 => result.Variant == MergeSortVariant.TopDownRecursive && SameValues(result.InitialValues, [1,2,3,4]) && result.Splits == 3 && result.Merges == 3 && result.Comparisons == 4,
+            3 => result.Variant == MergeSortVariant.NaturalRuns && SameValues(result.InitialValues, [1,2,3,4,5]) && result.InitialNaturalRunCount == 1 && result.Merges == 0 && result.NaturalPasses == 0 && result.Comparisons == 4,
+            4 => result.Variant == MergeSortVariant.NaturalRuns && SameValues(result.InitialValues, [1,3,5,2,4,6]) && result.InitialNaturalRunCount == 2 && result.Merges == 1 && result.NaturalPasses == 1,
+            5 => result.Variant == MergeSortVariant.TopDownRecursive && SameValues(result.InitialValues, [2,2,1,2]) && result.PreservedEqualValueOrder && _memoryOpenedDuringTask,
+            6 => result.Variant == MergeSortVariant.TopDownRecursive && SameValues(result.InitialValues, [42]) && result.Splits == 0 && result.Merges == 0 && result.Comparisons == 0 && result.Writes == 0,
+            _ => false
+        };
+        if (!completed) return;
+        _completedTaskIds.Add(_activeTaskId.Value); _activeTaskId = null; _practiceResults.Clear(); _memoryOpenedDuringTask = false; _ = PersistCompletedTasksAsync();
+    }
+
+    private string GetActiveTaskProgressText(int taskId)
+    {
+        if (_practiceResults.Count == 0) return taskId == 5 ? $"Input is loaded in {VariantLabel}. Run it, then open Memory state after completion to verify duplicate identity." : $"Input is loaded in {VariantLabel}. Predict first if you want, then run Merge Sort.";
+        var result = _practiceResults[^1];
+        return taskId switch
+        {
+            1 => $"Need 3 splits, 3 merges, 5 comparisons. Last run: {result.Splits}, {result.Merges}, {result.Comparisons}.",
+            2 => $"Sorted input still needs 3 splits and 3 merges in Top-down mode. Last run: {result.Splits} splits, {result.Merges} merges.",
+            3 => $"Need one initial run and zero merges. Last run: {result.InitialNaturalRunCount} run(s), {result.Merges} merges.",
+            4 => $"Need two initial runs and one merge pass. Last run: {result.InitialNaturalRunCount} run(s), {result.NaturalPasses} pass(es).",
+            5 => $"Stable order preserved={(result.PreservedEqualValueOrder ? "yes" : "no")}; Memory state opened={(_memoryOpenedDuringTask ? "yes" : "no")}.",
+            6 => $"Need zero work. Last run: {result.Splits} splits, {result.Merges} merges, {result.Writes} writes.",
+            _ => string.Empty
+        };
+    }
+
+    private async Task PersistCompletedTasksAsync() { try { var json = System.Text.Json.JsonSerializer.Serialize(_completedTaskIds.OrderBy(id => id).ToArray()); await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { CompletedTasksStorageKey, json }); } catch { } }
+    private async Task ToggleRunPopupsAsync(ChangeEventArgs args) { _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed; try { await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { PopupSettingStorageKey, _showRunPopups.ToString() }); } catch { } }
+    private void OpenLastRunPopup() { if (_lastResult is null) return; _popupTab = ResultPopupTab.Action; _lastRunPopupOpen = true; }
+    private void CloseLastRunPopup() => _lastRunPopupOpen = false;
+    private static void IgnorePopupClick() { }
+    private void SetVariant(MergeSortVariant variant) { if (IsBusy || _variant == variant) return; _variant = variant; ClearReview(); _predictionChoice = null; _predictionCorrect = false; }
+    private string RoleElementText(int index) => index >= 0 && index < DisplayedSnapshot.Elements.Length ? $"{DisplayedSnapshot.Elements[index].Value} @ {index}" : "—";
+    private static string VariantLabelFor(MergeSortVariant variant) => variant == MergeSortVariant.NaturalRuns ? "Natural Merge" : "Top-down Merge";
+    private static int[] CloneValues(int[] source) { var copy = new int[source.Length]; for (var index = 0; index < source.Length; index++) copy[index] = source[index]; return copy; }
+    private static bool SameValues(int[] left, int[] right) { if (left.Length != right.Length) return false; for (var index = 0; index < left.Length; index++) if (left[index] != right[index]) return false; return true; }
+    private static string FormatValues(int[] values) => string.Join(", ", values);
+    public void Dispose() => SimulationState.Changed -= HandleSimulationChanged;
+
+    private sealed record RunFrame(string StepText, MergeSortSnapshot Snapshot);
+    private sealed record PracticeTaskDefinition(int Id, string Title, string Goal, int[] Input, MergeSortVariant Variant);
+    private enum StateView { Visual, Memory }
+    private enum ResultPopupTab { Action, Complexity, Memory }
+    private enum Preset { Classic, NaturalRuns, Reverse, Duplicates, Sorted }
+}

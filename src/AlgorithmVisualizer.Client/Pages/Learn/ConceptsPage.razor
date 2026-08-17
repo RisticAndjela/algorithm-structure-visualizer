@@ -24,6 +24,7 @@
         <a href="#bubble-sort">Bubble Sort</a>
         <a href="#selection-sort">Selection Sort</a>
         <a href="#insertion-sort">Insertion Sort</a>
+        <a href="#merge-sort">Merge Sort</a>
         <a href="#identity">Value vs ID</a>
         <a href="#memory">Memory</a>
         <a href="#visual-vs-memory">Visual vs memory</a>
@@ -245,6 +246,57 @@
             <strong>Visual state vs Memory state</strong>
             <p>Visual state emphasizes the held key, current comparison/search probe, gap, shifts, and sorted prefix. Memory state shows that the array slots stay fixed while references move and one temporary key exists outside the array.</p>
             <a href="/sorting/insertion">Open the Insertion Sort lab →</a>
+        </div>
+    </section>
+
+
+    <section id="merge-sort" class="concept-section">
+        <div class="section-heading">
+            <span>SORT</span>
+            <div><h2>Merge Sort: divide, runs, merge fronts, and auxiliary memory</h2><p>Merge Sort becomes simple once you trust one invariant: every merge combines two runs that are already sorted.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class="concept-card">
+                <span class="term">DIVIDE & CONQUER</span>
+                <h3>Top-down mode solves smaller ranges first</h3>
+                <p>The basic implementation splits <code>[left..right]</code> at its midpoint, recursively sorts both halves, then merges the two sorted results. Single items are the base case because one item is already sorted.</p>
+                <div class="example"><strong>Shape:</strong> O(log n) recursive levels, with O(n) total merge work per level → Θ(n log n).</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">MERGE FRONTS</span>
+                <h3>You never search the whole two runs</h3>
+                <p>Because both input runs are sorted, the next output value must be one of their two front unread values. Compare those fronts, copy the smaller one, and advance only that run.</p>
+                <div class="example"><strong>Example:</strong> [2, 7] + [3, 5] → compare 2/3, then 7/3, then 7/5.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term">NATURAL MERGE</span>
+                <h3>The advanced variant reuses sorted runs already in the input</h3>
+                <p>A natural run is a maximal nondecreasing region. Instead of recursively splitting it again, Natural Merge Sort detects those runs and directly merges neighboring pairs.</p>
+                <div class="example"><strong>Adaptive best case:</strong> a fully sorted array is one natural run, detected in Θ(n), so zero merges are needed.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">STABLE</span>
+                <h3>Equality is resolved from the left run first</h3>
+                <p>The implementation chooses the left element when <code>left.Value &lt;= right.Value</code>. An equal element from the right run therefore cannot jump ahead of an earlier equal element from the left.</p>
+                <div class="example"><strong>Identity:</strong> equal values remain in their original relative order.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term">O(n) BUFFER</span>
+                <h3>Predictable speed costs auxiliary storage</h3>
+                <p>The teaching implementation reuses one temporary array of length n. A merge writes selected elements into that buffer, then copies the merged range back into the main array.</p>
+                <div class="example"><strong>Trade-off:</strong> Top-down also uses O(log n) recursion stack; Natural mode is iterative but still needs the O(n) merge buffer.</div>
+            </article>
+            <article class="concept-card">
+                <span class="term queue">CRUD / WHEN TO MOVE ON</span>
+                <h3>Active mutations invalidate the current merge plan</h3>
+                <p>Reads are safe, but create/update/delete changes range boundaries, run lengths, and buffer assumptions, so an active Merge Sort must restart. After completion, ordered maintenance is a separate operation.</p>
+                <div class="example"><strong>Alternatives:</strong> use Insertion Sort for tiny/nearly sorted arrays; compare Quick/Heap Sort when O(n) auxiliary memory is the limiting constraint.</div>
+            </article>
+        </div>
+        <div class="plain-note">
+            <strong>Visual state vs Memory state</strong>
+            <p>Visual state emphasizes left/right runs, front comparisons, merge phases, and the copy-back target. Memory state shows the main array and reusable auxiliary buffer side by side so O(n) extra space is concrete.</p>
+            <a href="/sorting/merge">Open the Merge Sort lab →</a>
         </div>
     </section>
 
