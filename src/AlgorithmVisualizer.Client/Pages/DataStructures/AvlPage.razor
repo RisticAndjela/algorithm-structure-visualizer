@@ -6,6 +6,7 @@
 @inject SimulationState SimulationState
 @inject AvlSimulation Tree
 @inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
 
 <PageTitle>AVL Tree Lab — Algorithm Visualizer</PageTitle>
 
@@ -176,20 +177,16 @@
             {
                 var completed = _completedTaskIds.Contains(task.Id);
                 var active = _activeTaskId == task.Id;
-                <article class="task-card @(completed ? "completed" : string.Empty) @(active ? "active" : string.Empty)">
-                    <div class="task-topline"><span>@task.Id.ToString("00")</span><span>@(completed ? "Completed" : active ? "In progress" : "Practice")</span></div>
-                    <h3>@task.Title</h3>
-                    <ol>
-                        @foreach (var step in task.Steps)
-                        {
-                            <li>@step</li>
-                        }
-                    </ol>
-                    <div class="task-actions">
-                        <a href="@task.HelpHref">Need the concept? →</a>
-                        <button type="button" @onclick="() => StartTask(task.Id)" disabled="@IsBusy">@(active ? "Restart task" : completed ? "Practice again" : "Start task")</button>
-                    </div>
-                </article>
+                <PracticeTaskCard TaskId="@task.Id"
+                                  Title="@task.Title"
+                                  Steps="@task.Steps"
+                                  HelpHref="@task.HelpHref"
+                                  Completed="@completed"
+                                  Active="@active"
+                                  Busy="@IsBusy"
+                                  HasEvidence="@(GetTaskEvidence(task.Id) is not null)"
+                                  Start="@(() => StartTask(task.Id))"
+                                  OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
             }
         </div>
     </section>
@@ -200,6 +197,8 @@
                     LinkLabel="Open Matrix lesson" />
 
 </div>
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
 
 @if (_lastRunPopupOpen && _lastResult is not null)
 {
@@ -262,11 +261,14 @@
 }
 
 @code {
+    private const string ModuleKey = "avl";
     private const string CompletedTasksStorageKey = "algorithm-visualizer.avl.completed-tasks.v1";
     private const string PopupSettingStorageKey = "algorithm-visualizer.avl.result-popups.v1";
 
     private readonly List<RunFrame> _runFrames = [];
     private readonly HashSet<int> _completedTaskIds = [];
+    private PracticeModuleProgress _practiceProgress = new();
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
     private readonly List<PracticeEvent> _practiceEvents = [];
 
     private static readonly int[] SampleValues = [30, 20, 10, 40, 50, 25, 35];
@@ -322,15 +324,9 @@
         _storageLoaded = true;
         try
         {
-            var completedJson = LearningStore.GetItem(CompletedTasksStorageKey);
-            if (!string.IsNullOrWhiteSpace(completedJson))
-            {
-                var completed = JsonSerializer.Deserialize<int[]>(completedJson) ?? [];
-                foreach (var id in completed.Where(id => PracticeTasks.Any(task => task.Id == id)))
-                {
-                    _completedTaskIds.Add(id);
-                }
-            }
+            _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
+            _completedTaskIds.Clear();
+            foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id);
 
             var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
             if (bool.TryParse(popupSetting, out var showPopups))
@@ -431,6 +427,7 @@
     private void PrepareNewRun()
     {
         _errorMessage = null;
+        _memoryOpenedDuringTask = _activeStateView == StateView.Memory;
         _lastRunPopupOpen = false;
         _runFrames.Clear();
         _frameIndex = -1;
@@ -523,10 +520,10 @@
     private void SetStateView(StateView view)
     {
         _activeStateView = view;
-        if (view == StateView.Memory && _activeTaskId is not null)
+        if (view == StateView.Memory && _lastResult is not null)
         {
             _memoryOpenedDuringTask = true;
-            CheckActiveTaskCompletion();
+            EvaluatePracticeTasks();
         }
     }
 
@@ -534,58 +531,65 @@
 
     private void StartTask(int taskId)
     {
-        if (IsBusy)
-        {
-            return;
-        }
-
+        if (IsBusy) return;
         _activeTaskId = taskId;
-        _practiceEvents.Clear();
-        _practiceSequence = 0;
         _memoryOpenedDuringTask = false;
     }
 
     private void RecordPracticeEvent(PracticeEvent practiceEvent)
     {
-        if (_activeTaskId is null)
-        {
-            return;
-        }
-
         _practiceEvents.Add(practiceEvent with { Sequence = ++_practiceSequence });
-        CheckActiveTaskCompletion();
+        if (_practiceEvents.Count > 256) _practiceEvents.RemoveAt(0);
+        EvaluatePracticeTasks();
     }
 
-    private void CheckActiveTaskCompletion()
+    private void EvaluatePracticeTasks()
     {
-        if (_activeTaskId is null)
+        if (_lastResult is null) return;
+        foreach (var task in PracticeTasks)
         {
-            return;
+            if (_completedTaskIds.Contains(task.Id) && GetTaskEvidence(task.Id) is not null && _activeTaskId != task.Id) continue;
+            var completed = task.Id switch
+            {
+                1 => _lastResult.Operation == AvlOperationKind.Insert && _lastResult.Succeeded && _lastResult.FirstRotationCase == AvlRotationCase.LL,
+                2 => _lastResult.Operation == AvlOperationKind.Insert && _lastResult.Succeeded && _lastResult.FirstRotationCase == AvlRotationCase.RR,
+                3 => _lastResult.Operation == AvlOperationKind.Insert && _lastResult.Succeeded && _lastResult.FirstRotationCase == AvlRotationCase.LR,
+                4 => _lastResult.Operation == AvlOperationKind.Insert && _lastResult.Succeeded && _lastResult.FirstRotationCase == AvlRotationCase.RL,
+                5 => _memoryOpenedDuringTask && _lastResult.Operation == AvlOperationKind.Delete && _lastResult.Succeeded && _lastResult.RotationCount > 0,
+                6 => _lastResult.Operation == AvlOperationKind.Search &&
+                     _practiceEvents.Any(e => e.Operation == AvlOperationKind.Search && e.Succeeded) &&
+                     _practiceEvents.Any(e => e.Operation == AvlOperationKind.Search && !e.Succeeded),
+                _ => false
+            };
+            if (completed) CompletePracticeTask(task, _lastResult);
         }
-
-        var completed = _activeTaskId.Value switch
-        {
-            1 => _practiceEvents.Any(e => e.Operation == AvlOperationKind.Insert && e.Succeeded && e.RotationCase == AvlRotationCase.LL),
-            2 => _practiceEvents.Any(e => e.Operation == AvlOperationKind.Insert && e.Succeeded && e.RotationCase == AvlRotationCase.RR),
-            3 => _practiceEvents.Any(e => e.Operation == AvlOperationKind.Insert && e.Succeeded && e.RotationCase == AvlRotationCase.LR),
-            4 => _practiceEvents.Any(e => e.Operation == AvlOperationKind.Insert && e.Succeeded && e.RotationCase == AvlRotationCase.RL),
-            5 => _memoryOpenedDuringTask && _practiceEvents.Any(e => e.Operation == AvlOperationKind.Delete && e.Succeeded && e.RotationCount > 0),
-            6 => _practiceEvents.Any(e => e.Operation == AvlOperationKind.Search && e.Succeeded) &&
-                 _practiceEvents.Any(e => e.Operation == AvlOperationKind.Search && !e.Succeeded),
-            _ => false
-        };
-
-        if (!completed)
-        {
-            return;
-        }
-
-        _completedTaskIds.Add(_activeTaskId.Value);
-        _activeTaskId = null;
-        _practiceEvents.Clear();
-        _memoryOpenedDuringTask = false;
-        PersistCompletedTasks();
     }
+
+    private void CompletePracticeTask(PracticeTaskDefinition task, AvlOperationResult result)
+    {
+        var evidence = new PracticeCompletionEvidence(
+            task.Id,
+            task.Title,
+            GetResultHeadline(result),
+            GetPlainRunSummary(result),
+            GetMemoryExplanation(result),
+            GetComplexityExplanation(result),
+            [
+                new("Operation", result.Operation.ToString()),
+                new("Checks", result.TotalChecks.ToString()),
+                new("Rotations", result.RotationCount.ToString()),
+                new("Rotation case", GetRotationCaseLabel(result.FirstRotationCase)),
+                new("Height", $"{result.HeightBefore} → {result.HeightAfter}")
+            ],
+            $"Target {result.RequestedValue} · {GetRotationCaseLabel(result.FirstRotationCase)}");
+        _completedTaskIds.Add(task.Id);
+        PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
+        if (_activeTaskId == task.Id) _activeTaskId = null;
+    }
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
+    private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
+    private void CloseTaskEvidence() => _practiceEvidencePopup = null;
 
     private string GetActiveTaskProgressText(int taskId) => taskId switch
     {

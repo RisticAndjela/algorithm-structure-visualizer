@@ -6,6 +6,7 @@
 @inject SimulationState SimulationState
 @inject HeapSimulation Heap
 @inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
 
 <PageTitle>Binary Heap Lab — Algorithm Visualizer</PageTitle>
 
@@ -173,17 +174,16 @@
             {
                 var completed = _completedTaskIds.Contains(task.Id);
                 var active = _activeTaskId == task.Id;
-                <article class="task-card @(completed ? "completed" : string.Empty) @(active ? "active" : string.Empty)">
-                    <div class="task-topline"><span>@task.Id.ToString("00")</span><span>@(completed ? "Completed" : active ? "In progress" : "Practice")</span></div>
-                    <h3>@task.Title</h3>
-                    <ol>
-                        @foreach (var step in task.Steps)
-                        {
-                            <li>@step</li>
-                        }
-                    </ol>
-                    <div class="task-actions"><a href="@task.HelpHref">Need the concept? →</a><button type="button" @onclick="() => StartTask(task.Id)" disabled="@IsBusy">@(active ? "Restart task" : completed ? "Practice again" : "Start task")</button></div>
-                </article>
+                <PracticeTaskCard TaskId="@task.Id"
+                                  Title="@task.Title"
+                                  Steps="@task.Steps"
+                                  HelpHref="@task.HelpHref"
+                                  Completed="@completed"
+                                  Active="@active"
+                                  Busy="@IsBusy"
+                                  HasEvidence="@(GetTaskEvidence(task.Id) is not null)"
+                                  Start="@(() => StartTask(task.Id))"
+                                  OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
             }
         </div>
     </section>
@@ -194,6 +194,8 @@
                     LinkLabel="Open d-ary Heap lesson" />
 
 </div>
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
 
 @if (_lastRunPopupOpen && _lastResult is not null)
 {
@@ -228,6 +230,7 @@
 }
 
 @code {
+    private const string ModuleKey = "binary-heap";
     private const string CompletedTasksStorageKey = "algorithm-visualizer.heap.completed-tasks.v1";
     private const string PopupSettingStorageKey = "algorithm-visualizer.heap.result-popups.v1";
 
@@ -259,6 +262,8 @@
     private StateView _activeStateView = StateView.Visual;
     private ResultPopupTab _popupTab = ResultPopupTab.Run;
     private HeapOperationResult? _lastResult;
+    private PracticeModuleProgress _practiceProgress = new();
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
 
     private bool IsBusy => SimulationState.IsRunning;
     private bool CanRunValueOperation => !IsBusy && _value.HasValue;
@@ -283,12 +288,8 @@
         _storageLoaded = true;
         try
         {
-            var completedJson = LearningStore.GetItem(CompletedTasksStorageKey);
-            if (!string.IsNullOrWhiteSpace(completedJson))
-            {
-                var completed = JsonSerializer.Deserialize<int[]>(completedJson) ?? [];
-                foreach (var id in completed.Where(id => PracticeTasks.Any(task => task.Id == id))) _completedTaskIds.Add(id);
-            }
+            _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
+            foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id);
 
             var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
             if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
@@ -391,6 +392,7 @@
         _runFrames.Clear();
         _frameIndex = -1;
         _lastCapturedStepText = null;
+        _memoryOpenedDuringTask = _activeStateView == StateView.Memory;
     }
 
     private void CaptureFrame()
@@ -410,45 +412,68 @@
     private Task ResetPlaybackAsync() { SimulationState.Reset(); _runFrames.Clear(); _frameIndex = -1; _lastCapturedStepText = null; return InvokeAsync(StateHasChanged); }
 
     private void SetValue(int value) { if (!IsBusy) { _value = value; _errorMessage = null; } }
-    private void SetStateView(StateView view) { _activeStateView = view; if (view == StateView.Memory && _activeTaskId is not null) { _memoryOpenedDuringTask = true; CheckActiveTaskCompletion(); } }
+    private void SetStateView(StateView view)
+    {
+        _activeStateView = view;
+        if (view == StateView.Memory)
+        {
+            _memoryOpenedDuringTask = true;
+            EvaluatePracticeTasks();
+        }
+    }
     private string GetStateTabClass(StateView view) => _activeStateView == view ? "active" : string.Empty;
 
     private void StartTask(int taskId)
     {
         if (IsBusy) return;
         _activeTaskId = taskId;
-        _practiceEvents.Clear();
-        _practiceSequence = 0;
         _memoryOpenedDuringTask = false;
     }
 
     private void RecordPracticeEvent(PracticeEvent practiceEvent)
     {
-        if (_activeTaskId is null) return;
         _practiceEvents.Add(practiceEvent with { Sequence = ++_practiceSequence });
-        CheckActiveTaskCompletion();
+        if (_practiceEvents.Count > 256) _practiceEvents.RemoveRange(0, _practiceEvents.Count - 256);
+        EvaluatePracticeTasks();
     }
 
-    private void CheckActiveTaskCompletion()
+    private void EvaluatePracticeTasks()
     {
-        if (_activeTaskId is null) return;
-        var completed = _activeTaskId.Value switch
+        foreach (var task in PracticeTasks)
         {
-            1 => _practiceEvents.Any(e => e.Operation == HeapOperationKind.Insert && e.Kind == HeapKind.Min && e.Succeeded && e.Swaps > 0 && e.Value == 10),
-            2 => _practiceEvents.Any(e => e.Operation == HeapOperationKind.ExtractRoot && e.Kind == HeapKind.Min && e.Succeeded && e.RepairDirection == HeapRepairDirection.BubbleDown && e.Swaps > 0),
-            3 => _practiceEvents.Any(e => e.Operation == HeapOperationKind.Insert && e.Kind == HeapKind.Max && e.Succeeded && e.Swaps > 0),
-            4 => _practiceEvents.Any(e => e.Operation == HeapOperationKind.Search && !e.Succeeded && e.Comparisons >= 5),
-            5 => _practiceEvents.Any(e => e.Operation == HeapOperationKind.Delete && e.Succeeded && e.RepairDirection != HeapRepairDirection.None),
-            6 => _memoryOpenedDuringTask && _practiceEvents.Any(e => e.Count >= 5 && e.Capacity >= 8),
-            _ => false
-        };
-        if (!completed) return;
-        _completedTaskIds.Add(_activeTaskId.Value);
-        _activeTaskId = null;
-        _practiceEvents.Clear();
-        _memoryOpenedDuringTask = false;
-        PersistCompletedTasks();
+            if (_completedTaskIds.Contains(task.Id) && GetTaskEvidence(task.Id) is not null && _activeTaskId != task.Id) continue;
+            var trigger = task.Id switch
+            {
+                1 => _practiceEvents.LastOrDefault(e => e.Operation == HeapOperationKind.Insert && e.Kind == HeapKind.Min && e.Succeeded && e.Swaps > 0),
+                2 => _practiceEvents.LastOrDefault(e => e.Operation == HeapOperationKind.ExtractRoot && e.Kind == HeapKind.Min && e.Succeeded && e.RepairDirection == HeapRepairDirection.BubbleDown && e.Swaps > 0),
+                3 => _practiceEvents.LastOrDefault(e => e.Operation == HeapOperationKind.Insert && e.Kind == HeapKind.Max && e.Succeeded && e.Swaps > 0),
+                4 => _practiceEvents.LastOrDefault(e => e.Operation == HeapOperationKind.Search && !e.Succeeded && e.Comparisons >= 5),
+                5 => _practiceEvents.LastOrDefault(e => e.Operation == HeapOperationKind.Delete && e.Succeeded && e.RepairDirection != HeapRepairDirection.None),
+                6 when _memoryOpenedDuringTask && Heap.Count >= 5 && Heap.Capacity >= 8 => _practiceEvents.LastOrDefault(e => e.Operation is not null && e.Succeeded),
+                _ => null
+            };
+            if (trigger is null || _lastResult is null || _lastResult.Operation != trigger.Operation || _lastResult.RequestedValue != trigger.Value) continue;
+            CompletePracticeTask(task, _lastResult);
+        }
     }
+
+    private void CompletePracticeTask(PracticeTaskDefinition task, HeapOperationResult result)
+    {
+        var evidence = new PracticeCompletionEvidence
+        {
+            TaskId = task.Id, TaskTitle = task.Title, Headline = GetResultHeadline(result),
+            ActionExplanation = GetPlainRunSummary(result), MemoryExplanation = GetMemoryExplanation(result),
+            WhyItMatters = GetComplexityExplanation(result), CaseSummary = $"{result.Kind} Heap · {result.Operation}",
+            Metrics = [new("Operation", result.Operation.ToString()), new("Comparisons", result.Comparisons.ToString()), new("Swaps", result.Swaps.ToString()), new("Repair", result.RepairDirection.ToString()), new("Count", result.FinalCount.ToString()), new("Capacity", result.CapacityAfter.ToString())]
+        };
+        PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
+        _completedTaskIds.Add(task.Id);
+        if (_activeTaskId == task.Id) _activeTaskId = null;
+    }
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
+    private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
+    private void CloseTaskEvidence() => _practiceEvidencePopup = null;
 
     private string GetActiveTaskProgressText(int taskId) => taskId switch
     {

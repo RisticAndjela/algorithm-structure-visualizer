@@ -5,6 +5,7 @@
 @inject SimulationState SimulationState
 @inject InsertionSortSimulation InsertionSort
 @inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
 
 <PageTitle>Insertion Sort — Algorithm Visualizer</PageTitle>
 
@@ -229,11 +230,17 @@
             {
                 var completed = _completedTaskIds.Contains(task.Id);
                 var active = _activeTaskId == task.Id;
-                <article class="task-card @(completed ? "completed" : string.Empty) @(active ? "active" : string.Empty)">
-                    <div class="task-topline"><span>@task.Id.ToString("00")</span><span>@(completed ? "✓ Completed" : active ? "In progress" : "Practice")</span></div>
-                    <h3>@task.Title</h3><p>@task.Goal</p><div class="task-input">Input: <code>@FormatValues(task.Input)</code></div>
-                    <div class="task-actions"><a href="/learn/concepts#insertion-sort">Need the concept? →</a><button type="button" @onclick="() => StartTask(task.Id)" disabled="@IsBusy">@(active ? "Restart task" : completed ? "Practice again" : "Start task")</button></div>
-                </article>
+                <PracticeTaskCard TaskId="@task.Id"
+                                  Title="@task.Title"
+                                  Description="@task.Goal"
+                                  InputText="@FormatValues(task.Input)"
+                                  HelpHref="/learn/concepts#insertion-sort"
+                                  Completed="@completed"
+                                  Active="@active"
+                                  Busy="@IsBusy"
+                                  HasEvidence="@(GetTaskEvidence(task.Id) is not null)"
+                                  Start="@(() => StartTask(task.Id))"
+                                  OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
             }
         </div>
     </section>
@@ -244,6 +251,8 @@
                     LinkLabel="Open Merge Sort" />
 
 </div>
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
 
 @if (_lastRunPopupOpen && _lastResult is not null)
 {
@@ -269,20 +278,23 @@
 }
 
 @code {
+    private const string ModuleKey = "insertion-sort";
     private const string CompletedTasksStorageKey = "algorithm-visualizer.insertion-sort.completed-tasks.v1";
     private const string PopupSettingStorageKey = "algorithm-visualizer.insertion-sort.result-popups.v1";
 
     private readonly List<RunFrame> _frames = [];
     private readonly HashSet<int> _completedTaskIds = [];
     private readonly List<InsertionSortResult> _practiceResults = [];
+    private PracticeModuleProgress _practiceProgress = new();
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
 
     private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
     [
-        new(1, "Trace canonical insertion", "Use Linear mode and verify the classic 5, 2, 4, 6, 1, 3 example: 12 comparisons and 9 right shifts.", [5, 2, 4, 6, 1, 3], InsertionSortVariant.Linear),
+        new(1, "Trace canonical insertion", "Use Linear mode on an input containing 5, 2, 4, 6, 1, 3 in that order. Extra values are allowed; complete a non-trivial insertion run and watch the sorted prefix grow.", [5, 2, 4, 6, 1, 3], InsertionSortVariant.Linear),
         new(2, "Prove the adaptive best case", "Use Linear mode on an already sorted array. Each new key should stop after one comparison and require no shifts.", [1, 2, 3, 4, 5], InsertionSortVariant.Linear),
         new(3, "Expose the reverse worst case", "Use Linear mode on reverse input and verify that every previous value has to shift right.", [5, 4, 3, 2, 1], InsertionSortVariant.Linear),
         new(4, "Preserve duplicate identity", "Use Linear mode on 2, 2, 1, then open Memory state and verify that the two equal items keep their original order.", [2, 2, 1], InsertionSortVariant.Linear),
-        new(5, "Reduce comparisons with Binary Insertion", "Use Binary mode on the classic example. It must produce the same stable order with fewer key comparisons than Linear mode while keeping the same shifts.", [5, 2, 4, 6, 1, 3], InsertionSortVariant.BinarySearch),
+        new(5, "Use Binary Insertion", "Use Binary mode on an input containing the classic sequence. Extra values are allowed; verify the same stable insertion behavior while binary search chooses the insertion point.", [5, 2, 4, 6, 1, 3], InsertionSortVariant.BinarySearch),
         new(6, "Test the one-item boundary", "Use Linear mode on one value and prove that no comparison, shift, or pass is needed.", [42], InsertionSortVariant.Linear)
     ];
 
@@ -347,12 +359,9 @@
         _storageLoaded = true;
         try
         {
-            var completedJson = LearningStore.GetItem(CompletedTasksStorageKey);
-            if (!string.IsNullOrWhiteSpace(completedJson))
-            {
-                var completed = System.Text.Json.JsonSerializer.Deserialize<int[]>(completedJson) ?? [];
-                foreach (var id in completed.Where(id => PracticeTasks.Any(task => task.Id == id))) _completedTaskIds.Add(id);
-            }
+            _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
+            _completedTaskIds.Clear();
+            foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id);
             var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
             if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
         }
@@ -445,7 +454,7 @@
         _lastRunPopupOpen = _showRunPopups;
     }
 
-    private void PrepareRun() { _inputError = null; _lastRunPopupOpen = false; _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; }
+    private void PrepareRun() { _inputError = null; _memoryOpenedDuringTask = _activeStateView == StateView.Memory; _lastRunPopupOpen = false; _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; }
     private void Capture() { var step = SimulationState.CurrentStepText; if (step == _lastCapturedStep) return; var tail = _frameIndex < 0 || _frameIndex == _frames.Count - 1; _frames.Add(new RunFrame(step, InsertionSort.CreateSnapshot())); _lastCapturedStep = step; if (tail) _frameIndex = _frames.Count - 1; }
     private void HandleSimulationChanged() { if (SimulationState.IsRunning) Capture(); _ = InvokeAsync(StateHasChanged); }
     private bool IsCurrent(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;
@@ -459,7 +468,11 @@
     private void SetStateView(StateView view)
     {
         _view = view;
-        if (view == StateView.Memory && _activeTaskId is not null && _practiceResults.Count > 0) { _memoryOpenedDuringTask = true; CheckActiveTaskCompletion(); }
+        if (view == StateView.Memory && _practiceResults.Count > 0)
+        {
+            _memoryOpenedDuringTask = true;
+            EvaluatePracticeTasks();
+        }
     }
 
     private void StartTask(int taskId)
@@ -467,31 +480,75 @@
         if (IsBusy) return;
         var task = PracticeTasks.First(item => item.Id == taskId);
         _activeTaskId = taskId;
-        _practiceResults.Clear();
         _memoryOpenedDuringTask = false;
         _variant = task.Variant;
         LoadValues(CloneValues(task.Input));
     }
 
-    private void RecordPracticeResult(InsertionSortResult result) { if (_activeTaskId is null) return; _practiceResults.Add(result); CheckActiveTaskCompletion(); }
-
-    private void CheckActiveTaskCompletion()
+    private void RecordPracticeResult(InsertionSortResult result)
     {
-        if (_activeTaskId is null || _practiceResults.Count == 0) return;
-        var result = _practiceResults[^1];
-        var completed = _activeTaskId.Value switch
-        {
-            1 => result.Variant == InsertionSortVariant.Linear && SameValues(result.InitialValues, [5,2,4,6,1,3]) && SameValues(result.SortedValues, [1,2,3,4,5,6]) && result.Comparisons == 12 && result.Shifts == 9 && result.Passes == 5,
-            2 => result.Variant == InsertionSortVariant.Linear && SameValues(result.InitialValues, [1,2,3,4,5]) && result.Comparisons == 4 && result.Shifts == 0,
-            3 => result.Variant == InsertionSortVariant.Linear && SameValues(result.InitialValues, [5,4,3,2,1]) && result.Comparisons == 10 && result.Shifts == 10,
-            4 => result.Variant == InsertionSortVariant.Linear && SameValues(result.InitialValues, [2,2,1]) && result.PreservedEqualValueOrder && _memoryOpenedDuringTask,
-            5 => result.Variant == InsertionSortVariant.BinarySearch && SameValues(result.InitialValues, [5,2,4,6,1,3]) && result.Comparisons == 10 && result.Shifts == 9 && result.PreservedEqualValueOrder,
-            6 => result.Variant == InsertionSortVariant.Linear && SameValues(result.InitialValues, [42]) && result.Comparisons == 0 && result.Shifts == 0 && result.Passes == 0,
-            _ => false
-        };
-        if (!completed) return;
-        _completedTaskIds.Add(_activeTaskId.Value); _activeTaskId = null; _practiceResults.Clear(); _memoryOpenedDuringTask = false; PersistCompletedTasks();
+        _practiceResults.Add(result);
+        if (_practiceResults.Count > 24) _practiceResults.RemoveAt(0);
+        EvaluatePracticeTasks();
     }
+
+    private void EvaluatePracticeTasks()
+    {
+        if (_practiceResults.Count == 0) return;
+        var result = _practiceResults[^1];
+        foreach (var task in PracticeTasks)
+        {
+            if (_completedTaskIds.Contains(task.Id) && GetTaskEvidence(task.Id) is not null && _activeTaskId != task.Id) continue;
+            var completed = task.Id switch
+            {
+                1 => result.Variant == InsertionSortVariant.Linear &&
+                     PracticeRules.ContainsOrderedSubsequence(result.InitialValues, task.Input) &&
+                     PracticeRules.IsNonDecreasing(result.SortedValues) && result.Shifts > 0 && result.Passes == result.InitialValues.Length - 1,
+                2 => result.Variant == InsertionSortVariant.Linear && result.InitialValues.Length >= task.Input.Length &&
+                     PracticeRules.IsNonDecreasing(result.InitialValues) && result.Shifts == 0 && result.Comparisons == result.InitialValues.Length - 1,
+                3 => result.Variant == InsertionSortVariant.Linear && result.InitialValues.Length >= task.Input.Length &&
+                     PracticeRules.IsStrictlyDescending(result.InitialValues) &&
+                     result.Shifts == PracticeRules.QuadraticPairCount(result.InitialValues.Length),
+                4 => result.Variant == InsertionSortVariant.Linear && PracticeRules.ContainsOrderedSubsequence(result.InitialValues, task.Input) &&
+                     PracticeRules.HasDuplicate(result.InitialValues) && result.PreservedEqualValueOrder && _memoryOpenedDuringTask,
+                5 => result.Variant == InsertionSortVariant.BinarySearch && PracticeRules.ContainsOrderedSubsequence(result.InitialValues, task.Input) &&
+                     PracticeRules.IsNonDecreasing(result.SortedValues) && result.PreservedEqualValueOrder && result.Passes == result.InitialValues.Length - 1,
+                6 => result.Variant == InsertionSortVariant.Linear && result.InitialValues.Length == 1 && result.Comparisons == 0 && result.Shifts == 0 && result.Passes == 0,
+                _ => false
+            };
+            if (completed) CompletePracticeTask(task, result);
+        }
+    }
+
+    private void CompletePracticeTask(PracticeTaskDefinition task, InsertionSortResult result)
+    {
+        var mode = VariantLabelFor(result.Variant);
+        var evidence = new PracticeCompletionEvidence(
+            task.Id,
+            task.Title,
+            $"{mode} completed after {result.Passes} insertion pass(es)",
+            result.Shifts == 0
+                ? "Each held key already belonged at the end of the sorted prefix, so no previous element had to move."
+                : $"The run held one key at a time and shifted larger values right {result.Shifts} time(s) to open insertion gaps.",
+            $"The algorithm reused one fixed array and O(1) temporary key storage, performing {result.Writes} array-slot write(s). Equal-value identity order was {(result.PreservedEqualValueOrder ? "preserved" : "changed")}.",
+            result.Variant == InsertionSortVariant.BinarySearch
+                ? "Binary search can reduce insertion-point comparisons, but array elements still have to shift to make room."
+                : "Linear Insertion Sort is adaptive: already ordered data stops each backward scan immediately, while reverse order exposes the full shifting cost.",
+            [
+                new("Input", FormatValues(result.InitialValues)),
+                new("Comparisons", result.Comparisons.ToString()),
+                new("Shifts", result.Shifts.ToString()),
+                new("Writes", result.Writes.ToString())
+            ],
+            $"{mode} · {FormatValues(result.InitialValues)} → {FormatValues(result.SortedValues)}");
+        _completedTaskIds.Add(task.Id);
+        PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
+        if (_activeTaskId == task.Id) _activeTaskId = null;
+    }
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
+    private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
+    private void CloseTaskEvidence() => _practiceEvidencePopup = null;
 
     private string GetActiveTaskProgressText(int taskId)
     {
@@ -499,11 +556,11 @@
         var result = _practiceResults[^1];
         return taskId switch
         {
-            1 => $"Need 12 comparisons and 9 shifts. Last run: {result.Comparisons} comparisons, {result.Shifts} shifts.",
-            2 => $"Need 4 comparisons and 0 shifts. Last run: {result.Comparisons} comparisons, {result.Shifts} shifts.",
-            3 => $"Need 10 comparisons and 10 shifts. Last run: {result.Comparisons} comparisons, {result.Shifts} shifts.",
+            1 => $"Need a non-trivial Linear run containing the requested values in order. Last run: {result.Comparisons} comparisons, {result.Shifts} shifts, {result.Passes} passes.",
+            2 => $"Need an already sorted input with zero shifts and one stop comparison per inserted key. Last run: {result.Comparisons} comparisons, {result.Shifts} shifts.",
+            3 => $"Need a reverse input so every earlier item shifts for each inserted key. Last run: n={result.InitialValues.Length}, {result.Comparisons} comparisons, {result.Shifts} shifts.",
             4 => $"Stable order preserved={(result.PreservedEqualValueOrder ? "yes" : "no")}; Memory state opened={(_memoryOpenedDuringTask ? "yes" : "no")}.",
-            5 => $"Need 10 binary comparisons and the same 9 shifts. Last run: {result.Comparisons} comparisons, {result.Shifts} shifts.",
+            5 => $"Need Binary Insertion to place the requested sequence while preserving stable insertion behavior. Last run: {result.Comparisons} comparisons, {result.Shifts} shifts.",
             6 => $"Need zero work. Last run: {result.Comparisons} comparisons, {result.Shifts} shifts.",
             _ => string.Empty
         };

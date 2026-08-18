@@ -5,6 +5,7 @@
 @inject SimulationState SimulationState
 @inject SelectionSortSimulation SelectionSort
 @inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
 
 <PageTitle>Selection Sort — Algorithm Visualizer</PageTitle>
 
@@ -262,12 +263,17 @@
             {
                 var completed = _completedTaskIds.Contains(task.Id);
                 var active = _activeTaskId == task.Id;
-                <article class="task-card @(completed ? "completed" : string.Empty) @(active ? "active" : string.Empty)">
-                    <div class="task-topline"><span>@task.Id.ToString("00")</span><span>@(completed ? "✓ Completed" : active ? "In progress" : "Practice")</span></div>
-                    <h3>@task.Title</h3><p>@task.Goal</p>
-                    <div class="task-input">Input: <code>@FormatValues(task.Input)</code></div>
-                    <div class="task-actions"><a href="/learn/concepts#selection-sort">Need the concept? →</a><button type="button" @onclick="() => StartTask(task.Id)" disabled="@IsBusy">@(active ? "Restart task" : completed ? "Practice again" : "Start task")</button></div>
-                </article>
+                <PracticeTaskCard TaskId="@task.Id"
+                                  Title="@task.Title"
+                                  Description="@task.Goal"
+                                  InputText="@FormatValues(task.Input)"
+                                  HelpHref="/learn/concepts#selection-sort"
+                                  Completed="@completed"
+                                  Active="@active"
+                                  Busy="@IsBusy"
+                                  HasEvidence="@(GetTaskEvidence(task.Id) is not null)"
+                                  Start="@(() => StartTask(task.Id))"
+                                  OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
             }
         </div>
     </section>
@@ -278,6 +284,8 @@
                     LinkLabel="Open Insertion Sort" />
 
 </div>
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
 
 @if (_lastRunPopupOpen && _lastResult is not null)
 {
@@ -323,16 +331,19 @@
 }
 
 @code {
+    private const string ModuleKey = "selection-sort";
     private const string CompletedTasksStorageKey = "algorithm-visualizer.selection-sort.completed-tasks.v1";
     private const string PopupSettingStorageKey = "algorithm-visualizer.selection-sort.result-popups.v1";
 
     private readonly List<RunFrame> _frames = [];
     private readonly HashSet<int> _completedTaskIds = [];
     private readonly List<SelectionSortResult> _practiceResults = [];
+    private PracticeModuleProgress _practiceProgress = new();
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
 
     private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
     [
-        new(1, "Trace Classic Selection Sort", "Use Classic mode and verify that four minimum scans produce 10 comparisons but only three direct swaps.", [64, 25, 12, 22, 11], SelectionSortVariant.Classic),
+        new(1, "Trace Classic Selection Sort", "Use Classic mode on an input containing 64, 25, 12, 22, 11 in that order. Extra values are allowed; verify a complete minimum scan for every destination and at most one direct swap per pass.", [64, 25, 12, 22, 11], SelectionSortVariant.Classic),
         new(2, "Prove there is no sorted-input shortcut", "Use Classic mode on an ordered array. It must still perform every Selection Sort comparison even though no swap is needed.", [1, 2, 3, 4, 5], SelectionSortVariant.Classic),
         new(3, "Compare scans with few swaps", "Use Classic mode on a reverse array and notice that comparison count stays quadratic while swaps stay limited.", [5, 4, 3, 2, 1], SelectionSortVariant.Classic),
         new(4, "Expose classic instability", "Use Classic mode on 2, 2, 1, then open Memory state. The two equal 2-items must reverse relative identity.", [2, 2, 1], SelectionSortVariant.Classic),
@@ -414,12 +425,9 @@
         _storageLoaded = true;
         try
         {
-            var completedJson = LearningStore.GetItem(CompletedTasksStorageKey);
-            if (!string.IsNullOrWhiteSpace(completedJson))
-            {
-                var completed = System.Text.Json.JsonSerializer.Deserialize<int[]>(completedJson) ?? [];
-                foreach (var id in completed.Where(id => PracticeTasks.Any(task => task.Id == id))) _completedTaskIds.Add(id);
-            }
+            _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
+            _completedTaskIds.Clear();
+            foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id);
             var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
             if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
         }
@@ -527,7 +535,7 @@
         _lastRunPopupOpen = _showRunPopups;
     }
 
-    private void PrepareRun() { _inputError = null; _lastRunPopupOpen = false; _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; }
+    private void PrepareRun() { _inputError = null; _memoryOpenedDuringTask = _activeStateView == StateView.Memory; _lastRunPopupOpen = false; _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; }
 
     private void Capture()
     {
@@ -556,7 +564,11 @@
     private void SetStateView(StateView view)
     {
         _view = view;
-        if (view == StateView.Memory && _activeTaskId is not null && _practiceResults.Count > 0) { _memoryOpenedDuringTask = true; CheckActiveTaskCompletion(); }
+        if (view == StateView.Memory && _practiceResults.Count > 0)
+        {
+            _memoryOpenedDuringTask = true;
+            EvaluatePracticeTasks();
+        }
     }
 
     private void StartTask(int taskId)
@@ -564,31 +576,83 @@
         if (IsBusy) return;
         var task = PracticeTasks.First(item => item.Id == taskId);
         _activeTaskId = taskId;
-        _practiceResults.Clear();
         _memoryOpenedDuringTask = false;
         _variant = task.Variant;
         LoadValues(CloneValues(task.Input));
     }
 
-    private void RecordPracticeResult(SelectionSortResult result) { if (_activeTaskId is null) return; _practiceResults.Add(result); CheckActiveTaskCompletion(); }
-
-    private void CheckActiveTaskCompletion()
+    private void RecordPracticeResult(SelectionSortResult result)
     {
-        if (_activeTaskId is null || _practiceResults.Count == 0) return;
-        var result = _practiceResults[^1];
-        var completed = _activeTaskId.Value switch
-        {
-            1 => result.Variant == SelectionSortVariant.Classic && SameValues(result.InitialValues, [64,25,12,22,11]) && SameValues(result.SortedValues, [11,12,22,25,64]) && result.Comparisons == 10 && result.Swaps == 3 && result.Passes == 4,
-            2 => result.Variant == SelectionSortVariant.Classic && SameValues(result.InitialValues, [1,2,3,4,5]) && result.Comparisons == 10 && result.Swaps == 0 && result.Passes == 4,
-            3 => result.Variant == SelectionSortVariant.Classic && SameValues(result.InitialValues, [5,4,3,2,1]) && result.Comparisons == 10 && result.Swaps == 2,
-            4 => result.Variant == SelectionSortVariant.Classic && SameValues(result.InitialValues, [2,2,1]) && !result.PreservedEqualValueOrder && _memoryOpenedDuringTask,
-            5 => result.Variant == SelectionSortVariant.StableShift && SameValues(result.InitialValues, [2,2,1]) && result.PreservedEqualValueOrder && result.StableAlgorithm && _memoryOpenedDuringTask,
-            6 => result.Variant == SelectionSortVariant.Classic && SameValues(result.InitialValues, [42]) && result.Comparisons == 0 && result.Swaps == 0 && result.Moves == 0 && result.Passes == 0,
-            _ => false
-        };
-        if (!completed) return;
-        _completedTaskIds.Add(_activeTaskId.Value); _activeTaskId = null; _practiceResults.Clear(); _memoryOpenedDuringTask = false; PersistCompletedTasks();
+        _practiceResults.Add(result);
+        if (_practiceResults.Count > 24) _practiceResults.RemoveAt(0);
+        EvaluatePracticeTasks();
     }
+
+    private void EvaluatePracticeTasks()
+    {
+        if (_practiceResults.Count == 0) return;
+        var result = _practiceResults[^1];
+        var expectedComparisons = PracticeRules.QuadraticPairCount(result.InitialValues.Length);
+
+        foreach (var task in PracticeTasks)
+        {
+            if (_completedTaskIds.Contains(task.Id) && GetTaskEvidence(task.Id) is not null && _activeTaskId != task.Id) continue;
+            var completed = task.Id switch
+            {
+                1 => result.Variant == SelectionSortVariant.Classic &&
+                     PracticeRules.ContainsOrderedSubsequence(result.InitialValues, task.Input) &&
+                     PracticeRules.IsNonDecreasing(result.SortedValues) &&
+                     result.Comparisons == expectedComparisons && result.Swaps <= Math.Max(0, result.InitialValues.Length - 1),
+                2 => result.Variant == SelectionSortVariant.Classic &&
+                     result.InitialValues.Length >= task.Input.Length && PracticeRules.IsNonDecreasing(result.InitialValues) &&
+                     result.Comparisons == expectedComparisons && result.Swaps == 0,
+                3 => result.Variant == SelectionSortVariant.Classic &&
+                     result.InitialValues.Length >= task.Input.Length && PracticeRules.IsStrictlyDescending(result.InitialValues) &&
+                     result.Comparisons == expectedComparisons && result.Swaps <= Math.Max(0, result.InitialValues.Length - 1),
+                4 => result.Variant == SelectionSortVariant.Classic &&
+                     PracticeRules.ContainsOrderedSubsequence(result.InitialValues, task.Input) && PracticeRules.HasDuplicate(result.InitialValues) &&
+                     !result.PreservedEqualValueOrder && _memoryOpenedDuringTask,
+                5 => result.Variant == SelectionSortVariant.StableShift &&
+                     PracticeRules.ContainsOrderedSubsequence(result.InitialValues, task.Input) && PracticeRules.HasDuplicate(result.InitialValues) &&
+                     result.PreservedEqualValueOrder && result.StableAlgorithm && _memoryOpenedDuringTask,
+                6 => result.Variant == SelectionSortVariant.Classic && result.InitialValues.Length == 1 &&
+                     result.Comparisons == 0 && result.Swaps == 0 && result.Moves == 0 && result.Passes == 0,
+                _ => false
+            };
+            if (completed) CompletePracticeTask(task, result);
+        }
+    }
+
+    private void CompletePracticeTask(PracticeTaskDefinition task, SelectionSortResult result)
+    {
+        var mode = VariantLabelFor(result.Variant);
+        var evidence = new PracticeCompletionEvidence(
+            task.Id,
+            task.Title,
+            $"{mode} Selection Sort completed",
+            result.Variant == SelectionSortVariant.StableShift
+                ? $"The run scanned each remaining suffix for its minimum and inserted the winner by shifting {result.Moves} slot(s)."
+                : $"The run scanned each remaining suffix completely and used {result.Swaps} direct swap(s) after the searches.",
+            result.Variant == SelectionSortVariant.StableShift
+                ? $"Stable Shift reused the fixed array with O(1) temporary storage. Equal-value identity order was {(result.PreservedEqualValueOrder ? "preserved" : "changed")}."
+                : $"Classic Selection Sort reused the fixed array with O(1) temporary storage. Distant swaps {(result.PreservedEqualValueOrder ? "did not change" : "changed")} equal-value identity order in this run.",
+            "Selection Sort is useful for contrasting a fixed quadratic comparison schedule with a low number of placements. The stable variant shows the trade-off between fewer distant swaps and more element movement.",
+            [
+                new("Input", FormatValues(result.InitialValues)),
+                new("Comparisons", result.Comparisons.ToString()),
+                new("Swaps", result.Swaps.ToString()),
+                new("Moves", result.Moves.ToString())
+            ],
+            $"{mode} · {FormatValues(result.InitialValues)} → {FormatValues(result.SortedValues)}");
+
+        _completedTaskIds.Add(task.Id);
+        PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
+        if (_activeTaskId == task.Id) _activeTaskId = null;
+    }
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
+    private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
+    private void CloseTaskEvidence() => _practiceEvidencePopup = null;
 
     private string GetActiveTaskProgressText(int taskId)
     {
@@ -598,9 +662,9 @@
         var result = _practiceResults[^1];
         return taskId switch
         {
-            1 => $"Need 10 comparisons and 3 swaps. Last run: {result.Comparisons} comparisons, {result.Swaps} swaps.",
-            2 => $"Need all 10 comparisons and zero swaps. Last run: {result.Comparisons} comparisons, {result.Swaps} swaps.",
-            3 => $"Need 10 comparisons but only 2 swaps. Last run: {result.Comparisons} comparisons, {result.Swaps} swaps.",
+            1 => $"Need the full n(n−1)/2 scan schedule with at most n−1 swaps. Last run: n={result.InitialValues.Length}, {result.Comparisons} comparisons, {result.Swaps} swaps.",
+            2 => $"Need an already sorted input: all n(n−1)/2 comparisons still happen, with zero swaps. Last run: {result.Comparisons} comparisons, {result.Swaps} swaps.",
+            3 => $"Need a reverse input: comparison work stays quadratic while direct swaps remain at most n−1. Last run: {result.Comparisons} comparisons, {result.Swaps} swaps.",
             4 => $"Classic instability visible={(!result.PreservedEqualValueOrder ? "yes" : "no")}; Memory state opened={(_memoryOpenedDuringTask ? "yes" : "no")}.",
             5 => $"Stable order preserved={(result.PreservedEqualValueOrder ? "yes" : "no")}; moves={result.Moves}; Memory state opened={(_memoryOpenedDuringTask ? "yes" : "no")}.",
             6 => $"Need zero work. Last run: {result.Comparisons} comparisons, {result.Swaps} swaps, {result.Moves} moves.",

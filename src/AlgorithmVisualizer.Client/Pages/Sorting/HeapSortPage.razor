@@ -5,6 +5,7 @@
 @inject SimulationState SimulationState
 @inject HeapSortSimulation HeapSort
 @inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
 
 <PageTitle>Heap Sort — Algorithm Visualizer</PageTitle>
 
@@ -175,17 +176,25 @@
             {
                 var completed = _completedTaskIds.Contains(task.Id);
                 var active = _activeTaskId == task.Id;
-                <article class="task-card @(completed ? "completed" : string.Empty) @(active ? "active" : string.Empty)">
-                    <div class="task-topline"><span>@task.Id.ToString("00")</span><span>@(completed ? "✓ Completed" : active ? "In progress" : "Practice")</span></div>
-                    <h3>@task.Title</h3><p>@task.Goal</p><div class="task-input">Input: <code>@FormatValues(task.Input)</code></div>
-                    <div class="task-actions"><a href="/learn/concepts#heap-sort">Need the concept? →</a><button type="button" @onclick="() => StartTask(task.Id)" disabled="@IsBusy">@(active ? "Restart task" : completed ? "Practice again" : "Start task")</button></div>
-                </article>
+                <PracticeTaskCard TaskId="@task.Id"
+                                  Title="@task.Title"
+                                  Description="@task.Goal"
+                                  InputText="@FormatValues(task.Input)"
+                                  HelpHref="/learn/concepts#heap-sort"
+                                  Completed="@completed"
+                                  Active="@active"
+                                  Busy="@IsBusy"
+                                  HasEvidence="@(GetTaskEvidence(task.Id) is not null)"
+                                  Start="@(() => StartTask(task.Id))"
+                                  OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
             }
         </div>
     </section>
 
     <NextLessonCard Eyebrow="NEXT TRACK PREP" Title="Review Big-O before search algorithms" Description="You have completed the sorting track. Review how Θ(n), Θ(n log n), and Θ(n²) grow before moving into the upcoming search-algorithm lessons." Href="/learn/concepts#big-o" Level="Sorting track complete" LinkLabel="Review Big-O" />
 </div>
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
 
 @if (_lastRunPopupOpen && _lastResult is not null)
 {
@@ -210,18 +219,21 @@
 }
 
 @code {
+    private const string ModuleKey = "heap-sort";
     private const string CompletedTasksStorageKey = "algorithm-visualizer.heap-sort.completed-tasks.v1";
     private const string PopupSettingStorageKey = "algorithm-visualizer.heap-sort.result-popups.v1";
 
     private readonly List<RunFrame> _frames = [];
     private readonly HashSet<int> _completedTaskIds = [];
     private readonly List<HeapSortResult> _practiceResults = [];
+    private PracticeModuleProgress _practiceProgress = new();
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
 
     private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
     [
         new(1, "Trace one complete Heap Sort", "Use Basic mode and finish the classic input. Confirm that every extraction grows the final suffix by one slot.", [4, 10, 3, 5, 1], HeapSortVariant.IncrementalBuild),
-        new(2, "Measure insertion-build work", "Use Basic mode on ascending input. Building by repeated bubble-up should use 10 build comparisons and 10 build swaps.", [1, 2, 3, 4, 5, 6, 7], HeapSortVariant.IncrementalBuild),
-        new(3, "Use Floyd's linear build", "Use Advanced mode on the same ascending input. Verify 8 build comparisons and only 4 build swaps before extraction begins.", [1, 2, 3, 4, 5, 6, 7], HeapSortVariant.FloydBottomUp),
+        new(2, "Measure insertion-build work", "Use Basic mode on an ascending input with at least seven values. Repeated bubble-up should expose the full insertion-build path for the actual array length.", [1, 2, 3, 4, 5, 6, 7], HeapSortVariant.IncrementalBuild),
+        new(3, "Use Floyd's linear build", "Use Advanced mode on an ascending input with at least seven values. Verify that bottom-up heap construction does less build work than repeated insertion would for the same size.", [1, 2, 3, 4, 5, 6, 7], HeapSortVariant.FloydBottomUp),
         new(4, "A Max Heap is not a sorted array", "Use Advanced mode on 7,6,5,4,3,2,1. Heap construction needs zero swaps, but the sort still needs six root extractions.", [7, 6, 5, 4, 3, 2, 1], HeapSortVariant.FloydBottomUp),
         new(5, "See why Heap Sort is not stable", "Use Basic mode on 2,2,1, then open Memory state. The equal 2 item identities should reverse even though the values are sorted.", [2, 2, 1], HeapSortVariant.IncrementalBuild),
         new(6, "Test the one-item boundary", "Use Advanced mode on one value and verify zero comparisons, swaps, and extractions.", [42], HeapSortVariant.FloydBottomUp)
@@ -302,12 +314,9 @@
         {
             var popupValue = LearningStore.GetItem(PopupSettingStorageKey);
             if (bool.TryParse(popupValue, out var parsedPopup)) _showRunPopups = parsedPopup;
-            var saved = LearningStore.GetItem(CompletedTasksStorageKey);
-            if (!string.IsNullOrWhiteSpace(saved))
-            {
-                var ids = System.Text.Json.JsonSerializer.Deserialize<int[]>(saved) ?? [];
-                foreach (var id in ids) _completedTaskIds.Add(id);
-            }
+            _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
+            _completedTaskIds.Clear();
+            foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id);
             StateHasChanged();
         }
         catch { }
@@ -420,7 +429,7 @@
         _lastRunPopupOpen = _showRunPopups;
     }
 
-    private void PrepareRun() { _inputError = null; _lastRunPopupOpen = false; _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; }
+    private void PrepareRun() { _inputError = null; _memoryOpenedDuringTask = _activeStateView == StateView.Memory; _lastRunPopupOpen = false; _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; }
     private void Capture() { var step = SimulationState.CurrentStepText; if (step == _lastCapturedStep) return; var tail = _frameIndex < 0 || _frameIndex == _frames.Count - 1; _frames.Add(new RunFrame(step, HeapSort.CreateSnapshot())); _lastCapturedStep = step; if (tail) _frameIndex = _frames.Count - 1; }
     private void HandleSimulationChanged() { if (SimulationState.IsRunning) Capture(); _ = InvokeAsync(StateHasChanged); }
     private bool IsCurrent(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;
@@ -434,7 +443,11 @@
     private void SetStateView(StateView view)
     {
         _view = view;
-        if (view == StateView.Memory && _activeTaskId is not null && _practiceResults.Count > 0) { _memoryOpenedDuringTask = true; CheckActiveTaskCompletion(); }
+        if (view == StateView.Memory && _practiceResults.Count > 0)
+        {
+            _memoryOpenedDuringTask = true;
+            EvaluatePracticeTasks();
+        }
     }
 
     private void StartTask(int taskId)
@@ -442,35 +455,75 @@
         if (IsBusy) return;
         var task = PracticeTasks.First(item => item.Id == taskId);
         _activeTaskId = taskId;
-        _practiceResults.Clear();
         _memoryOpenedDuringTask = false;
         _variant = task.Variant;
         LoadValues(CloneValues(task.Input));
     }
 
-    private void RecordPracticeResult(HeapSortResult result) { if (_activeTaskId is null) return; _practiceResults.Add(result); CheckActiveTaskCompletion(); }
-
-    private void CheckActiveTaskCompletion()
+    private void RecordPracticeResult(HeapSortResult result)
     {
-        if (_activeTaskId is null || _practiceResults.Count == 0) return;
-        var result = _practiceResults[^1];
-        var complete = _activeTaskId.Value switch
-        {
-            1 => result.Variant == HeapSortVariant.IncrementalBuild && SameValues(result.InitialValues, [4, 10, 3, 5, 1]) && IsSorted(result.SortedValues) && result.Extractions == 4,
-            2 => result.Variant == HeapSortVariant.IncrementalBuild && SameValues(result.InitialValues, [1, 2, 3, 4, 5, 6, 7]) && result.BuildComparisons == 10 && result.BuildSwaps == 10,
-            3 => result.Variant == HeapSortVariant.FloydBottomUp && SameValues(result.InitialValues, [1, 2, 3, 4, 5, 6, 7]) && result.BuildComparisons == 8 && result.BuildSwaps == 4 && result.UsesLinearHeapConstruction,
-            4 => result.Variant == HeapSortVariant.FloydBottomUp && SameValues(result.InitialValues, [7, 6, 5, 4, 3, 2, 1]) && result.BuildSwaps == 0 && result.Extractions == 6 && IsSorted(result.SortedValues),
-            5 => result.Variant == HeapSortVariant.IncrementalBuild && SameValues(result.InitialValues, [2, 2, 1]) && !result.PreservedEqualValueOrder && _memoryOpenedDuringTask,
-            6 => result.Variant == HeapSortVariant.FloydBottomUp && SameValues(result.InitialValues, [42]) && result.Extractions == 0 && result.Comparisons == 0 && result.Swaps == 0,
-            _ => false
-        };
-        if (!complete) return;
-        _completedTaskIds.Add(_activeTaskId.Value);
-        _activeTaskId = null;
-        _practiceResults.Clear();
-        _memoryOpenedDuringTask = false;
-        PersistCompletedTasks();
+        _practiceResults.Add(result);
+        if (_practiceResults.Count > 24) _practiceResults.RemoveAt(0);
+        EvaluatePracticeTasks();
     }
+
+    private void EvaluatePracticeTasks()
+    {
+        if (_practiceResults.Count == 0) return;
+        var result = _practiceResults[^1];
+        var expectedIncrementalSwaps = PracticeRules.BinaryHeapAscendingInsertionSwapCount(result.InitialValues.Length);
+        foreach (var task in PracticeTasks)
+        {
+            if (_completedTaskIds.Contains(task.Id) && GetTaskEvidence(task.Id) is not null && _activeTaskId != task.Id) continue;
+            var complete = task.Id switch
+            {
+                1 => result.Variant == HeapSortVariant.IncrementalBuild && PracticeRules.ContainsOrderedSubsequence(result.InitialValues, task.Input) &&
+                     PracticeRules.IsNonDecreasing(result.SortedValues) && result.Extractions == Math.Max(0, result.InitialValues.Length - 1),
+                2 => result.Variant == HeapSortVariant.IncrementalBuild && result.InitialValues.Length >= task.Input.Length &&
+                     PracticeRules.IsNonDecreasing(result.InitialValues) && result.BuildSwaps == expectedIncrementalSwaps && result.BuildComparisons == expectedIncrementalSwaps,
+                3 => result.Variant == HeapSortVariant.FloydBottomUp && result.InitialValues.Length >= task.Input.Length &&
+                     PracticeRules.IsNonDecreasing(result.InitialValues) && result.UsesLinearHeapConstruction &&
+                     result.BuildSwaps < expectedIncrementalSwaps && result.BuildComparisons <= Math.Max(1, result.InitialValues.Length * 2),
+                4 => result.Variant == HeapSortVariant.FloydBottomUp && result.InitialValues.Length >= task.Input.Length &&
+                     PracticeRules.IsMaxHeap(result.InitialValues) && result.BuildSwaps == 0 &&
+                     result.Extractions == result.InitialValues.Length - 1 && PracticeRules.IsNonDecreasing(result.SortedValues),
+                5 => result.Variant == HeapSortVariant.IncrementalBuild && PracticeRules.ContainsOrderedSubsequence(result.InitialValues, task.Input) &&
+                     PracticeRules.HasDuplicate(result.InitialValues) && !result.PreservedEqualValueOrder && _memoryOpenedDuringTask,
+                6 => result.Variant == HeapSortVariant.FloydBottomUp && result.InitialValues.Length == 1 && result.Extractions == 0 && result.Comparisons == 0 && result.Swaps == 0,
+                _ => false
+            };
+            if (complete) CompletePracticeTask(task, result);
+        }
+    }
+
+    private void CompletePracticeTask(PracticeTaskDefinition task, HeapSortResult result)
+    {
+        var mode = VariantLabelFor(result.Variant);
+        var evidence = new PracticeCompletionEvidence(
+            task.Id,
+            task.Title,
+            $"{mode} Heap Sort completed with {result.Extractions} extraction(s)",
+            $"Heap construction used {result.BuildComparisons} comparison(s) and {result.BuildSwaps} swap(s). Sorting then extracted the root {result.Extractions} time(s) while the final suffix grew.",
+            $"The array itself represented the complete binary tree, so no separate tree or O(n) buffer was allocated. Equal-value identity order was {(result.PreservedEqualValueOrder ? "preserved in this case" : "changed")}.",
+            result.Variant == HeapSortVariant.FloydBottomUp
+                ? "Floyd build demonstrates that a heap can be constructed bottom-up in linear time even though the full sorting phase remains Θ(n log n)."
+                : "Incremental build directly reuses the Binary Heap insertion mental model: append, bubble up, then extract roots for sorting.",
+            [
+                new("Input", FormatValues(result.InitialValues)),
+                new("Build comparisons", result.BuildComparisons.ToString()),
+                new("Build swaps", result.BuildSwaps.ToString()),
+                new("Extractions", result.Extractions.ToString()),
+                new("Total swaps", result.Swaps.ToString())
+            ],
+            $"{mode} · {FormatValues(result.InitialValues)} → {FormatValues(result.SortedValues)}");
+        _completedTaskIds.Add(task.Id);
+        PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
+        if (_activeTaskId == task.Id) _activeTaskId = null;
+    }
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
+    private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
+    private void CloseTaskEvidence() => _practiceEvidencePopup = null;
 
     private string GetActiveTaskProgressText(int taskId)
     {
@@ -478,9 +531,9 @@
         var result = _practiceResults[^1];
         return taskId switch
         {
-            2 => $"Need build 10 comparisons / 10 swaps. Last run: {result.BuildComparisons} / {result.BuildSwaps}.",
-            3 => $"Need Floyd build 8 comparisons / 4 swaps. Last run: {result.BuildComparisons} / {result.BuildSwaps}.",
-            4 => $"Need zero build swaps and six extractions. Last run: {result.BuildSwaps} build swaps, {result.Extractions} extractions.",
+            2 => $"Need ascending input so repeated insertion build exposes its full bubble-up work for the actual n. Last run: n={result.InitialValues.Length}, build comparisons/swaps={result.BuildComparisons}/{result.BuildSwaps}.",
+            3 => $"Need Floyd build to use less construction work than repeated insertion for the same n. Last run: n={result.InitialValues.Length}, build comparisons/swaps={result.BuildComparisons}/{result.BuildSwaps}.",
+            4 => $"Need an input that is already a Max Heap: zero build swaps, then n−1 root extractions. Last run: {result.BuildSwaps} build swaps, {result.Extractions} extractions.",
             5 => $"Equal identity preserved={result.PreservedEqualValueOrder}; Memory opened={_memoryOpenedDuringTask}.",
             6 => $"Need zero work. Last run: {result.Extractions} extractions, {result.Comparisons} comparisons, {result.Swaps} swaps.",
             _ => $"Last run: {result.Extractions} extractions, {result.Comparisons} comparisons, {result.Swaps} swaps."

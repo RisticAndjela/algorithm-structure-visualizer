@@ -5,6 +5,7 @@
 @inject SimulationState SimulationState
 @inject MergeSortSimulation MergeSort
 @inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
 
 <PageTitle>Merge Sort — Algorithm Visualizer</PageTitle>
 
@@ -221,11 +222,17 @@
             {
                 var completed = _completedTaskIds.Contains(task.Id);
                 var active = _activeTaskId == task.Id;
-                <article class="task-card @(completed ? "completed" : string.Empty) @(active ? "active" : string.Empty)">
-                    <div class="task-topline"><span>@task.Id.ToString("00")</span><span>@(completed ? "✓ Completed" : active ? "In progress" : "Practice")</span></div>
-                    <h3>@task.Title</h3><p>@task.Goal</p><div class="task-input">Input: <code>@FormatValues(task.Input)</code></div>
-                    <div class="task-actions"><a href="/learn/concepts#merge-sort">Need the concept? →</a><button type="button" @onclick="() => StartTask(task.Id)" disabled="@IsBusy">@(active ? "Restart task" : completed ? "Practice again" : "Start task")</button></div>
-                </article>
+                <PracticeTaskCard TaskId="@task.Id"
+                                  Title="@task.Title"
+                                  Description="@task.Goal"
+                                  InputText="@FormatValues(task.Input)"
+                                  HelpHref="/learn/concepts#merge-sort"
+                                  Completed="@completed"
+                                  Active="@active"
+                                  Busy="@IsBusy"
+                                  HasEvidence="@(GetTaskEvidence(task.Id) is not null)"
+                                  Start="@(() => StartTask(task.Id))"
+                                  OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
             }
         </div>
     </section>
@@ -236,6 +243,8 @@
                     LinkLabel="Open Quick Sort" />
 
 </div>
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
 
 @if (_lastRunPopupOpen && _lastResult is not null)
 {
@@ -260,16 +269,19 @@
 }
 
 @code {
+    private const string ModuleKey = "merge-sort";
     private const string CompletedTasksStorageKey = "algorithm-visualizer.merge-sort.completed-tasks.v1";
     private const string PopupSettingStorageKey = "algorithm-visualizer.merge-sort.result-popups.v1";
 
     private readonly List<RunFrame> _frames = [];
     private readonly HashSet<int> _completedTaskIds = [];
     private readonly List<MergeSortResult> _practiceResults = [];
+    private PracticeModuleProgress _practiceProgress = new();
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
 
     private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
     [
-        new(1, "Trace recursive divide & conquer", "Use Top-down mode on 8, 3, 5, 1. Verify three splits, three merges, five value comparisons, and the final sorted order.", [8, 3, 5, 1], MergeSortVariant.TopDownRecursive),
+        new(1, "Trace recursive divide & conquer", "Use Top-down mode on an input containing 8, 3, 5, 1 in that order. Extra values are allowed; verify that every non-trivial range is split and merged back into sorted order.", [8, 3, 5, 1], MergeSortVariant.TopDownRecursive),
         new(2, "Prove sorted input still recurses", "Use Top-down mode on 1, 2, 3, 4. The canonical version still performs the recursive split/merge structure even though the data begins sorted.", [1, 2, 3, 4], MergeSortVariant.TopDownRecursive),
         new(3, "Use the Natural best case", "Use Natural mode on an already sorted array. It should detect one run in a linear scan and perform zero merges.", [1, 2, 3, 4, 5], MergeSortVariant.NaturalRuns),
         new(4, "Merge two existing natural runs", "Use Natural mode on 1, 3, 5, 2, 4, 6. It should begin with exactly two runs and need only one actual merge pass.", [1, 3, 5, 2, 4, 6], MergeSortVariant.NaturalRuns),
@@ -351,12 +363,9 @@
         _storageLoaded = true;
         try
         {
-            var completedJson = LearningStore.GetItem(CompletedTasksStorageKey);
-            if (!string.IsNullOrWhiteSpace(completedJson))
-            {
-                var completed = System.Text.Json.JsonSerializer.Deserialize<int[]>(completedJson) ?? [];
-                foreach (var id in completed.Where(id => PracticeTasks.Any(task => task.Id == id))) _completedTaskIds.Add(id);
-            }
+            _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
+            _completedTaskIds.Clear();
+            foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id);
             var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
             if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
         }
@@ -450,7 +459,7 @@
         _lastRunPopupOpen = _showRunPopups;
     }
 
-    private void PrepareRun() { _inputError = null; _lastRunPopupOpen = false; _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; }
+    private void PrepareRun() { _inputError = null; _memoryOpenedDuringTask = _activeStateView == StateView.Memory; _lastRunPopupOpen = false; _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; }
     private void Capture() { var step = SimulationState.CurrentStepText; if (step == _lastCapturedStep) return; var tail = _frameIndex < 0 || _frameIndex == _frames.Count - 1; _frames.Add(new RunFrame(step, MergeSort.CreateSnapshot())); _lastCapturedStep = step; if (tail) _frameIndex = _frames.Count - 1; }
     private void HandleSimulationChanged() { if (SimulationState.IsRunning) Capture(); _ = InvokeAsync(StateHasChanged); }
     private bool IsCurrent(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;
@@ -464,7 +473,11 @@
     private void SetStateView(StateView view)
     {
         _view = view;
-        if (view == StateView.Memory && _activeTaskId is not null && _practiceResults.Count > 0) { _memoryOpenedDuringTask = true; CheckActiveTaskCompletion(); }
+        if (view == StateView.Memory && _practiceResults.Count > 0)
+        {
+            _memoryOpenedDuringTask = true;
+            EvaluatePracticeTasks();
+        }
     }
 
     private void StartTask(int taskId)
@@ -472,31 +485,77 @@
         if (IsBusy) return;
         var task = PracticeTasks.First(item => item.Id == taskId);
         _activeTaskId = taskId;
-        _practiceResults.Clear();
         _memoryOpenedDuringTask = false;
         _variant = task.Variant;
         LoadValues(CloneValues(task.Input));
     }
 
-    private void RecordPracticeResult(MergeSortResult result) { if (_activeTaskId is null) return; _practiceResults.Add(result); CheckActiveTaskCompletion(); }
-
-    private void CheckActiveTaskCompletion()
+    private void RecordPracticeResult(MergeSortResult result)
     {
-        if (_activeTaskId is null || _practiceResults.Count == 0) return;
-        var result = _practiceResults[^1];
-        var completed = _activeTaskId.Value switch
-        {
-            1 => result.Variant == MergeSortVariant.TopDownRecursive && SameValues(result.InitialValues, [8,3,5,1]) && SameValues(result.SortedValues, [1,3,5,8]) && result.Splits == 3 && result.Merges == 3 && result.Comparisons == 5,
-            2 => result.Variant == MergeSortVariant.TopDownRecursive && SameValues(result.InitialValues, [1,2,3,4]) && result.Splits == 3 && result.Merges == 3 && result.Comparisons == 4,
-            3 => result.Variant == MergeSortVariant.NaturalRuns && SameValues(result.InitialValues, [1,2,3,4,5]) && result.InitialNaturalRunCount == 1 && result.Merges == 0 && result.NaturalPasses == 0 && result.Comparisons == 4,
-            4 => result.Variant == MergeSortVariant.NaturalRuns && SameValues(result.InitialValues, [1,3,5,2,4,6]) && result.InitialNaturalRunCount == 2 && result.Merges == 1 && result.NaturalPasses == 1,
-            5 => result.Variant == MergeSortVariant.TopDownRecursive && SameValues(result.InitialValues, [2,2,1,2]) && result.PreservedEqualValueOrder && _memoryOpenedDuringTask,
-            6 => result.Variant == MergeSortVariant.TopDownRecursive && SameValues(result.InitialValues, [42]) && result.Splits == 0 && result.Merges == 0 && result.Comparisons == 0 && result.Writes == 0,
-            _ => false
-        };
-        if (!completed) return;
-        _completedTaskIds.Add(_activeTaskId.Value); _activeTaskId = null; _practiceResults.Clear(); _memoryOpenedDuringTask = false; PersistCompletedTasks();
+        _practiceResults.Add(result);
+        if (_practiceResults.Count > 24) _practiceResults.RemoveAt(0);
+        EvaluatePracticeTasks();
     }
+
+    private void EvaluatePracticeTasks()
+    {
+        if (_practiceResults.Count == 0) return;
+        var result = _practiceResults[^1];
+        foreach (var task in PracticeTasks)
+        {
+            if (_completedTaskIds.Contains(task.Id) && GetTaskEvidence(task.Id) is not null && _activeTaskId != task.Id) continue;
+            var completed = task.Id switch
+            {
+                1 => result.Variant == MergeSortVariant.TopDownRecursive &&
+                     PracticeRules.ContainsOrderedSubsequence(result.InitialValues, task.Input) && PracticeRules.IsNonDecreasing(result.SortedValues) &&
+                     result.Splits == Math.Max(0, result.InitialValues.Length - 1) && result.Merges == Math.Max(0, result.InitialValues.Length - 1),
+                2 => result.Variant == MergeSortVariant.TopDownRecursive && result.InitialValues.Length >= task.Input.Length &&
+                     PracticeRules.IsNonDecreasing(result.InitialValues) &&
+                     result.Splits == Math.Max(0, result.InitialValues.Length - 1) && result.Merges == Math.Max(0, result.InitialValues.Length - 1),
+                3 => result.Variant == MergeSortVariant.NaturalRuns && result.InitialValues.Length >= task.Input.Length &&
+                     PracticeRules.IsNonDecreasing(result.InitialValues) && result.InitialNaturalRunCount == 1 && result.Merges == 0 && result.NaturalPasses == 0,
+                4 => result.Variant == MergeSortVariant.NaturalRuns && PracticeRules.ContainsOrderedSubsequence(result.InitialValues, task.Input) &&
+                     result.InitialNaturalRunCount == 2 && result.Merges >= 1 && result.NaturalPasses >= 1,
+                5 => result.Variant == MergeSortVariant.TopDownRecursive && PracticeRules.ContainsOrderedSubsequence(result.InitialValues, task.Input) &&
+                     PracticeRules.HasDuplicate(result.InitialValues) && result.PreservedEqualValueOrder && _memoryOpenedDuringTask,
+                6 => result.Variant == MergeSortVariant.TopDownRecursive && result.InitialValues.Length == 1 &&
+                     result.Splits == 0 && result.Merges == 0 && result.Comparisons == 0 && result.Writes == 0,
+                _ => false
+            };
+            if (completed) CompletePracticeTask(task, result);
+        }
+    }
+
+    private void CompletePracticeTask(PracticeTaskDefinition task, MergeSortResult result)
+    {
+        var mode = VariantLabelFor(result.Variant);
+        var evidence = new PracticeCompletionEvidence(
+            task.Id,
+            task.Title,
+            $"{mode} completed with {result.Merges} merge operation(s)",
+            result.Merges == 0
+                ? "The input already formed one natural sorted run, so the adaptive variant had nothing to merge."
+                : $"The run combined smaller sorted ranges through {result.Merges} merge operation(s) and {result.Comparisons} front comparison(s).",
+            $"Merge Sort used one reusable O(n) auxiliary buffer and wrote {result.Writes} value/reference slot(s). Equal-value identity order was {(result.PreservedEqualValueOrder ? "preserved" : "changed")}.",
+            result.Variant == MergeSortVariant.NaturalRuns
+                ? "Natural Merge Sort can exploit order that already exists in the input while retaining the same stable merge rule."
+                : "Top-down Merge Sort makes divide-and-conquer explicit: every non-trivial range is divided, then reconstructed from sorted children.",
+            [
+                new("Input", FormatValues(result.InitialValues)),
+                new("Splits", result.Splits.ToString()),
+                new("Merges", result.Merges.ToString()),
+                new("Comparisons", result.Comparisons.ToString()),
+                new("Writes", result.Writes.ToString())
+            ],
+            $"{mode} · {FormatValues(result.InitialValues)} → {FormatValues(result.SortedValues)}");
+        _completedTaskIds.Add(task.Id);
+        PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
+        if (_activeTaskId == task.Id) _activeTaskId = null;
+    }
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
+    private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
+    private void CloseTaskEvidence() => _practiceEvidencePopup = null;
 
     private string GetActiveTaskProgressText(int taskId)
     {
@@ -504,8 +563,8 @@
         var result = _practiceResults[^1];
         return taskId switch
         {
-            1 => $"Need 3 splits, 3 merges, 5 comparisons. Last run: {result.Splits}, {result.Merges}, {result.Comparisons}.",
-            2 => $"Sorted input still needs 3 splits and 3 merges in Top-down mode. Last run: {result.Splits} splits, {result.Merges} merges.",
+            1 => $"Need Top-down recursion to split and merge every non-trivial range. Last run: n={result.InitialValues.Length}, {result.Splits} splits, {result.Merges} merges, {result.Comparisons} comparisons.",
+            2 => $"Sorted input must still follow the complete Top-down recursion structure. Last run: n={result.InitialValues.Length}, {result.Splits} splits, {result.Merges} merges.",
             3 => $"Need one initial run and zero merges. Last run: {result.InitialNaturalRunCount} run(s), {result.Merges} merges.",
             4 => $"Need two initial runs and one merge pass. Last run: {result.InitialNaturalRunCount} run(s), {result.NaturalPasses} pass(es).",
             5 => $"Stable order preserved={(result.PreservedEqualValueOrder ? "yes" : "no")}; Memory state opened={(_memoryOpenedDuringTask ? "yes" : "no")}.",

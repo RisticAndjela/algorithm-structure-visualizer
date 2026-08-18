@@ -6,6 +6,7 @@
 @implements IDisposable
 @inject SimulationState SimulationState
 @inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
 
 <PageTitle>Matrix — Algorithm Visualizer</PageTitle>
 
@@ -336,11 +337,16 @@
             {
                 var completed = _completedTasks.Contains(task.Id);
                 var active = _activeTaskId == task.Id;
-                <article class="task-card @(completed ? "completed" : string.Empty) @(active ? "active" : string.Empty)">
-                    <div class="task-topline"><span>@task.Id.ToString("00")</span><span>@(completed ? "✓ Completed" : active ? "In progress" : "Practice")</span></div>
-                    <h3>@task.Title</h3><p>@task.Description</p>
-                    <div class="task-actions"><a href="@task.HelpHref">Need the concept? →</a><button type="button" @onclick="() => StartTask(task.Id)" disabled="@IsBusy">@(active ? "Restart task" : completed ? "Practice again" : "Start task")</button></div>
-                </article>
+                <PracticeTaskCard TaskId="@task.Id"
+                                  Title="@task.Title"
+                                  Description="@task.Description"
+                                  HelpHref="@task.HelpHref"
+                                  Completed="@completed"
+                                  Active="@active"
+                                  Busy="@IsBusy"
+                                  HasEvidence="@(GetTaskEvidence(task.Id) is not null)"
+                                  Start="@(() => StartTask(task.Id))"
+                                  OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
             }
         </div>
     </section>
@@ -351,6 +357,8 @@
                     LinkLabel="Open Graph lesson" />
 
 </div>
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
 
 @if (_lastRunPopupOpen && _lastResult is not null)
 {
@@ -376,12 +384,14 @@
 }
 
 @code {
+    private const string ModuleKey = "matrix";
     private const string CompletedTasksStorageKey = "algovis.matrix.tasks.v1";
     private const string PopupSettingStorageKey = "algorithm-visualizer.matrix.result-popups.v1";
     private MatrixSimulation Matrix = default!;
     private readonly List<RunFrame> _runFrames = new();
     private readonly HashSet<int> _completedTasks = new();
     private readonly List<MatrixOperationResult> _practiceResults = new();
+    private readonly List<MatrixPracticeRun> _practiceRuns = new();
     private MatrixProperties _propertiesA = default!;
     private MatrixProperties _propertiesB = default!;
     private MatrixOperationResult? _lastResult;
@@ -407,6 +417,8 @@
     private bool _customInputChangedDuringTask;
     private bool _matrixAEditedDuringTask;
     private bool _steppedDuringTask;
+    private PracticeModuleProgress _practiceProgress = new();
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
 
     private static readonly PracticeTask[] PracticeTasks =
     [
@@ -458,9 +470,8 @@
         if (!firstRender) return;
         try
         {
-            var json = LearningStore.GetItem(CompletedTasksStorageKey);
-            if (!string.IsNullOrWhiteSpace(json))
-                foreach (var id in JsonSerializer.Deserialize<int[]>(json) ?? []) _completedTasks.Add(id);
+            _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
+            foreach (var id in _practiceProgress.CompletedTaskIds) _completedTasks.Add(id);
 
             var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
             if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
@@ -652,10 +663,10 @@
         _lastResult = null;
         _errorMessage = null;
         _manualInputError = null;
-        if (_activeTaskId == 7 && preset == MatrixPreset.GraphAdjacency)
+        if (preset == MatrixPreset.GraphAdjacency)
         {
             _graphAdjacencyLoadedDuringTask = true;
-            CheckActiveTaskCompletion();
+            EvaluatePracticeTasks();
         }
     }
     private void CopyAToB() { if (IsBusy) return; Matrix.CopyAToB(); SyncDimensions(); RefreshProperties(); ClearTimeline(); SyncBulkTextFromCurrent(MatrixSlot.B); _lastResult = null; _errorMessage = null; _manualInputError = null; }
@@ -718,11 +729,8 @@
     private Task StepBackAsync() { if (SimulationState.IsRunning && !SimulationState.IsPaused) SimulationState.Pause(); if (_frameIndex > 0) _frameIndex--; return InvokeAsync(StateHasChanged); }
     private Task StepForwardAsync()
     {
-        if (_activeTaskId == 3)
-        {
-            _steppedDuringTask = true;
-            CheckActiveTaskCompletion();
-        }
+        _steppedDuringTask = true;
+        EvaluatePracticeTasks();
         if (_frameIndex >= 0 && _frameIndex < _runFrames.Count - 1) { _frameIndex++; return InvokeAsync(StateHasChanged); }
         if (SimulationState.IsRunning) SimulationState.Step();
         return Task.CompletedTask;
@@ -731,10 +739,10 @@
     private void SetView(StateView view)
     {
         _activeView = view;
-        if (view == StateView.Memory && _activeTaskId is not null)
+        if (view == StateView.Memory)
         {
             _memoryOpenedDuringTask = true;
-            CheckActiveTaskCompletion();
+            EvaluatePracticeTasks();
         }
     }
 
@@ -761,7 +769,6 @@
     {
         if (IsBusy) return;
         _activeTaskId = taskId;
-        _practiceResults.Clear();
         _memoryOpenedDuringTask = false;
         _graphAdjacencyLoadedDuringTask = false;
         _customInputChangedDuringTask = false;
@@ -771,55 +778,94 @@
 
     private void MarkCustomInputChanged(MatrixSlot slot)
     {
-        if (_activeTaskId != 4 && _activeTaskId != 9) return;
         _customInputChangedDuringTask = true;
         if (slot == MatrixSlot.A) _matrixAEditedDuringTask = true;
-        CheckActiveTaskCompletion();
+        EvaluatePracticeTasks();
     }
 
     private void RecordPracticeResult(MatrixOperationResult result)
     {
-        if (_activeTaskId is null) return;
         _practiceResults.Add(result);
-        CheckActiveTaskCompletion();
-    }
-
-    private void CheckActiveTaskCompletion()
-    {
-        if (_activeTaskId is null) return;
-
-        var completed = _activeTaskId.Value switch
-        {
-            1 => _practiceResults.Any(result => result.Operation == MatrixOperationKind.Multiply && result.Succeeded) &&
-                 Matrix.RowsA == 2 && Matrix.ColumnsA == 3 && Matrix.RowsB == 3 && Matrix.ColumnsB == 4,
-            2 => _practiceResults.Any(result => !result.Succeeded && result.Operation == MatrixOperationKind.Add),
-            3 => _steppedDuringTask && _practiceResults.Any(result => result.Operation == MatrixOperationKind.Multiply && result.Succeeded) &&
-                 Matrix.RowsA == 2 && Matrix.ColumnsA == 2 && Matrix.RowsB == 2 && Matrix.ColumnsB == 2,
-            4 => _matrixAEditedDuringTask && Matrix.RowsA == 3 && Matrix.ColumnsA == 3 &&
-                 _practiceResults.Any(result => result.Operation == MatrixOperationKind.Rref && result.Succeeded),
-            5 => Matrix.RowsA == Matrix.ColumnsA && Matrix.RowsA is 2 or 3 &&
-                 _practiceResults.Any(result => result.Operation == MatrixOperationKind.Inverse && result.Succeeded),
-            6 => _practiceResults.Any(result =>
-                 (result.Operation == MatrixOperationKind.Determinant && Math.Abs(result.ScalarResult ?? 1d) < 1e-9) ||
-                 (result.Operation == MatrixOperationKind.Inverse && !result.Succeeded && result.Summary.Contains("singular", StringComparison.OrdinalIgnoreCase))),
-            7 => _graphAdjacencyLoadedDuringTask && _memoryOpenedDuringTask,
-            8 => _memoryOpenedDuringTask,
-            9 => _customInputChangedDuringTask && _practiceResults.Any(result => result.Succeeded),
-            _ => false
-        };
-
-        if (!completed) return;
-
-        _completedTasks.Add(_activeTaskId.Value);
-        _activeTaskId = null;
-        _practiceResults.Clear();
-        _memoryOpenedDuringTask = false;
-        _graphAdjacencyLoadedDuringTask = false;
+        var snapshot = Matrix.CreateSnapshot();
+        _practiceRuns.Add(new MatrixPracticeRun(
+            result, snapshot.A.Rows, snapshot.A.Columns, snapshot.B.Rows, snapshot.B.Columns,
+            _steppedDuringTask, _customInputChangedDuringTask, _matrixAEditedDuringTask, _graphAdjacencyLoadedDuringTask));
+        if (_practiceResults.Count > 64) _practiceResults.RemoveRange(0, _practiceResults.Count - 64);
+        if (_practiceRuns.Count > 64) _practiceRuns.RemoveRange(0, _practiceRuns.Count - 64);
+        EvaluatePracticeTasks();
+        _steppedDuringTask = false;
         _customInputChangedDuringTask = false;
         _matrixAEditedDuringTask = false;
-        _steppedDuringTask = false;
-        _ = PersistTasksAsync();
     }
+
+    private void EvaluatePracticeTasks()
+    {
+        foreach (var task in PracticeTasks)
+        {
+            if (_completedTasks.Contains(task.Id) && GetTaskEvidence(task.Id) is not null && _activeTaskId != task.Id) continue;
+
+            MatrixPracticeRun? run = task.Id switch
+            {
+                1 => _practiceRuns.LastOrDefault(x => x.Result.Operation == MatrixOperationKind.Multiply && x.Result.Succeeded && x.RowsA == 2 && x.ColumnsA == 3 && x.RowsB == 3 && x.ColumnsB == 4),
+                2 => _practiceRuns.LastOrDefault(x => x.Result.Operation == MatrixOperationKind.Add && !x.Result.Succeeded),
+                3 => _practiceRuns.LastOrDefault(x => x.Result.Operation == MatrixOperationKind.Multiply && x.Result.Succeeded && x.RowsA == 2 && x.ColumnsA == 2 && x.RowsB == 2 && x.ColumnsB == 2 && x.Stepped),
+                4 => _practiceRuns.LastOrDefault(x => x.Result.Operation == MatrixOperationKind.Rref && x.Result.Succeeded && x.RowsA == 3 && x.ColumnsA == 3 && x.MatrixAEdited),
+                5 => _practiceRuns.LastOrDefault(x => x.Result.Operation == MatrixOperationKind.Inverse && x.Result.Succeeded && x.RowsA == x.ColumnsA && x.RowsA is 2 or 3),
+                6 => _practiceRuns.LastOrDefault(x =>
+                    (x.Result.Operation == MatrixOperationKind.Determinant && Math.Abs(x.Result.ScalarResult ?? 1d) < 1e-9) ||
+                    (x.Result.Operation == MatrixOperationKind.Inverse && !x.Result.Succeeded && x.Result.Summary.Contains("singular", StringComparison.OrdinalIgnoreCase))),
+                9 => _practiceRuns.LastOrDefault(x => x.Result.Succeeded && x.CustomInputChanged),
+                _ => null
+            };
+
+            if (task.Id == 7 && _graphAdjacencyLoadedDuringTask && _memoryOpenedDuringTask)
+            {
+                CompletePracticeTask(task, run?.Result ?? _lastResult, "Graph adjacency preset + Memory state");
+                continue;
+            }
+            if (task.Id == 8 && _memoryOpenedDuringTask)
+            {
+                CompletePracticeTask(task, run?.Result ?? _lastResult, "Row-major Memory state inspected");
+                continue;
+            }
+            if (run is not null) CompletePracticeTask(task, run.Result, $"A={run.RowsA}×{run.ColumnsA}, B={run.RowsB}×{run.ColumnsB}");
+        }
+    }
+
+    private void CompletePracticeTask(PracticeTask task, MatrixOperationResult? result, string caseSummary)
+    {
+        PracticeCompletionEvidence evidence;
+        if (result is not null)
+        {
+            evidence = new PracticeCompletionEvidence
+            {
+                TaskId = task.Id, TaskTitle = task.Title, Headline = GetActionHeadline(result),
+                ActionExplanation = GetActionExplanation(result), MemoryExplanation = GetMemoryExplanation(result),
+                WhyItMatters = GetWhyExplanation(result), CaseSummary = caseSummary,
+                Metrics = [new("Operation", result.Operation.ToString()), new("Status", result.Succeeded ? "Completed" : "Rejected"), new("Arithmetic ops", result.ArithmeticOperations.ToString()), new("Row ops", result.RowOperations.ToString()), new("Complexity", result.Complexity)]
+            };
+        }
+        else
+        {
+            var snapshot = Matrix.CreateSnapshot();
+            evidence = new PracticeCompletionEvidence
+            {
+                TaskId = task.Id, TaskTitle = task.Title, Headline = caseSummary,
+                ActionExplanation = "The required matrix view/state was reached through normal interaction, so the task auto-completed without requiring an exact preset sequence beyond its learning goal.",
+                MemoryExplanation = "Memory state maps every matrix coordinate to the contiguous row-major backing array with index = row × columns + column.",
+                WhyItMatters = "The task checks the concept demonstrated by the current state instead of requiring one hardcoded click sequence.",
+                CaseSummary = caseSummary, Metrics = [new("A", $"{snapshot.A.Rows}×{snapshot.A.Columns}"), new("B", $"{snapshot.B.Rows}×{snapshot.B.Columns}")]
+            };
+        }
+
+        PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
+        _completedTasks.Add(task.Id);
+        if (_activeTaskId == task.Id) _activeTaskId = null;
+    }
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
+    private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
+    private void CloseTaskEvidence() => _practiceEvidencePopup = null;
 
     private string GetActiveTaskProgressText(int taskId) => taskId switch
     {
@@ -926,6 +972,7 @@
     public void Dispose() { SimulationState.Changed -= HandleStateChanged; Matrix.Changed -= HandleMatrixChanged; }
 
     private sealed record RunFrame(string StepText, MatrixWorkspaceSnapshot Snapshot);
+    private sealed record MatrixPracticeRun(MatrixOperationResult Result, int RowsA, int ColumnsA, int RowsB, int ColumnsB, bool Stepped, bool CustomInputChanged, bool MatrixAEdited, bool GraphAdjacencyLoaded);
     private sealed record PracticeTask(int Id, string Title, string Description, string HelpHref);
     private enum StateView { Visual, Memory }
     private enum ResultPopupTab { Action, Memory, Why }

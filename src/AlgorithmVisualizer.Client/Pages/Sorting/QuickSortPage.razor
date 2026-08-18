@@ -5,6 +5,7 @@
 @inject SimulationState SimulationState
 @inject QuickSortSimulation QuickSort
 @inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
 
 <PageTitle>Quick Sort — Algorithm Visualizer</PageTitle>
 
@@ -178,17 +179,25 @@
             {
                 var completed = _completedTaskIds.Contains(task.Id);
                 var active = _activeTaskId == task.Id;
-                <article class="task-card @(completed ? "completed" : string.Empty) @(active ? "active" : string.Empty)">
-                    <div class="task-topline"><span>@task.Id.ToString("00")</span><span>@(completed ? "✓ Completed" : active ? "In progress" : "Practice")</span></div>
-                    <h3>@task.Title</h3><p>@task.Goal</p><div class="task-input">Input: <code>@FormatValues(task.Input)</code></div>
-                    <div class="task-actions"><a href="/learn/concepts#quick-sort">Need the concept? →</a><button type="button" @onclick="() => StartTask(task.Id)" disabled="@IsBusy">@(active ? "Restart task" : completed ? "Practice again" : "Start task")</button></div>
-                </article>
+                <PracticeTaskCard TaskId="@task.Id"
+                                  Title="@task.Title"
+                                  Description="@task.Goal"
+                                  InputText="@FormatValues(task.Input)"
+                                  HelpHref="/learn/concepts#quick-sort"
+                                  Completed="@completed"
+                                  Active="@active"
+                                  Busy="@IsBusy"
+                                  HasEvidence="@(GetTaskEvidence(task.Id) is not null)"
+                                  Start="@(() => StartTask(task.Id))"
+                                  OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
             }
         </div>
     </section>
 
     <NextLessonCard Title="Heap Sort" Description="Finish the sorting track by combining heap construction with repeated root extraction and guaranteed Θ(n log n) time." Href="/sorting/heap" Level="06 · Advanced" LinkLabel="Open Heap Sort" />
 </div>
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
 
 @if (_lastRunPopupOpen && _lastResult is not null)
 {
@@ -213,18 +222,21 @@
 }
 
 @code {
+    private const string ModuleKey = "quick-sort";
     private const string CompletedTasksStorageKey = "algorithm-visualizer.quick-sort.completed-tasks.v1";
     private const string PopupSettingStorageKey = "algorithm-visualizer.quick-sort.result-popups.v1";
 
     private readonly List<RunFrame> _frames = [];
     private readonly HashSet<int> _completedTaskIds = [];
     private readonly List<QuickSortResult> _practiceResults = [];
+    private PracticeModuleProgress _practiceProgress = new();
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
 
     private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
     [
         new(1, "Trace one Lomuto run", "Use Basic mode and finish the classic input. Confirm that pivot placement creates final positions before recursion continues.", [4, 2, 7, 3, 1, 6], QuickSortVariant.LomutoLastPivot),
-        new(2, "Expose the sorted-input trap", "Use Basic mode on sorted input and observe 10 scan comparisons and recursion reaching depth 5.", [1, 2, 3, 4, 5], QuickSortVariant.LomutoLastPivot),
-        new(3, "Improve pivot balance", "Use Advanced mode on the same sorted input and prove its recursion depth is lower than the Basic last-pivot run.", [1, 2, 3, 4, 5], QuickSortVariant.MedianOfThreeThreeWay),
+        new(2, "Expose the sorted-input trap", "Use Basic mode on a sorted input with at least five values. Last-pivot Lomuto should show its quadratic scan pattern and a deep recursive chain.", [1, 2, 3, 4, 5], QuickSortVariant.LomutoLastPivot),
+        new(3, "Improve pivot balance", "Use Advanced mode on a sorted input with at least five values and verify that median-of-three avoids the Basic last-pivot depth pattern.", [1, 2, 3, 4, 5], QuickSortVariant.MedianOfThreeThreeWay),
         new(4, "Collapse duplicate values", "Use Advanced mode on duplicate-heavy input. The equal pivot band should be finished without recursive calls through every equal value.", [3, 3, 2, 3, 1, 3, 3], QuickSortVariant.MedianOfThreeThreeWay),
         new(5, "See why Quick Sort is not stable", "Use Basic mode on 2, 2, 1, then open Memory state. The two equal item identities should reverse even though the values are sorted.", [2, 2, 1], QuickSortVariant.LomutoLastPivot),
         new(6, "Test the one-item base case", "Use Basic mode on one value and verify zero partitions, comparisons, and swaps.", [42], QuickSortVariant.LomutoLastPivot)
@@ -295,12 +307,9 @@
         {
             var popupValue = LearningStore.GetItem(PopupSettingStorageKey);
             if (bool.TryParse(popupValue, out var parsedPopup)) _showRunPopups = parsedPopup;
-            var saved = LearningStore.GetItem(CompletedTasksStorageKey);
-            if (!string.IsNullOrWhiteSpace(saved))
-            {
-                var ids = System.Text.Json.JsonSerializer.Deserialize<int[]>(saved) ?? [];
-                foreach (var id in ids) _completedTaskIds.Add(id);
-            }
+            _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
+            _completedTaskIds.Clear();
+            foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id);
             StateHasChanged();
         }
         catch { }
@@ -427,7 +436,7 @@
         _lastRunPopupOpen = _showRunPopups;
     }
 
-    private void PrepareRun() { _inputError = null; _lastRunPopupOpen = false; _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; }
+    private void PrepareRun() { _inputError = null; _memoryOpenedDuringTask = _activeStateView == StateView.Memory; _lastRunPopupOpen = false; _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; }
     private void Capture() { var step = SimulationState.CurrentStepText; if (step == _lastCapturedStep) return; var tail = _frameIndex < 0 || _frameIndex == _frames.Count - 1; _frames.Add(new RunFrame(step, QuickSort.CreateSnapshot())); _lastCapturedStep = step; if (tail) _frameIndex = _frames.Count - 1; }
     private void HandleSimulationChanged() { if (SimulationState.IsRunning) Capture(); _ = InvokeAsync(StateHasChanged); }
     private bool IsCurrent(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;
@@ -441,7 +450,11 @@
     private void SetStateView(StateView view)
     {
         _view = view;
-        if (view == StateView.Memory && _activeTaskId is not null && _practiceResults.Count > 0) { _memoryOpenedDuringTask = true; CheckActiveTaskCompletion(); }
+        if (view == StateView.Memory && _practiceResults.Count > 0)
+        {
+            _memoryOpenedDuringTask = true;
+            EvaluatePracticeTasks();
+        }
     }
 
     private void StartTask(int taskId)
@@ -449,35 +462,73 @@
         if (IsBusy) return;
         var task = PracticeTasks.First(item => item.Id == taskId);
         _activeTaskId = taskId;
-        _practiceResults.Clear();
         _memoryOpenedDuringTask = false;
         _variant = task.Variant;
         LoadValues(CloneValues(task.Input));
     }
 
-    private void RecordPracticeResult(QuickSortResult result) { if (_activeTaskId is null) return; _practiceResults.Add(result); CheckActiveTaskCompletion(); }
-
-    private void CheckActiveTaskCompletion()
+    private void RecordPracticeResult(QuickSortResult result)
     {
-        if (_activeTaskId is null || _practiceResults.Count == 0) return;
-        var result = _practiceResults[^1];
-        var complete = _activeTaskId.Value switch
-        {
-            1 => result.Variant == QuickSortVariant.LomutoLastPivot && SameValues(result.InitialValues, [4, 2, 7, 3, 1, 6]) && IsSorted(result.SortedValues) && result.Partitions > 0,
-            2 => result.Variant == QuickSortVariant.LomutoLastPivot && SameValues(result.InitialValues, [1, 2, 3, 4, 5]) && result.Comparisons == 10 && result.MaxDepth == 5,
-            3 => result.Variant == QuickSortVariant.MedianOfThreeThreeWay && SameValues(result.InitialValues, [1, 2, 3, 4, 5]) && result.MaxDepth < 5,
-            4 => result.Variant == QuickSortVariant.MedianOfThreeThreeWay && SameValues(result.InitialValues, [3, 3, 2, 3, 1, 3, 3]) && result.HandlesDuplicateHeavyInputBetter && IsSorted(result.SortedValues),
-            5 => result.Variant == QuickSortVariant.LomutoLastPivot && SameValues(result.InitialValues, [2, 2, 1]) && !result.PreservedEqualValueOrder && _memoryOpenedDuringTask,
-            6 => result.Variant == QuickSortVariant.LomutoLastPivot && SameValues(result.InitialValues, [42]) && result.Partitions == 0 && result.Comparisons == 0 && result.Swaps == 0,
-            _ => false
-        };
-        if (!complete) return;
-        _completedTaskIds.Add(_activeTaskId.Value);
-        _activeTaskId = null;
-        _practiceResults.Clear();
-        _memoryOpenedDuringTask = false;
-        PersistCompletedTasks();
+        _practiceResults.Add(result);
+        if (_practiceResults.Count > 24) _practiceResults.RemoveAt(0);
+        EvaluatePracticeTasks();
     }
+
+    private void EvaluatePracticeTasks()
+    {
+        if (_practiceResults.Count == 0) return;
+        var result = _practiceResults[^1];
+        foreach (var task in PracticeTasks)
+        {
+            if (_completedTaskIds.Contains(task.Id) && GetTaskEvidence(task.Id) is not null && _activeTaskId != task.Id) continue;
+            var complete = task.Id switch
+            {
+                1 => result.Variant == QuickSortVariant.LomutoLastPivot &&
+                     PracticeRules.ContainsOrderedSubsequence(result.InitialValues, task.Input) && PracticeRules.IsNonDecreasing(result.SortedValues) && result.Partitions > 0,
+                2 => result.Variant == QuickSortVariant.LomutoLastPivot && result.InitialValues.Length >= task.Input.Length &&
+                     PracticeRules.IsNonDecreasing(result.InitialValues) && result.Comparisons == PracticeRules.QuadraticPairCount(result.InitialValues.Length) &&
+                     result.MaxDepth >= result.InitialValues.Length,
+                3 => result.Variant == QuickSortVariant.MedianOfThreeThreeWay && result.InitialValues.Length >= task.Input.Length &&
+                     PracticeRules.IsNonDecreasing(result.InitialValues) && result.MaxDepth < result.InitialValues.Length,
+                4 => result.Variant == QuickSortVariant.MedianOfThreeThreeWay && PracticeRules.HasDuplicate(result.InitialValues) &&
+                     PracticeRules.IsNonDecreasing(result.SortedValues) && result.HandlesDuplicateHeavyInputBetter && result.Partitions < result.InitialValues.Length,
+                5 => result.Variant == QuickSortVariant.LomutoLastPivot && PracticeRules.ContainsOrderedSubsequence(result.InitialValues, task.Input) &&
+                     PracticeRules.HasDuplicate(result.InitialValues) && !result.PreservedEqualValueOrder && _memoryOpenedDuringTask,
+                6 => result.Variant == QuickSortVariant.LomutoLastPivot && result.InitialValues.Length == 1 && result.Partitions == 0 && result.Comparisons == 0 && result.Swaps == 0,
+                _ => false
+            };
+            if (complete) CompletePracticeTask(task, result);
+        }
+    }
+
+    private void CompletePracticeTask(PracticeTaskDefinition task, QuickSortResult result)
+    {
+        var mode = VariantLabelFor(result.Variant);
+        var evidence = new PracticeCompletionEvidence(
+            task.Id,
+            task.Title,
+            $"{mode} Quick Sort completed in {result.Partitions} partition(s)",
+            $"The run used {result.Comparisons} comparison(s) and {result.Swaps} swap(s) while each partition placed or finalized pivot regions before recursion continued.",
+            $"Partitioning reused the input array with O(1) extra array storage. Recursion reached depth {result.MaxDepth}; equal-value identity order was {(result.PreservedEqualValueOrder ? "preserved in this case" : "changed")}.",
+            result.Variant == QuickSortVariant.MedianOfThreeThreeWay
+                ? "Median-of-three and three-way partitioning reduce some bad pivot patterns and collapse equal pivot values into one finished band."
+                : "Last-pivot Lomuto is intentionally simple, which makes both its normal partition rule and its sorted-input worst case visible.",
+            [
+                new("Input", FormatValues(result.InitialValues)),
+                new("Partitions", result.Partitions.ToString()),
+                new("Comparisons", result.Comparisons.ToString()),
+                new("Swaps", result.Swaps.ToString()),
+                new("Max depth", result.MaxDepth.ToString())
+            ],
+            $"{mode} · {FormatValues(result.InitialValues)} → {FormatValues(result.SortedValues)}");
+        _completedTaskIds.Add(task.Id);
+        PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
+        if (_activeTaskId == task.Id) _activeTaskId = null;
+    }
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
+    private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
+    private void CloseTaskEvidence() => _practiceEvidencePopup = null;
 
     private string GetActiveTaskProgressText(int taskId)
     {
@@ -485,8 +536,8 @@
         var result = _practiceResults[^1];
         return taskId switch
         {
-            2 => $"Need 10 comparisons and depth 5. Last run: {result.Comparisons} comparisons, depth {result.MaxDepth}.",
-            3 => $"Need Advanced depth < 5. Last run depth: {result.MaxDepth}.",
+            2 => $"Need sorted input with quadratic Lomuto comparisons and a deep last-pivot recursion chain. Last run: n={result.InitialValues.Length}, {result.Comparisons} comparisons, depth {result.MaxDepth}.",
+            3 => $"Need Advanced mode on sorted input with shallower recursion than last-pivot Lomuto for the same n. Last run: n={result.InitialValues.Length}, depth {result.MaxDepth}.",
             4 => $"Advanced duplicate run: {result.Partitions} partitions, sorted={IsSorted(result.SortedValues)}.",
             5 => $"Equal identity preserved={result.PreservedEqualValueOrder}; Memory opened={_memoryOpenedDuringTask}.",
             6 => $"Need zero work. Last run: {result.Partitions} partitions, {result.Comparisons} comparisons, {result.Swaps} swaps.",

@@ -5,6 +5,7 @@
 @inject StackSimulation Stack
 @inject QueueSimulation Queue
 @inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
 
 <PageTitle>Queue & Stack Lab — Algorithm Visualizer</PageTitle>
 
@@ -252,26 +253,16 @@
             {
                 var completed = _completedTaskIds.Contains(task.Id);
                 var active = _activeTaskId == task.Id;
-                <article class="task-card @(completed ? "completed" : string.Empty) @(active ? "active" : string.Empty)">
-                    <div class="task-title">
-                        <span>TASK @task.Id.ToString("00")</span>
-                        @if (completed)
-                        {
-                            <span class="completed-badge">✓ Completed</span>
-                        }
-                    </div>
-                    <strong>@task.Title</strong>
-                    <ol>
-                        @foreach (var step in task.Steps)
-                        {
-                            <li>@step</li>
-                        }
-                    </ol>
-                    <div class="task-actions">
-                        <button type="button" @onclick="() => StartTask(task.Id)" disabled="@IsBusy">@(active ? "Restart task" : completed ? "Practice again" : "Start task")</button>
-                        <a href="@task.HelpHref">Need the concept?</a>
-                    </div>
-                </article>
+                <PracticeTaskCard TaskId="@task.Id"
+                                  Title="@task.Title"
+                                  Steps="@task.Steps"
+                                  HelpHref="@task.HelpHref"
+                                  Completed="@completed"
+                                  Active="@active"
+                                  Busy="@IsBusy"
+                                  HasEvidence="@(GetTaskEvidence(task.Id) is not null)"
+                                  Start="@(() => StartTask(task.Id))"
+                                  OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
             }
         </div>
     </section>
@@ -282,6 +273,8 @@
                     LinkLabel="Open BST lesson" />
 
 </div>
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
 
 @if (_lastRunPopupOpen && _lastTraversalResult is not null)
 {
@@ -352,6 +345,7 @@
 }
 
 @code {
+    private const string ModuleKey = "queue-stack";
     private const string CompletedTasksStorageKey = "algorithm-visualizer.queue-stack.completed-tasks.v2";
     private const string PopupSettingStorageKey = "algorithm-visualizer.queue-stack.result-popups.v1";
 
@@ -375,6 +369,9 @@
     private int? _activeTaskId;
     private bool _memoryOpenedDuringTask;
     private bool _storageLoaded;
+    private int _practiceSequence;
+    private PracticeModuleProgress _practiceProgress = new();
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
 
     private bool IsBusy => SimulationState.IsRunning;
     private bool CanAddValue => !IsBusy && _newValue.HasValue;
@@ -406,7 +403,7 @@
         new(9, "Delete an ID, then search for that old ID", ["Delete an existing element by ID.", "Keep the same 6-character ID in the input.", "Find that ID again.", "It should now be missing."], "/learn/concepts#identity"),
         new(10, "Empty and one-item cases", ["Clear one structure.", "Find or delete while it is empty.", "Add exactly one item.", "Delete that one item."], "/learn/concepts#big-o"),
         new(11, "See how the array closes a gap", ["Build at least five items.", "Delete a middle item so later references must move.", "Open Memory state.", "Add one new item after the delete."], "/learn/concepts#memory"),
-        new(12, "Mixed challenge", ["In one structure add 4, 1, 4, 9, 2.", "Find value 4.", "Delete value 4.", "Find a surviving element by ID.", "Try to delete missing value 100."], "/learn/concepts#big-o")
+        new(12, "Mixed challenge", ["In one structure add 4, 1, 4, 9, 2 in that order; extra values are allowed.", "Find value 4.", "Delete value 4.", "Find a surviving element by ID.", "Try to delete any value that is not present."], "/learn/concepts#big-o")
     ];
 
     protected override void OnInitialized()
@@ -426,15 +423,8 @@
         _storageLoaded = true;
         try
         {
-            var completedJson = LearningStore.GetItem(CompletedTasksStorageKey);
-            if (!string.IsNullOrWhiteSpace(completedJson))
-            {
-                var completed = JsonSerializer.Deserialize<int[]>(completedJson) ?? [];
-                foreach (var id in completed.Where(id => PracticeTasks.Any(task => task.Id == id)))
-                {
-                    _completedTaskIds.Add(id);
-                }
-            }
+            _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
+            foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id);
 
             var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
             if (bool.TryParse(popupSetting, out var showPopups))
@@ -529,7 +519,7 @@
             await RunResultOperationAsync(
                 $"Starting {structureName} {verb} by value {requestedValue}.",
                 token => byValue(requestedValue, token),
-                result => new PracticeEvent(structureName, operation == LinearTraversalOperation.Search ? "Find" : "Delete", RequestedValue: requestedValue, Criterion: LinearLookupCriterion.Value, Found: result.Found, InitialCount: result.InitialCount, ShiftedElements: result.ShiftedElements));
+                result => new PracticeEvent(structureName, operation == LinearTraversalOperation.Search ? "Find" : "Delete", RequestedValue: requestedValue, Criterion: LinearLookupCriterion.Value, Found: result.Found, InitialCount: result.InitialCount, ShiftedElements: result.ShiftedElements, Result: result));
             return;
         }
 
@@ -543,7 +533,7 @@
         await RunResultOperationAsync(
             $"Starting {structureName} {verb} by ID #{idKey}.",
             token => byId(idKey, token),
-            result => new PracticeEvent(structureName, operation == LinearTraversalOperation.Search ? "Find" : "Delete", RequestedId: idKey, Criterion: LinearLookupCriterion.Id, Found: result.Found, InitialCount: result.InitialCount, ShiftedElements: result.ShiftedElements));
+            result => new PracticeEvent(structureName, operation == LinearTraversalOperation.Search ? "Find" : "Delete", RequestedId: idKey, Criterion: LinearLookupCriterion.Id, Found: result.Found, InitialCount: result.InitialCount, ShiftedElements: result.ShiftedElements, Result: result));
     }
 
     private async Task RunResultOperationAsync(string initialStepText, Func<CancellationToken, Task<LinearTraversalResult>> operation, Func<LinearTraversalResult, PracticeEvent> eventFactory)
@@ -687,10 +677,10 @@
     private void SetStateView(StateView view)
     {
         _activeStateView = view;
-        if (view == StateView.Memory && _activeTaskId is not null)
+        if (view == StateView.Memory)
         {
             _memoryOpenedDuringTask = true;
-            EvaluateActiveTask();
+            EvaluatePracticeTasks();
         }
     }
 
@@ -698,54 +688,103 @@
 
     private void StartTask(int taskId)
     {
+        if (IsBusy) return;
         _activeTaskId = taskId;
-        _practiceEvents.Clear();
         _memoryOpenedDuringTask = false;
     }
 
     private void RecordPracticeEvent(PracticeEvent practiceEvent)
     {
-        _practiceEvents.Add(practiceEvent with { Sequence = _practiceEvents.Count });
-        EvaluateActiveTask();
+        _practiceEvents.Add(practiceEvent with { Sequence = ++_practiceSequence });
+        if (_practiceEvents.Count > 512) _practiceEvents.RemoveRange(0, _practiceEvents.Count - 512);
+        EvaluatePracticeTasks();
     }
 
-    private void EvaluateActiveTask()
+    private void EvaluatePracticeTasks()
     {
-        if (_activeTaskId is null) return;
-        var completed = _activeTaskId.Value switch
+        foreach (var task in PracticeTasks)
         {
-            1 => HasAddedSequence("Stack", [3, 7, 2, 7]) && HasAddedSequence("Queue", [3, 7, 2, 7]),
-            2 => HasSameStructureSuccessfulFindByBothCriteria(),
-            3 => _practiceEvents.Any(e => e.Kind == "Delete" && e.Criterion == LinearLookupCriterion.Id && e.Found == true) && _practiceEvents.Any(e => e.Kind == "Delete" && e.Criterion == LinearLookupCriterion.Value && e.Found == true) && _memoryOpenedDuringTask,
-            4 => HasDuplicateAdd() && _memoryOpenedDuringTask,
-            5 => _practiceEvents.Any(e => e.Kind == "Find" && e.Found == true) && _practiceEvents.Any(e => e.Kind == "Find" && e.Found == false),
-            6 => _practiceEvents.Any(e => e.Kind == "Delete" && e.Found == true) && _practiceEvents.Any(e => e.Kind == "Delete" && e.Found == false),
-            7 => HasRepeatedSuccessfulValueDelete(),
-            8 => _practiceEvents.Any(e => e.Kind == "Find" && e.Criterion == LinearLookupCriterion.Id && e.Found == false) && _practiceEvents.Any(e => e.Kind == "Delete" && e.Criterion == LinearLookupCriterion.Id && e.Found == false),
-            9 => HasDeletedThenMissedSameId(),
-            10 => HasEmptyAndSingleElementFlow(),
-            11 => HasShiftThenAdd() && _memoryOpenedDuringTask,
-            12 => HasMixedChallenge(),
-            _ => false
-        };
+            if (_completedTaskIds.Contains(task.Id) && GetTaskEvidence(task.Id) is not null && _activeTaskId != task.Id) continue;
+            var completed = task.Id switch
+            {
+                1 => HasAddedSequence("Stack", [3, 7, 2, 7]) && HasAddedSequence("Queue", [3, 7, 2, 7]),
+                2 => HasSameStructureSuccessfulFindByBothCriteria(),
+                3 => _practiceEvents.Any(e => e.Kind == "Delete" && e.Criterion == LinearLookupCriterion.Id && e.Found == true) && _practiceEvents.Any(e => e.Kind == "Delete" && e.Criterion == LinearLookupCriterion.Value && e.Found == true) && _memoryOpenedDuringTask,
+                4 => HasDuplicateAdd() && _memoryOpenedDuringTask,
+                5 => _practiceEvents.Any(e => e.Kind == "Find" && e.Found == true) && _practiceEvents.Any(e => e.Kind == "Find" && e.Found == false),
+                6 => _practiceEvents.Any(e => e.Kind == "Delete" && e.Found == true) && _practiceEvents.Any(e => e.Kind == "Delete" && e.Found == false),
+                7 => HasRepeatedSuccessfulValueDelete(),
+                8 => _practiceEvents.Any(e => e.Kind == "Find" && e.Criterion == LinearLookupCriterion.Id && e.Found == false) && _practiceEvents.Any(e => e.Kind == "Delete" && e.Criterion == LinearLookupCriterion.Id && e.Found == false),
+                9 => HasDeletedThenMissedSameId(),
+                10 => HasEmptyAndSingleElementFlow(),
+                11 => HasShiftThenAdd() && _memoryOpenedDuringTask,
+                12 => HasMixedChallenge(),
+                _ => false
+            };
+            if (!completed) continue;
 
-        if (!completed) return;
-        _completedTaskIds.Add(_activeTaskId.Value);
-        _activeTaskId = null;
-        _practiceEvents.Clear();
-        _memoryOpenedDuringTask = false;
-        PersistCompletedTasks();
+            var trigger = GetCompletionTrigger(task.Id);
+            CompletePracticeTask(task, trigger);
+        }
+    }
+
+    private PracticeEvent? GetCompletionTrigger(int taskId) => taskId switch
+    {
+        1 => _practiceEvents.LastOrDefault(e => e.Kind == "Add"),
+        2 => _practiceEvents.LastOrDefault(e => e.Kind == "Find" && e.Found == true),
+        3 => _practiceEvents.LastOrDefault(e => e.Kind == "Delete" && e.Found == true),
+        4 => _practiceEvents.LastOrDefault(e => e.Kind == "Add"),
+        5 => _practiceEvents.LastOrDefault(e => e.Kind == "Find"),
+        6 => _practiceEvents.LastOrDefault(e => e.Kind == "Delete"),
+        7 => _practiceEvents.LastOrDefault(e => e.Kind == "Delete" && e.Criterion == LinearLookupCriterion.Value && e.Found == true),
+        8 => _practiceEvents.LastOrDefault(e => e.Criterion == LinearLookupCriterion.Id && e.Found == false),
+        9 => _practiceEvents.LastOrDefault(e => e.Kind == "Find" && e.Criterion == LinearLookupCriterion.Id && e.Found == false),
+        10 => _practiceEvents.LastOrDefault(e => e.Kind == "Delete" && e.Found == true),
+        11 => _practiceEvents.LastOrDefault(e => e.Kind == "Add"),
+        12 => _practiceEvents.LastOrDefault(e => e.Kind is "Find" or "Delete"),
+        _ => null
+    };
+
+    private void CompletePracticeTask(PracticeTaskDefinition task, PracticeEvent? trigger)
+    {
+        PracticeCompletionEvidence evidence;
+        if (trigger?.Result is { } result)
+        {
+            evidence = new PracticeCompletionEvidence
+            {
+                TaskId = task.Id, TaskTitle = task.Title, Headline = GetResultHeadline(result),
+                ActionExplanation = GetResultExplanation(result),
+                MemoryExplanation = result.Operation == LinearTraversalOperation.Delete && result.Found
+                    ? $"The matched element was removed from slot {result.MatchedIndex ?? 0}; {result.ShiftedElements} later reference(s) shifted left while Capacity stayed {result.CapacityBefore} → {result.CapacityAfter}."
+                    : "The traversal followed the structure's real backing references without changing unrelated element identities.",
+                WhyItMatters = GetPlainComplexityExplanation(result),
+                CaseSummary = $"{result.StructureName} · {result.Operation} · {(result.Found ? "found" : "missing")}",
+                Metrics = [new("Items checked", $"{result.Comparisons}/{result.InitialCount}"), new("Run", result.CurrentRunComplexity), new("Whole operation", result.FullOperationComplexity), new("Shifted", result.ShiftedElements.ToString())]
+            };
+        }
+        else
+        {
+            var structure = trigger?.Structure ?? "Stack / Queue";
+            var action = trigger?.Kind ?? "Practice action";
+            evidence = new PracticeCompletionEvidence
+            {
+                TaskId = task.Id, TaskTitle = task.Title, Headline = $"{task.Title} completed",
+                ActionExplanation = $"The tracker observed the required {action.ToLowerInvariant()} behavior in {structure}. Extra unrelated values/actions did not invalidate the task.",
+                MemoryExplanation = "Every added element keeps its own stable identity even when values are duplicated. Array-backed deletion shifts references only when a gap must be closed.",
+                WhyItMatters = "The task validates the behavior being taught instead of requiring one exact click sequence or an exact final array with no extra values.",
+                CaseSummary = $"{structure} · {action}",
+                Metrics = [new("Stack count", Stack.Count.ToString()), new("Queue count", Queue.Count.ToString()), new("Tracked actions", _practiceEvents.Count.ToString())]
+            };
+        }
+        PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
+        _completedTaskIds.Add(task.Id);
+        if (_activeTaskId == task.Id) _activeTaskId = null;
     }
 
     private bool HasAddedSequence(string structure, int[] sequence)
     {
         var values = _practiceEvents.Where(e => e.Structure == structure && e.Kind == "Add" && e.Value.HasValue).Select(e => e.Value!.Value).ToArray();
-        if (values.Length < sequence.Length) return false;
-        for (var start = 0; start <= values.Length - sequence.Length; start++)
-        {
-            if (values.Skip(start).Take(sequence.Length).SequenceEqual(sequence)) return true;
-        }
-        return false;
+        return PracticeRules.ContainsOrderedSubsequence(values, sequence);
     }
 
     private bool HasSameStructureSuccessfulFindByBothCriteria() =>
@@ -774,13 +813,15 @@
 
     private bool HasEmptyAndSingleElementFlow()
     {
-        var clear = _practiceEvents.FirstOrDefault(e => e.Kind == "Clear");
-        if (clear is null) return false;
-        var emptyCheck = _practiceEvents.FirstOrDefault(e => e.Sequence > clear.Sequence && e.Structure == clear.Structure && (e.Kind == "Find" || e.Kind == "Delete") && e.InitialCount == 0);
-        if (emptyCheck is null) return false;
-        var add = _practiceEvents.FirstOrDefault(e => e.Sequence > emptyCheck.Sequence && e.Structure == clear.Structure && e.Kind == "Add");
-        if (add is null) return false;
-        return _practiceEvents.Any(e => e.Sequence > add.Sequence && e.Structure == clear.Structure && e.Kind == "Delete" && e.Found == true && e.InitialCount == 1);
+        foreach (var clear in _practiceEvents.Where(e => e.Kind == "Clear"))
+        {
+            var emptyCheck = _practiceEvents.FirstOrDefault(e => e.Sequence > clear.Sequence && e.Structure == clear.Structure && (e.Kind == "Find" || e.Kind == "Delete") && e.InitialCount == 0);
+            if (emptyCheck is null) continue;
+            var add = _practiceEvents.FirstOrDefault(e => e.Sequence > emptyCheck.Sequence && e.Structure == clear.Structure && e.Kind == "Add");
+            if (add is null) continue;
+            if (_practiceEvents.Any(e => e.Sequence > add.Sequence && e.Structure == clear.Structure && e.Kind == "Delete" && e.Found == true && e.InitialCount == 1)) return true;
+        }
+        return false;
     }
 
     private bool HasShiftThenAdd()
@@ -797,7 +838,11 @@
         _practiceEvents.Any(e => e.Kind == "Find" && e.Criterion == LinearLookupCriterion.Value && e.RequestedValue == 4 && e.Found == true) &&
         _practiceEvents.Any(e => e.Kind == "Delete" && e.Criterion == LinearLookupCriterion.Value && e.RequestedValue == 4 && e.Found == true) &&
         _practiceEvents.Any(e => e.Kind == "Find" && e.Criterion == LinearLookupCriterion.Id && e.Found == true) &&
-        _practiceEvents.Any(e => e.Kind == "Delete" && e.Criterion == LinearLookupCriterion.Value && e.RequestedValue == 100 && e.Found == false);
+        _practiceEvents.Any(e => e.Kind == "Delete" && e.Criterion == LinearLookupCriterion.Value && e.Found == false);
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
+    private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
+    private void CloseTaskEvidence() => _practiceEvidencePopup = null;
 
     private string GetActiveTaskProgressText(int taskId) => taskId switch
     {
@@ -889,7 +934,7 @@
 
     private sealed record RunFrame(string StepText, IReadOnlyList<LinearElement> StackItems, int StackCapacity, IReadOnlyList<LinearElement> QueueItems, int QueueCapacity);
     private sealed record PracticeTaskDefinition(int Id, string Title, IReadOnlyList<string> Steps, string HelpHref);
-    private sealed record PracticeEvent(string Structure, string Kind, int? Value = null, int Sequence = -1, int? RequestedValue = null, string? RequestedId = null, LinearLookupCriterion? Criterion = null, bool? Found = null, int? InitialCount = null, int ShiftedElements = 0);
+    private sealed record PracticeEvent(string Structure, string Kind, int? Value = null, int Sequence = -1, int? RequestedValue = null, string? RequestedId = null, LinearLookupCriterion? Criterion = null, bool? Found = null, int? InitialCount = null, int ShiftedElements = 0, LinearTraversalResult? Result = null);
     private enum StateView { Visual, Memory }
     private enum ResultPopupTab { Run, Memory }
 }

@@ -1,0 +1,70 @@
+<article class="practice-task-card @(Completed ? "completed" : string.Empty) @(Active ? "active" : string.Empty)">
+    <div class="practice-task-topline">
+        <span>TASK @TaskId.ToString("00")</span>
+        <span class="practice-task-status">@(Completed ? "✓ Completed" : Active ? "In progress" : "Auto-tracked")</span>
+    </div>
+
+    <h3>@Title</h3>
+
+    @if (!string.IsNullOrWhiteSpace(Description))
+    {
+        <p class="practice-task-description">@Description</p>
+    }
+
+    @if (Steps is { Count: > 0 })
+    {
+        <ol class="practice-task-steps">
+            @foreach (var step in Steps)
+            {
+                <li>@step</li>
+            }
+        </ol>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(InputText))
+    {
+        <div class="practice-task-input"><span>Suggested input</span><code>@InputText</code></div>
+    }
+
+    <div class="practice-task-note">
+        <strong>Auto-complete:</strong>
+        <span>The app watches your actions. Extra values/actions are allowed unless the task explicitly tests an exact boundary case.</span>
+    </div>
+
+    @if (Completed && !HasEvidence)
+    {
+        <div class="practice-task-note evidence-pending">
+            <strong>Explanation:</strong>
+            <span>This completion came from the older progress format. Repeat any matching case once and the exact completion explanation will be saved here automatically.</span>
+        </div>
+    }
+
+    <div class="practice-task-actions">
+        @if (!string.IsNullOrWhiteSpace(HelpHref))
+        {
+            <a href="@HelpHref">Need the concept? →</a>
+        }
+        <div class="practice-task-buttons">
+            @if (Completed && HasEvidence)
+            {
+                <button class="practice-evidence-button" type="button" @onclick="OpenEvidence">Completion explanation</button>
+            }
+            <button type="button" @onclick="Start" disabled="@Busy">@(Active ? "Restart task" : Completed ? "Practice again" : "Start task")</button>
+        </div>
+    </div>
+</article>
+
+@code {
+    [Parameter, EditorRequired] public int TaskId { get; set; }
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public IReadOnlyList<string>? Steps { get; set; }
+    [Parameter] public string? InputText { get; set; }
+    [Parameter] public string? HelpHref { get; set; }
+    [Parameter] public bool Completed { get; set; }
+    [Parameter] public bool Active { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public bool HasEvidence { get; set; }
+    [Parameter] public EventCallback Start { get; set; }
+    [Parameter] public EventCallback OpenEvidence { get; set; }
+}

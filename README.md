@@ -89,7 +89,7 @@ The application now has twelve fully implemented learning modules: **Queue & Sta
 - REF, RREF, rank, inverse through Gauss-Jordan elimination, and `A·X=B` solving;
 - matrix property analysis (square, zero, identity, diagonal, triangular, symmetric);
 - Matrix Visual/Memory views showing cell states, a list-of-row-lists memory explanation, and an expandable actual backing-array view with `index = row * columns + column`;
-- Matrix guided practice with explicit Start/Restart flow, live task-condition verification, active-task progress, and persistent completion;
+- Matrix guided practice with continuous auto-tracking, optional Start/Restart setup, active-task progress, and SQLite-backed completion evidence;
 - Matrix Last Run explanations with Action / Memory / Why-it-matters tabs and a persisted automatic-popup preference, matching the other mature structure labs;
 - Graph directed/undirected and weighted/unweighted modes;
 - Graph add/search/remove vertex and add/search/remove edge operations;
@@ -1072,9 +1072,11 @@ The Queue & Stack page contains practical exercises.
 
 Tasks are not simple checkboxes.
 
-The learner presses **Start task**, performs the required operations, and the application observes what happens.
+The application continuously observes relevant learner actions and run results. **Start task** is an optional setup/helper action: it can load or focus the suggested scenario, but a learner does not need to press it for completion tracking to work.
 
-A task becomes `Completed` only after its required scenario has actually been performed.
+A task becomes `Completed` only after its required behavior has actually been observed. Validation is intentionally semantic rather than over-fitted to one exact input: when a task asks for a sequence such as `3, 7, 2, 7`, those required values must occur in order but extra values before, between, or after them are allowed. Exact-size validation is reserved for tasks whose learning goal is specifically a boundary case such as an empty or one-item structure.
+
+When a task auto-completes, the app stores the explanation snapshot associated with the operation/run that satisfied it. Completed cards can reopen this **Completion explanation** later, including the action summary, memory explanation, why-it-matters text, concrete metrics, and the completed case. Both completion state and evidence are persisted through the C# learning-state API into SQLite.
 
 Current exercises cover scenarios such as:
 
@@ -1096,7 +1098,7 @@ Current exercises cover scenarios such as:
 - observing memory shifts;
 - mixed final exercises.
 
-Completed Queue & Stack task progress is stored locally in the browser.
+Completed Queue & Stack progress and completion-evidence snapshots are persisted through the C# backend in SQLite.
 
 The BST lab has its own guided tasks for:
 
@@ -1109,7 +1111,7 @@ The BST lab has its own guided tasks for:
 - duplicate-key rejection;
 - balancing a deliberately skewed BST with DSW and inspecting the same node IDs in Memory state after reference rewiring.
 
-BST task completion is also stored locally in the browser.
+BST task completion and the exact completion-evidence snapshot are also persisted through the C# backend in SQLite.
 
 The AVL lab adds guided tasks for:
 
@@ -1120,7 +1122,7 @@ The AVL lab adds guided tasks for:
 - deletion that triggers upward rebalancing plus Memory-state inspection;
 - successful and missing search after rotations.
 
-AVL task completion is stored locally in the browser.
+AVL task completion and the exact completion-evidence snapshot are stored through the same SQLite-backed C# persistence layer.
 
 ---
 
@@ -1397,7 +1399,7 @@ The structure foundation now includes our custom Queue, Stack, BST, AVL, Red-Bla
 
 **Binary Heap: implemented as the focused d = 2 complete-tree / custom-array module with Min/Max modes, bubble-up, bubble-down, extract-root, linear search, arbitrary delete repair, Visual/Memory views, capacity teaching, run explanations, and guided practice.**
 
-**Matrix: implemented as the pre-Graph row-major module with direct cell editing, bulk custom-value input with automatic dimension detection, arithmetic, multiplication, transpose, powers, determinant, minors/cofactors, elementary row operations, REF/RREF/rank, inverse, equation solving, graph-adjacency presets, Visual/Memory views, a row-list-first memory explanation with expandable real `double[]` backing storage, verified Start/Restart guided practice with active progress, and automatic three-view Last Run explanations.**
+**Matrix: implemented as the pre-Graph row-major module with direct cell editing, bulk custom-value input with automatic dimension detection, arithmetic, multiplication, transpose, powers, determinant, minors/cofactors, elementary row operations, REF/RREF/rank, inverse, equation solving, graph-adjacency presets, Visual/Memory views, a row-list-first memory explanation with expandable real `double[]` backing storage, continuously auto-tracked guided practice with optional Start/Restart setup and active progress, and automatic three-view Last Run explanations.**
 
 The project now has reusable manual linear structures, three reusable manual tree foundations, two reusable heap views of the same family, a reusable Matrix foundation, a live reusable Graph structure ready for BFS/DFS and later path/MST algorithms, plus six complete sorting labs: Bubble Sort, Selection Sort, Insertion Sort, Merge Sort, Quick Sort, and Heap Sort.
 
@@ -1419,6 +1421,6 @@ Graph UI markup follows a strict Razor rule: whenever `@if`, `@foreach`, `@for`,
 
 ### Graph guided practice and explanations
 
-Graph now follows the same learning-completion contract as the mature Queue/Stack, tree, and Heap modules. Guided Practice is no longer static reading: the learner starts a task, the page observes real `GraphSimulation` results plus the current graph snapshot, validates the requested topology/operation, marks completion automatically, and keeps completed task IDs in the scoped C# learning-session store. Tasks cover undirected symmetry, directed asymmetry, a real zero-weight edge, incident-edge cleanup during vertex deletion, sparse list-vs-matrix inspection, and a branch/cycle topology prepared for later BFS/DFS.
+Graph follows the same shared learning-completion contract as every other live module. The page continuously observes real `GraphSimulation` results plus the current graph snapshot; **Start task** is only an optional scenario helper. Validation checks graph semantics rather than requiring specific labels whenever the label itself is not the concept: any suitable undirected branching example can prove symmetry, any real directed edge can prove a missing reverse direction, any zero-weight edge can prove presence-vs-weight semantics, and any sufficiently sparse topology can support list-vs-matrix comparison. Completion and its exact explanation snapshot are persisted through the C# learning-state store into SQLite.
 
 Every completed Graph action now has a learner-facing explanation layer. The Last Run card can reopen a dismissible interactive explanation with three views: the action that happened, how the adjacency list and Matrix-backed representation changed together, and why the operation matters for later graph algorithms. Automatic result explanations can be disabled and that preference is persisted by the C# backend in SQLite. The Graph `Result popups` toggle now lives in the Playground header beside `Last run explanation`, matching the established Queue/Stack, BST, AVL, and Heap interaction pattern instead of creating a graph-specific preference strip below the result. The Graph lab also exposes direct `Graph concepts` and `Concepts & memory` links beside the Visual/Memory controls so theory is always reachable from the working area.

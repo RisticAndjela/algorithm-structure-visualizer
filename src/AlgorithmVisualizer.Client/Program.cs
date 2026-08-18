@@ -32,6 +32,7 @@ builder.Services.AddScoped(_ => new HttpClient
 // The concrete state is used by UI controls, while Core code depends only on ISimulationRuntime.
 builder.Services.AddScoped<SimulationState>();
 builder.Services.AddScoped<LearningSessionStore>();
+builder.Services.AddScoped<PracticeProgressStore>();
 builder.Services.AddScoped<ISimulationRuntime>(serviceProvider =>
     serviceProvider.GetRequiredService<SimulationState>());
 

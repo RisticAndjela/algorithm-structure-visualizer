@@ -5,6 +5,7 @@
 @inject SimulationState SimulationState
 @inject GraphSimulation Graph
 @inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
 
 <PageTitle>Graph — Algorithm Visualizer</PageTitle>
 
@@ -212,17 +213,16 @@
             {
                 var completed = _completedTaskIds.Contains(task.Id);
                 var active = _activeTaskId == task.Id;
-                <article class="task-card @(completed ? "completed" : string.Empty) @(active ? "active" : string.Empty)">
-                    <div class="task-topline"><span>@task.Id.ToString("00")</span><span>@(completed ? "✓ Completed" : active ? "In progress" : "Practice")</span></div>
-                    <h3>@task.Title</h3>
-                    <ol>
-                        @foreach (var step in task.Steps)
-                        {
-                            <li>@step</li>
-                        }
-                    </ol>
-                    <div class="task-actions"><a href="@task.HelpHref">Need the concept? →</a><button type="button" @onclick="() => StartTask(task.Id)" disabled="@IsBusy">@(active ? "Restart task" : completed ? "Practice again" : "Start task")</button></div>
-                </article>
+                <PracticeTaskCard TaskId="@task.Id"
+                                  Title="@task.Title"
+                                  Steps="@task.Steps"
+                                  HelpHref="@task.HelpHref"
+                                  Completed="@completed"
+                                  Active="@active"
+                                  Busy="@IsBusy"
+                                  HasEvidence="@(GetTaskEvidence(task.Id) is not null)"
+                                  Start="@(() => StartTask(task.Id))"
+                                  OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
             }
         </div>
     </section>
@@ -233,6 +233,8 @@
                     LinkLabel="Open Red-Black lesson" />
 
 </div>
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
 
 @if (_lastRunPopupOpen && _lastResult is not null)
 {
@@ -277,6 +279,7 @@
 }
 
 @code {
+    private const string ModuleKey = "graph";
     private const string CompletedTasksStorageKey = "algorithm-visualizer.graph.completed-tasks.v1";
     private const string PopupSettingStorageKey = "algorithm-visualizer.graph.result-popups.v1";
 
@@ -311,6 +314,8 @@
     private bool _storageLoaded;
     private bool _memoryOpenedDuringTask;
     private int? _activeTaskId;
+    private PracticeModuleProgress _practiceProgress = new();
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
 
     private bool IsBusy => SimulationState.IsRunning;
     private GraphSnapshot Current => Graph.CreateSnapshot();
@@ -331,15 +336,8 @@
         _storageLoaded = true;
         try
         {
-            var completedJson = LearningStore.GetItem(CompletedTasksStorageKey);
-            if (!string.IsNullOrWhiteSpace(completedJson))
-            {
-                var completed = System.Text.Json.JsonSerializer.Deserialize<int[]>(completedJson) ?? [];
-                foreach (var id in completed.Where(id => PracticeTasks.Any(task => task.Id == id)))
-                {
-                    _completedTaskIds.Add(id);
-                }
-            }
+            _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
+            foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id);
 
             var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
             if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
@@ -365,7 +363,7 @@
             ? "Directed mode treats A → B and B → A as different edges. Adding one direction does not create the reverse direction."
             : "Undirected mode treats A—B as one two-way relationship, so each endpoint appears in the other's adjacency list.";
         ClearReview();
-        CheckActiveTaskCompletion();
+        EvaluatePracticeTasks();
     }
 
     private void SetWeighted(bool value)
@@ -382,7 +380,7 @@
             ? "Weighted mode stores a numeric value on each edge. The number can model distance, time, cost, capacity, or another relationship."
             : "Unweighted mode cares only whether a connection exists; each present edge is represented as a connection rather than a learner-entered cost.";
         ClearReview();
-        CheckActiveTaskCompletion();
+        EvaluatePracticeTasks();
     }
 
     private Task AddVertexAsync() => RunAsync("Adding vertex", ct => Graph.AddVertexAsync(_vertexLabel, ct));
@@ -523,10 +521,10 @@
     private void SetStateView(StateView view)
     {
         _view = view;
-        if (view == StateView.Memory && _activeTaskId is not null)
+        if (view == StateView.Memory)
         {
             _memoryOpenedDuringTask = true;
-            CheckActiveTaskCompletion();
+            EvaluatePracticeTasks();
         }
     }
 
@@ -534,39 +532,62 @@
     {
         if (IsBusy) return;
         _activeTaskId = taskId;
-        _practiceResults.Clear();
         _memoryOpenedDuringTask = false;
     }
 
     private void RecordPracticeResult(GraphOperationResult result)
     {
-        if (_activeTaskId is null) return;
         _practiceResults.Add(result);
-        CheckActiveTaskCompletion();
+        if (_practiceResults.Count > 128) _practiceResults.RemoveRange(0, _practiceResults.Count - 128);
+        EvaluatePracticeTasks();
     }
 
-    private void CheckActiveTaskCompletion()
+    private void EvaluatePracticeTasks()
     {
-        if (_activeTaskId is null) return;
         var snapshot = Graph.CreateSnapshot();
-        var completed = _activeTaskId.Value switch
+        foreach (var task in PracticeTasks)
         {
-            1 => !snapshot.Directed && HasVertices(snapshot, "A", "B", "C") && HasEdge(snapshot, "A", "B") && HasEdge(snapshot, "A", "C") && _memoryOpenedDuringTask,
-            2 => snapshot.Directed && HasVertices(snapshot, "A", "B") && HasEdge(snapshot, "A", "B") && !HasEdge(snapshot, "B", "A") && _practiceResults.Any(r => r.Operation == GraphOperationKind.SearchEdge && !r.Succeeded && LabelsEqual(r.FirstLabel, "B") && LabelsEqual(r.SecondLabel, "A")),
-            3 => snapshot.Weighted && HasVertices(snapshot, "A", "B") && HasEdgeWithWeight(snapshot, "A", "B", 0d) && _memoryOpenedDuringTask,
-            4 => _practiceResults.Any(r => r.Operation == GraphOperationKind.RemoveVertex && r.Succeeded && r.InitialEdgeCount - r.FinalEdgeCount >= 2),
-            5 => snapshot.VertexCount >= 5 && snapshot.EdgeCount >= 3 && snapshot.EdgeCount <= snapshot.VertexCount && _memoryOpenedDuringTask,
-            6 => !snapshot.Directed && HasVertices(snapshot, "A", "B", "C", "D") && HasEdge(snapshot, "A", "B") && HasEdge(snapshot, "A", "C") && HasEdge(snapshot, "B", "D") && HasEdge(snapshot, "C", "D") && _practiceResults.Any(r => r.Operation == GraphOperationKind.InspectNeighbors && r.Succeeded && LabelsEqual(r.FirstLabel, "A") && r.NeighborCount == 2),
-            _ => false
-        };
+            if (_completedTaskIds.Contains(task.Id) && GetTaskEvidence(task.Id) is not null && _activeTaskId != task.Id) continue;
 
-        if (!completed) return;
-        _completedTaskIds.Add(_activeTaskId.Value);
-        _activeTaskId = null;
-        _practiceResults.Clear();
-        _memoryOpenedDuringTask = false;
-        PersistCompletedTasks();
+            GraphOperationResult? trigger = task.Id switch
+            {
+                1 when !snapshot.Directed && HasVertexWithDegree(snapshot, 2) && _memoryOpenedDuringTask => _lastResult,
+                2 when snapshot.Directed => _practiceResults.LastOrDefault(r => r.Operation == GraphOperationKind.SearchEdge && !r.Succeeded && HasEdge(snapshot, r.SecondLabel ?? string.Empty, r.FirstLabel ?? string.Empty) && !HasEdge(snapshot, r.FirstLabel ?? string.Empty, r.SecondLabel ?? string.Empty)),
+                3 when snapshot.Weighted && snapshot.Edges.Any(edge => Math.Abs(edge.Weight) <= 1e-9) && _memoryOpenedDuringTask => _lastResult,
+                4 => _practiceResults.LastOrDefault(r => r.Operation == GraphOperationKind.RemoveVertex && r.Succeeded && r.InitialEdgeCount - r.FinalEdgeCount >= 2),
+                5 when snapshot.VertexCount >= 5 && snapshot.EdgeCount >= 3 && snapshot.EdgeCount <= snapshot.VertexCount && _memoryOpenedDuringTask => _lastResult,
+                6 when !snapshot.Directed && snapshot.VertexCount >= 4 && snapshot.EdgeCount >= 4 => _practiceResults.LastOrDefault(r => r.Operation == GraphOperationKind.InspectNeighbors && r.Succeeded && r.NeighborCount >= 2),
+                _ => null
+            };
+
+            if (trigger is null && task.Id is not (1 or 3 or 5)) continue;
+            if (task.Id is 1 or 3 or 5)
+            {
+                if (trigger is null && _lastResult is null) continue;
+                trigger ??= _lastResult;
+            }
+            if (trigger is not null) CompletePracticeTask(task, trigger, snapshot);
+        }
     }
+
+    private void CompletePracticeTask(PracticeTaskDefinition task, GraphOperationResult result, GraphSnapshot snapshot)
+    {
+        var evidence = new PracticeCompletionEvidence
+        {
+            TaskId = task.Id, TaskTitle = task.Title, Headline = RunHeadline(result),
+            ActionExplanation = RunExplanation(result), MemoryExplanation = RunRepresentationExplanation(result),
+            WhyItMatters = RunWhyExplanation(result),
+            CaseSummary = $"{(snapshot.Directed ? "Directed" : "Undirected")} · {(snapshot.Weighted ? "Weighted" : "Unweighted")} · V={snapshot.VertexCount}, E={snapshot.EdgeCount}",
+            Metrics = [new("Operation", result.Operation.ToString()), new("Status", result.Succeeded ? "Completed" : "Observed missing/rejected case"), new("Comparisons", result.Comparisons.ToString()), new("Vertices", snapshot.VertexCount.ToString()), new("Edges", snapshot.EdgeCount.ToString()), new("Neighbors", result.NeighborCount.ToString())]
+        };
+        PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
+        _completedTaskIds.Add(task.Id);
+        if (_activeTaskId == task.Id) _activeTaskId = null;
+    }
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
+    private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
+    private void CloseTaskEvidence() => _practiceEvidencePopup = null;
 
     private string GetActiveTaskProgressText(int taskId)
     {
@@ -581,6 +602,21 @@
             6 => "Need Undirected A—B, A—C, B—D, C—D, then run Neighbors for A and observe exactly two direct neighbors.",
             _ => string.Empty
         };
+    }
+
+    private static bool HasVertexWithDegree(GraphSnapshot snapshot, int minimumDegree)
+    {
+        foreach (var vertex in snapshot.Vertices)
+        {
+            var neighbors = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var edge in snapshot.Edges)
+            {
+                if (LabelsEqual(edge.FromLabel, vertex.Label)) neighbors.Add(edge.ToLabel);
+                if (!snapshot.Directed && LabelsEqual(edge.ToLabel, vertex.Label)) neighbors.Add(edge.FromLabel);
+            }
+            if (neighbors.Count >= minimumDegree) return true;
+        }
+        return false;
     }
 
     private static bool HasVertices(GraphSnapshot snapshot, params string[] labels) => labels.All(label => snapshot.Vertices.Any(vertex => LabelsEqual(vertex.Label, label)));

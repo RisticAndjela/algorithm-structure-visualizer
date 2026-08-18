@@ -6,6 +6,7 @@
 @inject SimulationState SimulationState
 @inject RedBlackSimulation Tree
 @inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
 
 <PageTitle>Red-Black Tree Lab — Algorithm Visualizer</PageTitle>
 
@@ -176,20 +177,16 @@
             {
                 var completed = _completedTaskIds.Contains(task.Id);
                 var active = _activeTaskId == task.Id;
-                <article class="task-card @(completed ? "completed" : string.Empty) @(active ? "active" : string.Empty)">
-                    <div class="task-topline"><span>@task.Id.ToString("00")</span><span>@(completed ? "Completed" : active ? "In progress" : "Practice")</span></div>
-                    <h3>@task.Title</h3>
-                    <ol>
-                        @foreach (var step in task.Steps)
-                        {
-                            <li>@step</li>
-                        }
-                    </ol>
-                    <div class="task-actions">
-                        <a href="@task.HelpHref">Need the concept? →</a>
-                        <button type="button" @onclick="() => StartTask(task.Id)" disabled="@IsBusy">@(active ? "Restart task" : completed ? "Practice again" : "Start task")</button>
-                    </div>
-                </article>
+                <PracticeTaskCard TaskId="@task.Id"
+                                  Title="@task.Title"
+                                  Steps="@task.Steps"
+                                  HelpHref="@task.HelpHref"
+                                  Completed="@completed"
+                                  Active="@active"
+                                  Busy="@IsBusy"
+                                  HasEvidence="@(GetTaskEvidence(task.Id) is not null)"
+                                  Start="@(() => StartTask(task.Id))"
+                                  OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
             }
         </div>
     </section>
@@ -200,6 +197,8 @@
                     LinkLabel="Start sorting" />
 
 </div>
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
 
 @if (_lastRunPopupOpen && _lastResult is not null)
 {
@@ -264,6 +263,7 @@
 }
 
 @code {
+    private const string ModuleKey = "red-black";
     private const string CompletedTasksStorageKey = "algorithm-visualizer.redblack.completed-tasks.v1";
     private const string PopupSettingStorageKey = "algorithm-visualizer.redblack.result-popups.v1";
 
@@ -295,6 +295,8 @@
     private StateView _activeStateView = StateView.Visual;
     private ResultPopupTab _popupTab = ResultPopupTab.Run;
     private RedBlackOperationResult? _lastResult;
+    private PracticeModuleProgress _practiceProgress = new();
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
 
     private bool IsBusy => SimulationState.IsRunning;
     private bool CanRunValueOperation => !IsBusy && _value.HasValue;
@@ -325,14 +327,10 @@
         _storageLoaded = true;
         try
         {
-            var completedJson = LearningStore.GetItem(CompletedTasksStorageKey);
-            if (!string.IsNullOrWhiteSpace(completedJson))
+            _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
+            foreach (var id in _practiceProgress.CompletedTaskIds)
             {
-                var completed = JsonSerializer.Deserialize<int[]>(completedJson) ?? [];
-                foreach (var id in completed.Where(id => PracticeTasks.Any(task => task.Id == id)))
-                {
-                    _completedTaskIds.Add(id);
-                }
+                _completedTaskIds.Add(id);
             }
 
             var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
@@ -438,6 +436,7 @@
         _runFrames.Clear();
         _frameIndex = -1;
         _lastCapturedStepText = null;
+        _memoryOpenedDuringTask = _activeStateView == StateView.Memory;
     }
 
     private void CaptureFrame()
@@ -526,10 +525,10 @@
     private void SetStateView(StateView view)
     {
         _activeStateView = view;
-        if (view == StateView.Memory && _activeTaskId is not null)
+        if (view == StateView.Memory)
         {
             _memoryOpenedDuringTask = true;
-            CheckActiveTaskCompletion();
+            EvaluatePracticeTasks();
         }
     }
 
@@ -543,52 +542,91 @@
         }
 
         _activeTaskId = taskId;
-        _practiceEvents.Clear();
-        _practiceSequence = 0;
         _memoryOpenedDuringTask = false;
     }
 
     private void RecordPracticeEvent(PracticeEvent practiceEvent)
     {
-        if (_activeTaskId is null)
+        _practiceEvents.Add(practiceEvent with { Sequence = ++_practiceSequence });
+        if (_practiceEvents.Count > 256)
         {
-            return;
+            _practiceEvents.RemoveRange(0, _practiceEvents.Count - 256);
         }
 
-        _practiceEvents.Add(practiceEvent with { Sequence = ++_practiceSequence });
-        CheckActiveTaskCompletion();
+        EvaluatePracticeTasks();
     }
 
-    private void CheckActiveTaskCompletion()
+    private void EvaluatePracticeTasks()
     {
-        if (_activeTaskId is null)
+        foreach (var task in PracticeTasks)
         {
-            return;
-        }
+            if (_completedTaskIds.Contains(task.Id) && GetTaskEvidence(task.Id) is not null && _activeTaskId != task.Id)
+            {
+                continue;
+            }
 
-        var completed = _activeTaskId.Value switch
+            var triggeringEvent = task.Id switch
+            {
+                1 => _practiceEvents.LastOrDefault(e => e.Operation == RedBlackOperationKind.Insert && e.Succeeded && e.FirstRepairCase == RedBlackRepairCase.InsertRootBlack),
+                2 => _practiceEvents.LastOrDefault(e => e.Operation == RedBlackOperationKind.Insert && e.Succeeded && e.FirstRepairCase == RedBlackRepairCase.InsertUncleRed),
+                3 => _practiceEvents.LastOrDefault(e => e.Operation == RedBlackOperationKind.Insert && e.Succeeded && e.FirstRepairCase == RedBlackRepairCase.InsertTriangle),
+                4 => _practiceEvents.LastOrDefault(e => e.Operation == RedBlackOperationKind.Insert && e.Succeeded && e.FirstRepairCase == RedBlackRepairCase.InsertLine),
+                5 when _memoryOpenedDuringTask => _practiceEvents.LastOrDefault(e => e.Operation == RedBlackOperationKind.Delete && e.Succeeded && e.FixupChecks > 0),
+                6 when _practiceEvents.Any(e => e.Operation == RedBlackOperationKind.Search && e.Succeeded) && _practiceEvents.Any(e => e.Operation == RedBlackOperationKind.Search && !e.Succeeded)
+                    => _practiceEvents.LastOrDefault(e => e.Operation == RedBlackOperationKind.Search),
+                _ => null
+            };
+
+            if (triggeringEvent is null)
+            {
+                continue;
+            }
+
+            var result = _lastResult;
+            if (result is null || result.Operation != triggeringEvent.Operation || result.RequestedValue != triggeringEvent.Value)
+            {
+                continue;
+            }
+
+            CompletePracticeTask(task, result);
+        }
+    }
+
+    private void CompletePracticeTask(PracticeTaskDefinition task, RedBlackOperationResult result)
+    {
+        var evidence = new PracticeCompletionEvidence
         {
-            1 => _practiceEvents.Any(e => e.Operation == RedBlackOperationKind.Insert && e.Succeeded && e.FirstRepairCase == RedBlackRepairCase.InsertRootBlack),
-            2 => _practiceEvents.Any(e => e.Operation == RedBlackOperationKind.Insert && e.Succeeded && e.FirstRepairCase == RedBlackRepairCase.InsertUncleRed),
-            3 => _practiceEvents.Any(e => e.Operation == RedBlackOperationKind.Insert && e.Succeeded && e.FirstRepairCase == RedBlackRepairCase.InsertTriangle),
-            4 => _practiceEvents.Any(e => e.Operation == RedBlackOperationKind.Insert && e.Succeeded && e.FirstRepairCase == RedBlackRepairCase.InsertLine),
-            5 => _memoryOpenedDuringTask && _practiceEvents.Any(e => e.Operation == RedBlackOperationKind.Delete && e.Succeeded && e.FixupChecks > 0),
-            6 => _practiceEvents.Any(e => e.Operation == RedBlackOperationKind.Search && e.Succeeded) &&
-                 _practiceEvents.Any(e => e.Operation == RedBlackOperationKind.Search && !e.Succeeded),
-            _ => false
+            TaskId = task.Id,
+            TaskTitle = task.Title,
+            Headline = GetResultHeadline(result),
+            ActionExplanation = GetPlainRunSummary(result),
+            MemoryExplanation = GetMemoryExplanation(result),
+            WhyItMatters = GetComplexityExplanation(result),
+            CaseSummary = result.FirstRepairCase != RedBlackRepairCase.None
+                ? GetRepairCaseLabel(result.FirstRepairCase)
+                : result.Operation == RedBlackOperationKind.Delete ? GetDeleteCaseLabel(result.DeleteCase) : result.Operation.ToString(),
+            Metrics =
+            [
+                new("Operation", result.Operation.ToString()),
+                new("Checks", result.TotalChecks.ToString()),
+                new("Recolors", result.RecolorCount.ToString()),
+                new("Rotations", result.RotationCount.ToString()),
+                new("Height", $"{result.HeightBefore} → {result.HeightAfter}"),
+                new("Black-height", $"{result.BlackHeightBefore} → {result.BlackHeightAfter}")
+            ]
         };
 
-        if (!completed)
+        PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
+        _completedTaskIds.Add(task.Id);
+        if (_activeTaskId == task.Id)
         {
-            return;
+            _activeTaskId = null;
         }
-
-        _completedTaskIds.Add(_activeTaskId.Value);
-        _activeTaskId = null;
-        _practiceEvents.Clear();
-        _memoryOpenedDuringTask = false;
-        PersistCompletedTasks();
     }
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
+    private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
+    private void CloseTaskEvidence() => _practiceEvidencePopup = null;
 
     private string GetActiveTaskProgressText(int taskId) => taskId switch
     {

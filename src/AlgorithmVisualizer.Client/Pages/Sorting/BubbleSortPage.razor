@@ -5,6 +5,7 @@
 @inject SimulationState SimulationState
 @inject BubbleSortSimulation BubbleSort
 @inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
 
 <PageTitle>Bubble Sort — Algorithm Visualizer</PageTitle>
 
@@ -262,13 +263,17 @@
             {
                 var completed = _completedTaskIds.Contains(task.Id);
                 var active = _activeTaskId == task.Id;
-                <article class="task-card @(completed ? "completed" : string.Empty) @(active ? "active" : string.Empty)">
-                    <div class="task-topline"><span>@task.Id.ToString("00")</span><span>@(completed ? "✓ Completed" : active ? "In progress" : "Practice")</span></div>
-                    <h3>@task.Title</h3>
-                    <p>@task.Goal</p>
-                    <div class="task-input">Input: <code>@FormatValues(task.Input)</code></div>
-                    <div class="task-actions"><a href="/learn/concepts#bubble-sort">Need the concept? →</a><button type="button" @onclick="() => StartTask(task.Id)" disabled="@IsBusy">@(active ? "Restart task" : completed ? "Practice again" : "Start task")</button></div>
-                </article>
+                <PracticeTaskCard TaskId="@task.Id"
+                                  Title="@task.Title"
+                                  Description="@task.Goal"
+                                  InputText="@FormatValues(task.Input)"
+                                  HelpHref="/learn/concepts#bubble-sort"
+                                  Completed="@completed"
+                                  Active="@active"
+                                  Busy="@IsBusy"
+                                  HasEvidence="@(GetTaskEvidence(task.Id) is not null)"
+                                  Start="@(() => StartTask(task.Id))"
+                                  OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
             }
         </div>
     </section>
@@ -279,6 +284,8 @@
                     LinkLabel="Open Selection Sort" />
 
 </div>
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
 
 @if (_lastRunPopupOpen && _lastResult is not null)
 {
@@ -324,16 +331,19 @@
 }
 
 @code {
+    private const string ModuleKey = "bubble-sort";
     private const string CompletedTasksStorageKey = "algorithm-visualizer.bubble-sort.completed-tasks.v1";
     private const string PopupSettingStorageKey = "algorithm-visualizer.bubble-sort.result-popups.v1";
 
     private readonly List<RunFrame> _frames = [];
     private readonly HashSet<int> _completedTaskIds = [];
     private readonly List<BubbleSortResult> _practiceResults = [];
+    private PracticeModuleProgress _practiceProgress = new();
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
 
     private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
     [
-        new(1, "Trace Basic Bubble Sort", "Use the canonical mode and verify that it runs every shrinking pass without an early-exit shortcut.", [5, 1, 4, 2, 8], BubbleSortVariant.Basic),
+        new(1, "Trace Basic Bubble Sort", "Use Basic mode on an input containing 5, 1, 4, 2, 8 in that order. Extra values are allowed; verify that the run uses the full shrinking-pass schedule without early exit.", [5, 1, 4, 2, 8], BubbleSortVariant.Basic),
         new(2, "Trigger the optimized early exit", "Use Optimized mode on an ordered array. One no-swap pass must prove that the run can stop.", [1, 2, 3, 4, 5], BubbleSortVariant.Optimized),
         new(3, "Create the quadratic worst case", "Use Basic mode on a reverse array and observe every possible adjacent inversion being swapped.", [5, 4, 3, 2, 1], BubbleSortVariant.Basic),
         new(4, "Prove duplicate stability", "Use Basic mode, sort duplicate 3s, then open Memory state. Their item numbers must keep the same relative order.", [3, 2, 3, 1, 3], BubbleSortVariant.Basic),
@@ -424,15 +434,9 @@
         _storageLoaded = true;
         try
         {
-            var completedJson = LearningStore.GetItem(CompletedTasksStorageKey);
-            if (!string.IsNullOrWhiteSpace(completedJson))
-            {
-                var completed = System.Text.Json.JsonSerializer.Deserialize<int[]>(completedJson) ?? [];
-                foreach (var id in completed.Where(id => PracticeTasks.Any(task => task.Id == id)))
-                {
-                    _completedTaskIds.Add(id);
-                }
-            }
+            _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
+            _completedTaskIds.Clear();
+            foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id);
 
             var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
             if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
@@ -568,6 +572,7 @@
     private void PrepareRun()
     {
         _inputError = null;
+        _memoryOpenedDuringTask = _activeStateView == StateView.Memory;
         _lastRunPopupOpen = false;
         _frames.Clear();
         _frameIndex = -1;
@@ -645,10 +650,10 @@
     private void SetStateView(StateView view)
     {
         _view = view;
-        if (view == StateView.Memory && _activeTaskId is not null && _practiceResults.Count > 0)
+        if (view == StateView.Memory && _practiceResults.Count > 0)
         {
             _memoryOpenedDuringTask = true;
-            CheckActiveTaskCompletion();
+            EvaluatePracticeTasks();
         }
     }
 
@@ -657,7 +662,6 @@
         if (IsBusy) return;
         var task = PracticeTasks.First(item => item.Id == taskId);
         _activeTaskId = taskId;
-        _practiceResults.Clear();
         _memoryOpenedDuringTask = false;
         _variant = task.Variant;
         LoadValues(CloneValues(task.Input));
@@ -665,32 +669,73 @@
 
     private void RecordPracticeResult(BubbleSortResult result)
     {
-        if (_activeTaskId is null) return;
         _practiceResults.Add(result);
-        CheckActiveTaskCompletion();
+        if (_practiceResults.Count > 24) _practiceResults.RemoveAt(0);
+        EvaluatePracticeTasks();
     }
 
-    private void CheckActiveTaskCompletion()
+    private void EvaluatePracticeTasks()
     {
-        if (_activeTaskId is null || _practiceResults.Count == 0) return;
+        if (_practiceResults.Count == 0) return;
         var result = _practiceResults[^1];
-        var completed = _activeTaskId.Value switch
-        {
-            1 => result.Variant == BubbleSortVariant.Basic && SameValues(result.InitialValues, [5, 1, 4, 2, 8]) && SameValues(result.SortedValues, [1, 2, 4, 5, 8]) && result.Comparisons == 10 && result.Swaps == 4 && result.Passes == 4 && !result.UsedEarlyExit,
-            2 => result.Variant == BubbleSortVariant.Optimized && SameValues(result.InitialValues, [1, 2, 3, 4, 5]) && result.Passes == 1 && result.Comparisons == 4 && result.Swaps == 0 && result.UsedEarlyExit,
-            3 => result.Variant == BubbleSortVariant.Basic && SameValues(result.InitialValues, [5, 4, 3, 2, 1]) && result.Comparisons == 10 && result.Swaps == 10 && !result.UsedEarlyExit,
-            4 => result.Variant == BubbleSortVariant.Basic && SameValues(result.InitialValues, [3, 2, 3, 1, 3]) && result.Stable && _memoryOpenedDuringTask,
-            5 => result.Variant == BubbleSortVariant.Basic && SameValues(result.InitialValues, [42]) && result.Comparisons == 0 && result.Swaps == 0,
-            _ => false
-        };
 
-        if (!completed) return;
-        _completedTaskIds.Add(_activeTaskId.Value);
-        _activeTaskId = null;
-        _practiceResults.Clear();
-        _memoryOpenedDuringTask = false;
-        PersistCompletedTasks();
+        foreach (var task in PracticeTasks)
+        {
+            if (_completedTaskIds.Contains(task.Id) && GetTaskEvidence(task.Id) is not null && _activeTaskId != task.Id) continue;
+            var completed = task.Id switch
+            {
+                1 => result.Variant == BubbleSortVariant.Basic &&
+                     PracticeRules.ContainsOrderedSubsequence(result.InitialValues, task.Input) &&
+                     PracticeRules.IsNonDecreasing(result.SortedValues) && result.Passes > 0 && !result.UsedEarlyExit,
+                2 => result.Variant == BubbleSortVariant.Optimized &&
+                     result.InitialValues.Length >= task.Input.Length &&
+                     PracticeRules.IsNonDecreasing(result.InitialValues) &&
+                     result.Swaps == 0 && result.UsedEarlyExit && result.Passes == 1,
+                3 => result.Variant == BubbleSortVariant.Basic &&
+                     result.InitialValues.Length >= task.Input.Length &&
+                     PracticeRules.IsStrictlyDescending(result.InitialValues) &&
+                     result.Comparisons == PracticeRules.QuadraticPairCount(result.InitialValues.Length) &&
+                     result.Swaps == PracticeRules.QuadraticPairCount(result.InitialValues.Length),
+                4 => result.Variant == BubbleSortVariant.Basic &&
+                     PracticeRules.ContainsOrderedSubsequence(result.InitialValues, task.Input) &&
+                     PracticeRules.HasDuplicate(result.InitialValues) && result.Stable && _memoryOpenedDuringTask,
+                5 => result.Variant == BubbleSortVariant.Basic && result.InitialValues.Length == 1 && result.Comparisons == 0 && result.Swaps == 0,
+                _ => false
+            };
+
+            if (completed) CompletePracticeTask(task, result);
+        }
     }
+
+    private void CompletePracticeTask(PracticeTaskDefinition task, BubbleSortResult result)
+    {
+        var evidence = new PracticeCompletionEvidence(
+            task.Id,
+            task.Title,
+            result.UsedEarlyExit ? $"{VariantLabelFor(result.Variant)} stopped after a no-swap proof" : $"{VariantLabelFor(result.Variant)} Bubble Sort completed",
+            result.Swaps == 0
+                ? "The run inspected adjacent pairs without needing a swap."
+                : $"The run repaired {result.Swaps} adjacent inversion(s) while the sorted suffix grew from right to left.",
+            $"The same fixed array was reused with O(1) temporary swap storage. Stable duplicate order was {(result.Stable ? "preserved" : "not preserved")}.",
+            result.Variant == BubbleSortVariant.Optimized
+                ? "The no-swap pass is a real proof that the remaining array is sorted; it improves the best case without changing the quadratic worst case."
+                : "The Basic version exposes the complete shrinking-pass schedule, making the quadratic comparison pattern easy to see.",
+            [
+                new("Input", FormatValues(result.InitialValues)),
+                new("Comparisons", result.Comparisons.ToString()),
+                new("Swaps", result.Swaps.ToString()),
+                new("Passes", result.Passes.ToString())
+            ],
+            $"{VariantLabelFor(result.Variant)} · {FormatValues(result.InitialValues)} → {FormatValues(result.SortedValues)}");
+
+        _completedTaskIds.Add(task.Id);
+        PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
+        if (_activeTaskId == task.Id) _activeTaskId = null;
+    }
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
+    private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
+    private void CloseTaskEvidence() => _practiceEvidencePopup = null;
 
     private string GetActiveTaskProgressText(int taskId)
     {
@@ -704,9 +749,9 @@
         var result = _practiceResults[^1];
         return taskId switch
         {
-            1 => $"Need Basic mode, 10 comparisons, 4 swaps and no early exit. Last run: {VariantLabelFor(result.Variant)}, {result.Comparisons} comparisons, {result.Swaps} swaps.",
+            1 => $"Need Basic mode with the requested values in order and no early exit. Last run: {VariantLabelFor(result.Variant)}, {result.Comparisons} comparisons, {result.Swaps} swaps, {result.Passes} passes.",
             2 => $"Need one no-swap pass. Last run: {result.Passes} pass(es), {result.Swaps} swaps, early exit={(result.UsedEarlyExit ? "yes" : "no")}.",
-            3 => $"Need 10 comparisons and 10 swaps. Last run: {result.Comparisons} comparisons, {result.Swaps} swaps.",
+            3 => $"Need a reverse input so every inversion is exposed. Last run: n={result.InitialValues.Length}, {result.Comparisons} comparisons, {result.Swaps} swaps.",
             4 => $"Stable result={(result.Stable ? "yes" : "no")}; Memory state opened={(_memoryOpenedDuringTask ? "yes" : "no")}.",
             5 => $"Need zero work. Last run: {result.Comparisons} comparisons and {result.Swaps} swaps.",
             _ => string.Empty

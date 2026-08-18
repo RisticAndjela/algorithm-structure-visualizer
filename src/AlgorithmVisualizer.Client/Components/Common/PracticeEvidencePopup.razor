@@ -1,0 +1,67 @@
+@if (Evidence is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="Close">
+        <section class="run-popup practice-evidence-popup" role="dialog" aria-modal="true" aria-labelledby="practice-evidence-title" @onclick:stopPropagation="true">
+            <header>
+                <div>
+                    <span class="section-kicker">COMPLETION EXPLANATION · TASK @Evidence.TaskId.ToString("00")</span>
+                    <h2 id="practice-evidence-title">@Evidence.Headline</h2>
+                    <small>@Evidence.TaskTitle</small>
+                </div>
+                <button class="popup-close" type="button" @onclick="Close" aria-label="Close completion explanation">×</button>
+            </header>
+
+            <div class="popup-tabs" role="tablist">
+                <button type="button" class="@(_tab == EvidenceTab.Action ? "active" : string.Empty)" @onclick="() => _tab = EvidenceTab.Action">What happened</button>
+                <button type="button" class="@(_tab == EvidenceTab.Memory ? "active" : string.Empty)" @onclick="() => _tab = EvidenceTab.Memory">Memory</button>
+                <button type="button" class="@(_tab == EvidenceTab.Why ? "active" : string.Empty)" @onclick="() => _tab = EvidenceTab.Why">Why it matters</button>
+            </div>
+
+            <div class="popup-body">
+                @if (!string.IsNullOrWhiteSpace(Evidence.CaseSummary))
+                {
+                    <div class="practice-evidence-case"><strong>Completed case</strong><span>@Evidence.CaseSummary</span></div>
+                }
+
+                @if (_tab == EvidenceTab.Action)
+                {
+                    <p>@Evidence.ActionExplanation</p>
+                    @if (Evidence.Metrics.Count > 0)
+                    {
+                        <div class="popup-metrics">
+                            @foreach (var metric in Evidence.Metrics)
+                            {
+                                <div><span>@metric.Label</span><strong>@metric.Value</strong></div>
+                            }
+                        </div>
+                    }
+                }
+                else if (_tab == EvidenceTab.Memory)
+                {
+                    <p>@Evidence.MemoryExplanation</p>
+                }
+                else
+                {
+                    <p>@Evidence.WhyItMatters</p>
+                }
+
+                <small class="practice-evidence-time">Saved when this task auto-completed · @Evidence.CompletedAtUtc.ToLocalTime().ToString("g")</small>
+            </div>
+        </section>
+    </div>
+}
+
+@code {
+    [Parameter] public PracticeCompletionEvidence? Evidence { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private EvidenceTab _tab = EvidenceTab.Action;
+
+    protected override void OnParametersSet()
+    {
+        _tab = EvidenceTab.Action;
+    }
+
+    private Task Close() => OnClose.InvokeAsync();
+    private enum EvidenceTab { Action, Memory, Why }
+}
