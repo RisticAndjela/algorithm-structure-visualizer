@@ -21,7 +21,7 @@
             </p>
             <div class="learn-actions">
                 <a class="primary-link" href="#matrix-workspace">Start with the matrices ↓</a>
-                <a href="/learn/concepts#matrix">Matrix concepts &amp; memory →</a>
+                <ConceptLink Href="/learn/concepts#matrix">Matrix concepts &amp; memory →</ConceptLink>
             </div>
         </div>
         <div class="matrix-intuition" aria-label="Simple 2 by 3 matrix example">
@@ -173,7 +173,7 @@
                 <span class="step-number">2</span>
                 <div><span class="section-kicker">CHOOSE ONE OPERATION</span><h2 id="operations-title">What do you want to see happen?</h2><p>Start with one of the four core ideas. Each card tells you the rule before you run it.</p></div>
             </div>
-            <a class="concept-link" href="/learn/concepts#matrix-compatibility">Why dimensions matter →</a>
+            <ConceptLink class="concept-link" Href="/learn/concepts#matrix-compatibility">Why dimensions matter →</ConceptLink>
         </div>
 
         <div class="starter-operation-grid">
@@ -291,7 +291,7 @@
 
         <div class="state-tabs-row">
             <div class="state-tabs" role="tablist"><button class="@(_activeView == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetView(StateView.Visual)">Visual state</button><button class="@(_activeView == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetView(StateView.Memory)">Memory state</button></div>
-            <div class="state-context"><p>@DisplayedSnapshot.FocusText</p><div class="lesson-reference-links"><a href="/learn/concepts#matrix">Matrix concepts →</a><a href="/learn/concepts#visual-vs-memory">Concepts &amp; memory →</a></div></div>
+            <div class="state-context"><p>@DisplayedSnapshot.FocusText</p><div class="lesson-reference-links"><ConceptLink Href="/learn/concepts#matrix">Matrix concepts →</ConceptLink><ConceptLink Href="/learn/concepts#visual-vs-memory">Concepts &amp; memory →</ConceptLink></div></div>
         </div>
 
         @if (_activeView == StateView.Visual)
@@ -372,11 +372,11 @@
             }
             else if (_popupTab == ResultPopupTab.Memory)
             {
-                <div class="popup-body"><h3>The mathematical grid and the backing storage are two views of the same values.</h3><p>@GetMemoryExplanation(_lastResult)</p><a class="popup-concept-link" href="/learn/concepts#visual-vs-memory">Open Concepts &amp; Memory →</a></div>
+                <div class="popup-body"><h3>The mathematical grid and the backing storage are two views of the same values.</h3><p>@GetMemoryExplanation(_lastResult)</p><ConceptLink class="popup-concept-link" Href="/learn/concepts#visual-vs-memory">Open Concepts &amp; Memory →</ConceptLink></div>
             }
             else
             {
-                <div class="popup-body"><h3>@GetWhyHeadline(_lastResult)</h3><p>@GetWhyExplanation(_lastResult)</p><a class="popup-concept-link" href="/learn/concepts#matrix">Open the Matrix concept guide →</a></div>
+                <div class="popup-body"><h3>@GetWhyHeadline(_lastResult)</h3><p>@GetWhyExplanation(_lastResult)</p><ConceptLink class="popup-concept-link" Href="/learn/concepts#matrix">Open the Matrix concept guide →</ConceptLink></div>
             }
             <footer><label class="popup-toggle inside"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Show automatically after future Matrix runs</span></label></footer>
         </section>

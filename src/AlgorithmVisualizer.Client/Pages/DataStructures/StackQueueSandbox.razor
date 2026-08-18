@@ -15,29 +15,29 @@
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="learn-launchpad-title">Start with the big idea, then practice it.</h2>
             <p>Use this page like a lab: learn one simple rule, try it, then check the visual and memory views.</p>
-            <a class="learn-launchpad-link" href="/learn/concepts#queue-stack">Open Queue & Stack concepts →</a>
+            <ConceptLink class="learn-launchpad-link" Href="/learn/concepts#queue-stack">Open Queue & Stack concepts →</ConceptLink>
         </div>
         <div class="learn-launchpad-grid">
-            <a class="launch-card lifo" href="/learn/concepts#lifo-fifo">
+            <ConceptLink class="launch-card lifo" Href="/learn/concepts#lifo-fifo">
                 <span class="card-badge">STACK</span>
                 <strong>LIFO</strong>
                 <small>The last item added is the first one removed.</small>
-            </a>
-            <a class="launch-card fifo" href="/learn/concepts#lifo-fifo">
+            </ConceptLink>
+            <ConceptLink class="launch-card fifo" Href="/learn/concepts#lifo-fifo">
                 <span class="card-badge">QUEUE</span>
                 <strong>FIFO</strong>
                 <small>The first item added is the first one removed.</small>
-            </a>
-            <a class="launch-card identity" href="/learn/concepts#identity">
+            </ConceptLink>
+            <ConceptLink class="launch-card identity" Href="/learn/concepts#identity">
                 <span class="card-badge">ID + VALUE</span>
                 <strong>Same value, different item</strong>
                 <small>Two 7s can exist because they are two separate objects with different IDs.</small>
-            </a>
-            <a class="launch-card memory" href="/learn/concepts#memory">
+            </ConceptLink>
+            <ConceptLink class="launch-card memory" Href="/learn/concepts#memory">
                 <span class="card-badge">MEMORY</span>
                 <strong>See both views</strong>
                 <small>The drawing helps you learn. The memory tab shows how the app stores it.</small>
-            </a>
+            </ConceptLink>
         </div>
     </section>
 
@@ -51,7 +51,7 @@
             <h1>Queue &amp; Stack</h1>
             <p>Build, search, delete, and compare what you see on screen with a simple memory view.</p>
         </div>
-        <a class="header-concepts-link" href="/learn/concepts#queue-stack">Open Queue & Stack concepts →</a>
+        <ConceptLink class="header-concepts-link" Href="/learn/concepts#queue-stack">Open Queue & Stack concepts →</ConceptLink>
     </header>
 
     <section class="smart-tip" aria-label="Learning tip">
@@ -60,7 +60,7 @@
             <strong>Quick tip:</strong>
             <p>Before you press Play, guess which item will be checked first.</p>
         </div>
-        <a class="tip-link" href="/learn/concepts#big-o">Simple Big-O guide →</a>
+        <ConceptLink class="tip-link" Href="/learn/concepts#big-o">Simple Big-O guide →</ConceptLink>
     </section>
 
     <section class="lab-shell">
@@ -87,7 +87,7 @@
                     <span class="control-label">VALUE</span>
                     <InputNumber TValue="int?" @bind-Value="_newValue" disabled="@IsBusy" placeholder="e.g. 8" />
                 </label>
-                <small>You can add the same value more than once. Each item still gets its own ID. <a href="/learn/concepts#identity">Why?</a></small>
+                <small>You can add the same value more than once. Each item still gets its own ID. <ConceptLink Href="/learn/concepts#identity">Why?</ConceptLink></small>
             </div>
 
             <div class="operation-group stack-operations">
@@ -199,8 +199,8 @@
         </div>
 
         <div class="lesson-reference-links" aria-label="Concepts and memory links">
-            <a href="/learn/concepts#queue-stack">Queue & Stack concepts →</a>
-            <a href="/learn/concepts#memory">Memory basics →</a>
+            <ConceptLink Href="/learn/concepts#queue-stack">Queue & Stack concepts →</ConceptLink>
+            <ConceptLink Href="/learn/concepts#memory">Memory basics →</ConceptLink>
         </div>
 
         @if (_activeStateView == StateView.Visual)
@@ -220,7 +220,7 @@
             </div>
             <div class="memory-warning">
                 <strong>This is a learning model, not a real RAM address viewer.</strong>
-                <span>.NET can move managed objects during garbage collection, so the app uses stable learning labels such as <code>MEM-#A31F9C</code>. This lab stores both structures in a small dynamic array implemented manually for this project; that storage choice is separate from the LIFO/FIFO rule itself. <a href="/learn/concepts#visual-vs-memory">Learn why visual and memory views can differ.</a></span>
+                <span>.NET can move managed objects during garbage collection, so the app uses stable learning labels such as <code>MEM-#A31F9C</code>. This lab stores both structures in a small dynamic array implemented manually for this project; that storage choice is separate from the LIFO/FIFO rule itself. <ConceptLink Href="/learn/concepts#visual-vs-memory">Learn why visual and memory views can differ.</ConceptLink></span>
             </div>
         }
     </section>
@@ -307,7 +307,7 @@
                         <strong>In simple words</strong>
                         <p>@GetPlainComplexityExplanation(_lastTraversalResult)</p>
                     </div>
-                    <a class="popup-learn" href="/learn/concepts#big-o">Learn O(1), O(n), n and k →</a>
+                    <ConceptLink class="popup-learn" Href="/learn/concepts#big-o">Learn O(1), O(n), n and k →</ConceptLink>
                 </div>
             }
             else
@@ -333,7 +333,7 @@
                             <p>A Find only reads and compares. A failed Delete also leaves the structure unchanged because no matching element was found.</p>
                         </div>
                     }
-                    <a class="popup-learn" href="/learn/concepts#memory">Open the simple memory guide →</a>
+                    <ConceptLink class="popup-learn" Href="/learn/concepts#memory">Open the simple memory guide →</ConceptLink>
                 </div>
             }
 

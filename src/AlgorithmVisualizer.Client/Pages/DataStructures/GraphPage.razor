@@ -15,29 +15,29 @@
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="graph-learn-title">Start with the big idea, then build the connections.</h2>
             <p>A graph models entities and the relationships between them. Learn the four rules below first, then create your own topology in the playground.</p>
-            <a class="learn-launchpad-link" href="/learn/concepts#graph">Open the Graph concepts guide →</a>
+            <ConceptLink class="learn-launchpad-link" Href="/learn/concepts#graph">Open the Graph concepts guide →</ConceptLink>
         </div>
         <div class="learn-launchpad-grid">
-            <a class="launch-card vertex-edge" href="/learn/concepts#graph">
+            <ConceptLink class="launch-card vertex-edge" Href="/learn/concepts#graph">
                 <span class="card-badge">VERTEX + EDGE</span>
                 <strong>Entities connected by relationships</strong>
                 <small>Vertices are the things. Edges say which things are connected: cities and roads, people and links, or devices and cables.</small>
-            </a>
-            <a class="launch-card direction" href="/learn/concepts#graph">
+            </ConceptLink>
+            <ConceptLink class="launch-card direction" Href="/learn/concepts#graph">
                 <span class="card-badge">DIRECTION</span>
                 <strong>A connection can be one-way</strong>
                 <small>Undirected A—B works both ways. Directed A → B does not automatically mean B → A.</small>
-            </a>
-            <a class="launch-card weight" href="/learn/concepts#graph">
+            </ConceptLink>
+            <ConceptLink class="launch-card weight" Href="/learn/concepts#graph">
                 <span class="card-badge">WEIGHT</span>
                 <strong>An edge can carry a numeric cost</strong>
                 <small>A weight can represent distance, time, price, capacity, or another value that later algorithms can use.</small>
-            </a>
-            <a class="launch-card representation" href="/learn/concepts#visual-vs-memory">
+            </ConceptLink>
+            <ConceptLink class="launch-card representation" Href="/learn/concepts#visual-vs-memory">
                 <span class="card-badge">TWO VIEWS</span>
                 <strong>Adjacency list and matrix</strong>
                 <small>The topology is the same. The list stores neighbors compactly; the matrix stores every possible vertex pair in a table.</small>
-            </a>
+            </ConceptLink>
         </div>
     </section>
 
@@ -162,8 +162,8 @@
                 <button class="@(_view == StateView.Memory ? "active" : "")" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
             </div>
             <div class="lesson-reference-links" aria-label="Graph learning links">
-                <a href="/learn/concepts#graph">Graph concepts →</a>
-                <a href="/learn/concepts#visual-vs-memory">Concepts &amp; memory →</a>
+                <ConceptLink Href="/learn/concepts#graph">Graph concepts →</ConceptLink>
+                <ConceptLink Href="/learn/concepts#visual-vs-memory">Concepts &amp; memory →</ConceptLink>
             </div>
         </div>
 
@@ -263,7 +263,7 @@
                 <div class="popup-body">
                     <h3>One graph, two synchronized representations.</h3>
                     <p>@RunRepresentationExplanation(_lastResult)</p>
-                    <a class="popup-concept-link" href="/learn/concepts#visual-vs-memory">Open Concepts &amp; Memory →</a>
+                    <ConceptLink class="popup-concept-link" Href="/learn/concepts#visual-vs-memory">Open Concepts &amp; Memory →</ConceptLink>
                 </div>
             }
             else
@@ -271,7 +271,7 @@
                 <div class="popup-body">
                     <h3>@RunWhyHeadline(_lastResult)</h3>
                     <p>@RunWhyExplanation(_lastResult)</p>
-                    <a class="popup-concept-link" href="/learn/concepts#graph">Open the Graph concept guide →</a>
+                    <ConceptLink class="popup-concept-link" Href="/learn/concepts#graph">Open the Graph concept guide →</ConceptLink>
                 </div>
             }
         </section>

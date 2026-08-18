@@ -16,7 +16,7 @@
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="redblack-learn-title">BST ordering stays. Color rules keep paths short.</h2>
             <p>A Red-Black Tree is still a BST: smaller goes left, larger goes right. The extra color rules prevent one root-to-leaf path from becoming arbitrarily longer than another.</p>
-            <a href="/learn/concepts#red-black">Open Red-Black invariants &amp; black-height →</a>
+            <ConceptLink Href="/learn/concepts#red-black">Open Red-Black invariants &amp; black-height →</ConceptLink>
         </div>
         <div class="learn-grid">
             <article class="learn-card purple"><span>ROOT</span><strong>Root is always black</strong><small>New nodes start red, but the final root may never remain red.</small></article>
@@ -49,7 +49,7 @@
             <strong>Do not memorize colors as decoration.</strong>
             <p>Ask which invariant is broken: red parent + red child, or unequal black-height after deletion. The parent/uncle/sibling colors tell you whether to recolor, rotate, or move the problem upward.</p>
         </div>
-        <a href="/learn/concepts#red-black">See the invariants →</a>
+        <ConceptLink Href="/learn/concepts#red-black">See the invariants →</ConceptLink>
     </section>
 
     <section class="lab-shell">
@@ -139,8 +139,8 @@
         </div>
 
         <div class="lesson-reference-links" aria-label="Concepts and memory links">
-            <a href="/learn/concepts#red-black">Red-Black concepts →</a>
-            <a href="/learn/concepts#visual-vs-memory">Red-Black links & memory →</a>
+            <ConceptLink Href="/learn/concepts#red-black">Red-Black concepts →</ConceptLink>
+            <ConceptLink Href="/learn/concepts#visual-vs-memory">Red-Black links & memory →</ConceptLink>
         </div>
 
         @if (_activeStateView == StateView.Visual)
@@ -234,7 +234,7 @@
                         <strong>@GetPlainRunSummary(_lastResult)</strong>
                         <p>@GetComplexityExplanation(_lastResult)</p>
                     </div>
-                    <a class="popup-learn" href="/learn/concepts#red-black">Learn how Red-Black keeps h logarithmic →</a>
+                    <ConceptLink class="popup-learn" Href="/learn/concepts#red-black">Learn how Red-Black keeps h logarithmic →</ConceptLink>
                 </div>
             }
             else
@@ -251,7 +251,7 @@
                         <strong>@GetMemoryHeadline(_lastResult)</strong>
                         <p>@GetMemoryExplanation(_lastResult)</p>
                     </div>
-                    <a class="popup-learn" href="/learn/concepts#visual-vs-memory">Visual state vs Memory state →</a>
+                    <ConceptLink class="popup-learn" Href="/learn/concepts#visual-vs-memory">Visual state vs Memory state →</ConceptLink>
                 </div>
             }
 

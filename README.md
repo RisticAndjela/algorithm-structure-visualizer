@@ -11,7 +11,7 @@ The project is built with **Blazor WebAssembly and C#**. Its goal is not only to
 - what the time complexity means for the current run;
 - how the visual representation differs from the way the data is stored in memory.
 
-The application now has twelve fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **AVL Tree**, **Red-Black Tree**, **Heap (generalized d-ary)**, **Binary Heap (Min/Max)**, **Matrix**, **Graph**, **Bubble Sort**, **Selection Sort**, **Insertion Sort**, and **Merge Sort**. Queue & Stack established the reusable simulation pattern; BST extended it to linked nodes; AVL added strict height balancing; Red-Black added color-invariant repair; the two Heap labs teach the heap family and Binary Heap specialization; Matrix provides the row-major foundation reused by Graph; Bubble Sort introduces adjacent comparison, stability, sorted-suffix invariants, and Basic/Optimized stopping behavior; Selection Sort adds minimum-candidate scanning, sorted-prefix invariants, fixed quadratic comparison counts, Classic low-swap placement, and Stable Shift placement; Insertion Sort adds held-key/gap mechanics, adaptive sorted-prefix growth, Binary Insertion, stability, and online maintenance semantics; Merge Sort adds recursive divide-and-conquer, stable auxiliary-buffer merging, Natural Merge run detection, and predictable Θ(n log n) general performance.
+The application now has fourteen fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **Binary Heap (Min/Max)**, **Heap (generalized d-ary)**, **AVL Tree**, **Matrix**, **Graph**, **Red-Black Tree**, **Bubble Sort**, **Selection Sort**, **Insertion Sort**, **Merge Sort**, **Quick Sort**, and **Heap Sort**. The Home page, sidebar, Concepts & Memory navigation, and Next Lesson flow expose these modules one-to-one in the same curriculum order instead of grouping several finished lessons behind one card. Every live lab deep-links to the exact Concepts & Memory topic through a shared C# `ConceptLink` component that performs a full native fragment navigation, so the correct section is reached reliably without authored JavaScript.
 
 ---
 
@@ -32,6 +32,8 @@ The application now has twelve fully implemented learning modules: **Queue & Sta
 - Selection Sort
 - Insertion Sort
 - Merge Sort
+- Quick Sort
+- Heap Sort
 - shared simulation runtime;
 - play, pause and adjustable simulation speed;
 - manual step forward;

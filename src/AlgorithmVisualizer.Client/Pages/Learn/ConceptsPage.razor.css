@@ -438,3 +438,37 @@
 .anchor-card {
     scroll-margin-top: 5rem;
 }
+
+/* Canonical fragment targets. Legacy aliases remain in the markup so old links keep working. */
+.concept-section[id],
+.concept-card[id],
+.anchor-target {
+    scroll-margin-top: 1.5rem;
+}
+
+.anchor-target {
+    display: block;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
+
+.concepts-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: .55rem;
+}
+
+.back-to-lab.primary {
+    color: #fff;
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+}
+
+@media (max-width: 760px) {
+    .concepts-hero-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}

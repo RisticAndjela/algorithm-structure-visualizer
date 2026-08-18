@@ -16,7 +16,7 @@
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="bst-learn-title">One comparison decides the next branch.</h2>
             <p>A BST repeats one rule: smaller goes left, larger goes right. Search, insert, and delete all depend on that ordering. This lab also lets you explicitly rebalance an existing BST so you can compare shape before and after.</p>
-            <a href="/learn/concepts#bst-balancing">Open BST height &amp; balancing →</a>
+            <ConceptLink Href="/learn/concepts#bst-balancing">Open BST height &amp; balancing →</ConceptLink>
         </div>
         <div class="learn-grid">
             <article class="learn-card purple"><span>ORDER</span><strong>left &lt; node &lt; right</strong><small>This lab rejects duplicate keys so the invariant stays strict.</small></article>
@@ -50,7 +50,7 @@
             <strong>Before every step:</strong>
             <p>compare the target with the highlighted node and predict whether the next link will be left or right.</p>
         </div>
-        <a href="/learn/concepts#big-o">Why height changes the cost →</a>
+        <ConceptLink Href="/learn/concepts#big-o">Why height changes the cost →</ConceptLink>
     </section>
 
     <section class="lab-shell">
@@ -145,8 +145,8 @@
         </div>
 
         <div class="lesson-reference-links" aria-label="Concepts and memory links">
-            <a href="/learn/concepts#bst">BST concepts →</a>
-            <a href="/learn/concepts#visual-vs-memory">BST visual vs memory →</a>
+            <ConceptLink Href="/learn/concepts#bst">BST concepts →</ConceptLink>
+            <ConceptLink Href="/learn/concepts#visual-vs-memory">BST visual vs memory →</ConceptLink>
         </div>
 
         @if (_activeStateView == StateView.Visual)
@@ -270,7 +270,7 @@
                         <strong>@GetMemoryHeadline(_lastResult)</strong>
                         <p>@GetMemoryExplanation(_lastResult)</p>
                     </div>
-                    <a class="popup-learn" href="/learn/concepts#visual-vs-memory">Visual state vs Memory state →</a>
+                    <ConceptLink class="popup-learn" Href="/learn/concepts#visual-vs-memory">Visual state vs Memory state →</ConceptLink>
                 </div>
             }
 

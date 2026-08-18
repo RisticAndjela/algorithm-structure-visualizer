@@ -9,7 +9,10 @@
             <h1>Words and ideas used in every simulation</h1>
             <p>Start with foundations, then follow each track from easier to harder. Every module link lands on its exact concept section and every lesson section links back to the matching lab.</p>
         </div>
-        <a class="back-to-lab" href="/structures/queue-stack">Open Queue &amp; Stack lab <span>→</span></a>
+        <div class="concepts-hero-actions">
+            <a class="back-to-lab" href="/">Learning path <span>→</span></a>
+            <a class="back-to-lab primary" href="/structures/queue-stack">Open first lab <span>→</span></a>
+        </div>
     </header>
 
     <nav class="concept-jump" aria-label="Concept shortcuts">
@@ -197,8 +200,8 @@
         <div class="plain-note"><strong>C is more manual.</strong><p>A plain C array does not have a built-in “delete item” operation. Your code decides whether to shift values, keep a logical length, or manage separate nodes and call <code>free</code>. That is why the app always names the storage type instead of saying “delete always works this way”.</p></div>
     </section>
 
-    <section id="lifo-fifo" class="concept-section">
-        <span id="queue-stack" class="anchor-target"></span>
+    <section id="queue-stack" class="concept-section">
+        <span id="lifo-fifo" class="anchor-target" aria-hidden="true"></span>
         <div class="section-heading">
             <span>S1</span>
             <div><h2>LIFO and FIFO</h2><p>These words only describe which item is allowed to leave first.</p></div>
@@ -223,8 +226,8 @@
         <div class="concept-lesson-links"><a href="/structures/queue-stack">Open Queue & Stack lab →</a></div>
     </section>
 
-    <section id="tree-height" class="concept-section">
-        <span id="bst" class="anchor-target"></span>
+    <section id="bst" class="concept-section">
+        <span id="tree-height" class="anchor-target" aria-hidden="true"></span>
         <div class="section-heading">
             <span>S2</span>
             <div><h2>Tree height h</h2><p>For a Binary Search Tree, the length of the path matters more than the total node count by itself.</p></div>
@@ -364,8 +367,8 @@
         </div>
     </section>
 
-    <section id="matrices" class="concept-section">
-        <span id="matrix" class="anchor-target"></span>
+    <section id="matrix" class="concept-section">
+        <span id="matrices" class="anchor-target" aria-hidden="true"></span>
         <div class="section-heading">
             <span>S6</span>
             <div><h2>Matrix: dimensions, memory and why it matters</h2><p>A matrix is a rectangular grid of values. The shape is part of the data, and many operations are legal only when dimensions are compatible.</p></div>

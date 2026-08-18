@@ -16,7 +16,7 @@
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="avl-learn-title">BST ordering stays. AVL adds one repair rule.</h2>
             <p>Insert and search follow the same left/right rule as our BST. After a mutation, AVL walks upward, measures balance, and rotates only when a node becomes too heavy on one side.</p>
-            <a href="/learn/concepts#avl-balance">Open AVL balance &amp; rotations →</a>
+            <ConceptLink Href="/learn/concepts#avl-balance">Open AVL balance &amp; rotations →</ConceptLink>
         </div>
         <div class="learn-grid">
             <article class="learn-card purple"><span>BALANCE</span><strong>BF = h(left) − h(right)</strong><small>Every node must finish with balance factor −1, 0, or +1.</small></article>
@@ -49,7 +49,7 @@
             <strong>Before a rotation:</strong>
             <p>read the first unbalanced node's BF, then inspect its heavy child. That pair tells you LL, RR, LR, or RL before anything moves.</p>
         </div>
-        <a href="/learn/concepts#avl-balance">How to choose the rotation →</a>
+        <ConceptLink Href="/learn/concepts#avl-balance">How to choose the rotation →</ConceptLink>
     </section>
 
     <section class="lab-shell">
@@ -139,8 +139,8 @@
         </div>
 
         <div class="lesson-reference-links" aria-label="Concepts and memory links">
-            <a href="/learn/concepts#avl-balance">AVL concepts →</a>
-            <a href="/learn/concepts#visual-vs-memory">AVL links & memory →</a>
+            <ConceptLink Href="/learn/concepts#avl-balance">AVL concepts →</ConceptLink>
+            <ConceptLink Href="/learn/concepts#visual-vs-memory">AVL links & memory →</ConceptLink>
         </div>
 
         @if (_activeStateView == StateView.Visual)
@@ -233,7 +233,7 @@
                         <strong>@GetPlainRunSummary(_lastResult)</strong>
                         <p>@GetComplexityExplanation(_lastResult)</p>
                     </div>
-                    <a class="popup-learn" href="/learn/concepts#avl-balance">Learn how AVL keeps h logarithmic →</a>
+                    <ConceptLink class="popup-learn" Href="/learn/concepts#avl-balance">Learn how AVL keeps h logarithmic →</ConceptLink>
                 </div>
             }
             else
@@ -249,7 +249,7 @@
                         <strong>@GetMemoryHeadline(_lastResult)</strong>
                         <p>@GetMemoryExplanation(_lastResult)</p>
                     </div>
-                    <a class="popup-learn" href="/learn/concepts#visual-vs-memory">Visual state vs Memory state →</a>
+                    <ConceptLink class="popup-learn" Href="/learn/concepts#visual-vs-memory">Visual state vs Memory state →</ConceptLink>
                 </div>
             }
 

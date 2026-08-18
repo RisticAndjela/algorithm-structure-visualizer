@@ -5,19 +5,20 @@
 <div class="home-page">
     <section class="hero">
         <div class="hero-copy">
-            <div class="eyebrow"><span>✦</span> Visual learning, built for understanding</div>
-            <h1>Algorithms make more sense when you can <em>see them think.</em></h1>
+            <div class="eyebrow"><span>✦</span> Learn the rule, watch the state, explain the change</div>
+            <h1>Algorithms make more sense when you can <em>see every decision.</em></h1>
             <p class="hero-lead">
-                Explore data structures and algorithms as interactive systems. Change the input, slow the process down,
-                move one step at a time, and connect every visual change to the idea behind it.
+                Build the input yourself, predict what should happen, step through the real C# implementation,
+                compare Visual State with Memory State, and finish each lesson with automatically checked practice.
             </p>
             <div class="hero-actions">
-                <a class="primary-action" href="/structures/queue-stack">Start with Queue &amp; Stack <span>→</span></a>
-                <a class="secondary-action" href="#learning-path">Browse learning path</a>
+                <a class="primary-action" href="/structures/queue-stack">Start lesson 01 <span>→</span></a>
+                <ConceptLink class="secondary-action" Href="/learn/concepts#visual-vs-memory">Concepts &amp; Memory</ConceptLink>
+                <a class="secondary-action" href="#learning-path">See all 14 modules</a>
             </div>
             <div class="hero-note">
                 <span class="note-icon">i</span>
-                <span><strong>Learning tip:</strong> predict the next state before pressing Step. Active recall makes the visualization far more useful.</span>
+                <span><strong>Best way to use the app:</strong> predict the next step first, then use Step and the explanation to verify your reasoning.</span>
             </div>
         </div>
 
@@ -25,10 +26,10 @@
             <div class="visual-card">
                 <div class="visual-card-top">
                     <div>
-                        <span class="mini-label">CONCEPT PREVIEW</span>
+                        <span class="mini-label">ONE ACTION · THREE VIEWS</span>
                         <strong>Stack · PUSH(8)</strong>
                     </div>
-                    <span class="live-pill"><i></i> Live lab available</span>
+                    <span class="live-pill"><i></i> Interactive</span>
                 </div>
 
                 <div class="stack-preview">
@@ -41,93 +42,178 @@
                 <div class="preview-explanation">
                     <span class="step-number">03</span>
                     <div>
-                        <small>WHAT JUST HAPPENED?</small>
-                        <p><strong>8</strong> became the new top because a stack follows <strong>LIFO</strong>: last in, first out.</p>
+                        <small>WHY DID THIS CHANGE?</small>
+                        <p><strong>8</strong> became the new top because Stack follows <strong>LIFO</strong>. Memory State keeps its own element identity even if another item also has value 8.</p>
                     </div>
                 </div>
             </div>
-            <span class="floating-chip chip-one">O(1)</span>
-            <span class="floating-chip chip-two">LIFO</span>
+            <span class="floating-chip chip-one">Visual State</span>
+            <span class="floating-chip chip-two">Memory State</span>
         </div>
     </section>
 
-    <section class="quick-stats" aria-label="Learning experience highlights">
-        <div><strong>14</strong><span>learning modules</span></div>
-        <div><strong>Step</strong><span>through every mutation</span></div>
-        <div><strong>Why?</strong><span>explanations, not just motion</span></div>
-        <div><strong>∞</strong><span>safe experiments</span></div>
+    <section class="quick-stats" aria-label="Implemented learning modules">
+        <div><strong>14</strong><span>interactive modules</span></div>
+        <div><strong>8</strong><span>data-structure labs</span></div>
+        <div><strong>6</strong><span>sorting labs</span></div>
+        <div><strong>Auto</strong><span>checked guided practice</span></div>
+    </section>
+
+    <section class="foundation-callout" aria-labelledby="foundation-title">
+        <div class="foundation-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="foundation-title">Use Concepts &amp; Memory when a label is unclear.</h2>
+            <p>It is the shared reference for Visual vs Memory State, identity, Big-O, tree height, heap indexing, matrix storage, graph adjacency and every implemented sorting strategy.</p>
+        </div>
+        <div class="foundation-links">
+            <ConceptLink Href="/learn/concepts#visual-vs-memory"><strong>Visual vs memory</strong><span>What the picture shows vs what is stored →</span></ConceptLink>
+            <ConceptLink Href="/learn/concepts#identity"><strong>Value vs ID</strong><span>Why equal values can be different elements →</span></ConceptLink>
+            <ConceptLink Href="/learn/concepts#big-o"><strong>Big-O</strong><span>Read O(1), O(n), Θ(n²), Θ(n log n) →</span></ConceptLink>
+        </div>
     </section>
 
     <section class="learning-section" id="learning-path">
         <div class="section-heading">
             <div>
-                <span class="section-kicker">LEARNING PATH</span>
-                <h2>Build intuition in the right order.</h2>
+                <span class="section-kicker">DATA STRUCTURES · 01–08</span>
+                <h2>Build the storage model first.</h2>
             </div>
-            <p>Follow the same easy → hard order used in the sidebar and Next lesson cards: Queue & Stack → BST → Binary Heap → d-ary Heap → AVL → Matrix → Graph → Red-Black Tree, then Bubble → Selection → Insertion → Merge → Quick → Heap Sort.</p>
+            <p>Each card opens one real lab. The order matches the sidebar and the Next lesson navigation, so there is no hidden or grouped step in the learning path.</p>
         </div>
 
-        <div class="path-grid">
-            <a class="path-card available" href="/structures/queue-stack">
-                <div class="card-topline"><span class="path-index">01</span><span class="status-pill live"><i></i> Ready</span></div>
+        <div class="path-grid module-grid">
+            <a class="path-card available module-card" href="/structures/queue-stack">
+                <div class="card-topline"><span class="path-index">01 · BEGINNER</span><span class="status-pill live"><i></i> Ready</span></div>
                 <div class="path-icon linear-icon"><i></i><i></i><i></i></div>
-                <h3>Linear foundations</h3>
-                <p>Understand order, pointers, LIFO, and FIFO through Queue &amp; Stack.</p>
-                <div class="concept-row"><span>Stack</span><span>Queue</span><span>O(1)</span></div>
-                <span class="card-link">Open lab <b>→</b></span>
+                <h3>Queue &amp; Stack</h3>
+                <p>Start with LIFO, FIFO, stable IDs, linear search and manual dynamic-array storage.</p>
+                <div class="concept-row"><span>LIFO</span><span>FIFO</span><span>Identity</span></div>
+                <span class="card-link">Open lesson <b>→</b></span>
             </a>
 
-            <a class="path-card available" href="/structures/bst">
-                <div class="card-topline"><span class="path-index">02–05</span><span class="status-pill live"><i></i> Tree + priority path</span></div>
+            <a class="path-card available module-card" href="/structures/bst">
+                <div class="card-topline"><span class="path-index">02 · BEGINNER</span><span class="status-pill live"><i></i> Ready</span></div>
                 <div class="path-icon tree-icon"><i></i><i></i><i></i><i></i><i></i></div>
-                <h3>Trees &amp; priority</h3>
-                <p>Continue in difficulty order: BST ordering → Binary Heap indexes → generalized d-ary Heap → AVL rotations. Red-Black comes later after Matrix and Graph.</p>
-                <div class="concept-row"><span>BST</span><span>Binary Heap</span><span>d-ary Heap</span><span>AVL</span></div>
-                <span class="card-link">Start with BST <b>→</b></span>
+                <h3>Binary Search Tree</h3>
+                <p>Follow comparison paths, all delete cases, height changes and explicit DSW balancing.</p>
+                <div class="concept-row"><span>O(h)</span><span>Delete</span><span>DSW</span></div>
+                <span class="card-link">Open lesson <b>→</b></span>
             </a>
 
-            <a class="path-card available" href="/structures/matrix">
-                <div class="card-topline"><span class="path-index">06</span><span class="status-pill live"><i></i> Ready</span></div>
-                <div class="path-icon graph-icon"><i></i><i></i><i></i><i></i></div>
-                <h3>Matrix foundations</h3>
-                <p>Learn row-major storage, matrix arithmetic, multiplication, elimination, inverse and rank, then see the same Matrix storage reused by Graph adjacency.</p>
-                <div class="concept-row"><span>A×B</span><span>RREF</span><span>Adjacency</span></div>
-                <span class="card-link">Open Matrix lab <b>→</b></span>
+            <a class="path-card available module-card" href="/structures/binary-heap">
+                <div class="card-topline"><span class="path-index">03 · BEGINNER+</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="path-icon tree-icon"><i></i><i></i><i></i><i></i><i></i></div>
+                <h3>Binary Heap</h3>
+                <p>Connect complete-tree shape to array indexes, bubble-up and bubble-down.</p>
+                <div class="concept-row"><span>d = 2</span><span>Min/Max</span><span>Indexes</span></div>
+                <span class="card-link">Open lesson <b>→</b></span>
             </a>
 
-            <a class="path-card available" href="/structures/graph">
-                <div class="card-topline"><span class="path-index">07</span><span class="status-pill live"><i></i> Ready</span></div>
+            <a class="path-card available module-card" href="/structures/heap">
+                <div class="card-topline"><span class="path-index">04 · INTERMEDIATE</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="path-icon tree-icon"><i></i><i></i><i></i><i></i><i></i></div>
+                <h3>d-ary Heap</h3>
+                <p>Generalize the Binary Heap and compare branching factor, height and repair cost.</p>
+                <div class="concept-row"><span>d ≥ 2</span><span>Priority</span><span>Trade-off</span></div>
+                <span class="card-link">Open lesson <b>→</b></span>
+            </a>
+
+            <a class="path-card available module-card" href="/structures/avl">
+                <div class="card-topline"><span class="path-index">05 · INTERMEDIATE</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="path-icon tree-icon"><i></i><i></i><i></i><i></i><i></i></div>
+                <h3>AVL Tree</h3>
+                <p>Read balance factors and watch LL, RR, LR and RL repairs rewire node references.</p>
+                <div class="concept-row"><span>BF</span><span>Rotations</span><span>Height</span></div>
+                <span class="card-link">Open lesson <b>→</b></span>
+            </a>
+
+            <a class="path-card available module-card" href="/structures/matrix">
+                <div class="card-topline"><span class="path-index">06 · INTERMEDIATE</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="path-icon matrix-icon"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                <h3>Matrix</h3>
+                <p>Work from dimensions and row-major storage through multiplication, RREF, inverse and rank.</p>
+                <div class="concept-row"><span>Row-major</span><span>RREF</span><span>Inverse</span></div>
+                <span class="card-link">Open lesson <b>→</b></span>
+            </a>
+
+            <a class="path-card available module-card" href="/structures/graph">
+                <div class="card-topline"><span class="path-index">07 · INTERMEDIATE</span><span class="status-pill live"><i></i> Ready</span></div>
                 <div class="path-icon graph-icon"><i></i><i></i><i></i><i></i></div>
-                <h3>Graph thinking</h3>
-                <p>Build directed, undirected, weighted and unweighted graphs, then compare the same topology as an adjacency list and Matrix-backed adjacency table.</p>
+                <h3>Graph</h3>
+                <p>Build one topology and compare synchronized adjacency-list and adjacency-matrix representations.</p>
                 <div class="concept-row"><span>Vertices</span><span>Edges</span><span>Adjacency</span></div>
-                <span class="card-link">Open Graph lab <b>→</b></span>
+                <span class="card-link">Open lesson <b>→</b></span>
             </a>
 
-            <a class="path-card available" href="/sorting/bubble">
-                <div class="card-topline"><span class="path-index">SORT 01–06</span><span class="status-pill live"><i></i> 6 live</span></div>
+            <a class="path-card available module-card" href="/structures/red-black">
+                <div class="card-topline"><span class="path-index">08 · ADVANCED</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="path-icon tree-icon"><i></i><i></i><i></i><i></i><i></i></div>
+                <h3>Red-Black Tree</h3>
+                <p>Track color invariants, black-height, recoloring and insert/delete fix-up cases.</p>
+                <div class="concept-row"><span>Color</span><span>NIL</span><span>Fix-up</span></div>
+                <span class="card-link">Open lesson <b>→</b></span>
+            </a>
+        </div>
+    </section>
+
+    <section class="learning-section sorting-home-section">
+        <div class="section-heading">
+            <div>
+                <span class="section-kicker">SORTING · 01–06</span>
+                <h2>Compare strategies, not just final arrays.</h2>
+            </div>
+            <p>Every sorting lab uses the same Build → Predict → Watch → Explain → Practice rhythm, while Visual and Memory State expose the behavior unique to that algorithm.</p>
+        </div>
+
+        <div class="path-grid module-grid">
+            <a class="path-card available module-card" href="/sorting/bubble">
+                <div class="card-topline"><span class="path-index">01 · BEGINNER</span><span class="status-pill live"><i></i> Ready</span></div>
                 <div class="path-icon sort-icon"><i></i><i></i><i></i><i></i><i></i></div>
-                <h3>Sorting strategies</h3>
-                <p>Follow Bubble → Selection → Insertion → Merge → Quick → Heap Sort. The order moves from local quadratic strategies to divide-and-conquer, partitioning, and guaranteed heap-based Θ(n log n) sorting.</p>
-                <div class="concept-row"><span>Bubble</span><span>Selection</span><span>Insertion</span><span>Merge</span><span>Quick</span><span>Heap</span></div>
-                <span class="card-link">Open sorting labs <b>→</b></span>
+                <h3>Bubble Sort</h3><p>Adjacent comparisons, swaps, sorted suffix and adaptive early exit.</p>
+                <div class="concept-row"><span>Stable</span><span>Θ(n²)</span><span>Early exit</span></div><span class="card-link">Open lesson <b>→</b></span>
+            </a>
+            <a class="path-card available module-card" href="/sorting/selection">
+                <div class="card-topline"><span class="path-index">02 · BEGINNER</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="path-icon sort-icon"><i></i><i></i><i></i><i></i><i></i></div>
+                <h3>Selection Sort</h3><p>Separate minimum search from the one distant swap that finishes each prefix position.</p>
+                <div class="concept-row"><span>Minimum</span><span>Few swaps</span><span>Unstable</span></div><span class="card-link">Open lesson <b>→</b></span>
+            </a>
+            <a class="path-card available module-card" href="/sorting/insertion">
+                <div class="card-topline"><span class="path-index">03 · BEGINNER</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="path-icon sort-icon"><i></i><i></i><i></i><i></i><i></i></div>
+                <h3>Insertion Sort</h3><p>Grow a sorted prefix by shifting a contiguous block and inserting one key.</p>
+                <div class="concept-row"><span>Adaptive</span><span>Stable</span><span>Online</span></div><span class="card-link">Open lesson <b>→</b></span>
+            </a>
+            <a class="path-card available module-card" href="/sorting/merge">
+                <div class="card-topline"><span class="path-index">04 · INTERMEDIATE</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="path-icon sort-icon"><i></i><i></i><i></i><i></i><i></i></div>
+                <h3>Merge Sort</h3><p>Split into runs, merge with a reusable buffer, and compare top-down with natural runs.</p>
+                <div class="concept-row"><span>Stable</span><span>Θ(n log n)</span><span>O(n) buffer</span></div><span class="card-link">Open lesson <b>→</b></span>
+            </a>
+            <a class="path-card available module-card" href="/sorting/quick">
+                <div class="card-topline"><span class="path-index">05 · INTERMEDIATE</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="path-icon sort-icon"><i></i><i></i><i></i><i></i><i></i></div>
+                <h3>Quick Sort</h3><p>Choose a pivot, partition the active range and see how recursion shape controls cost.</p>
+                <div class="concept-row"><span>Pivot</span><span>Partition</span><span>3-way</span></div><span class="card-link">Open lesson <b>→</b></span>
+            </a>
+            <a class="path-card available module-card" href="/sorting/heap">
+                <div class="card-topline"><span class="path-index">06 · ADVANCED</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="path-icon sort-icon"><i></i><i></i><i></i><i></i><i></i></div>
+                <h3>Heap Sort</h3><p>Build a Max Heap in the same array, extract the root and grow a final sorted suffix.</p>
+                <div class="concept-row"><span>Floyd</span><span>Θ(n log n)</span><span>O(1) extra</span></div><span class="card-link">Open lesson <b>→</b></span>
             </a>
         </div>
     </section>
 
     <section class="principles-section">
         <div class="section-heading compact">
-            <div>
-                <span class="section-kicker">HOW TO USE ALGOLAB</span>
-                <h2>Watch less. Think more.</h2>
-            </div>
+            <div><span class="section-kicker">HOW TO USE EACH LAB</span><h2>Build → Predict → Step → Explain → Practice.</h2></div>
         </div>
-
         <div class="principles-grid">
-            <article><span>01</span><h3>Predict</h3><p>Before each step, decide what you expect the structure to do.</p></article>
-            <article><span>02</span><h3>Step</h3><p>Advance once and focus on the exact state that changed.</p></article>
-            <article><span>03</span><h3>Explain</h3><p>Use the tip and operation log to connect the visual change to the rule.</p></article>
-            <article><span>04</span><h3>Experiment</h3><p>Try inputs that break your intuition: empty states, duplicates, boundaries.</p></article>
+            <article><span>01</span><h3>Build</h3><p>Choose the data yourself instead of only watching a fixed demo.</p></article>
+            <article><span>02</span><h3>Predict</h3><p>Commit to what you think the next decision or mutation should be.</p></article>
+            <article><span>03</span><h3>Step &amp; explain</h3><p>Move through the real implementation and connect each state change to its rule.</p></article>
+            <article><span>04</span><h3>Practice</h3><p>Complete flexible behavior-based tasks; the app records the exact explanation that proved completion.</p></article>
         </div>
     </section>
 </div>

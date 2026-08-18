@@ -15,7 +15,7 @@
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="quick-learn-title">Quick Sort does not sort everything at once. It makes one partition correct.</h2>
             <p>Choose a pivot, rearrange the active range around that pivot, then recurse only on the unfinished sides. A partition creates useful structure; recursion finishes the sorting.</p>
-            <a class="learn-launchpad-link" href="/learn/concepts#quick-sort">Open Quick Sort concepts &amp; memory →</a>
+            <ConceptLink class="learn-launchpad-link" Href="/learn/concepts#quick-sort">Open Quick Sort concepts &amp; memory →</ConceptLink>
         </div>
         <div class="learn-grid">
             <article class="learn-card purple"><span>PIVOT</span><strong>Choose one reference value</strong><small>Basic mode uses the last item. Advanced mode uses a median-of-three pivot to avoid blindly trusting an endpoint.</small></article>
@@ -41,7 +41,7 @@
     <section class="smart-tip" aria-label="Quick Sort learning tip">
         <span class="tip-icon">✦</span>
         <div><strong>Keep one invariant in mind:</strong><p>after a partition, the pivot/equal band is finished, but the values inside the left and right regions are not necessarily internally sorted yet.</p></div>
-        <a href="/learn/concepts#quick-sort">Why partition ≠ full sort →</a>
+        <ConceptLink Href="/learn/concepts#quick-sort">Why partition ≠ full sort →</ConceptLink>
     </section>
 
     <section class="implementation-section" aria-labelledby="quick-implementation-title">
@@ -66,7 +66,7 @@
     <section id="quick-lab" class="builder-section" aria-labelledby="quick-build-title">
         <div class="section-heading-row">
             <div class="heading-with-step"><span class="step-number">1</span><div><span class="section-kicker">BUILD THE ARRAY</span><h2 id="quick-build-title">Choose a range worth partitioning.</h2><p>Use 1–12 integers so the pivot and both regions stay readable.</p></div></div>
-            <a class="concept-link" href="/learn/concepts#quick-sort">How Quick Sort works →</a>
+            <ConceptLink class="concept-link" Href="/learn/concepts#quick-sort">How Quick Sort works →</ConceptLink>
         </div>
         <div class="array-builder">
             <label class="array-input"><span>VALUES</span><input value="@_arrayText" @oninput="ArrayTextChanged" disabled="@IsBusy" aria-label="Quick Sort array values" placeholder="Example: 4, 2, 7, 3, 1, 6" /><small>Separate values with spaces or commas. Duplicates and negatives are allowed.</small></label>
@@ -141,7 +141,7 @@
             </div>
             <p>@(_view == StateView.Visual ? "Visual state shows the current pivot, scan, partition regions, and which indexes are already final." : "Memory state shows the same fixed array slots, item identity, and the recursion-stack cost that Quick Sort adds even though it uses no O(n) buffer.")</p>
         </div>
-        <div class="lesson-reference-links"><a href="/learn/concepts#quick-sort">Quick Sort concepts →</a><a href="/learn/concepts#memory">Array &amp; recursion memory →</a><a href="/learn/concepts#big-o">Complexity guide →</a></div>
+        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts#quick-sort">Quick Sort concepts →</ConceptLink><ConceptLink Href="/learn/concepts#memory">Array &amp; recursion memory →</ConceptLink><ConceptLink Href="/learn/concepts#big-o">Complexity guide →</ConceptLink></div>
 
         <div class="visual-shell">
             @if (_view == StateView.Visual) { <QuickSortVisualization Snapshot="@DisplayedSnapshot" /> }
@@ -211,11 +211,11 @@
             }
             else if (_popupTab == ResultPopupTab.Complexity)
             {
-                <div class="popup-body"><h3>Quick Sort's recursion shape controls its cost.</h3><p>Balanced partitions keep the run around Θ(n log n). Repeatedly tiny/huge splits can degrade to Θ(n²), which is why pivot selection matters.</p><div class="complexity-line"><span>Best</span><strong>@_lastResult.BestCaseComplexity</strong><span>Average</span><strong>@_lastResult.AverageCaseComplexity</strong><span>Worst</span><strong>@_lastResult.WorstCaseComplexity</strong></div><a class="popup-concept-link" href="/learn/concepts#big-o">Open the Big-O guide →</a></div>
+                <div class="popup-body"><h3>Quick Sort's recursion shape controls its cost.</h3><p>Balanced partitions keep the run around Θ(n log n). Repeatedly tiny/huge splits can degrade to Θ(n²), which is why pivot selection matters.</p><div class="complexity-line"><span>Best</span><strong>@_lastResult.BestCaseComplexity</strong><span>Average</span><strong>@_lastResult.AverageCaseComplexity</strong><span>Worst</span><strong>@_lastResult.WorstCaseComplexity</strong></div><ConceptLink class="popup-concept-link" Href="/learn/concepts#big-o">Open the Big-O guide →</ConceptLink></div>
             }
             else
             {
-                <div class="popup-body"><h3>In-place does not mean zero extra memory.</h3><p>The array itself needs O(1) extra partition storage, but recursive calls use O(log n) stack space on average and O(n) in the worst case. Quick Sort is not stable; this run happened to @(_lastResult.PreservedEqualValueOrder ? "preserve" : "change") equal-value identity order.</p><a class="popup-concept-link" href="/learn/concepts#quick-sort">Open Quick Sort concepts &amp; memory →</a></div>
+                <div class="popup-body"><h3>In-place does not mean zero extra memory.</h3><p>The array itself needs O(1) extra partition storage, but recursive calls use O(log n) stack space on average and O(n) in the worst case. Quick Sort is not stable; this run happened to @(_lastResult.PreservedEqualValueOrder ? "preserve" : "change") equal-value identity order.</p><ConceptLink class="popup-concept-link" Href="/learn/concepts#quick-sort">Open Quick Sort concepts &amp; memory →</ConceptLink></div>
             }
         </section>
     </div>

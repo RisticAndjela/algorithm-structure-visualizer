@@ -1,0 +1,26 @@
+@inject NavigationManager Navigation
+
+<a href="@Href"
+   @attributes="AdditionalAttributes"
+   @onclick="NavigateToConcept"
+   @onclick:preventDefault="true">
+    @ChildContent
+</a>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Href { get; set; } = string.Empty;
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private void NavigateToConcept()
+    {
+        // A full browser navigation lets the native fragment behavior place the
+        // requested Concepts & Memory section correctly without authored JS.
+        Navigation.NavigateTo(Href, forceLoad: true);
+    }
+}
