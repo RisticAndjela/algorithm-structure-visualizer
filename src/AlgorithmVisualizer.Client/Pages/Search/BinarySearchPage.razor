@@ -1,0 +1,448 @@
+@page "/search/binary"
+@using AlgorithmVisualizer.Core.Algorithms.Search.Binary
+@using AlgorithmVisualizer.Client.Components.Visualization.Search.Binary
+@implements IDisposable
+@inject SimulationState SimulationState
+@inject BinarySearchSimulation BinarySearch
+@inject BinarySearchInputSorter InputSorter
+@inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
+
+<PageTitle>Binary Search — Algorithm Visualizer</PageTitle>
+
+<div class="linear-search-page learning-module-page learning-module-shell">
+    <section class="learn-launchpad" aria-labelledby="binary-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="binary-learn-title">Binary Search uses sorted order to throw half the work away.</h2>
+            <p>Keep an inclusive range <strong>[left, right]</strong>, inspect its midpoint, and use the comparison to prove that one whole side cannot contain the target.</p>
+            <ConceptLink class="learn-launchpad-link" Href="/learn/concepts/binary-search">Open Binary Search concepts &amp; memory →</ConceptLink>
+        </div>
+        <div class="learn-grid">
+            <article class="learn-card purple"><span>PRECONDITION</span><strong>The array must be sorted</strong><small>Without order, midpoint comparisons cannot eliminate a half safely.</small></article>
+            <article class="learn-card blue"><span>MIDPOINT</span><strong>Read one middle value</strong><small><code>mid = left + (right-left)/2</code> avoids adding the full indexes first.</small></article>
+            <article class="learn-card mint"><span>ELIMINATE</span><strong>Keep only one half</strong><small>Less than target → move left rightward. Greater → move right leftward.</small></article>
+            <article class="learn-card gold"><span>DUPLICATES</span><strong>“Any match” is not “first match”</strong><small>Advanced mode keeps searching left after an equality.</small></article>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow"><span>SEARCH ALGORITHMS</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <h1>Binary Search</h1>
+            <p>Build an array, sort it first when needed using one of the implemented sorting algorithms, choose a target, predict the returned index, then watch the real C# loop shrink its candidate interval.</p>
+        </div>
+        <div class="complexity-summary" aria-label="Binary Search complexity">
+            <div><span>Best case</span><strong>Θ(1)</strong><small>first midpoint matches</small></div>
+            <div><span>Average / worst</span><strong>Θ(log n)</strong><small>candidate range halves</small></div>
+            <div><span>Extra space</span><strong>O(1)</strong><small>iterative boundaries only</small></div>
+        </div>
+    </header>
+
+    <section class="smart-tip" aria-label="Binary Search learning tip">
+        <span class="tip-icon">✦</span>
+        <div><strong>Before moving a boundary:</strong><p>Say exactly why every discarded value is impossible. Sorted order is the proof that makes the skip legal.</p></div>
+        <ConceptLink Href="/learn/concepts/binary-search-complexity">Why halving becomes Θ(log n) →</ConceptLink>
+    </section>
+
+    <section class="implementation-section" aria-labelledby="binary-implementation-title">
+        <div class="section-heading-row"><div><span class="section-kicker">IMPLEMENTATION CHOICE</span><h2 id="binary-implementation-title">Choose what an equality means.</h2><p>Both modes are true Binary Search. The advanced mode strengthens the result contract for duplicate values.</p></div></div>
+        <div class="variant-grid">
+            <button type="button" class="variant-card @(_variant == BinarySearchVariant.AnyMatch ? "active" : string.Empty)" @onclick="() => SetVariant(BinarySearchVariant.AnyMatch)" disabled="@IsBusy">
+                <span>BASIC · ANY MATCH</span><strong>Return the matching midpoint</strong><p>As soon as <code>a[mid] == target</code>, return that index. With duplicates, it may not be the first occurrence.</p><small>Θ(1) best · Θ(log n) average/worst · O(1)</small>
+            </button>
+            <button type="button" class="variant-card @(_variant == BinarySearchVariant.FirstOccurrence ? "active" : string.Empty)" @onclick="() => SetVariant(BinarySearchVariant.FirstOccurrence)" disabled="@IsBusy">
+                <span>ADVANCED · FIRST OCCURRENCE</span><strong>Save equality, then continue left</strong><p>Remember the matching midpoint as a candidate and shrink <code>right</code> to find an earlier duplicate if one exists.</p><small>Still Θ(log n) · deterministic first duplicate</small>
+            </button>
+        </div>
+        <div class="live-data-card"><div><span>REAL-TIME CRUD</span><strong>READ is safe · mutations restart the search</strong></div><p>Insert/update/delete can break sortedness or invalidate the current boundaries. This teaching run therefore searches one fixed sorted snapshot.</p><span class="compatibility-badge restart">SORTED snapshot required · mutation restarts</span></div>
+    </section>
+
+    <section id="binary-search-lab" class="builder-section" aria-labelledby="binary-build-title">
+        <div class="section-heading-row"><div class="heading-with-step"><span class="step-number">1</span><div><span class="section-kicker">BUILD THE SEARCH</span><h2 id="binary-build-title">Choose an array and target.</h2><p>Use 0–16 integers. If the array is not sorted yet, choose one of the sorting algorithms you already learned as the first preprocessing step.</p></div></div><ConceptLink class="concept-link" Href="/learn/concepts/binary-search">How Binary Search works →</ConceptLink></div>
+        <div class="search-builder">
+            <label class="array-input"><span>ARRAY VALUES</span><input value="@_arrayText" @oninput="ArrayTextChanged" disabled="@IsBusy" aria-label="Binary Search array values" placeholder="Example: 7, 1, 11, 3, 9, 5, 13" /><small>Separate values with spaces or commas. Unsorted input is allowed: Binary Search will ask you to choose a sorter first.</small></label>
+            <label class="target-input"><span>TARGET</span><input value="@_targetText" @oninput="TargetTextChanged" disabled="@IsBusy" aria-label="Binary Search target" inputmode="numeric" /><small>The value to find.</small></label>
+            <button class="primary-action" type="button" @onclick="ApplySearchInput" disabled="@IsBusy">Use this search</button>
+        </div>
+        <div class="preset-row" aria-label="Binary Search example cases">
+            <span>TRY A CASE</span>
+            <button type="button" @onclick="() => LoadPreset(Preset.Best)" disabled="@IsBusy">Best midpoint</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.GoRight)" disabled="@IsBusy">Go right</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.GoLeft)" disabled="@IsBusy">Go left</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Missing)" disabled="@IsBusy">Missing</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Duplicates)" disabled="@IsBusy">Duplicates</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Single)" disabled="@IsBusy">One item</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Empty)" disabled="@IsBusy">Empty</button>
+        </div>
+        @if (_showSortChooser)
+        {
+            <section class="presort-panel" aria-labelledby="binary-presort-title">
+                <div class="presort-heading">
+                    <div>
+                        <span class="section-kicker">STEP 1 · SORT INPUT FIRST</span>
+                        <h3 id="binary-presort-title">Binary Search needs order. Which implemented sorter should prepare this array?</h3>
+                        <p>Your input is valid, but it is not nondecreasing yet. Pick one algorithm below. Its real C# implementation will sort the array once, without replaying that sorting algorithm's individual visualization steps here.</p>
+                    </div>
+                    <div class="presort-preview"><span>UNSORTED INPUT</span><strong>@FormatValues(_pendingUnsortedValues)</strong></div>
+                </div>
+                <div class="presort-choice-grid">
+                    <button type="button" @onclick="() => SortInputAsync(BinarySearchInputSortAlgorithm.BubbleSort)" disabled="@IsBusy"><span>BUBBLE SORT</span><strong>Adjacent swaps</strong><small>Optimized implementation · good teaching choice for nearly sorted input</small></button>
+                    <button type="button" @onclick="() => SortInputAsync(BinarySearchInputSortAlgorithm.SelectionSort)" disabled="@IsBusy"><span>SELECTION SORT</span><strong>Select minimum</strong><small>Classic implementation · few direct swaps, but Θ(n²) comparisons</small></button>
+                    <button type="button" @onclick="() => SortInputAsync(BinarySearchInputSortAlgorithm.InsertionSort)" disabled="@IsBusy"><span>INSERTION SORT</span><strong>Grow a sorted prefix</strong><small>Linear implementation · especially suitable for small or nearly sorted input</small></button>
+                    <button type="button" @onclick="() => SortInputAsync(BinarySearchInputSortAlgorithm.MergeSort)" disabled="@IsBusy"><span>MERGE SORT</span><strong>Split and merge</strong><small>Top-down implementation · predictable Θ(n log n)</small></button>
+                    <button type="button" @onclick="() => SortInputAsync(BinarySearchInputSortAlgorithm.QuickSort)" disabled="@IsBusy"><span>QUICK SORT</span><strong>Partition around pivots</strong><small>Median-of-three 3-way implementation · strong general-purpose choice</small></button>
+                    <button type="button" @onclick="() => SortInputAsync(BinarySearchInputSortAlgorithm.HeapSort)" disabled="@IsBusy"><span>HEAP SORT</span><strong>Build heap, extract max</strong><small>Floyd bottom-up implementation · deterministic Θ(n log n)</small></button>
+                </div>
+                <div class="presort-note"><strong>No hidden shortcut.</strong><span>The selected algorithm is one of this project's existing manual sorting implementations. Binary Search only skips showing its internal sort timeline because sorting is a prerequisite here, not the lesson being simulated.</span></div>
+            </section>
+        }
+        @if (!string.IsNullOrWhiteSpace(_preSortMessage))
+        {
+            <div class="presort-success" role="status"><strong>Step 1 complete.</strong><span>@_preSortMessage</span></div>
+        }
+        @if (!string.IsNullOrWhiteSpace(_inputError)) { <div class="input-error" role="alert"><strong>Check the Binary Search input.</strong><span>@_inputError</span></div> }
+        <div class="current-search"><div><span>CURRENT SORTED ARRAY</span><strong>@(Current.Count == 0 ? "∅ empty" : FormatValues(Current.Elements.Select(element => element.Value).ToArray()))</strong></div><div><span>TARGET</span><strong>@_target</strong></div></div>
+    </section>
+
+    <section class="predict-section" aria-labelledby="binary-prediction-title">
+        <div class="prediction-copy"><span class="step-number">2</span><div><span class="section-kicker">PREDICT FIRST</span><h2 id="binary-prediction-title">Which index will this mode return?</h2><p>Basic may return any matching midpoint encountered. Advanced returns the first occurrence.</p></div></div>
+        <div class="prediction-card linear-prediction">
+            @if (Current.Count > 0)
+            {
+                <div class="index-choice-row">
+                    @for (var index = 0; index < Current.Elements.Length; index++)
+                    {
+                        var choiceIndex = index;
+                        <button type="button" class="@(_predictionAnswered && _predictedIndex == choiceIndex ? "chosen" : string.Empty)" @onclick="() => AnswerPrediction(choiceIndex)" disabled="@(IsBusy || _showSortChooser)"><small>index @choiceIndex</small><strong>@Current.Elements[choiceIndex].Value</strong></button>
+                    }
+                </div>
+            }
+            <button type="button" class="not-found-choice @(_predictionAnswered && _predictedIndex == -1 ? "chosen" : string.Empty)" @onclick="() => AnswerPrediction(-1)" disabled="@(IsBusy || _showSortChooser)">Target is not present</button>
+            @if (_predictionAnswered) { <p class="prediction-feedback @(_predictionCorrect ? "correct" : "incorrect")">@PredictionFeedback</p> }
+        </div>
+    </section>
+
+    <section class="lab-section" aria-labelledby="binary-visualizer-title">
+        <div class="lab-heading"><div><span class="section-kicker">3 · WATCH THE ALGORITHM</span><h2 id="binary-visualizer-title">Watch one midpoint eliminate an entire half.</h2></div><div class="lab-actions"><label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Open explanation after run</span></label>@if (_lastResult is not null) { <button class="secondary-action" type="button" @onclick="OpenLastRunPopup">Last explanation</button> }<button class="sort-button" type="button" @onclick="RunSearchAsync" disabled="@(IsBusy || _showSortChooser)"><span>▶</span> Search for @_target</button></div></div>
+
+        <div class="state-tabs-row"><div class="state-tabs" role="tablist"><button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state</button><button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state</button></div><p>@(_view == StateView.Visual ? "See active, discarded, midpoint, candidate and final positions." : "See that the array never moves: only left/right/mid integers change.")</p></div>
+        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/binary-search">Binary Search concepts →</ConceptLink><ConceptLink Href="/learn/concepts/binary-search-complexity">Complexity →</ConceptLink><ConceptLink Href="/learn/concepts/linear-vs-binary-search">Linear vs Binary →</ConceptLink></div>
+        <div class="visualizer-shell">@if (_view == StateView.Visual) { <BinarySearchVisualization Snapshot="@DisplayedSnapshot" /> } else { <BinarySearchMemoryVisualization Snapshot="@DisplayedSnapshot" /> }</div>
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+
+        <div class="run-dashboard"><article><span>Target</span><strong>@_target</strong><small>@VariantLabel</small></article><article><span>Comparisons</span><strong>@DisplayedSnapshot.Comparisons</strong><small>Midpoint reads.</small></article><article><span>Active range</span><strong>@DisplayedRangeText</strong><small>@DisplayedSnapshot.ActiveCount candidate slot(s).</small></article><article><span>Result</span><strong>@DisplayedResultText</strong><small>@DisplayedResultNote</small></article></div>
+        <div class="invariant-panel"><div><span>INVARIANT TO WATCH</span><h3>If the target exists, it must remain inside [left, right] — or be the saved candidate in First-occurrence mode.</h3><p>Every boundary update is justified by sorted order.</p></div><div class="early-exit-note"><span>HALVING RULE</span><strong>Each unequal comparison removes roughly half the remaining indexes.</strong><p>That repeated halving is the source of logarithmic growth.</p></div></div>
+    </section>
+
+    <section class="algorithm-map">
+        <div class="section-heading-row"><div><span class="section-kicker">ALGORITHM MAP</span><h2>Two boundaries, one midpoint, one proof.</h2><p>The Core implementation uses an explicit iterative loop; no framework binary-search helper performs the work.</p></div><ConceptLink class="concept-link" Href="/learn/concepts/binary-search-complexity">Review logarithmic growth →</ConceptLink></div>
+        <div class="pseudo-grid"><div class="pseudo-code"><span>left = 0; right = n - 1</span><span>while left &lt;= right</span><span class="indent">mid = left + (right-left)/2</span><span class="indent">if a[mid] &lt; target: left = mid + 1</span><span class="indent">else if a[mid] &gt; target: right = mid - 1</span><span class="indent">else: return mid (or save + continue left)</span></div><div class="why-cards"><article><span>Sorted proof</span><strong>Order turns one comparison into many eliminated candidates.</strong><p>If midpoint is too small, every earlier value is also too small.</p></article><article><span>Duplicates</span><strong>An equality does not identify the first duplicate automatically.</strong><p>First-occurrence mode treats equality as a candidate and keeps searching left.</p></article></div></div>
+    </section>
+
+    <section class="fit-section">
+        <div class="section-heading-row"><div><span class="section-kicker">WHEN SHOULD I USE IT?</span><h2>Binary Search is excellent when sorted random-access data is already available.</h2><p>The search is fast, but maintaining sorted order can itself have a cost.</p></div></div>
+        <div class="fit-grid"><article class="fit-card good"><span>GOOD FIT</span><strong>Large sorted arrays searched repeatedly</strong><p>Each comparison removes roughly half of the remaining candidate range.</p></article><article class="fit-card avoid"><span>AVOID FOR</span><strong>Unsorted or frequently mutated data with expensive reordering</strong><p>Binary Search's guarantee disappears without its sorted-data precondition.</p></article><article class="fit-card better"><span>BETTER ALTERNATIVE</span><strong>Linear Search when sorting is unavailable</strong><p>For a one-off search on arbitrary data, a direct scan may be simpler than preprocessing.</p><div class="fit-links"><a href="/search/linear">Open Linear Search →</a></div></article></div>
+    </section>
+
+    <section class="practice-section" aria-labelledby="binary-practice-title">
+        <div class="practice-heading"><div><span class="section-kicker">GUIDED PRACTICE</span><h2 id="binary-practice-title">Prove the important Binary Search decisions yourself.</h2></div><div class="task-score"><strong>@_completedTaskIds.Count / @PracticeTasks.Count</strong><span>completed</span></div></div>
+        @if (_activeTaskId is not null) { var activeTask = PracticeTasks.First(task => task.Id == _activeTaskId.Value); <div class="active-task-banner"><span>ACTIVE TASK @activeTask.Id.ToString("00")</span><strong>@activeTask.Title</strong><small>@GetActiveTaskProgressText(activeTask.Id)</small></div> }
+        <div class="practice-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                var completed = _completedTaskIds.Contains(task.Id); var active = _activeTaskId == task.Id;
+                <PracticeTaskCard TaskId="@task.Id" Title="@task.Title" Description="@task.Goal" InputText="@task.SuggestedInput" HelpHref="/learn/concepts/binary-search" Completed="@completed" Active="@active" Busy="@IsBusy" HasEvidence="@(GetTaskEvidence(task.Id) is not null)" Start="@(() => StartTask(task.Id))" OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
+            }
+        </div>
+    </section>
+
+    <NextLessonCard Eyebrow="NEXT SEARCH" Title="Depth-First Search" Description="Move from ordered arrays to graph traversal, where a Stack controls which unexplored branch is visited next." Href="/structures/graph" Level="03 · Planned" LinkLabel="Review Graph first" />
+</div>
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
+
+@if (_lastRunPopupOpen && _lastResult is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRunPopup">
+        <section class="run-popup" role="dialog" aria-modal="true" aria-labelledby="binary-run-popup-title" @onclick="IgnorePopupClick" @onclick:stopPropagation="true">
+            <header><div><span class="section-kicker">WHAT JUST HAPPENED?</span><h2 id="binary-run-popup-title">@RunHeadline</h2></div><button class="popup-close" type="button" @onclick="CloseLastRunPopup">×</button></header>
+            <div class="popup-tabs"><button type="button" class="@(_popupTab == ResultPopupTab.Action ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Action">Search</button><button type="button" class="@(_popupTab == ResultPopupTab.Complexity ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Complexity">Complexity</button><button type="button" class="@(_popupTab == ResultPopupTab.Memory ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Memory">Memory</button></div>
+            @if (_popupTab == ResultPopupTab.Action) { <div class="popup-body"><div class="popup-metrics"><div><span>Mode</span><strong>@VariantName(_lastResult.Variant)</strong></div><div><span>Result</span><strong>@(_lastResult.Found ? $"index {_lastResult.FoundIndex}" : "Not found")</strong></div><div><span>Comparisons</span><strong>@_lastResult.Comparisons</strong></div><div><span>Range reductions</span><strong>@_lastResult.RangeReductions</strong></div></div><h3>@RunActionExplanation</h3><p>Input: <strong>@FormatValues(_lastResult.InitialValues)</strong>.</p></div> }
+            else if (_popupTab == ResultPopupTab.Complexity) { <div class="popup-body"><h3>Repeated halving produces logarithmic growth.</h3><p>@ComplexityPopupExplanation</p><div class="complexity-line"><span>Best</span><strong>Θ(1)</strong><span>Average</span><strong>Θ(log n)</strong><span>Worst</span><strong>Θ(log n)</strong></div><ConceptLink class="popup-concept-link" Href="/learn/concepts/binary-search-complexity">Open Binary Search complexity →</ConceptLink></div> }
+            else { <div class="popup-body"><h3>The sorted array stayed fixed.</h3><p>Binary Search changes only boundary integers and reads midpoint slots. Discarded indexes remain in memory; they are simply proven impossible.</p><ConceptLink class="popup-concept-link" Href="/learn/concepts/binary-search">Open Binary Search concepts &amp; memory →</ConceptLink></div> }
+        </section>
+    </div>
+}
+
+@code {
+    private const string ModuleKey = "binary-search";
+    private const string CompletedTasksStorageKey = "algorithm-visualizer.binary-search.completed-tasks.v1";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.binary-search.result-popups.v1";
+
+    private readonly List<RunFrame> _frames = [];
+    private readonly HashSet<int> _completedTaskIds = [];
+    private readonly List<BinarySearchResult> _practiceResults = [];
+    private PracticeModuleProgress _practiceProgress = new();
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
+
+    private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
+    [
+        new(1, "Hit the midpoint immediately", "Use any non-empty sorted array where the target equals the initial midpoint. The run must finish in one comparison.", "Example: 1, 3, 5, 7, 9 · target 5 · Basic", [1,3,5,7,9], 5, BinarySearchVariant.AnyMatch),
+        new(2, "Discard the left half", "Use any sorted array where the first midpoint is smaller than the target and the target is eventually found on the right.", "Example: 1, 3, 5, 7, 9, 11, 13 · target 11", [1,3,5,7,9,11,13], 11, BinarySearchVariant.AnyMatch),
+        new(3, "Discard the right half", "Use any sorted array where the first midpoint is larger than the target and the target is eventually found on the left.", "Example: 1, 3, 5, 7, 9, 11, 13 · target 3", [1,3,5,7,9,11,13], 3, BinarySearchVariant.AnyMatch),
+        new(4, "Prove a logarithmic miss", "Search a missing target in any sorted array with at least seven values. The run must use fewer comparisons than a full linear scan.", "Example: 1, 3, 5, 7, 9, 11, 13 · target 8", [1,3,5,7,9,11,13], 8, BinarySearchVariant.AnyMatch),
+        new(5, "Find the first duplicate", "Use First-occurrence mode with a target that appears at least twice. It must return the earliest equal index.", "Example: 1, 2, 2, 2, 3 · target 2 · Advanced", [1,2,2,2,3], 2, BinarySearchVariant.FirstOccurrence),
+        new(6, "Show Basic duplicate behavior", "Use Basic mode with duplicates in a case where the matching midpoint is not the first occurrence. This proves Basic means any match.", "Example: 1, 2, 2, 2, 3 · target 2 · Basic", [1,2,2,2,3], 2, BinarySearchVariant.AnyMatch),
+        new(7, "Test the one-item boundary", "Use exactly one element and search successfully for it. This boundary intentionally requires size 1.", "Example: 42 · target 42", [42], 42, BinarySearchVariant.AnyMatch),
+        new(8, "Test the empty-array boundary", "Use exactly zero elements. Any target must return not found with zero comparisons.", "Empty array · target 5", [], 5, BinarySearchVariant.AnyMatch)
+    ];
+
+    private string _arrayText = "1, 3, 5, 7, 9, 11, 13";
+    private string _targetText = "11";
+    private int _target = 11;
+    private BinarySearchVariant _variant = BinarySearchVariant.AnyMatch;
+    private string? _inputError;
+    private string? _preSortMessage;
+    private int[] _pendingUnsortedValues = [];
+    private int _pendingTarget;
+    private bool _showSortChooser;
+    private bool _isPreparingInput;
+    private string? _lastCapturedStep;
+    private int _frameIndex = -1;
+    private int _predictedIndex = -2;
+    private bool _predictionAnswered;
+    private bool _predictionCorrect;
+    private BinarySearchResult? _lastResult;
+    private bool _lastRunPopupOpen;
+    private bool _showRunPopups = true;
+    private bool _storageLoaded;
+    private int? _activeTaskId;
+    private StateView _view = StateView.Visual;
+    private ResultPopupTab _popupTab = ResultPopupTab.Action;
+
+    private bool IsBusy => SimulationState.IsRunning || _isPreparingInput;
+    private BinarySearchSnapshot Current => BinarySearch.CreateSnapshot();
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_frames.Count > 0 && _frameIndex < _frames.Count - 1) || SimulationState.IsRunning;
+    private int TimelineCount => _frames.Count;
+    private int TimelinePosition => _frameIndex >= 0 ? _frameIndex + 1 : 0;
+    private RunFrame? DisplayedFrame => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex] : null;
+    private string DisplayedStepText => DisplayedFrame?.StepText ?? SimulationState.CurrentStepText;
+    private BinarySearchSnapshot DisplayedSnapshot => DisplayedFrame?.Snapshot ?? BinarySearch.CreateSnapshot();
+    private string DisplayedRangeText => DisplayedSnapshot.Left <= DisplayedSnapshot.Right ? $"[{DisplayedSnapshot.Left}, {DisplayedSnapshot.Right}]" : "empty";
+    private string DisplayedResultText => DisplayedSnapshot.FoundIndex is int found ? $"index {found}" : DisplayedSnapshot.CandidateIndex is int candidate ? $"candidate {candidate}" : (DisplayedSnapshot.Phase is BinarySearchPhase.NotFound or BinarySearchPhase.Complete) && DisplayedSnapshot.Left > DisplayedSnapshot.Right ? "Not found" : "Searching";
+    private string DisplayedResultNote => DisplayedSnapshot.FoundIndex is not null ? "Final returned index." : DisplayedSnapshot.CandidateIndex is not null ? "Advanced mode still checks left." : "No final result yet.";
+    private string VariantLabel => _variant == BinarySearchVariant.AnyMatch ? "Basic · any match" : "Advanced · first occurrence";
+
+    private string PredictionFeedback { get { var actual = PredictResultIndex(Current.Elements, _target, _variant); if (_predictionCorrect) return actual >= 0 ? $"Correct. This mode returns index {actual}." : "Correct. The candidate range eventually becomes empty."; return actual >= 0 ? $"This mode returns index {actual}. Follow the midpoint decisions to see why." : "The target is absent, so the correct prediction is not present."; } }
+    private string RunHeadline => _lastResult is null ? "Binary Search complete" : _lastResult.Found ? $"Found {_lastResult.Target} at index {_lastResult.FoundIndex}" : $"{_lastResult.Target} was not found";
+    private string RunActionExplanation => _lastResult is null ? string.Empty : _lastResult.Found ? _lastResult.Variant == BinarySearchVariant.FirstOccurrence ? $"The algorithm found an equal midpoint, saved it, and continued left until it proved index {_lastResult.FoundIndex} was the earliest occurrence." : $"Basic mode returned the first matching midpoint it encountered after {_lastResult.Comparisons} comparison(s)." : _lastResult.InitialValues.Length == 0 ? "The sorted array had no candidate range, so zero comparisons were needed." : $"Every midpoint comparison discarded a provably impossible half until left became greater than right after {_lastResult.Comparisons} comparison(s).";
+    private string ComplexityPopupExplanation => _lastResult is null ? string.Empty : _lastResult.Comparisons <= 1 ? "This run ended at the first midpoint, so it demonstrated the constant-time best case." : $"This run used {_lastResult.Comparisons} midpoint comparisons over {_lastResult.InitialValues.Length} values. Each unequal comparison reduced the candidate interval instead of scanning every slot.";
+
+    protected override void OnInitialized()
+    {
+        BinarySearch.LoadValues([1,3,5,7,9,11,13]);
+        BinarySearch.Configure(_target, _variant);
+        SimulationState.Changed += HandleSimulationChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _storageLoaded) return;
+        _storageLoaded = true;
+        try { _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id)); _completedTaskIds.Clear(); foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id); var popupSetting = LearningStore.GetItem(PopupSettingStorageKey); if (bool.TryParse(popupSetting, out var show)) _showRunPopups = show; } catch { }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ArrayTextChanged(ChangeEventArgs args) { _arrayText = args.Value?.ToString() ?? string.Empty; ClearPendingSortChoice(); _inputError = null; _preSortMessage = null; }
+    private void TargetTextChanged(ChangeEventArgs args) { _targetText = args.Value?.ToString() ?? string.Empty; ClearPendingSortChoice(); _inputError = null; _preSortMessage = null; }
+
+    private void ApplySearchInput()
+    {
+        if (IsBusy) return;
+        _preSortMessage = null;
+        if (!TryParseArray(_arrayText, out var values, out var error)) { ClearPendingSortChoice(); _inputError = error; return; }
+        if (!int.TryParse(_targetText.Trim(), out var target)) { ClearPendingSortChoice(); _inputError = "Target must be one whole number."; return; }
+        if (!BinarySearchSimulation.IsSortedNondecreasing(values))
+        {
+            ClearReview();
+            BinarySearch.LoadValues([]);
+            _target = target;
+            BinarySearch.Configure(target, _variant);
+            _predictionAnswered = false;
+            _predictionCorrect = false;
+            _predictedIndex = -2;
+            _pendingUnsortedValues = CloneValues(values);
+            _pendingTarget = target;
+            _showSortChooser = true;
+            _inputError = null;
+            return;
+        }
+
+        ClearPendingSortChoice();
+        LoadSearch(values, target, _variant);
+    }
+
+    private async Task SortInputAsync(BinarySearchInputSortAlgorithm algorithm)
+    {
+        if (IsBusy || !_showSortChooser) return;
+        _isPreparingInput = true;
+        _inputError = null;
+        _preSortMessage = null;
+        var originalValues = CloneValues(_pendingUnsortedValues);
+        var target = _pendingTarget;
+
+        try
+        {
+            var result = await InputSorter.SortAsync(originalValues, algorithm);
+            LoadSearch(result.SortedValues, target, _variant);
+            _preSortMessage = $"{result.ImplementationName} prepared [{FormatValues(originalValues)}] as [{FormatValues(result.SortedValues)}]. Binary Search can now use the sorted snapshot.";
+        }
+        catch (Exception ex)
+        {
+            _inputError = $"The selected sorting step could not prepare the input: {ex.Message}";
+        }
+        finally
+        {
+            _isPreparingInput = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void ClearPendingSortChoice()
+    {
+        _showSortChooser = false;
+        _pendingUnsortedValues = [];
+        _pendingTarget = 0;
+    }
+
+    private void SetVariant(BinarySearchVariant variant)
+    {
+        if (IsBusy) return;
+        _variant = variant; BinarySearch.Configure(_target, _variant); ClearReview(); _predictionAnswered = false; _predictedIndex = -2;
+    }
+
+    private void LoadPreset(Preset preset)
+    {
+        if (IsBusy) return;
+        var setup = preset switch
+        {
+            Preset.Best => (new[] {1,3,5,7,9}, 5, BinarySearchVariant.AnyMatch),
+            Preset.GoLeft => (new[] {1,3,5,7,9,11,13}, 3, BinarySearchVariant.AnyMatch),
+            Preset.Missing => (new[] {1,3,5,7,9,11,13}, 8, BinarySearchVariant.AnyMatch),
+            Preset.Duplicates => (new[] {1,2,2,2,3}, 2, BinarySearchVariant.FirstOccurrence),
+            Preset.Single => (new[] {42}, 42, BinarySearchVariant.AnyMatch),
+            Preset.Empty => (Array.Empty<int>(), 5, BinarySearchVariant.AnyMatch),
+            _ => (new[] {1,3,5,7,9,11,13}, 11, BinarySearchVariant.AnyMatch)
+        };
+        LoadSearch(setup.Item1, setup.Item2, setup.Item3);
+    }
+
+    private void LoadSearch(int[] values, int target, BinarySearchVariant variant)
+    {
+        ClearPendingSortChoice(); ClearReview(); BinarySearch.LoadValues(values); _target = target; _variant = variant; BinarySearch.Configure(target, variant); _arrayText = FormatValues(values); _targetText = target.ToString(); _inputError = null; _predictionAnswered = false; _predictionCorrect = false; _predictedIndex = -2;
+    }
+
+    private static bool TryParseArray(string input, out int[] values, out string error)
+    {
+        var parts = (input ?? string.Empty).Split([',',';',' ','\n','\r','\t'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length > 16) { values = []; error = "Keep this learning view to at most 16 values so boundaries stay readable."; return false; }
+        values = new int[parts.Length];
+        for (var index=0; index<parts.Length; index++) if (!int.TryParse(parts[index], out values[index])) { values=[]; error=$"“{parts[index]}” is not a whole number."; return false; }
+        error = string.Empty; return true;
+    }
+
+    private void AnswerPrediction(int predictedIndex) { if (IsBusy) return; _predictedIndex = predictedIndex; _predictionAnswered = true; _predictionCorrect = predictedIndex == PredictResultIndex(Current.Elements, _target, _variant); }
+
+    private static int PredictResultIndex(BinarySearchElementSnapshot[] elements, int target, BinarySearchVariant variant)
+    {
+        var left=0; var right=elements.Length-1; var candidate=-1;
+        while (left<=right) { var mid=left+((right-left)/2); var value=elements[mid].Value; if (value<target) left=mid+1; else if (value>target) right=mid-1; else { if (variant==BinarySearchVariant.AnyMatch) return mid; candidate=mid; right=mid-1; } }
+        return candidate;
+    }
+
+    private async Task RunSearchAsync()
+    {
+        if (IsBusy) return; PrepareRun(); BinarySearch.Configure(_target, _variant); var token=SimulationState.Start($"Binary Search is ready with range [0, {Math.Max(-1, Current.Count-1)}] for target {_target}.");
+        try { var result=await BinarySearch.SearchAsync(_target, _variant, token); if (!IsCurrent(token)) return; FinishRun(result); }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception ex) { _inputError=$"The search run stopped: {ex.Message}"; if (IsCurrent(token)) SimulationState.Complete("The run stopped because of an error."); }
+    }
+
+    private void FinishRun(BinarySearchResult result) { _lastResult=result; RecordPracticeResult(result); SimulationState.Complete(result.Found ? $"Found {result.Target} at index {result.FoundIndex} after {result.Comparisons} midpoint comparison(s)." : $"{result.Target} not found after {result.Comparisons} midpoint comparison(s)."); _popupTab=ResultPopupTab.Action; _lastRunPopupOpen=_showRunPopups; }
+    private void PrepareRun() { _inputError=null; _lastRunPopupOpen=false; _frames.Clear(); _frameIndex=-1; _lastCapturedStep=null; }
+    private void Capture() { var step=SimulationState.CurrentStepText; if (step==_lastCapturedStep) return; var tail=_frameIndex<0 || _frameIndex==_frames.Count-1; _frames.Add(new RunFrame(step, BinarySearch.CreateSnapshot())); _lastCapturedStep=step; if (tail) _frameIndex=_frames.Count-1; }
+    private void HandleSimulationChanged() { if (SimulationState.IsRunning) Capture(); _=InvokeAsync(StateHasChanged); }
+    private bool IsCurrent(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;
+    private void ClearReview() { SimulationState.Reset(); _frames.Clear(); _frameIndex=-1; _lastCapturedStep=null; _lastResult=null; _lastRunPopupOpen=false; }
+    private Task PlayTimelineAsync() { if (_frames.Count>0) _frameIndex=_frames.Count-1; SimulationState.Resume(); return InvokeAsync(StateHasChanged); }
+    private Task PauseTimelineAsync() { SimulationState.Pause(); return Task.CompletedTask; }
+    private Task StepBackAsync() { if (SimulationState.IsRunning && !SimulationState.IsPaused) SimulationState.Pause(); if (_frameIndex>0) _frameIndex--; return InvokeAsync(StateHasChanged); }
+    private Task StepForwardAsync() { if (_frameIndex>=0 && _frameIndex<_frames.Count-1) { _frameIndex++; return InvokeAsync(StateHasChanged); } if (SimulationState.IsRunning) SimulationState.Step(); return Task.CompletedTask; }
+    private Task ResetPlaybackAsync() { SimulationState.Reset(); _frames.Clear(); _frameIndex=-1; _lastCapturedStep=null; return InvokeAsync(StateHasChanged); }
+    private void SetStateView(StateView view) => _view=view;
+
+    private void StartTask(int taskId) { if (IsBusy) return; var task=PracticeTasks.First(item=>item.Id==taskId); _activeTaskId=taskId; LoadSearch(CloneValues(task.Input), task.Target, task.Variant); _activeTaskId=taskId; }
+    private void RecordPracticeResult(BinarySearchResult result) { _practiceResults.Add(result); if (_practiceResults.Count>30) _practiceResults.RemoveAt(0); EvaluatePracticeTasks(); }
+
+    private void EvaluatePracticeTasks()
+    {
+        if (_practiceResults.Count==0) return; var result=_practiceResults[^1]; var first=FirstOccurrence(result.InitialValues,result.Target); var count=CountOccurrences(result.InitialValues,result.Target); var initialMid=result.InitialValues.Length==0 ? -1 : (result.InitialValues.Length-1)/2;
+        foreach (var task in PracticeTasks)
+        {
+            if (_completedTaskIds.Contains(task.Id) && GetTaskEvidence(task.Id) is not null && _activeTaskId != task.Id) continue;
+            var completed = task.Id switch
+            {
+                1 => result.InitialValues.Length>0 && result.Found && result.Comparisons==1 && result.FoundIndex==initialMid,
+                2 => result.InitialValues.Length>=3 && result.Found && result.InitialValues[initialMid] < result.Target && result.RangeReductions>0,
+                3 => result.InitialValues.Length>=3 && result.Found && result.InitialValues[initialMid] > result.Target && result.RangeReductions>0,
+                4 => result.InitialValues.Length>=7 && !result.Found && result.Comparisons < result.InitialValues.Length,
+                5 => result.Variant==BinarySearchVariant.FirstOccurrence && count>=2 && result.Found && result.FoundIndex==first && result.ReturnsFirstOccurrence,
+                6 => result.Variant==BinarySearchVariant.AnyMatch && count>=2 && result.Found && result.FoundIndex != first,
+                7 => result.InitialValues.Length==1 && result.Found && result.FoundIndex==0 && result.Comparisons==1,
+                8 => result.InitialValues.Length==0 && !result.Found && result.Comparisons==0,
+                _ => false
+            };
+            if (completed) CompletePracticeTask(task,result);
+        }
+    }
+
+    private void CompletePracticeTask(PracticeTaskDefinition task, BinarySearchResult result)
+    {
+        var evidence=new PracticeCompletionEvidence(task.Id, task.Title,
+            result.Found ? $"Binary Search returned index {result.FoundIndex}" : "Binary Search exhausted the candidate range",
+            result.Found ? $"Using {VariantName(result.Variant)}, the loop made {result.Comparisons} midpoint comparison(s), reduced the range {result.RangeReductions} time(s), and returned index {result.FoundIndex} for target {result.Target}." : $"Target {result.Target} was absent. After {result.Comparisons} midpoint comparison(s), left crossed right and no candidate remained.",
+            "The fixed sorted array was never rewritten. Only left, right, mid, target, counters, and (in First-occurrence mode) one candidate index changed, so extra algorithmic space stayed O(1).",
+            result.Comparisons<=1 ? "A midpoint hit demonstrates the Θ(1) best case." : result.Variant==BinarySearchVariant.FirstOccurrence && CountOccurrences(result.InitialValues,result.Target)>=2 ? "Continuing left after equality strengthens the duplicate contract while preserving logarithmic search growth." : "Each ordered comparison eliminated a whole interval rather than checking each discarded slot individually, demonstrating why Binary Search grows logarithmically.",
+            [new("Mode",VariantName(result.Variant)),new("Target",result.Target.ToString()),new("Result",result.Found?$"index {result.FoundIndex}":"Not found"),new("Comparisons",result.Comparisons.ToString()),new("Range reductions",result.RangeReductions.ToString())],
+            $"[{FormatValues(result.InitialValues)}] · target {result.Target} · {VariantName(result.Variant)}");
+        _completedTaskIds.Add(task.Id); PracticeProgress.Complete(ModuleKey,_practiceProgress,task.Id,evidence); if (_activeTaskId==task.Id) _activeTaskId=null;
+    }
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress,taskId);
+    private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup=GetTaskEvidence(taskId);
+    private void CloseTaskEvidence() => _practiceEvidencePopup=null;
+    private string GetActiveTaskProgressText(int taskId) { if (_practiceResults.Count==0) return "Suggested setup is loaded. You may change values freely as long as the behavior still proves the task concept."; var result=_practiceResults[^1]; return $"Last run: {ResultSummary(result)}. Auto-complete keeps watching every run."; }
+    private static string ResultSummary(BinarySearchResult result) => result.Found ? $"{VariantName(result.Variant)} found index {result.FoundIndex} in {result.Comparisons} comparison(s)" : $"not found in {result.Comparisons} comparison(s)";
+
+    private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups=args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(),out var parsed)&&parsed; try { LearningStore.SetItem(PopupSettingStorageKey,_showRunPopups.ToString()); } catch { } }
+    private void OpenLastRunPopup() { if (_lastResult is null) return; _popupTab=ResultPopupTab.Action; _lastRunPopupOpen=true; }
+    private void CloseLastRunPopup() => _lastRunPopupOpen=false;
+    private static void IgnorePopupClick() { }
+
+    private static int FirstOccurrence(IReadOnlyList<int> values,int target) { for (var i=0;i<values.Count;i++) if(values[i]==target) return i; return -1; }
+    private static int CountOccurrences(IReadOnlyList<int> values,int target) { var count=0; for(var i=0;i<values.Count;i++) if(values[i]==target) count++; return count; }
+    private static int[] CloneValues(int[] source) { var copy=new int[source.Length]; for(var i=0;i<source.Length;i++) copy[i]=source[i]; return copy; }
+    private static string FormatValues(int[] values) => values.Length==0 ? "empty" : string.Join(", ",values);
+    private static string VariantName(BinarySearchVariant variant) => variant==BinarySearchVariant.AnyMatch ? "Basic · Any match" : "Advanced · First occurrence";
+
+    public void Dispose() => SimulationState.Changed -= HandleSimulationChanged;
+
+    private sealed record RunFrame(string StepText, BinarySearchSnapshot Snapshot);
+    private sealed record PracticeTaskDefinition(int Id,string Title,string Goal,string SuggestedInput,int[] Input,int Target,BinarySearchVariant Variant);
+    private enum StateView { Visual, Memory }
+    private enum ResultPopupTab { Action, Complexity, Memory }
+    private enum Preset { Best, GoRight, GoLeft, Missing, Duplicates, Single, Empty }
+}

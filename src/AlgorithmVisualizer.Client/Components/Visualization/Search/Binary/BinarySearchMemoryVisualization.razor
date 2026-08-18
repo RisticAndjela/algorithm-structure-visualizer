@@ -1,0 +1,58 @@
+@using AlgorithmVisualizer.Core.Algorithms.Search.Binary
+
+<section class="linear-search-memory" aria-label="Binary Search memory state">
+    <div class="memory-note">
+        <div><span>ACTUAL TEACHING STORAGE</span><strong>Fixed sorted <code>BinarySearchElement[]</code></strong></div>
+        <p>Binary Search is read-only. The array never moves; only integer boundaries <code>left</code>, <code>right</code>, and <code>mid</code> change while ordering lets the algorithm ignore whole ranges.</p>
+    </div>
+
+    @if (Snapshot.Count == 0)
+    {
+        <div class="empty-memory">Zero slots means left = 0 and right = −1 immediately.</div>
+    }
+    else
+    {
+        <div class="slot-strip" role="list" aria-label="Binary Search memory slots">
+            @for (var index = 0; index < Snapshot.Elements.Length; index++)
+            {
+                var element = Snapshot.Elements[index];
+                <article class="memory-slot @StateClass(element.VisualState)" role="listitem">
+                    <header><span>slot</span><strong>[@index]</strong></header>
+                    <div class="reference-arrow" aria-hidden="true">↓</div>
+                    <div class="element-object"><span>item #@(element.OriginalIndex + 1)</span><strong>@element.Value</strong></div>
+                    <small>@RoleLabel(element.VisualState)</small>
+                </article>
+            }
+        </div>
+
+        <div class="memory-facts">
+            <article><span>Boundary state</span><strong>left=@Snapshot.Left · right=@Snapshot.Right</strong><small>Two integers describe the remaining interval.</small></article>
+            <article><span>Extra algorithmic space</span><strong>O(1)</strong><small>The iterative version uses boundaries, midpoint, target and counters.</small></article>
+            <article><span>Writes to array</span><strong>0</strong><small>No slot, value or identity changes during search.</small></article>
+        </div>
+
+        <div class="read-only-note"><strong>Why does sorted order matter?</strong><p>After reading the midpoint, every value on one side is known to be too small or too large. Those slots remain in memory; they are only removed from the logical candidate range.</p></div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public BinarySearchSnapshot Snapshot { get; set; } = default!;
+
+    private static string StateClass(BinarySearchElementVisualState state) => state switch
+    {
+        BinarySearchElementVisualState.Current => "is-current",
+        BinarySearchElementVisualState.Eliminated => "is-checked",
+        BinarySearchElementVisualState.Candidate => "is-candidate",
+        BinarySearchElementVisualState.Found => "is-found",
+        _ => string.Empty
+    };
+
+    private static string RoleLabel(BinarySearchElementVisualState state) => state switch
+    {
+        BinarySearchElementVisualState.Current => "midpoint read",
+        BinarySearchElementVisualState.Eliminated => "outside active range",
+        BinarySearchElementVisualState.Candidate => "saved equal candidate",
+        BinarySearchElementVisualState.Found => "returned match",
+        _ => "still possible"
+    };
+}

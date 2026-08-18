@@ -66,6 +66,7 @@
             <div class="concept-jump-group">
                 <span>SEARCH · EASY → HARD</span>
                 <a href="#linear-search">Linear Search</a>
+                <a href="#binary-search">Binary Search</a>
             </div>
         </nav>
 
@@ -775,14 +776,62 @@
         <div class="concept-lesson-links"><a href="/search/linear">Open the Linear Search lab →</a><a href="/learn/concepts/big-o">Review Big-O →</a></div>
     </section>
 
+
+    <section id="binary-search" class='@SectionClass("binary-search")'>
+        <div class="section-heading">
+            <span>Q2</span>
+            <div><h2>Binary Search: sorted order lets one comparison eliminate half</h2><p>Binary Search keeps an inclusive candidate interval. The midpoint comparison is useful because sorted order proves that one whole side cannot contain the target.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class='@CardClass("binary-search", "concept-card")'>
+                <span class="term">PRECONDITION</span>
+                <h3>The input must be sorted in nondecreasing order</h3>
+                <p>If <code>a[mid] &lt; target</code>, every index at or left of <code>mid</code> is too small. If <code>a[mid] &gt; target</code>, every index at or right of <code>mid</code> is too large. That proof does not exist on arbitrary unsorted data.</p>
+                <div class="example"><strong>In the lab:</strong> an unsorted array becomes a preprocessing lesson instead of an error. Choose Bubble, Selection, Insertion, Merge, Quick, or Heap Sort; that existing C# implementation prepares the sorted snapshot, then Binary Search begins.</div>
+                <div class="example"><strong>Invariant:</strong> if the target exists, it remains inside <code>[left, right]</code>, or is the saved duplicate candidate in first-occurrence mode.</div>
+            </article>
+            <article class='@CardClass("binary-search", "concept-card")'>
+                <span class="term queue">BOUNDARIES</span>
+                <h3>left, right and mid describe the whole search state</h3>
+                <p>Use <code>mid = left + (right-left)/2</code>. A too-small midpoint moves <code>left</code> to <code>mid+1</code>; a too-large midpoint moves <code>right</code> to <code>mid-1</code>.</p>
+                <div class="example"><strong>Memory:</strong> the iterative algorithm needs only O(1) extra state; discarded array slots are not deleted or moved.</div>
+            </article>
+            <article class='@CardClass("binary-search-complexity", "concept-card")'>
+                <span class="term">COMPLEXITY</span>
+                <h3>Best Θ(1); average and worst Θ(log n)</h3>
+                <p>A first-midpoint hit needs one comparison. Otherwise each unequal comparison removes roughly half of the remaining candidates. After k reductions, only about <code>n / 2^k</code> candidates remain.</p>
+                <div class="example"><strong>Why logarithmic:</strong> solve <code>n / 2^k ≈ 1</code>, giving <code>k ≈ log₂ n</code>.</div>
+            </article>
+            <article class='@CardClass("binary-search-duplicates", "concept-card")'>
+                <span class="term queue">DUPLICATES</span>
+                <h3>Any matching midpoint is not necessarily the first occurrence</h3>
+                <p>Basic Binary Search may return whichever equal midpoint it encounters. To guarantee the first duplicate, save the matching midpoint and continue searching the left half until no earlier equal value can remain.</p>
+                <div class="example"><strong>Example:</strong> [1, 2, 2, 2, 3] searching for 2 can return index 2 in Basic mode; First-occurrence mode returns index 1.</div>
+            </article>
+            <article class='@CardClass("linear-vs-binary-search", "concept-card")'>
+                <span class="term">LINEAR vs BINARY</span>
+                <h3>Fewer comparisons require a stronger input assumption</h3>
+                <p>Linear Search works on arbitrary order and may inspect all n values. Binary Search needs sorted random-access data, but then it can skip proven-impossible ranges and search in logarithmic time.</p>
+                <div class="example"><strong>Trade-off:</strong> if data changes constantly, maintaining sorted order may cost more than a one-off linear scan.</div>
+            </article>
+            <article class='@CardClass("binary-search", "concept-card")'>
+                <span class="term queue">CRUD</span>
+                <h3>Reads are safe; mutation restarts the teaching run</h3>
+                <p>An insert, delete or update can change indexes or break sortedness, so the current left/right proof may become invalid. The simulator therefore searches a fixed sorted snapshot.</p>
+                <div class="example"><strong>Use when:</strong> sorted arrays are already available and searches are repeated. Prefer Linear Search when ordering is unavailable.</div>
+            </article>
+        </div>
+        <div class="concept-lesson-links"><a href="/search/binary">Open the Binary Search lab →</a><a href="/search/linear">Compare with Linear Search →</a><a href="/learn/concepts/big-o">Review Big-O →</a></div>
+    </section>
+
     <section class="concept-section implementation-note">
         <div class="section-heading">
             <span>✓</span>
-            <div><h2>Implemented from scratch</h2><p>The learning structures and algorithms do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, Matrix, Graph, sorting, Linear Search, or balancing behavior to ready-made framework collections/search helpers.</p></div>
+            <div><h2>Implemented from scratch</h2><p>The learning structures and algorithms do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, Matrix, Graph, sorting, Linear Search, Binary Search, or balancing behavior to ready-made framework collections/search helpers.</p></div>
         </div>
         <div class="plain-note">
             <strong>What our code does itself</strong>
-            <p>Linear structures keep and grow their own raw array and move references with manual loops. BST, AVL, and Red-Black Tree keep explicit node links and perform their own comparisons, transplants, recoloring, and rotations. BST Balance uses our own Day-Stout-Warren vine/compression logic over those same node references. Heap uses its own growable raw array and manual index swaps for bubble-up/bubble-down instead of PriorityQueue or a library heap. Matrix uses its own row-major <code>double[]</code>, manual cell/index loops, row operations, multiplication and elimination instead of a numerical or linear-algebra library. Graph keeps canonical vertex/edge objects, manual adjacency lists over our own dynamic-array storage, and reuses ManualMatrix for the synchronized adjacency table instead of a graph package or dictionary-backed graph. Linear Search uses its own explicit index loop and does not call LINQ First/Contains or a framework search helper. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the taught data-structure algorithms for us.</p>
+            <p>Linear structures keep and grow their own raw array and move references with manual loops. BST, AVL, and Red-Black Tree keep explicit node links and perform their own comparisons, transplants, recoloring, and rotations. BST Balance uses our own Day-Stout-Warren vine/compression logic over those same node references. Heap uses its own growable raw array and manual index swaps for bubble-up/bubble-down instead of PriorityQueue or a library heap. Matrix uses its own row-major <code>double[]</code>, manual cell/index loops, row operations, multiplication and elimination instead of a numerical or linear-algebra library. Graph keeps canonical vertex/edge objects, manual adjacency lists over our own dynamic-array storage, and reuses ManualMatrix for the synchronized adjacency table instead of a graph package or dictionary-backed graph. Linear Search uses its own explicit index loop and does not call LINQ First/Contains or a framework search helper. Binary Search uses its own iterative left/right/mid loop and does not call Array.BinarySearch or another framework binary-search helper. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the taught data-structure algorithms for us.</p>
         </div>
     </section>
 
@@ -809,7 +858,9 @@
     {
         "binary-heap" or "general-heap" => "heap",
         "matrix-compatibility" => "matrix",
-        "linear-search-complexity" or "linear-vs-binary-search" => "linear-search",
+        "linear-search-complexity" => "linear-search",
+        "binary-search-complexity" or "binary-search-duplicates" => "binary-search",
+        "linear-vs-binary-search" => "binary-search",
         _ => NormalizedTopic
     };
 
@@ -842,6 +893,9 @@
         "linear-search" => "Linear Search",
         "linear-search-complexity" => "Linear Search complexity",
         "linear-vs-binary-search" => "Linear Search vs Binary Search",
+        "binary-search" => "Binary Search",
+        "binary-search-complexity" => "Binary Search complexity",
+        "binary-search-duplicates" => "Binary Search duplicates",
         _ => "Concepts & Memory"
     };
 
@@ -863,7 +917,8 @@
         "merge-sort" => "/sorting/merge",
         "quick-sort" => "/sorting/quick",
         "heap-sort" => "/sorting/heap",
-        "linear-search" or "linear-search-complexity" or "linear-vs-binary-search" => "/search/linear",
+        "linear-search" or "linear-search-complexity" => "/search/linear",
+        "binary-search" or "binary-search-complexity" or "binary-search-duplicates" or "linear-vs-binary-search" => "/search/binary",
         _ => null
     };
 
@@ -901,7 +956,8 @@
         "general-heap" or "avl-balance" or "matrix" or "matrix-compatibility" or
         "graph" or "red-black" or "bubble-sort" or "selection-sort" or
         "insertion-sort" or "merge-sort" or "quick-sort" or "heap-sort" or
-        "linear-search" or "linear-search-complexity" or "linear-vs-binary-search" => true,
+        "linear-search" or "linear-search-complexity" or "linear-vs-binary-search" or
+        "binary-search" or "binary-search-complexity" or "binary-search-duplicates" => true,
         _ => false
     };
 }

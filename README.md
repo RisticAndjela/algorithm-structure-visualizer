@@ -11,7 +11,7 @@ The project is built with **Blazor WebAssembly and C#**. Its goal is not only to
 - what the time complexity means for the current run;
 - how the visual representation differs from the way the data is stored in memory.
 
-The application now has fifteen fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **Binary Heap (Min/Max)**, **Heap (generalized d-ary)**, **AVL Tree**, **Matrix**, **Graph**, **Red-Black Tree**, **Bubble Sort**, **Selection Sort**, **Insertion Sort**, **Merge Sort**, **Quick Sort**, **Heap Sort**, and **Linear Search**. The Home page, sidebar, Concepts & Memory navigation, and Next Lesson flow expose these modules one-to-one in the same curriculum order instead of grouping several finished lessons behind one card. Every live lab deep-links to the exact Concepts & Memory topic through dedicated Blazor routes such as `/learn/concepts/linear-search`; the shared C# `ConceptLink` component performs normal Blazor navigation without authored JavaScript or cross-page fragment timing.
+The application now has sixteen fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **Binary Heap (Min/Max)**, **Heap (generalized d-ary)**, **AVL Tree**, **Matrix**, **Graph**, **Red-Black Tree**, **Bubble Sort**, **Selection Sort**, **Insertion Sort**, **Merge Sort**, **Quick Sort**, **Heap Sort**, **Linear Search**, and **Binary Search**. The Home page, sidebar, Concepts & Memory navigation, and Next Lesson flow expose these modules one-to-one in the same curriculum order instead of grouping several finished lessons behind one card. Every live lab deep-links to the exact Concepts & Memory topic through dedicated Blazor routes such as `/learn/concepts/linear-search`; the shared C# `ConceptLink` component performs normal Blazor navigation without authored JavaScript or cross-page fragment timing.
 
 ---
 
@@ -35,6 +35,7 @@ The application now has fifteen fully implemented learning modules: **Queue & St
 - Quick Sort
 - Heap Sort
 - Linear Search
+- Binary Search
 - shared simulation runtime;
 - play, pause and adjustable simulation speed;
 - manual step forward;
@@ -51,7 +52,7 @@ The application now has fifteen fully implemented learning modules: **Queue & St
 - optional result explanation popups;
 - Concepts & Memory learning page;
 - shared learner-facing module chrome in `wwwroot/css/learning-modules.css`, using the mature Queue & Stack / BST / Matrix / Graph visual language for sorting Learn First panels, module headers, tips, reference links, and lesson progression;
-- difficulty-ordered curriculum navigation with reusable `NextLessonCard` links: Queue & Stack → BST → Binary Heap → d-ary Heap → AVL → Matrix → Graph → Red-Black Tree, then Bubble → Selection → Insertion → Merge → Quick → Heap Sort, then Linear Search;
+- difficulty-ordered curriculum navigation with reusable `NextLessonCard` links: Queue & Stack → BST → Binary Heap → d-ary Heap → AVL → Matrix → Graph → Red-Black Tree, then Bubble → Selection → Insertion → Merge → Quick → Heap Sort, then Linear Search → Binary Search;
 - exact route-based links from every live lab to the relevant Concepts & Memory topic, plus reverse links from the concept sections back to the matching lesson;
 - BST insert, search, delete, explicit DSW balance, and reset;
 - BST leaf / one-child / two-child deletion simulation;
@@ -128,7 +129,7 @@ The application now has fifteen fully implemented learning modules: **Queue & St
 
 All sorting pages now use the same learner-facing design language as the mature data-structure modules instead of a separate sorting-specific landing-page style. Live sorting labs opt into `learning-module-page learning-module-shell`; their **LEARN FIRST** area uses the shared explanation + 2×2 concept-card pattern, followed by the same compact module-header, smart-tip, bordered lab panels, compact Visual/Memory switch with an adjacent explanation, Guided Practice styling, exact Concepts & Memory links, and reusable Next Lesson navigation. Quick Sort and Heap Sort are both live labs using the shared learning shell. `LearningPlaceholder` remains the required shell for future not-yet-implemented lessons so a future implementation replaces only the TODO workspace rather than inventing another design.
 
-The sidebar and Concepts & Memory page use explicit easy → hard ordering. Concepts & Memory starts with shared foundations (Visual vs Memory, memory, identity, Big-O), then presents data-structure lessons in curriculum order, sorting lessons from Bubble through Heap Sort, and the search track beginning with Linear Search. Dedicated topic routes such as `/learn/concepts/bst`, `/learn/concepts/matrix`, `/learn/concepts/heap-sort`, and `/learn/concepts/linear-search` let each module land on the exact explanation it needs without cross-page fragment scrolling. Every lesson page exposes a `NextLessonCard`, and the concept sections link back to the corresponding lab.
+The sidebar and Concepts & Memory page use explicit easy → hard ordering. Concepts & Memory starts with shared foundations (Visual vs Memory, memory, identity, Big-O), then presents data-structure lessons in curriculum order, sorting lessons from Bubble through Heap Sort, and the search track progressing from Linear Search to Binary Search. Dedicated topic routes such as `/learn/concepts/bst`, `/learn/concepts/matrix`, `/learn/concepts/heap-sort`, and `/learn/concepts/linear-search` let each module land on the exact explanation it needs without cross-page fragment scrolling. Every lesson page exposes a `NextLessonCard`, and the concept sections link back to the corresponding lab.
 
 ### Bubble Sort module details
 
@@ -206,7 +207,7 @@ All currently planned base data-structure modules in the specification are now r
 
 All six sorting lessons in the current curriculum are live: Bubble, Selection, Insertion, Merge, Quick, and Heap Sort.
 
-Linear Search is now live as the first search lesson. Future Binary Search and graph algorithms will follow the same simulation architecture.
+Linear Search and Binary Search are now live as the first two search lessons. Future graph traversal/search algorithms will follow the same simulation architecture.
 
 ---
 
@@ -1452,3 +1453,24 @@ The lesson provides:
 - seven continuously auto-tracked Guided Practice tasks with behavior-based validation and SQLite-backed completion evidence;
 - dedicated concept routes `/learn/concepts/linear-search`, `/learn/concepts/linear-search-complexity`, and `/learn/concepts/linear-vs-binary-search`;
 - mutation semantics: read-only inspection is safe, while CREATE/UPDATE/DELETE during an active search requires restart because the checked-index history belongs to the old snapshot.
+
+## Binary Search
+
+Route: `/search/binary`
+
+Core namespace: `AlgorithmVisualizer.Core.Algorithms.Search.Binary`
+
+Binary Search is implemented manually over a fixed **sorted** raw teaching array. Core uses an iterative `left` / `right` / `mid` loop and never delegates the taught search to `Array.BinarySearch`, LINQ, or another framework helper. If the learner enters unsorted values, the lab does not fake a Binary Search or silently call a framework sort: it pauses at **Step 1 · Sort input** and lets the learner choose Bubble, Selection, Insertion, Merge, Quick, or Heap Sort. The chosen existing manual C# sorting implementation runs through an immediate/silent simulation runtime, only its final sorted array is reused, and the Binary Search lesson then continues on that valid snapshot without replaying every sorting animation step.
+
+The lesson provides:
+
+- Build → Predict → Watch → Explain → Practice workflow;
+- Visual State for active range, midpoint, discarded ranges, saved duplicate candidate, and final match;
+- Memory State showing that array slots and stable teaching identities never move while only boundary integers change;
+- **Basic · Any Match** mode, which returns the first matching midpoint encountered;
+- **Advanced · First Occurrence** mode, which saves an equality candidate and continues into the left half until no earlier duplicate can remain;
+- best-case `Θ(1)` and average/worst `Θ(log n)` explanations tied to actual midpoint comparisons and range reductions;
+- sorted-input validation, empty/single boundaries, found-left/found-right/missing cases, and duplicate semantics;
+- eight continuously auto-tracked Guided Practice tasks with behavior-based validation and SQLite-backed completion evidence;
+- dedicated concept routes `/learn/concepts/binary-search`, `/learn/concepts/binary-search-complexity`, `/learn/concepts/binary-search-duplicates`, and shared comparison route `/learn/concepts/linear-vs-binary-search`;
+- mutation semantics: reads are safe, while CREATE/UPDATE/DELETE requires restart because indexes, sortedness, and the current candidate interval belong to the old snapshot.

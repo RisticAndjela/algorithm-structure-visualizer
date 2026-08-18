@@ -135,3 +135,13 @@ The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctnes
 - duplicate target returns the first occurrence;
 - empty-array zero-comparison boundary;
 - search does not reorder or mutate input values.
+
+`Algorithms/Search/BinarySearchSimulationTests.cs` verifies:
+- unsorted Binary Search preprocessing can reuse every implemented sorting algorithm and each produces a valid nondecreasing snapshot before search;
+- first-midpoint Θ(1) best case;
+- logarithmic missing-target range reduction;
+- Basic duplicate search may return a non-first matching midpoint;
+- First-occurrence mode continues left and returns the earliest duplicate;
+- the Binary Search Core still rejects unsorted input when preprocessing is bypassed, preserving the algorithm precondition;
+- the fixed sorted input is never mutated;
+- empty-array zero-comparison behavior.

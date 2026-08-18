@@ -14,7 +14,7 @@
             <div class="hero-actions">
                 <a class="primary-action" href="/structures/queue-stack">Start lesson 01 <span>→</span></a>
                 <ConceptLink class="secondary-action" Href="/learn/concepts/visual-vs-memory">Concepts &amp; Memory</ConceptLink>
-                <a class="secondary-action" href="#learning-path">See all 15 modules</a>
+                <a class="secondary-action" href="#learning-path">See all 16 modules</a>
             </div>
             <div class="hero-note">
                 <span class="note-icon">i</span>
@@ -53,9 +53,9 @@
     </section>
 
     <section class="quick-stats" aria-label="Implemented learning modules">
-        <div><strong>15</strong><span>interactive modules</span></div>
+        <div><strong>16</strong><span>interactive modules</span></div>
         <div><strong>8</strong><span>data-structure labs</span></div>
-        <div><strong>7</strong><span>algorithm labs</span></div>
+        <div><strong>8</strong><span>algorithm labs</span></div>
         <div><strong>Auto</strong><span>checked guided practice</span></div>
     </section>
 
@@ -63,7 +63,7 @@
         <div class="foundation-copy">
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="foundation-title">Use Concepts &amp; Memory when a label is unclear.</h2>
-            <p>It is the shared reference for Visual vs Memory State, identity, Big-O, tree height, heap indexing, matrix storage, graph adjacency, every implemented sorting strategy, and Linear Search.</p>
+            <p>It is the shared reference for Visual vs Memory State, identity, Big-O, tree height, heap indexing, matrix storage, graph adjacency, every implemented sorting strategy, and both Linear and Binary Search.</p>
         </div>
         <div class="foundation-links">
             <ConceptLink Href="/learn/concepts/visual-vs-memory"><strong>Visual vs memory</strong><span>What the picture shows vs what is stored →</span></ConceptLink>
@@ -208,10 +208,10 @@
     <section class="learning-section search-home-section">
         <div class="section-heading">
             <div>
-                <span class="section-kicker">SEARCH · 01</span>
+                <span class="section-kicker">SEARCH · 01–02</span>
                 <h2>Find values by following the evidence.</h2>
             </div>
-            <p>The search track begins with the only strategy that needs no ordering assumption: inspect values from left to right and stop at the first match.</p>
+            <p>Start without assumptions, then add sorted order and see how one comparison can eliminate half of the remaining candidates.</p>
         </div>
 
         <div class="path-grid module-grid">
@@ -220,6 +220,12 @@
                 <div class="path-icon sort-icon"><i></i><i></i><i></i><i></i><i></i></div>
                 <h3>Linear Search</h3><p>Scan index 0 → n−1, stop at the first match, and connect the visited prefix directly to Θ(1) and Θ(n).</p>
                 <div class="concept-row"><span>First match</span><span>Θ(n)</span><span>Read-only</span></div><span class="card-link">Open lesson <b>→</b></span>
+            </a>
+            <a class="path-card available module-card" href="/search/binary">
+                <div class="card-topline"><span class="path-index">02 · BEGINNER</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="path-icon sort-icon"><i></i><i></i><i></i><i></i><i></i></div>
+                <h3>Binary Search</h3><p>Shrink a sorted candidate range with left/right/mid, then compare any-match with first-occurrence duplicate handling.</p>
+                <div class="concept-row"><span>Sorted input</span><span>Θ(log n)</span><span>First occurrence</span></div><span class="card-link">Open lesson <b>→</b></span>
             </a>
         </div>
     </section>
