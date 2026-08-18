@@ -644,7 +644,7 @@
                 new("Height", $"{result.HeightBefore} → {result.HeightAfter}"),
                 new("Delete case", GetDeleteCaseLabel(result.DeleteCase))
             ],
-            result.RequestedValue.HasValue ? $"Target value {result.RequestedValue.Value}" : result.Operation.ToString());
+            $"Target value {result.RequestedValue}");
         _completedTaskIds.Add(task.Id);
         PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
         if (_activeTaskId == task.Id) _activeTaskId = null;

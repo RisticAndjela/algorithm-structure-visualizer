@@ -535,7 +535,7 @@
         _lastRunPopupOpen = _showRunPopups;
     }
 
-    private void PrepareRun() { _inputError = null; _memoryOpenedDuringTask = _activeStateView == StateView.Memory; _lastRunPopupOpen = false; _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; }
+    private void PrepareRun() { _inputError = null; _memoryOpenedDuringTask = _view == StateView.Memory; _lastRunPopupOpen = false; _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; }
 
     private void Capture()
     {

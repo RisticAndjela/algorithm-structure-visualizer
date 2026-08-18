@@ -459,7 +459,7 @@
         _lastRunPopupOpen = _showRunPopups;
     }
 
-    private void PrepareRun() { _inputError = null; _memoryOpenedDuringTask = _activeStateView == StateView.Memory; _lastRunPopupOpen = false; _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; }
+    private void PrepareRun() { _inputError = null; _memoryOpenedDuringTask = _view == StateView.Memory; _lastRunPopupOpen = false; _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; }
     private void Capture() { var step = SimulationState.CurrentStepText; if (step == _lastCapturedStep) return; var tail = _frameIndex < 0 || _frameIndex == _frames.Count - 1; _frames.Add(new RunFrame(step, MergeSort.CreateSnapshot())); _lastCapturedStep = step; if (tail) _frameIndex = _frames.Count - 1; }
     private void HandleSimulationChanged() { if (SimulationState.IsRunning) Capture(); _ = InvokeAsync(StateHasChanged); }
     private bool IsCurrent(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;

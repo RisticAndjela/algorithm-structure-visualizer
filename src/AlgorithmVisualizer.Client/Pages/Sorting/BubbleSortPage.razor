@@ -572,7 +572,7 @@
     private void PrepareRun()
     {
         _inputError = null;
-        _memoryOpenedDuringTask = _activeStateView == StateView.Memory;
+        _memoryOpenedDuringTask = _view == StateView.Memory;
         _lastRunPopupOpen = false;
         _frames.Clear();
         _frameIndex = -1;
