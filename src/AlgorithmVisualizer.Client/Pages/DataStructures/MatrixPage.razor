@@ -21,7 +21,7 @@
             </p>
             <div class="learn-actions">
                 <a class="primary-link" href="#matrix-workspace">Start with the matrices ↓</a>
-                <ConceptLink Href="/learn/concepts#matrix">Matrix concepts &amp; memory →</ConceptLink>
+                <ConceptLink Href="/learn/concepts/matrix">Matrix concepts &amp; memory →</ConceptLink>
             </div>
         </div>
         <div class="matrix-intuition" aria-label="Simple 2 by 3 matrix example">
@@ -173,7 +173,7 @@
                 <span class="step-number">2</span>
                 <div><span class="section-kicker">CHOOSE ONE OPERATION</span><h2 id="operations-title">What do you want to see happen?</h2><p>Start with one of the four core ideas. Each card tells you the rule before you run it.</p></div>
             </div>
-            <ConceptLink class="concept-link" Href="/learn/concepts#matrix-compatibility">Why dimensions matter →</ConceptLink>
+            <ConceptLink class="concept-link" Href="/learn/concepts/matrix-compatibility">Why dimensions matter →</ConceptLink>
         </div>
 
         <div class="starter-operation-grid">
@@ -291,7 +291,7 @@
 
         <div class="state-tabs-row">
             <div class="state-tabs" role="tablist"><button class="@(_activeView == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetView(StateView.Visual)">Visual state</button><button class="@(_activeView == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetView(StateView.Memory)">Memory state</button></div>
-            <div class="state-context"><p>@DisplayedSnapshot.FocusText</p><div class="lesson-reference-links"><ConceptLink Href="/learn/concepts#matrix">Matrix concepts →</ConceptLink><ConceptLink Href="/learn/concepts#visual-vs-memory">Concepts &amp; memory →</ConceptLink></div></div>
+            <div class="state-context"><p>@DisplayedSnapshot.FocusText</p><div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/matrix">Matrix concepts →</ConceptLink><ConceptLink Href="/learn/concepts/visual-vs-memory">Concepts &amp; memory →</ConceptLink></div></div>
         </div>
 
         @if (_activeView == StateView.Visual)
@@ -372,11 +372,11 @@
             }
             else if (_popupTab == ResultPopupTab.Memory)
             {
-                <div class="popup-body"><h3>The mathematical grid and the backing storage are two views of the same values.</h3><p>@GetMemoryExplanation(_lastResult)</p><ConceptLink class="popup-concept-link" Href="/learn/concepts#visual-vs-memory">Open Concepts &amp; Memory →</ConceptLink></div>
+                <div class="popup-body"><h3>The mathematical grid and the backing storage are two views of the same values.</h3><p>@GetMemoryExplanation(_lastResult)</p><ConceptLink class="popup-concept-link" Href="/learn/concepts/visual-vs-memory">Open Concepts &amp; Memory →</ConceptLink></div>
             }
             else
             {
-                <div class="popup-body"><h3>@GetWhyHeadline(_lastResult)</h3><p>@GetWhyExplanation(_lastResult)</p><ConceptLink class="popup-concept-link" Href="/learn/concepts#matrix">Open the Matrix concept guide →</ConceptLink></div>
+                <div class="popup-body"><h3>@GetWhyHeadline(_lastResult)</h3><p>@GetWhyExplanation(_lastResult)</p><ConceptLink class="popup-concept-link" Href="/learn/concepts/matrix">Open the Matrix concept guide →</ConceptLink></div>
             }
             <footer><label class="popup-toggle inside"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Show automatically after future Matrix runs</span></label></footer>
         </section>
@@ -422,15 +422,15 @@
 
     private static readonly PracticeTask[] PracticeTasks =
     [
-        new(1, "Predict dimensions", "Make A 2×3 and B 3×4. Predict the A×B result shape before running multiplication.", "/learn/concepts#matrix-compatibility"),
-        new(2, "Trigger an invalid operation", "Make A and B different shapes and run A+B. Explain why the simulator refuses.", "/learn/concepts#matrix-compatibility"),
-        new(3, "Watch one dot product", "Use 2×2 matrices and Step through A×B. Explain how result[1,1] is built.", "/learn/concepts#matrices"),
-        new(4, "Reduce to RREF", "Use a 3×3 matrix, change at least one value, then follow pivots and elimination to RREF.", "/learn/concepts#matrices"),
-        new(5, "Invert a matrix", "Create a non-singular 2×2 or 3×3 A and watch [A|I] become [I|A⁻¹].", "/learn/concepts#matrices"),
-        new(6, "Find a singular matrix", "Use dependent rows so det(A)=0, then run determinant or inverse and observe the singular case.", "/learn/concepts#matrices"),
-        new(7, "Connect matrices to graphs", "Load Graph adjacency, open Memory state and inspect why the matrix is symmetric for this undirected example.", "/learn/concepts#graph"),
-        new(8, "Inspect memory", "Open Memory state and match row/column values to the contiguous row-major slots shown below each matrix.", "/learn/concepts#visual-vs-memory"),
-        new(9, "Enter your own matrix", "Type, paste or edit a custom matrix in A or B, then run a matrix operation on your values.", "/learn/concepts#matrices")
+        new(1, "Predict dimensions", "Make A 2×3 and B 3×4. Predict the A×B result shape before running multiplication.", "/learn/concepts/matrix-compatibility"),
+        new(2, "Trigger an invalid operation", "Make A and B different shapes and run A+B. Explain why the simulator refuses.", "/learn/concepts/matrix-compatibility"),
+        new(3, "Watch one dot product", "Use 2×2 matrices and Step through A×B. Explain how result[1,1] is built.", "/learn/concepts/matrix"),
+        new(4, "Reduce to RREF", "Use a 3×3 matrix, change at least one value, then follow pivots and elimination to RREF.", "/learn/concepts/matrix"),
+        new(5, "Invert a matrix", "Create a non-singular 2×2 or 3×3 A and watch [A|I] become [I|A⁻¹].", "/learn/concepts/matrix"),
+        new(6, "Find a singular matrix", "Use dependent rows so det(A)=0, then run determinant or inverse and observe the singular case.", "/learn/concepts/matrix"),
+        new(7, "Connect matrices to graphs", "Load Graph adjacency, open Memory state and inspect why the matrix is symmetric for this undirected example.", "/learn/concepts/graph"),
+        new(8, "Inspect memory", "Open Memory state and match row/column values to the contiguous row-major slots shown below each matrix.", "/learn/concepts/visual-vs-memory"),
+        new(9, "Enter your own matrix", "Type, paste or edit a custom matrix in A or B, then run a matrix operation on your values.", "/learn/concepts/matrix")
     ];
 
     private bool IsBusy => SimulationState.IsRunning;

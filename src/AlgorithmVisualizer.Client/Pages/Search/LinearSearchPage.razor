@@ -1,0 +1,596 @@
+@page "/search/linear"
+@using AlgorithmVisualizer.Core.Algorithms.Search.Linear
+@using AlgorithmVisualizer.Client.Components.Visualization.Search.Linear
+@implements IDisposable
+@inject SimulationState SimulationState
+@inject LinearSearchSimulation LinearSearch
+@inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
+
+<PageTitle>Linear Search — Algorithm Visualizer</PageTitle>
+
+<div class="linear-search-page learning-module-page learning-module-shell">
+    <section class="learn-launchpad" aria-labelledby="linear-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="linear-learn-title">Linear Search checks one position at a time.</h2>
+            <p>Start at index 0, compare the current value with the target, and move right only when they are different. The first match ends the search.</p>
+            <ConceptLink class="learn-launchpad-link" Href="/learn/concepts/linear-search">Open Linear Search concepts &amp; memory →</ConceptLink>
+        </div>
+        <div class="learn-grid">
+            <article class="learn-card purple"><span>START</span><strong>Always begin at index 0</strong><small>An unsorted array gives Linear Search no safe place to skip.</small></article>
+            <article class="learn-card blue"><span>COMPARE</span><strong>Read one value per visited index</strong><small>Each inspected slot contributes exactly one value comparison.</small></article>
+            <article class="learn-card mint"><span>STOP</span><strong>Return the first match</strong><small>With duplicates, canonical Linear Search does not continue to a later equal value.</small></article>
+            <article class="learn-card gold"><span>MISS</span><strong>Not found requires a full scan</strong><small>Only after every index fails can an unsorted array be declared missing.</small></article>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow"><span>SEARCH ALGORITHMS</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <h1>Linear Search</h1>
+            <p>Build any array, choose a target, predict where the first match is, then watch the real C# loop inspect indexes from left to right.</p>
+        </div>
+        <div class="complexity-summary" aria-label="Linear Search complexity">
+            <div><span>Best case</span><strong>Θ(1)</strong><small>target is at index 0</small></div>
+            <div><span>Average / worst</span><strong>Θ(n)</strong><small>work grows with visited items</small></div>
+            <div><span>Extra space</span><strong>O(1)</strong><small>read-only scan, no buffer</small></div>
+        </div>
+    </header>
+
+    <section class="smart-tip" aria-label="Linear Search learning tip">
+        <span class="tip-icon">✦</span>
+        <div><strong>Before every comparison:</strong><p>Ask which indexes have already been ruled out. The current index is the only new fact the algorithm is learning.</p></div>
+        <ConceptLink Href="/learn/concepts/linear-search-complexity">Why a miss is Θ(n) →</ConceptLink>
+    </section>
+
+    <section class="implementation-section" aria-labelledby="linear-implementation-title">
+        <div class="section-heading-row">
+            <div><span class="section-kicker">IMPLEMENTATION CHOICE</span><h2 id="linear-implementation-title">Use the canonical first-match scan.</h2><p>This lab deliberately keeps one standard implementation instead of inventing an “advanced” mode that changes the problem.</p></div>
+        </div>
+        <div class="variant-grid single-variant">
+            <article class="variant-card active static-card">
+                <span>BASIC · CANONICAL</span><strong>First-match Linear Search</strong><p>Scan indexes 0 → n−1 and stop on the first equality. No LINQ <code>First</code>, <code>Contains</code>, or framework search helper hides the traversal.</p><small>Θ(1) best · Θ(n) average/worst · O(1) space</small>
+            </article>
+            <article class="variant-card static-card">
+                <span>WHEN YOU NEED MORE</span><strong>Change the algorithm, not the label</strong><p>If data is sorted and repeatedly searched, Binary Search is the meaningful next algorithm. If every duplicate is needed, that is a different “collect all matches” requirement.</p><small>Next lesson: Binary Search</small>
+            </article>
+        </div>
+        <div class="live-data-card">
+            <div><span>REAL-TIME CRUD</span><strong>READ is safe · mutations restart the active search</strong></div>
+            <p>Changing an array value, inserting, or deleting while index traversal is active can invalidate which positions were already checked. This teaching run therefore uses one fixed input snapshot.</p>
+            <span class="compatibility-badge restart">READ safe · CREATE/UPDATE/DELETE restart</span>
+        </div>
+    </section>
+
+    <section id="linear-search-lab" class="builder-section" aria-labelledby="linear-build-title">
+        <div class="section-heading-row">
+            <div class="heading-with-step"><span class="step-number">1</span><div><span class="section-kicker">BUILD THE SEARCH</span><h2 id="linear-build-title">Choose the array and target.</h2><p>Use 0–12 integers. Empty arrays, negatives and duplicates are all valid learning cases.</p></div></div>
+            <ConceptLink class="concept-link" Href="/learn/concepts/linear-search">How Linear Search works →</ConceptLink>
+        </div>
+
+        <div class="search-builder">
+            <label class="array-input">
+                <span>ARRAY VALUES</span>
+                <input value="@_arrayText" @oninput="ArrayTextChanged" disabled="@IsBusy" aria-label="Linear Search array values" placeholder="Example: 8, 3, 7, 5, 7" />
+                <small>Separate values with spaces or commas. Leave blank for an empty-array case.</small>
+            </label>
+            <label class="target-input">
+                <span>TARGET</span>
+                <input value="@_targetText" @oninput="TargetTextChanged" disabled="@IsBusy" aria-label="Linear Search target" inputmode="numeric" />
+                <small>The value to find.</small>
+            </label>
+            <button class="primary-action" type="button" @onclick="ApplySearchInput" disabled="@IsBusy">Use this search</button>
+        </div>
+
+        <div class="preset-row" aria-label="Linear Search example cases">
+            <span>TRY A CASE</span>
+            <button type="button" @onclick="() => LoadPreset(Preset.First)" disabled="@IsBusy">First</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Middle)" disabled="@IsBusy">Middle</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Last)" disabled="@IsBusy">Last</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Missing)" disabled="@IsBusy">Missing</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Duplicates)" disabled="@IsBusy">Duplicates</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Single)" disabled="@IsBusy">One item</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Empty)" disabled="@IsBusy">Empty</button>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_inputError))
+        {
+            <div class="input-error" role="alert"><strong>Check the search input.</strong><span>@_inputError</span></div>
+        }
+
+        <div class="current-search" aria-label="Current Linear Search input">
+            <div><span>CURRENT ARRAY</span><strong>@(Current.Count == 0 ? "∅ empty" : FormatValues(Current.Elements.Select(element => element.Value).ToArray()))</strong></div>
+            <div><span>TARGET</span><strong>@_target</strong></div>
+        </div>
+    </section>
+
+    <section class="predict-section" aria-labelledby="linear-prediction-title">
+        <div class="prediction-copy"><span class="step-number">2</span><div><span class="section-kicker">PREDICT FIRST</span><h2 id="linear-prediction-title">Where will the search stop?</h2><p>Choose the <strong>first</strong> matching index, or predict that the target is not present.</p></div></div>
+        <div class="prediction-card linear-prediction">
+            @if (Current.Count > 0)
+            {
+                <div class="index-choice-row">
+                    @for (var index = 0; index < Current.Elements.Length; index++)
+                    {
+                        var choiceIndex = index;
+                        <button type="button" class="@(_predictionAnswered && _predictedIndex == choiceIndex ? "chosen" : string.Empty)" @onclick="() => AnswerPrediction(choiceIndex)" disabled="@IsBusy"><small>index @choiceIndex</small><strong>@Current.Elements[choiceIndex].Value</strong></button>
+                    }
+                </div>
+            }
+            <button type="button" class="not-found-choice @(_predictionAnswered && _predictedIndex == -1 ? "chosen" : string.Empty)" @onclick="() => AnswerPrediction(-1)" disabled="@IsBusy">Target is not present</button>
+            @if (_predictionAnswered)
+            {
+                <p class="prediction-feedback @(_predictionCorrect ? "correct" : "incorrect")" aria-live="polite">@PredictionFeedback</p>
+            }
+        </div>
+    </section>
+
+    <section class="lab-section" aria-labelledby="linear-visualizer-title">
+        <div class="lab-heading">
+            <div><span class="section-kicker">3 · WATCH THE ALGORITHM</span><h2 id="linear-visualizer-title">Watch the checked prefix grow until the first match.</h2></div>
+            <div class="lab-actions">
+                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Open explanation after run</span></label>
+                @if (_lastResult is not null) { <button class="secondary-action" type="button" @onclick="OpenLastRunPopup">Last explanation</button> }
+                <button class="sort-button" type="button" @onclick="RunSearchAsync" disabled="@IsBusy"><span>▶</span> Search for @_target</button>
+            </div>
+        </div>
+
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist" aria-label="Linear Search state view">
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state</button>
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
+            </div>
+            <p>@(_view == StateView.Visual ? "The visual view separates checked, current, found and unvisited positions." : "The memory view proves that search only reads fixed slots; values and references never move.")</p>
+        </div>
+
+        <div class="lesson-reference-links" aria-label="Linear Search concepts and memory links">
+            <ConceptLink Href="/learn/concepts/linear-search">Linear Search concepts →</ConceptLink>
+            <ConceptLink Href="/learn/concepts/linear-search-complexity">Complexity →</ConceptLink>
+            <ConceptLink Href="/learn/concepts/linear-vs-binary-search">Linear vs Binary Search →</ConceptLink>
+        </div>
+
+        <div class="visualizer-shell">
+            @if (_view == StateView.Visual) { <LinearSearchVisualization Snapshot="@DisplayedSnapshot" /> }
+            else { <LinearSearchMemoryVisualization Snapshot="@DisplayedSnapshot" /> }
+        </div>
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync"
+                           OnPause="PauseTimelineAsync"
+                           OnStepBack="StepBackAsync"
+                           OnStepForward="StepForwardAsync"
+                           OnReset="ResetPlaybackAsync"
+                           CanStepBack="@CanStepBack"
+                           CanStepForwardOverride="@CanStepForward"
+                           StepTextOverride="@DisplayedStepText"
+                           TimelinePosition="@TimelinePosition"
+                           TimelineCount="@TimelineCount" />
+
+        <div class="run-dashboard" aria-label="Linear Search live metrics">
+            <article><span>Target</span><strong>@_target</strong><small>The value being compared.</small></article>
+            <article><span>Comparisons</span><strong>@DisplayedSnapshot.Comparisons</strong><small>One per inspected index.</small></article>
+            <article><span>Checked</span><strong>@DisplayedSnapshot.CheckedCount / @DisplayedSnapshot.Count</strong><small>Prefix already ruled out or matched.</small></article>
+            <article><span>Result</span><strong>@DisplayedResultText</strong><small>@DisplayedResultNote</small></article>
+        </div>
+
+        <div class="invariant-panel">
+            <div><span>INVARIANT TO WATCH</span><h3>Before checking index i, every index smaller than i has already been ruled out.</h3><p>That is why the first equality is automatically the first occurrence of the target.</p></div>
+            <div class="early-exit-note"><span>STOP RULE</span><strong>A match stops immediately; a miss cannot stop early.</strong><p>Without additional ordering information, an unchecked position may still contain the target.</p></div>
+        </div>
+    </section>
+
+    <section class="algorithm-map" aria-labelledby="linear-map-title">
+        <div class="section-heading-row"><div><span class="section-kicker">ALGORITHM MAP</span><h2 id="linear-map-title">The Core implementation is one explicit loop.</h2><p>No helper method performs the search behind the visualization.</p></div><ConceptLink class="concept-link" Href="/learn/concepts/big-o">Review Big-O →</ConceptLink></div>
+        <div class="pseudo-grid">
+            <div class="pseudo-code" aria-label="Linear Search pseudocode"><span>for i = 0 to n - 1</span><span class="indent">if a[i] == target</span><span class="indent-two">return i</span><span>return not found</span></div>
+            <div class="why-cards">
+                <article><span>First match</span><strong>The loop never skips an earlier duplicate.</strong><p>If target appears more than once, the first equal index is returned because execution stops there.</p></article>
+                <article><span>Read-only</span><strong>Searching does not rearrange the array.</strong><p>The algorithm needs only an index, target and counters, so additional algorithmic space stays O(1).</p></article>
+            </div>
+        </div>
+    </section>
+
+    <section class="fit-section" aria-labelledby="linear-fit-title">
+        <div class="section-heading-row"><div><span class="section-kicker">WHEN SHOULD I USE IT?</span><h2 id="linear-fit-title">Linear Search is the safe default when you cannot assume ordering.</h2><p>It works on unsorted data and has almost no setup cost, but repeated scans become expensive as n grows.</p></div></div>
+        <div class="fit-grid">
+            <article class="fit-card good"><span>GOOD FIT</span><strong>Small or unsorted collections and one-off searches</strong><p>No preprocessing is required, and the target may appear anywhere.</p></article>
+            <article class="fit-card avoid"><span>AVOID FOR</span><strong>Large collections searched repeatedly</strong><p>Repeated Θ(n) scans can dominate runtime when better structure or ordering is available.</p></article>
+            <article class="fit-card better"><span>BETTER NEXT CHOICE</span><strong>Binary Search for sorted random-access data</strong><p>Binary Search discards half of the remaining search region at each decision, but it requires sorted data.</p><div class="fit-links"><ConceptLink Href="/learn/concepts/linear-vs-binary-search">Compare the two →</ConceptLink></div></article>
+        </div>
+    </section>
+
+    <section class="practice-section" aria-labelledby="linear-practice-title">
+        <div class="practice-heading"><div><span class="section-kicker">GUIDED PRACTICE</span><h2 id="linear-practice-title">Prove every important Linear Search case yourself.</h2></div><div class="task-score"><strong>@_completedTaskIds.Count / @PracticeTasks.Count</strong><span>completed</span></div></div>
+
+        @if (_activeTaskId is not null)
+        {
+            var activeTask = PracticeTasks.First(task => task.Id == _activeTaskId.Value);
+            <div class="active-task-banner"><span>ACTIVE TASK @activeTask.Id.ToString("00")</span><strong>@activeTask.Title</strong><small>@GetActiveTaskProgressText(activeTask.Id)</small></div>
+        }
+
+        <div class="practice-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                var completed = _completedTaskIds.Contains(task.Id);
+                var active = _activeTaskId == task.Id;
+                <PracticeTaskCard TaskId="@task.Id"
+                                  Title="@task.Title"
+                                  Description="@task.Goal"
+                                  InputText="@task.SuggestedInput"
+                                  HelpHref="/learn/concepts/linear-search"
+                                  Completed="@completed"
+                                  Active="@active"
+                                  Busy="@IsBusy"
+                                  HasEvidence="@(GetTaskEvidence(task.Id) is not null)"
+                                  Start="@(() => StartTask(task.Id))"
+                                  OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
+            }
+        </div>
+    </section>
+
+    <NextLessonCard Eyebrow="NEXT SEARCH" Title="Binary Search" Description="Now compare a full left-to-right scan with a search that can discard half of a sorted range after each comparison." Href="/learn/concepts/linear-vs-binary-search" Level="02 · Planned" LinkLabel="Preview Linear vs Binary" />
+</div>
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
+
+@if (_lastRunPopupOpen && _lastResult is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRunPopup">
+        <section class="run-popup" role="dialog" aria-modal="true" aria-labelledby="linear-run-popup-title" @onclick="IgnorePopupClick" @onclick:stopPropagation="true">
+            <header><div><span class="section-kicker">WHAT JUST HAPPENED?</span><h2 id="linear-run-popup-title">@RunHeadline</h2></div><button class="popup-close" type="button" @onclick="CloseLastRunPopup" aria-label="Close result explanation">×</button></header>
+            <div class="popup-tabs" role="tablist"><button type="button" class="@(_popupTab == ResultPopupTab.Action ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Action">Search</button><button type="button" class="@(_popupTab == ResultPopupTab.Complexity ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Complexity">Complexity</button><button type="button" class="@(_popupTab == ResultPopupTab.Memory ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Memory">Memory</button></div>
+            @if (_popupTab == ResultPopupTab.Action)
+            {
+                <div class="popup-body"><div class="popup-metrics"><div><span>Target</span><strong>@_lastResult.Target</strong></div><div><span>Result</span><strong>@(_lastResult.Found ? $"index {_lastResult.FoundIndex}" : "Not found")</strong></div><div><span>Comparisons</span><strong>@_lastResult.Comparisons</strong></div><div><span>First occurrence</span><strong>@(_lastResult.ReturnsFirstOccurrence ? "Yes" : _lastResult.Found ? "No" : "—")</strong></div></div><h3>@RunActionExplanation</h3><p>Input: <strong>@FormatValues(_lastResult.InitialValues)</strong>. Use Step backward to inspect the exact prefix the loop visited.</p></div>
+            }
+            else if (_popupTab == ResultPopupTab.Complexity)
+            {
+                <div class="popup-body"><h3>The number of comparisons equals the number of visited indexes.</h3><p>@ComplexityPopupExplanation</p><div class="complexity-line"><span>Best</span><strong>Θ(1)</strong><span>Average</span><strong>Θ(n)</strong><span>Worst</span><strong>Θ(n)</strong></div><ConceptLink class="popup-concept-link" Href="/learn/concepts/linear-search-complexity">Open Linear Search complexity →</ConceptLink></div>
+            }
+            else
+            {
+                <div class="popup-body"><h3>The array did not move.</h3><p>Linear Search only read values. The fixed slots and stable item identities stayed in the same order for the entire run, and the algorithm used O(1) additional state.</p><ConceptLink class="popup-concept-link" Href="/learn/concepts/linear-search">Open Linear Search concepts &amp; memory →</ConceptLink></div>
+            }
+        </section>
+    </div>
+}
+
+@code {
+    private const string ModuleKey = "linear-search";
+    private const string CompletedTasksStorageKey = "algorithm-visualizer.linear-search.completed-tasks.v1";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.linear-search.result-popups.v1";
+
+    private readonly List<RunFrame> _frames = [];
+    private readonly HashSet<int> _completedTaskIds = [];
+    private readonly List<LinearSearchResult> _practiceResults = [];
+    private PracticeModuleProgress _practiceProgress = new();
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
+
+    private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
+    [
+        new(1, "Prove the best case", "Search any non-empty array where the target's first occurrence is at index 0. Extra values after it are allowed.", "Example: 7, 4, 9, 2 · target 7", [7, 4, 9, 2], 7),
+        new(2, "Find a middle value", "Use any array of at least three values where the first target occurrence is neither first nor last.", "Example: 8, 3, 7, 5, 1 · target 7", [8, 3, 7, 5, 1], 7),
+        new(3, "Prove worst-case found", "Place the target's first occurrence at the last index. Other non-target values may appear anywhere before it.", "Example: 4, 8, 1, 6, 9 · target 9", [4, 8, 1, 6, 9], 9),
+        new(4, "Prove a missing target", "Search for any value that is absent from an array with at least three elements and verify that every index is checked.", "Example: 3, 8, 1, 6 · target 99", [3, 8, 1, 6], 99),
+        new(5, "Stop at the first duplicate", "Use any array where the target occurs at least twice. The returned index must be the first occurrence, even with extra values around the duplicates.", "Example: 5, 2, 7, 2, 9 · target 2", [5, 2, 7, 2, 9], 2),
+        new(6, "Test the one-item boundary", "Use exactly one element and search successfully for that value. This boundary intentionally requires size 1.", "Example: 42 · target 42", [42], 42),
+        new(7, "Test the empty-array boundary", "Use exactly zero elements and search for any target. The run must finish not-found with zero comparisons.", "Empty array · target 5", [], 5)
+    ];
+
+    private string _arrayText = "8, 3, 7, 5, 7";
+    private string _targetText = "7";
+    private int _target = 7;
+    private string? _inputError;
+    private string? _lastCapturedStep;
+    private int _frameIndex = -1;
+    private int _predictedIndex;
+    private bool _predictionAnswered;
+    private bool _predictionCorrect;
+    private LinearSearchResult? _lastResult;
+    private bool _lastRunPopupOpen;
+    private bool _showRunPopups = true;
+    private bool _storageLoaded;
+    private int? _activeTaskId;
+    private StateView _view = StateView.Visual;
+    private ResultPopupTab _popupTab = ResultPopupTab.Action;
+
+    private bool IsBusy => SimulationState.IsRunning;
+    private LinearSearchSnapshot Current => LinearSearch.CreateSnapshot();
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_frames.Count > 0 && _frameIndex < _frames.Count - 1) || SimulationState.IsRunning;
+    private int TimelineCount => _frames.Count;
+    private int TimelinePosition => _frameIndex >= 0 ? _frameIndex + 1 : 0;
+    private RunFrame? DisplayedFrame => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex] : null;
+    private string DisplayedStepText => DisplayedFrame?.StepText ?? SimulationState.CurrentStepText;
+    private LinearSearchSnapshot DisplayedSnapshot => DisplayedFrame?.Snapshot ?? LinearSearch.CreateSnapshot();
+    private string DisplayedResultText => DisplayedSnapshot.FoundIndex is int found ? $"index {found}" : (DisplayedSnapshot.Phase is LinearSearchPhase.NotFound or LinearSearchPhase.Complete) && DisplayedSnapshot.CheckedCount == DisplayedSnapshot.Count ? "Not found" : "Searching";
+    private string DisplayedResultNote => DisplayedSnapshot.FoundIndex is not null ? "First equal slot ends the scan." : DisplayedSnapshot.Phase == LinearSearchPhase.Complete ? "Every required index was checked." : "No conclusion yet.";
+
+    private string PredictionFeedback
+    {
+        get
+        {
+            var actual = FindFirstOccurrence(Current.Elements, _target);
+            if (_predictionCorrect) return actual >= 0 ? $"Correct. Index {actual} is the first {_target} in the array, so the loop stops there." : $"Correct. {_target} is absent, so every index must be checked.";
+            return actual >= 0 ? $"The first match is index {actual}. Linear Search stops there before any later duplicate." : $"There is no {_target} in this array, so the correct prediction is not present.";
+        }
+    }
+
+    private string RunHeadline => _lastResult is null ? "Linear Search complete" : _lastResult.Found ? $"Found {_lastResult.Target} at index {_lastResult.FoundIndex}" : $"{_lastResult.Target} was not found";
+    private string RunActionExplanation => _lastResult is null ? string.Empty : _lastResult.Found ? $"The loop stopped after {_lastResult.Comparisons} comparison{(_lastResult.Comparisons == 1 ? string.Empty : "s")} because index {_lastResult.FoundIndex} was the first matching position." : _lastResult.InitialValues.Length == 0 ? "The array had no indexes, so the algorithm correctly returned not found without a comparison." : $"Every one of the {_lastResult.InitialValues.Length} indexes failed to match, so only then could the algorithm return not found.";
+    private string ComplexityPopupExplanation => _lastResult is null ? string.Empty : _lastResult.Found && _lastResult.FoundIndex == 0 ? "This was the best case: the first inspected value matched, so the work stayed constant at one comparison." : _lastResult.Found ? $"This target was at index {_lastResult.FoundIndex}, so the algorithm visited {_lastResult.Comparisons} positions. In general that visited prefix can grow with n." : _lastResult.InitialValues.Length == 0 ? "For n = 0 there is no work. For non-empty missing cases, every index must be inspected, which is Θ(n)." : $"The target was missing, so all {_lastResult.InitialValues.Length} values were inspected. This is the canonical Θ(n) worst case.";
+
+    protected override void OnInitialized()
+    {
+        LinearSearch.LoadValues([8, 3, 7, 5, 7]);
+        LinearSearch.SetTarget(_target);
+        SimulationState.Changed += HandleSimulationChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _storageLoaded) return;
+        _storageLoaded = true;
+        try
+        {
+            _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
+            _completedTaskIds.Clear();
+            foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id);
+            var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
+            if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
+        }
+        catch { }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ArrayTextChanged(ChangeEventArgs args) { _arrayText = args.Value?.ToString() ?? string.Empty; _inputError = null; }
+    private void TargetTextChanged(ChangeEventArgs args) { _targetText = args.Value?.ToString() ?? string.Empty; _inputError = null; }
+
+    private void ApplySearchInput()
+    {
+        if (IsBusy) return;
+        if (!TryParseArray(_arrayText, out var values, out var arrayError)) { _inputError = arrayError; return; }
+        if (!int.TryParse(_targetText.Trim(), out var target)) { _inputError = "Target must be one whole number."; return; }
+        LoadSearch(values, target);
+    }
+
+    private void LoadPreset(Preset preset)
+    {
+        if (IsBusy) return;
+        var setup = preset switch
+        {
+            Preset.Middle => (new[] { 8, 3, 7, 5, 1 }, 7),
+            Preset.Last => (new[] { 4, 8, 1, 6, 9 }, 9),
+            Preset.Missing => (new[] { 3, 8, 1, 6 }, 99),
+            Preset.Duplicates => (new[] { 5, 2, 7, 2, 9 }, 2),
+            Preset.Single => (new[] { 42 }, 42),
+            Preset.Empty => (Array.Empty<int>(), 5),
+            _ => (new[] { 7, 4, 9, 2 }, 7)
+        };
+        LoadSearch(setup.Item1, setup.Item2);
+    }
+
+    private void LoadSearch(int[] values, int target)
+    {
+        ClearReview();
+        LinearSearch.LoadValues(values);
+        LinearSearch.SetTarget(target);
+        _arrayText = FormatValues(values);
+        _target = target;
+        _targetText = target.ToString();
+        _inputError = null;
+        _predictionAnswered = false;
+        _predictionCorrect = false;
+        _predictedIndex = -2;
+    }
+
+    private static bool TryParseArray(string input, out int[] values, out string error)
+    {
+        var parts = (input ?? string.Empty).Split([',', ';', ' ', '\n', '\r', '\t'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length > 12) { values = []; error = "Keep this learning view to at most 12 values so every inspected slot stays readable."; return false; }
+        values = new int[parts.Length];
+        for (var index = 0; index < parts.Length; index++)
+        {
+            if (!int.TryParse(parts[index], out values[index])) { values = []; error = $"“{parts[index]}” is not a whole number."; return false; }
+        }
+        error = string.Empty;
+        return true;
+    }
+
+    private void AnswerPrediction(int predictedIndex)
+    {
+        if (IsBusy) return;
+        _predictedIndex = predictedIndex;
+        _predictionAnswered = true;
+        _predictionCorrect = predictedIndex == FindFirstOccurrence(Current.Elements, _target);
+    }
+
+    private static int FindFirstOccurrence(LinearSearchElementSnapshot[] elements, int target)
+    {
+        for (var index = 0; index < elements.Length; index++) if (elements[index].Value == target) return index;
+        return -1;
+    }
+
+    private async Task RunSearchAsync()
+    {
+        if (IsBusy) return;
+        PrepareRun();
+        LinearSearch.SetTarget(_target);
+        LinearSearch.ResetVisualState();
+        var token = SimulationState.Start($"Linear Search is ready to inspect index 0 for target {_target}.");
+        try
+        {
+            var result = await LinearSearch.SearchAsync(_target, token);
+            if (!IsCurrent(token)) return;
+            FinishRun(result);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception ex)
+        {
+            _inputError = $"The search run stopped: {ex.Message}";
+            if (IsCurrent(token)) SimulationState.Complete("The run stopped because of an error.");
+        }
+    }
+
+    private void FinishRun(LinearSearchResult result)
+    {
+        _lastResult = result;
+        RecordPracticeResult(result);
+        SimulationState.Complete(result.Found ? $"Found {result.Target} at index {result.FoundIndex} after {result.Comparisons} comparison(s)." : $"{result.Target} not found after {result.Comparisons} comparison(s)." );
+        _popupTab = ResultPopupTab.Action;
+        _lastRunPopupOpen = _showRunPopups;
+    }
+
+    private void PrepareRun() { _inputError = null; _lastRunPopupOpen = false; _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; }
+
+    private void Capture()
+    {
+        var step = SimulationState.CurrentStepText;
+        if (step == _lastCapturedStep) return;
+        var tail = _frameIndex < 0 || _frameIndex == _frames.Count - 1;
+        _frames.Add(new RunFrame(step, LinearSearch.CreateSnapshot()));
+        _lastCapturedStep = step;
+        if (tail) _frameIndex = _frames.Count - 1;
+    }
+
+    private void HandleSimulationChanged() { if (SimulationState.IsRunning) Capture(); _ = InvokeAsync(StateHasChanged); }
+    private bool IsCurrent(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;
+
+    private void ClearReview() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; _lastResult = null; _lastRunPopupOpen = false; }
+    private Task PlayTimelineAsync() { if (_frames.Count > 0) _frameIndex = _frames.Count - 1; SimulationState.Resume(); return InvokeAsync(StateHasChanged); }
+    private Task PauseTimelineAsync() { SimulationState.Pause(); return Task.CompletedTask; }
+    private Task StepBackAsync() { if (SimulationState.IsRunning && !SimulationState.IsPaused) SimulationState.Pause(); if (_frameIndex > 0) _frameIndex--; return InvokeAsync(StateHasChanged); }
+    private Task StepForwardAsync() { if (_frameIndex >= 0 && _frameIndex < _frames.Count - 1) { _frameIndex++; return InvokeAsync(StateHasChanged); } if (SimulationState.IsRunning) SimulationState.Step(); return Task.CompletedTask; }
+    private Task ResetPlaybackAsync() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; return InvokeAsync(StateHasChanged); }
+    private void SetStateView(StateView view) => _view = view;
+
+    private void StartTask(int taskId)
+    {
+        if (IsBusy) return;
+        var task = PracticeTasks.First(item => item.Id == taskId);
+        _activeTaskId = taskId;
+        LoadSearch(CloneValues(task.Input), task.Target);
+        _activeTaskId = taskId;
+    }
+
+    private void RecordPracticeResult(LinearSearchResult result)
+    {
+        _practiceResults.Add(result);
+        if (_practiceResults.Count > 30) _practiceResults.RemoveAt(0);
+        EvaluatePracticeTasks();
+    }
+
+    private void EvaluatePracticeTasks()
+    {
+        if (_practiceResults.Count == 0) return;
+        var result = _practiceResults[^1];
+        var first = FirstOccurrence(result.InitialValues, result.Target);
+        var occurrenceCount = CountOccurrences(result.InitialValues, result.Target);
+
+        foreach (var task in PracticeTasks)
+        {
+            if (_completedTaskIds.Contains(task.Id) && GetTaskEvidence(task.Id) is not null && _activeTaskId != task.Id) continue;
+            var completed = task.Id switch
+            {
+                1 => result.InitialValues.Length > 0 && result.Found && result.FoundIndex == 0 && result.Comparisons == 1,
+                2 => result.InitialValues.Length >= 3 && result.Found && result.FoundIndex is int middle && middle > 0 && middle < result.InitialValues.Length - 1 && result.Comparisons == middle + 1,
+                3 => result.InitialValues.Length >= 2 && result.Found && result.FoundIndex == result.InitialValues.Length - 1 && first == result.InitialValues.Length - 1 && result.Comparisons == result.InitialValues.Length,
+                4 => result.InitialValues.Length >= 3 && !result.Found && result.Comparisons == result.InitialValues.Length,
+                5 => occurrenceCount >= 2 && result.Found && result.FoundIndex == first && result.ReturnsFirstOccurrence && result.Comparisons == first + 1,
+                6 => result.InitialValues.Length == 1 && result.Found && result.FoundIndex == 0 && result.Target == result.InitialValues[0] && result.Comparisons == 1,
+                7 => result.InitialValues.Length == 0 && !result.Found && result.Comparisons == 0,
+                _ => false
+            };
+            if (completed) CompletePracticeTask(task, result);
+        }
+    }
+
+    private void CompletePracticeTask(PracticeTaskDefinition task, LinearSearchResult result)
+    {
+        var evidence = new PracticeCompletionEvidence(
+            task.Id,
+            task.Title,
+            result.Found ? $"Linear Search stopped at index {result.FoundIndex}" : "Linear Search proved the target was missing",
+            result.Found
+                ? $"The loop inspected indexes 0 through {result.FoundIndex} and stopped on the first value equal to {result.Target}. It performed {result.Comparisons} comparison(s)."
+                : result.InitialValues.Length == 0
+                    ? $"The input had no indexes, so target {result.Target} was not found with zero comparisons."
+                    : $"No value matched {result.Target}. The loop inspected all {result.InitialValues.Length} indexes before returning not found.",
+            $"The run used the same fixed array throughout. It performed zero element moves and zero writes; only the current index, target and counters changed. Extra algorithmic space remained O(1).",
+            result.Found && result.FoundIndex == 0
+                ? "This demonstrates the Θ(1) best case: the answer can be known after one comparison."
+                : !result.Found
+                    ? "A missing target demonstrates why Linear Search has a Θ(n) worst case on unsorted data: every unchecked index remains a possible match."
+                    : result.ReturnsFirstOccurrence && CountOccurrences(result.InitialValues, result.Target) >= 2
+                        ? "Duplicates demonstrate the stop rule: canonical Linear Search returns the first occurrence because it never skips an earlier index."
+                        : "The number of comparisons is exactly the length of the visited prefix, which connects the concrete run to linear growth.",
+            [
+                new("Target", result.Target.ToString()),
+                new("Result", result.Found ? $"index {result.FoundIndex}" : "Not found"),
+                new("Comparisons", result.Comparisons.ToString()),
+                new("Input length", result.InitialValues.Length.ToString())
+            ],
+            $"[{FormatValues(result.InitialValues)}] · target {result.Target} · {(result.Found ? $"found at {result.FoundIndex}" : "not found")}");
+
+        _completedTaskIds.Add(task.Id);
+        PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
+        if (_activeTaskId == task.Id) _activeTaskId = null;
+    }
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
+    private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
+    private void CloseTaskEvidence() => _practiceEvidencePopup = null;
+
+    private string GetActiveTaskProgressText(int taskId)
+    {
+        if (_practiceResults.Count == 0) return "Suggested setup is loaded. Run the search; completion is based on behavior, so you may change the values and still satisfy the concept.";
+        var result = _practiceResults[^1];
+        return taskId switch
+        {
+            1 => $"Need first occurrence at index 0 and one comparison. Last run: {ResultSummary(result)}.",
+            2 => $"Need a first match strictly between first and last index. Last run: {ResultSummary(result)}.",
+            3 => $"Need the target's first occurrence at the last index and n comparisons. Last run: {ResultSummary(result)}.",
+            4 => $"Need a missing target in n≥3 with n comparisons. Last run: {ResultSummary(result)}.",
+            5 => $"Need at least two target occurrences and a stop at the first. Last run: {ResultSummary(result)}.",
+            6 => $"Exact boundary: one element, successful search, one comparison. Last run: {ResultSummary(result)}.",
+            7 => $"Exact boundary: empty array, not found, zero comparisons. Last run: {ResultSummary(result)}.",
+            _ => string.Empty
+        };
+    }
+
+    private static string ResultSummary(LinearSearchResult result) => result.Found ? $"found at {result.FoundIndex}, {result.Comparisons} comparison(s)" : $"not found, {result.Comparisons} comparison(s)";
+
+    private void ToggleRunPopups(ChangeEventArgs args)
+    {
+        _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed;
+        try { LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); } catch { }
+    }
+
+    private void OpenLastRunPopup() { if (_lastResult is null) return; _popupTab = ResultPopupTab.Action; _lastRunPopupOpen = true; }
+    private void CloseLastRunPopup() => _lastRunPopupOpen = false;
+    private static void IgnorePopupClick() { }
+
+    private static int FirstOccurrence(IReadOnlyList<int> values, int target)
+    {
+        for (var index = 0; index < values.Count; index++) if (values[index] == target) return index;
+        return -1;
+    }
+
+    private static int CountOccurrences(IReadOnlyList<int> values, int target)
+    {
+        var count = 0;
+        for (var index = 0; index < values.Count; index++) if (values[index] == target) count++;
+        return count;
+    }
+
+    private static int[] CloneValues(int[] source) { var copy = new int[source.Length]; for (var index = 0; index < source.Length; index++) copy[index] = source[index]; return copy; }
+    private static string FormatValues(int[] values) => values.Length == 0 ? "empty" : string.Join(", ", values);
+
+    public void Dispose() => SimulationState.Changed -= HandleSimulationChanged;
+
+    private sealed record RunFrame(string StepText, LinearSearchSnapshot Snapshot);
+    private sealed record PracticeTaskDefinition(int Id, string Title, string Goal, string SuggestedInput, int[] Input, int Target);
+    private enum StateView { Visual, Memory }
+    private enum ResultPopupTab { Action, Complexity, Memory }
+    private enum Preset { First, Middle, Last, Missing, Duplicates, Single, Empty }
+}

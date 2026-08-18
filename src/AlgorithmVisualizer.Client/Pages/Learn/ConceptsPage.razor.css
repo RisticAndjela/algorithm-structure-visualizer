@@ -472,3 +472,52 @@
         justify-content: flex-start;
     }
 }
+
+
+/* Dedicated concept routes: external module links never depend on fragment scrolling. */
+.concept-topic-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem 0 .25rem;
+}
+
+.concept-topic-header h1 {
+    margin: .35rem 0 .4rem;
+    font-size: clamp(1.9rem, 4vw, 3rem);
+    line-height: 1.05;
+    letter-spacing: -.04em;
+}
+
+.concept-topic-header p {
+    max-width: 44rem;
+    margin: 0;
+    color: var(--color-text-soft);
+    font-size: .95rem;
+    line-height: 1.55;
+}
+
+.topic-focused-page .concept-section:not(.focused-topic),
+.topic-focused-page .implementation-note,
+.topic-focused-page .source-strip {
+    display: none;
+}
+
+.topic-focused-page .focused-topic {
+    border-color: #d9d1ff;
+    box-shadow: 0 14px 34px rgba(81, 65, 196, .10);
+}
+
+.focused-subtopic {
+    border-color: #bfb1ff;
+    background: linear-gradient(135deg, #f7f4ff, #fff);
+    box-shadow: inset 0 0 0 1px rgba(81, 65, 196, .08);
+}
+
+@media (max-width: 760px) {
+    .concept-topic-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}

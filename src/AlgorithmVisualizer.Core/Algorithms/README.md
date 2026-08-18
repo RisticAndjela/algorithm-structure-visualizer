@@ -104,3 +104,23 @@ The implementation is written from scratch over one `HeapSortElement[]`. **Incre
 Heap Sort keeps `Θ(n log n)` best/average/worst total time and `O(1)` extra array storage. It is not stable. Active create/update/delete mutations require restart because heap order, the heap boundary, and sorted-suffix finality belong to the old snapshot.
 
 Bubble Sort, Selection Sort, Insertion Sort, Merge Sort, Quick Sort, and Heap Sort are all live.
+
+
+## Implemented search algorithms
+
+### Linear Search
+
+Route: `/search/linear`
+
+Core namespace: `AlgorithmVisualizer.Core.Algorithms.Search.Linear`
+
+The implementation manually scans a fixed raw array from index `0` to `n-1`, compares one value per visited slot, stops on the first match, and performs no element mutation. It does not call LINQ `First`/`Contains`, `Array.IndexOf`, or another search helper.
+
+Complexity taught by the module:
+
+- first index match: `Θ(1)`;
+- average case: `Θ(n)`;
+- last-index first occurrence or missing target: `Θ(n)`;
+- algorithmic extra space: `O(1)`.
+
+The UI makes duplicate first-occurrence behavior and zero-write Memory State explicit.

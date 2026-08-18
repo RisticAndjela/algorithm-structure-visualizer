@@ -15,7 +15,7 @@
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="insertion-learn-title">Insertion Sort grows one already-sorted prefix.</h2>
             <p>Take the next value as a key, hold it temporarily, move larger values one slot right, then place the key into the gap that remains.</p>
-            <ConceptLink class="learn-launchpad-link" Href="/learn/concepts#insertion-sort">Open Insertion Sort concepts & memory →</ConceptLink>
+            <ConceptLink class="learn-launchpad-link" Href="/learn/concepts/insertion-sort">Open Insertion Sort concepts & memory →</ConceptLink>
         </div>
         <div class="learn-grid">
             <article class="learn-card purple"><span>KEY</span><strong>Hold one value outside the prefix</strong><small>The key is the new item that must be integrated into the already-sorted left side.</small></article>
@@ -41,7 +41,7 @@
     <section class="smart-tip" aria-label="insertion learning tip">
         <span class="tip-icon">✦</span>
         <div><strong>Before every step:</strong><p>Pretend the next key is a playing card in your hand: where would you insert it without re-sorting the cards already in order?</p></div>
-        <ConceptLink Href="/learn/concepts#insertion-sort">Why Insertion Sort is adaptive →</ConceptLink>
+        <ConceptLink Href="/learn/concepts/insertion-sort">Why Insertion Sort is adaptive →</ConceptLink>
     </section>
 
     <section class="implementation-section" aria-labelledby="insertion-implementation-title">
@@ -67,7 +67,7 @@
     <section id="insertion-lab" class="builder-section" aria-labelledby="insertion-build-title">
         <div class="section-heading-row">
             <div class="heading-with-step"><span class="step-number">1</span><div><span class="section-kicker">BUILD THE ARRAY</span><h2 id="insertion-build-title">Choose values you want to sort.</h2><p>Use 1–12 integers. Negative values and duplicates are allowed.</p></div></div>
-            <ConceptLink class="concept-link" Href="/learn/concepts#insertion-sort">How Insertion Sort works →</ConceptLink>
+            <ConceptLink class="concept-link" Href="/learn/concepts/insertion-sort">How Insertion Sort works →</ConceptLink>
         </div>
 
         <div class="array-builder">
@@ -143,8 +143,8 @@
         </div>
 
         <div class="lesson-reference-links" aria-label="Concepts and memory links">
-            <ConceptLink Href="/learn/concepts#insertion-sort">Insertion Sort concepts →</ConceptLink>
-            <ConceptLink Href="/learn/concepts#insertion-sort">Insertion Sort memory & online behavior →</ConceptLink>
+            <ConceptLink Href="/learn/concepts/insertion-sort">Insertion Sort concepts →</ConceptLink>
+            <ConceptLink Href="/learn/concepts/insertion-sort">Insertion Sort memory & online behavior →</ConceptLink>
         </div>
 
         <div class="visualizer-shell">
@@ -174,7 +174,7 @@
     </section>
 
     <section class="algorithm-map" aria-labelledby="insertion-map-title">
-        <div class="section-heading-row"><div><span class="section-kicker">ALGORITHM MAP</span><h2 id="insertion-map-title">Search only the sorted prefix, then shift one contiguous block.</h2><p>The Core implementation performs these operations manually over the teaching array.</p></div><ConceptLink class="concept-link" Href="/learn/concepts#big-o">Review Big-O →</ConceptLink></div>
+        <div class="section-heading-row"><div><span class="section-kicker">ALGORITHM MAP</span><h2 id="insertion-map-title">Search only the sorted prefix, then shift one contiguous block.</h2><p>The Core implementation performs these operations manually over the teaching array.</p></div><ConceptLink class="concept-link" Href="/learn/concepts/big-o">Review Big-O →</ConceptLink></div>
         <div class="pseudo-grid">
             <div class="pseudo-code" aria-label="Insertion Sort pseudocode">
                 <span>for i = 1 to n - 1</span>
@@ -234,7 +234,7 @@
                                   Title="@task.Title"
                                   Description="@task.Goal"
                                   InputText="@FormatValues(task.Input)"
-                                  HelpHref="/learn/concepts#insertion-sort"
+                                  HelpHref="/learn/concepts/insertion-sort"
                                   Completed="@completed"
                                   Active="@active"
                                   Busy="@IsBusy"
@@ -267,11 +267,11 @@
             }
             else if (_popupTab == ResultPopupTab.Complexity)
             {
-                <div class="popup-body"><h3>@(_lastResult.Variant == InsertionSortVariant.Linear ? "Linear Insertion Sort benefits directly from existing order." : "Binary search reduces comparisons, not array movement.")</h3><p>This run used <strong>@_lastResult.Comparisons comparisons</strong> and <strong>@_lastResult.Shifts shifts</strong>. @(_lastResult.Variant == InsertionSortVariant.Linear ? "If each next key is already near its final place, the backward scans stop quickly and the run can approach Θ(n)." : "The insertion point is found faster, but a key that belongs far left still forces many values to shift right, so worst-case time remains Θ(n²).")</p><ConceptLink class="popup-concept-link" Href="/learn/concepts#insertion-sort">Review Insertion Sort complexity →</ConceptLink></div>
+                <div class="popup-body"><h3>@(_lastResult.Variant == InsertionSortVariant.Linear ? "Linear Insertion Sort benefits directly from existing order." : "Binary search reduces comparisons, not array movement.")</h3><p>This run used <strong>@_lastResult.Comparisons comparisons</strong> and <strong>@_lastResult.Shifts shifts</strong>. @(_lastResult.Variant == InsertionSortVariant.Linear ? "If each next key is already near its final place, the backward scans stop quickly and the run can approach Θ(n)." : "The insertion point is found faster, but a key that belongs far left still forces many values to shift right, so worst-case time remains Θ(n²).")</p><ConceptLink class="popup-concept-link" Href="/learn/concepts/insertion-sort">Review Insertion Sort complexity →</ConceptLink></div>
             }
             else
             {
-                <div class="popup-body"><h3>One temporary key is enough.</h3><p>@MemoryPopupExplanation</p><p><strong>Online property:</strong> once a collection is sorted, a newly arriving item can be treated as one more key and inserted without re-sorting all previous values.</p><ConceptLink class="popup-concept-link" Href="/learn/concepts#insertion-sort">Review insertion sort memory & online behavior →</ConceptLink></div>
+                <div class="popup-body"><h3>One temporary key is enough.</h3><p>@MemoryPopupExplanation</p><p><strong>Online property:</strong> once a collection is sorted, a newly arriving item can be treated as one more key and inserted without re-sorting all previous values.</p><ConceptLink class="popup-concept-link" Href="/learn/concepts/insertion-sort">Review insertion sort memory & online behavior →</ConceptLink></div>
             }
         </section>
     </div>

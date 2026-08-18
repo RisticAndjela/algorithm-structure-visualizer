@@ -4,7 +4,7 @@
             <span class="section-kicker">LEARN FIRST</span>
             <h2>@LearnTitle</h2>
             <p>@LearnSummary</p>
-            <a class="learn-launchpad-link" href="@ConceptHref">Open concepts &amp; memory →</a>
+            <ConceptLink class="learn-launchpad-link" Href="@ConceptHref">Open concepts &amp; memory →</ConceptLink>
         </div>
         <div class="learn-grid">
             @foreach (var card in ParsedLearnCards)
@@ -39,7 +39,7 @@
     <section class="smart-tip" aria-label="Learning tip">
         <span class="tip-icon">✦</span>
         <div><strong>@TipTitle</strong><p>@TipText</p></div>
-        <a href="@ConceptHref">Open the exact concept →</a>
+        <ConceptLink Href="@ConceptHref">Open the exact concept →</ConceptLink>
     </section>
 
     <div class="concept-strip" aria-label="Key concepts">
@@ -50,7 +50,7 @@
     </div>
 
     <div class="lesson-reference-links" aria-label="Concepts and memory links">
-        <a href="@ConceptHref">Concepts &amp; memory for @Title →</a>
+        <ConceptLink Href="@ConceptHref">Concepts &amp; memory for @Title →</ConceptLink>
     </div>
 
     <div class="module-grid">

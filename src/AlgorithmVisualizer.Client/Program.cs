@@ -13,6 +13,7 @@ using AlgorithmVisualizer.Core.Algorithms.Sorting.Insertion;
 using AlgorithmVisualizer.Core.Algorithms.Sorting.Merge;
 using AlgorithmVisualizer.Core.Algorithms.Sorting.Quick;
 using AlgorithmVisualizer.Core.Algorithms.Sorting.HeapSort;
+using AlgorithmVisualizer.Core.Algorithms.Search.Linear;
 using AlgorithmVisualizer.Core.Simulation.Contracts;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -51,6 +52,7 @@ builder.Services.AddScoped<InsertionSortSimulation>();
 builder.Services.AddScoped<MergeSortSimulation>();
 builder.Services.AddScoped<QuickSortSimulation>();
 builder.Services.AddScoped<HeapSortSimulation>();
+builder.Services.AddScoped<LinearSearchSimulation>();
 
 var host = builder.Build();
 

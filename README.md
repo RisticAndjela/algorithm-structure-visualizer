@@ -11,7 +11,7 @@ The project is built with **Blazor WebAssembly and C#**. Its goal is not only to
 - what the time complexity means for the current run;
 - how the visual representation differs from the way the data is stored in memory.
 
-The application now has fourteen fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **Binary Heap (Min/Max)**, **Heap (generalized d-ary)**, **AVL Tree**, **Matrix**, **Graph**, **Red-Black Tree**, **Bubble Sort**, **Selection Sort**, **Insertion Sort**, **Merge Sort**, **Quick Sort**, and **Heap Sort**. The Home page, sidebar, Concepts & Memory navigation, and Next Lesson flow expose these modules one-to-one in the same curriculum order instead of grouping several finished lessons behind one card. Every live lab deep-links to the exact Concepts & Memory topic through a shared C# `ConceptLink` component that performs a full native fragment navigation, so the correct section is reached reliably without authored JavaScript.
+The application now has fifteen fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **Binary Heap (Min/Max)**, **Heap (generalized d-ary)**, **AVL Tree**, **Matrix**, **Graph**, **Red-Black Tree**, **Bubble Sort**, **Selection Sort**, **Insertion Sort**, **Merge Sort**, **Quick Sort**, **Heap Sort**, and **Linear Search**. The Home page, sidebar, Concepts & Memory navigation, and Next Lesson flow expose these modules one-to-one in the same curriculum order instead of grouping several finished lessons behind one card. Every live lab deep-links to the exact Concepts & Memory topic through dedicated Blazor routes such as `/learn/concepts/linear-search`; the shared C# `ConceptLink` component performs normal Blazor navigation without authored JavaScript or cross-page fragment timing.
 
 ---
 
@@ -34,6 +34,7 @@ The application now has fourteen fully implemented learning modules: **Queue & S
 - Merge Sort
 - Quick Sort
 - Heap Sort
+- Linear Search
 - shared simulation runtime;
 - play, pause and adjustable simulation speed;
 - manual step forward;
@@ -50,8 +51,8 @@ The application now has fourteen fully implemented learning modules: **Queue & S
 - optional result explanation popups;
 - Concepts & Memory learning page;
 - shared learner-facing module chrome in `wwwroot/css/learning-modules.css`, using the mature Queue & Stack / BST / Matrix / Graph visual language for sorting Learn First panels, module headers, tips, reference links, and lesson progression;
-- difficulty-ordered curriculum navigation with reusable `NextLessonCard` links: Queue & Stack → BST → Binary Heap → d-ary Heap → AVL → Matrix → Graph → Red-Black Tree, then Bubble → Selection → Insertion → Merge → Quick → Heap Sort;
-- exact deep links from every live lab to the relevant Concepts & Memory section, plus reverse links from the concept sections back to the matching lesson;
+- difficulty-ordered curriculum navigation with reusable `NextLessonCard` links: Queue & Stack → BST → Binary Heap → d-ary Heap → AVL → Matrix → Graph → Red-Black Tree, then Bubble → Selection → Insertion → Merge → Quick → Heap Sort, then Linear Search;
+- exact route-based links from every live lab to the relevant Concepts & Memory topic, plus reverse links from the concept sections back to the matching lesson;
 - BST insert, search, delete, explicit DSW balance, and reset;
 - BST leaf / one-child / two-child deletion simulation;
 - BST Day-Stout-Warren vine + compression simulation with node-identity preservation;
@@ -127,7 +128,7 @@ The application now has fourteen fully implemented learning modules: **Queue & S
 
 All sorting pages now use the same learner-facing design language as the mature data-structure modules instead of a separate sorting-specific landing-page style. Live sorting labs opt into `learning-module-page learning-module-shell`; their **LEARN FIRST** area uses the shared explanation + 2×2 concept-card pattern, followed by the same compact module-header, smart-tip, bordered lab panels, compact Visual/Memory switch with an adjacent explanation, Guided Practice styling, exact Concepts & Memory links, and reusable Next Lesson navigation. Quick Sort and Heap Sort are both live labs using the shared learning shell. `LearningPlaceholder` remains the required shell for future not-yet-implemented lessons so a future implementation replaces only the TODO workspace rather than inventing another design.
 
-The sidebar and Concepts & Memory page use explicit easy → hard ordering. Concepts & Memory starts with shared foundations (Visual vs Memory, memory, identity, Big-O), then presents data-structure lessons in curriculum order, then sorting lessons from Bubble through Heap Sort. Stable deep-link aliases such as `/learn/concepts#bst`, `#binary-heap`, `#matrix`, `#bubble-sort`, `#merge-sort`, `#quick-sort`, and `#heap-sort` let each module land on the exact explanation it needs. Every lesson page exposes a `NextLessonCard`, and the concept sections link back to the corresponding lab.
+The sidebar and Concepts & Memory page use explicit easy → hard ordering. Concepts & Memory starts with shared foundations (Visual vs Memory, memory, identity, Big-O), then presents data-structure lessons in curriculum order, sorting lessons from Bubble through Heap Sort, and the search track beginning with Linear Search. Dedicated topic routes such as `/learn/concepts/bst`, `/learn/concepts/matrix`, `/learn/concepts/heap-sort`, and `/learn/concepts/linear-search` let each module land on the exact explanation it needs without cross-page fragment scrolling. Every lesson page exposes a `NextLessonCard`, and the concept sections link back to the corresponding lab.
 
 ### Bubble Sort module details
 
@@ -205,7 +206,7 @@ All currently planned base data-structure modules in the specification are now r
 
 All six sorting lessons in the current curriculum are live: Bubble, Selection, Insertion, Merge, Quick, and Heap Sort.
 
-Future search and graph algorithms will follow the same simulation architecture.
+Linear Search is now live as the first search lesson. Future Binary Search and graph algorithms will follow the same simulation architecture.
 
 ---
 
@@ -1426,3 +1427,28 @@ Graph UI markup follows a strict Razor rule: whenever `@if`, `@foreach`, `@for`,
 Graph follows the same shared learning-completion contract as every other live module. The page continuously observes real `GraphSimulation` results plus the current graph snapshot; **Start task** is only an optional scenario helper. Validation checks graph semantics rather than requiring specific labels whenever the label itself is not the concept: any suitable undirected branching example can prove symmetry, any real directed edge can prove a missing reverse direction, any zero-weight edge can prove presence-vs-weight semantics, and any sufficiently sparse topology can support list-vs-matrix comparison. Completion and its exact explanation snapshot are persisted through the C# learning-state store into SQLite.
 
 Every completed Graph action now has a learner-facing explanation layer. The Last Run card can reopen a dismissible interactive explanation with three views: the action that happened, how the adjacency list and Matrix-backed representation changed together, and why the operation matters for later graph algorithms. Automatic result explanations can be disabled and that preference is persisted by the C# backend in SQLite. The Graph `Result popups` toggle now lives in the Playground header beside `Last run explanation`, matching the established Queue/Stack, BST, AVL, and Heap interaction pattern instead of creating a graph-specific preference strip below the result. The Graph lab also exposes direct `Graph concepts` and `Concepts & memory` links beside the Visual/Memory controls so theory is always reachable from the working area.
+
+### Concepts navigation rule
+
+- Concepts links from modules/tasks use dedicated routes such as `/learn/concepts/bst` or `/learn/concepts/heap-sort`; do not use `/learn/concepts#...` for cross-page navigation because Blazor WASM renders the target after the browser fragment-scroll moment. In-page jump links inside the already-rendered Concepts page may still use `#...`.
+
+
+## Linear Search
+
+Route: `/search/linear`
+
+Core namespace: `AlgorithmVisualizer.Core.Algorithms.Search.Linear`
+
+Linear Search is implemented manually over a fixed raw teaching array. The Core loop checks indexes from `0` to `n-1`, performs one equality comparison per visited slot, stops at the first matching occurrence, and returns not-found only after the complete array has been inspected. It does not delegate the taught traversal to LINQ `First`, `Contains`, `Find`, or another framework search helper.
+
+The lesson provides:
+
+- Build → Predict → Watch → Explain → Practice workflow;
+- Visual State with current / checked / found / unvisited positions;
+- Memory State showing fixed slots, stable teaching identities, zero element writes, and `O(1)` extra algorithmic state;
+- first-occurrence behavior for duplicate target values;
+- empty, single-item, first, middle, last, duplicate, and missing cases;
+- best-case `Θ(1)` and average/worst `Θ(n)` explanations tied to the actual visited prefix;
+- seven continuously auto-tracked Guided Practice tasks with behavior-based validation and SQLite-backed completion evidence;
+- dedicated concept routes `/learn/concepts/linear-search`, `/learn/concepts/linear-search-complexity`, and `/learn/concepts/linear-vs-binary-search`;
+- mutation semantics: read-only inspection is safe, while CREATE/UPDATE/DELETE during an active search requires restart because the checked-index history belongs to the old snapshot.

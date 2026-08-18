@@ -47,7 +47,7 @@
             <strong>Predict the next index before pressing Step forward.</strong>
             <p>For element i, parent = (i − 1) / 2, left = 2i + 1, right = 2i + 2. Those formulas are the tree links.</p>
         </div>
-        <ConceptLink Href="/learn/concepts#heap">Why search is still O(n) →</ConceptLink>
+        <ConceptLink Href="/learn/concepts/binary-heap">Why search is still O(n) →</ConceptLink>
     </section>
 
     <section class="lab-shell">
@@ -143,8 +143,8 @@
         </div>
 
         <div class="lesson-reference-links" aria-label="Concepts and memory links">
-            <ConceptLink Href="/learn/concepts#binary-heap">Binary Heap concepts →</ConceptLink>
-            <ConceptLink Href="/learn/concepts#memory">Heap array memory →</ConceptLink>
+            <ConceptLink Href="/learn/concepts/binary-heap">Binary Heap concepts →</ConceptLink>
+            <ConceptLink Href="/learn/concepts/memory">Heap array memory →</ConceptLink>
         </div>
 
         @if (_activeStateView == StateView.Visual)
@@ -241,12 +241,12 @@
     private static readonly int[] SampleValues = [10, 20, 25, 30, 40, 50, 70];
     private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
     [
-        new(1, "Force bubble-up", ["Use Min Heap and clear it.", "Insert 40, then 25, then 10.", "Predict each parent index before the swap."], "/learn/concepts#heap"),
-        new(2, "Force bubble-down", ["Build Min Heap with 10, 20, 30, 40, 50, 60, 70.", "Extract root.", "Watch the last element move to index 0, then sink."], "/learn/concepts#heap"),
-        new(3, "Mirror it as Max Heap", ["Clear the heap and switch to Max Heap.", "Insert 10, 25, 40.", "Confirm that the larger value rises instead of the smaller one."], "/learn/concepts#heap"),
-        new(4, "Prove search is linear", ["Build at least five elements.", "Search for a missing value.", "Watch every used array slot get checked."], "/learn/concepts#big-o"),
-        new(5, "Delete and choose repair direction", ["Build a heap with at least five values.", "Delete a non-root value.", "Observe whether the replacement bubbles up or down."], "/learn/concepts#heap"),
-        new(6, "Inspect real storage", ["Build enough values to grow capacity beyond four.", "Open Memory state.", "Compare used slots, reserved slots, and stable IDs."], "/learn/concepts#visual-vs-memory")
+        new(1, "Force bubble-up", ["Use Min Heap and clear it.", "Insert 40, then 25, then 10.", "Predict each parent index before the swap."], "/learn/concepts/binary-heap"),
+        new(2, "Force bubble-down", ["Build Min Heap with 10, 20, 30, 40, 50, 60, 70.", "Extract root.", "Watch the last element move to index 0, then sink."], "/learn/concepts/binary-heap"),
+        new(3, "Mirror it as Max Heap", ["Clear the heap and switch to Max Heap.", "Insert 10, 25, 40.", "Confirm that the larger value rises instead of the smaller one."], "/learn/concepts/binary-heap"),
+        new(4, "Prove search is linear", ["Build at least five elements.", "Search for a missing value.", "Watch every used array slot get checked."], "/learn/concepts/big-o"),
+        new(5, "Delete and choose repair direction", ["Build a heap with at least five values.", "Delete a non-root value.", "Observe whether the replacement bubbles up or down."], "/learn/concepts/binary-heap"),
+        new(6, "Inspect real storage", ["Build enough values to grow capacity beyond four.", "Open Memory state.", "Compare used slots, reserved slots, and stable IDs."], "/learn/concepts/visual-vs-memory")
     ];
 
     private int? _value;

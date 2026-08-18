@@ -1,0 +1,59 @@
+@using AlgorithmVisualizer.Core.Algorithms.Search.Linear
+
+<section class="linear-search-memory" aria-label="Linear Search memory state">
+    <div class="memory-note">
+        <div><span>ACTUAL TEACHING STORAGE</span><strong>Fixed <code>LinearSearchElement[]</code></strong></div>
+        <p>Linear Search is read-only. Indexes, values, references, and element identities never move during the run; only the current read position changes.</p>
+    </div>
+
+    @if (Snapshot.Count == 0)
+    {
+        <div class="empty-memory">The array has zero slots. Searching it performs zero reads/comparisons.</div>
+    }
+    else
+    {
+        <div class="slot-strip" role="list" aria-label="Linear Search memory slots">
+            @for (var index = 0; index < Snapshot.Elements.Length; index++)
+            {
+                var element = Snapshot.Elements[index];
+                <article class="memory-slot @StateClass(element.VisualState)" role="listitem">
+                    <header><span>slot</span><strong>[@index]</strong></header>
+                    <div class="reference-arrow" aria-hidden="true">↓</div>
+                    <div class="element-object"><span>item #@(element.OriginalIndex + 1)</span><strong>@element.Value</strong></div>
+                    <small>@RoleLabel(element.VisualState)</small>
+                </article>
+            }
+        </div>
+
+        <div class="memory-facts">
+            <article><span>Length</span><strong>@Snapshot.Count</strong><small>Fixed for this search run.</small></article>
+            <article><span>Extra algorithmic space</span><strong>O(1)</strong><small>Only target/index/counters are needed.</small></article>
+            <article><span>Writes</span><strong>0</strong><small>The search reads values; it never swaps or rewrites them.</small></article>
+        </div>
+
+        <div class="read-only-note">
+            <strong>Why do duplicates still need stable identity?</strong>
+            <p>Two slots can contain the same value but refer to different teaching elements. Linear Search returns the first matching <em>slot</em>, so the item number makes “first occurrence” visible even when values are equal.</p>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public LinearSearchSnapshot Snapshot { get; set; } = default!;
+
+    private static string StateClass(LinearSearchElementVisualState state) => state switch
+    {
+        LinearSearchElementVisualState.Current => "is-current",
+        LinearSearchElementVisualState.Checked => "is-checked",
+        LinearSearchElementVisualState.Found => "is-found",
+        _ => string.Empty
+    };
+
+    private static string RoleLabel(LinearSearchElementVisualState state) => state switch
+    {
+        LinearSearchElementVisualState.Current => "current read",
+        LinearSearchElementVisualState.Checked => "already read",
+        LinearSearchElementVisualState.Found => "first match",
+        _ => "not read yet"
+    };
+}

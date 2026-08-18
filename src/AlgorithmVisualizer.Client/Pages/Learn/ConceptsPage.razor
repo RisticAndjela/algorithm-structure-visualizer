@@ -1,58 +1,83 @@
 @page "/learn/concepts"
+@page "/learn/concepts/{Topic}"
 
-<PageTitle>Learn the basics — Algorithm Visualizer</PageTitle>
+<PageTitle>@PageTitleText</PageTitle>
 
-<div class="concepts-page">
-    <header class="concepts-hero">
-        <div>
-            <span class="page-kicker">LEARN THE BASICS</span>
-            <h1>Words and ideas used in every simulation</h1>
-            <p>Start with foundations, then follow each track from easier to harder. Every module link lands on its exact concept section and every lesson section links back to the matching lab.</p>
-        </div>
-        <div class="concepts-hero-actions">
-            <a class="back-to-lab" href="/">Learning path <span>→</span></a>
-            <a class="back-to-lab primary" href="/structures/queue-stack">Open first lab <span>→</span></a>
-        </div>
-    </header>
+<div class="concepts-page @(HasFocusedTopic ? "topic-focused-page" : string.Empty)">
+    @if (HasFocusedTopic)
+    {
+        <header class="concept-topic-header">
+            <div>
+                <span class="page-kicker">CONCEPTS &amp; MEMORY</span>
+                <h1>@FocusedTitle</h1>
+                <p>This route opens the exact concept directly. No fragment scrolling or JavaScript interop is required.</p>
+            </div>
+            <div class="concepts-hero-actions">
+                <a class="back-to-lab" href="/learn/concepts">All concepts <span>→</span></a>
+                @if (!string.IsNullOrWhiteSpace(FocusedLabHref))
+                {
+                    <a class="back-to-lab primary" href="@FocusedLabHref">Open matching lab <span>→</span></a>
+                }
+            </div>
+        </header>
+    }
+    else
+    {
+        <header class="concepts-hero">
+            <div>
+                <span class="page-kicker">LEARN THE BASICS</span>
+                <h1>Words and ideas used in every simulation</h1>
+                <p>Start with foundations, then follow each track from easier to harder. Module links use dedicated concept routes, so every lesson opens the intended topic directly.</p>
+            </div>
+            <div class="concepts-hero-actions">
+                <a class="back-to-lab" href="/">Learning path <span>→</span></a>
+                <a class="back-to-lab primary" href="/structures/queue-stack">Open first lab <span>→</span></a>
+            </div>
+        </header>
 
-    <nav class="concept-jump" aria-label="Concept shortcuts">
-        <div class="concept-jump-group">
-            <span>FOUNDATIONS</span>
-            <a href="#visual-vs-memory">Visual vs memory</a>
-            <a href="#memory">Memory</a>
-            <a href="#identity">Value vs ID</a>
-            <a href="#big-o">Big-O</a>
-        </div>
-        <div class="concept-jump-group">
-            <span>DATA STRUCTURES · EASY → HARD</span>
-            <a href="#queue-stack">Queue &amp; Stack</a>
-            <a href="#bst">BST</a>
-            <a href="#binary-heap">Binary Heap</a>
-            <a href="#general-heap">d-ary Heap</a>
-            <a href="#avl-balance">AVL</a>
-            <a href="#matrix">Matrix</a>
-            <a href="#graph">Graph</a>
-            <a href="#red-black">Red-Black Tree</a>
-        </div>
-        <div class="concept-jump-group">
-            <span>SORTING · EASY → HARD</span>
-            <a href="#bubble-sort">Bubble</a>
-            <a href="#selection-sort">Selection</a>
-            <a href="#insertion-sort">Insertion</a>
-            <a href="#merge-sort">Merge</a>
-            <a href="#quick-sort">Quick</a>
-            <a href="#heap-sort">Heap Sort</a>
-        </div>
-    </nav>
+        <nav class="concept-jump" aria-label="Concept shortcuts">
+            <div class="concept-jump-group">
+                <span>FOUNDATIONS</span>
+                <a href="#visual-vs-memory">Visual vs memory</a>
+                <a href="#memory">Memory</a>
+                <a href="#identity">Value vs ID</a>
+                <a href="#big-o">Big-O</a>
+            </div>
+            <div class="concept-jump-group">
+                <span>DATA STRUCTURES · EASY → HARD</span>
+                <a href="#queue-stack">Queue &amp; Stack</a>
+                <a href="#bst">BST</a>
+                <a href="#binary-heap">Binary Heap</a>
+                <a href="#general-heap">d-ary Heap</a>
+                <a href="#avl-balance">AVL</a>
+                <a href="#matrix">Matrix</a>
+                <a href="#graph">Graph</a>
+                <a href="#red-black">Red-Black Tree</a>
+            </div>
+            <div class="concept-jump-group">
+                <span>SORTING · EASY → HARD</span>
+                <a href="#bubble-sort">Bubble</a>
+                <a href="#selection-sort">Selection</a>
+                <a href="#insertion-sort">Insertion</a>
+                <a href="#merge-sort">Merge</a>
+                <a href="#quick-sort">Quick</a>
+                <a href="#heap-sort">Heap Sort</a>
+            </div>
+            <div class="concept-jump-group">
+                <span>SEARCH · EASY → HARD</span>
+                <a href="#linear-search">Linear Search</a>
+            </div>
+        </nav>
 
         <section class="concepts-start" aria-label="Quick start concepts">
-        <a class="start-card purple" href="#visual-vs-memory"><span>01 · START HERE</span><strong>Visual vs memory</strong><small>Separate the teaching picture from how data is actually stored.</small></a>
-        <a class="start-card mint" href="#memory"><span>02 · MEMORY</span><strong>Objects, references &amp; slots</strong><small>Understand what a stored element and a reference mean.</small></a>
-        <a class="start-card gold" href="#identity"><span>03 · IDENTITY</span><strong>Value vs ID</strong><small>Equal values can still be different elements.</small></a>
-        <a class="start-card blue" href="#big-o"><span>04 · BIG-O</span><strong>How work grows</strong><small>Read O(1), O(n), Θ(n²) and Θ(n log n) without guessing.</small></a>
-    </section>
+            <a class="start-card purple" href="#visual-vs-memory"><span>01 · START HERE</span><strong>Visual vs memory</strong><small>Separate the teaching picture from how data is actually stored.</small></a>
+            <a class="start-card mint" href="#memory"><span>02 · MEMORY</span><strong>Objects, references &amp; slots</strong><small>Understand what a stored element and a reference mean.</small></a>
+            <a class="start-card gold" href="#identity"><span>03 · IDENTITY</span><strong>Value vs ID</strong><small>Equal values can still be different elements.</small></a>
+            <a class="start-card blue" href="#big-o"><span>04 · BIG-O</span><strong>How work grows</strong><small>Read O(1), O(n), Θ(n²) and Θ(n log n) without guessing.</small></a>
+        </section>
+    }
 
-    <section id="visual-vs-memory" class="concept-section">
+    <section id="visual-vs-memory" class='@SectionClass("visual-vs-memory")'>
         <div class="section-heading">
             <span>F1</span>
             <div><h2>Visual state vs memory state</h2><p>The picture we draw for learning is not necessarily the shape of RAM.</p></div>
@@ -78,7 +103,7 @@
         <div class="concept-lesson-links"><a href="/structures/graph">Compare both views in Graph →</a><a href="/sorting/merge">Compare main array and buffer in Merge Sort →</a></div>
     </section>
 
-    <section id="memory" class="concept-section">
+    <section id="memory" class='@SectionClass("memory")'>
         <div class="section-heading">
             <span>F2</span>
             <div><h2>Memory, references, Count and Capacity</h2><p>A simple model for what the C# version of this lab is doing.</p></div>
@@ -130,7 +155,7 @@
         <div class="concept-lesson-links"><a href="/structures/queue-stack">Open linear Memory state →</a><a href="/structures/matrix">Open Matrix Memory state →</a></div>
     </section>
 
-    <section id="identity" class="concept-section">
+    <section id="identity" class='@SectionClass("identity")'>
         <div class="section-heading">
             <span>F3</span>
             <div><h2>Value is not the same as identity</h2><p>Structures that allow duplicate values can still store them as different element objects. Heap allows duplicates and gives each element its own ID; BST, AVL, and Red-Black Tree intentionally use unique keys.</p></div>
@@ -148,7 +173,7 @@
         <div class="concept-lesson-links"><a href="/structures/queue-stack">See duplicate identity in Queue & Stack →</a><a href="/sorting/bubble">See stable duplicate identity in Bubble Sort →</a></div>
     </section>
 
-    <section id="big-o" class="concept-section">
+    <section id="big-o" class='@SectionClass("big-o")'>
         <div class="section-heading">
             <span>F4</span>
             <div><h2>O(1), O(n), Θ(n) and k</h2><p>They describe how the amount of work grows. They are not a stopwatch.</p></div>
@@ -200,7 +225,7 @@
         <div class="plain-note"><strong>C is more manual.</strong><p>A plain C array does not have a built-in “delete item” operation. Your code decides whether to shift values, keep a logical length, or manage separate nodes and call <code>free</code>. That is why the app always names the storage type instead of saying “delete always works this way”.</p></div>
     </section>
 
-    <section id="queue-stack" class="concept-section">
+    <section id="queue-stack" class='@SectionClass("queue-stack")'>
         <span id="lifo-fifo" class="anchor-target" aria-hidden="true"></span>
         <div class="section-heading">
             <span>S1</span>
@@ -226,7 +251,7 @@
         <div class="concept-lesson-links"><a href="/structures/queue-stack">Open Queue & Stack lab →</a></div>
     </section>
 
-    <section id="bst" class="concept-section">
+    <section id="bst" class='@SectionClass("bst")'>
         <span id="tree-height" class="anchor-target" aria-hidden="true"></span>
         <div class="section-heading">
             <span>S2</span>
@@ -254,7 +279,7 @@
         <div class="concept-lesson-links"><a href="/structures/bst">Open BST lab →</a></div>
     </section>
 
-    <section id="bst-balancing" class="concept-section">
+    <section id="bst-balancing" class='@SectionClass("bst-balancing")'>
         <div class="section-heading">
             <span>S2+</span>
             <div><h2>What does balancing a BST mean?</h2><p>Balancing changes the tree's shape so root-to-leaf paths are shorter, while preserving the same sorted-key rule and the same node objects.</p></div>
@@ -292,7 +317,7 @@
         </div>
     </section>
 
-    <section id="heap" class="concept-section">
+    <section id="heap" class='@SectionClass("heap")'>
         <div class="section-heading">
             <span>S3–4</span>
             <div><h2>Heap vs Binary Heap: family versus one concrete implementation</h2><p>The word <strong>heap</strong> describes a family of priority-ordered data structures. <strong>Binary Heap</strong> is one specific heap whose complete tree allows at most two children per parent.</p></div>
@@ -304,13 +329,13 @@
                 <p>In a Min Heap, each parent has priority over its children; in a Max Heap, the rule is reversed. The family can be implemented with different branching factors and specialized structures.</p>
                 <div class="example"><strong>Min rule:</strong> parent ≤ every child. <strong>Max rule:</strong> parent ≥ every child.</div>
             </article>
-            <article id="binary-heap" class="concept-card anchor-card">
+            <article id="binary-heap" class='@CardClass("binary-heap", "concept-card anchor-card")'>
                 <span class="term queue">BINARY HEAP</span>
                 <h3>d = 2: at most two children</h3>
                 <p>The classic Binary Heap is a complete binary tree stored compactly in an array. Its index formulas are <code>parent=(i-1)/2</code>, <code>left=2i+1</code>, and <code>right=2i+2</code>.</p>
                 <a href="/structures/binary-heap">Open Binary Heap lab →</a>
             </article>
-            <article id="general-heap" class="concept-card anchor-card">
+            <article id="general-heap" class='@CardClass("general-heap", "concept-card anchor-card")'>
                 <span class="term">D-ARY HEAP</span>
                 <h3>Generalize the same idea to d children</h3>
                 <p>For a complete d-ary heap, <code>parent=(i-1)/d</code> and a node's possible children occupy <code>di+1</code> through <code>di+d</code>. Binary Heap is exactly the d=2 case.</p>
@@ -341,7 +366,7 @@
         </div>
     </section>
 
-    <section id="avl-balance" class="concept-section">
+    <section id="avl-balance" class='@SectionClass("avl-balance")'>
         <div class="section-heading">
             <span>S5</span>
             <div><h2>Balance factor and rotations</h2><p>AVL keeps the BST ordering rule, then repairs shape whenever one side becomes more than one level taller.</p></div>
@@ -367,7 +392,7 @@
         </div>
     </section>
 
-    <section id="matrix" class="concept-section">
+    <section id="matrix" class='@SectionClass("matrix")'>
         <span id="matrices" class="anchor-target" aria-hidden="true"></span>
         <div class="section-heading">
             <span>S6</span>
@@ -380,7 +405,7 @@
                 <p>A <code>2×3</code> matrix has 2 rows and 3 columns. Transpose swaps those dimensions: a <code>2×3</code> matrix becomes <code>3×2</code>.</p>
                 <div class="example"><strong>Think first:</strong> dimensions usually tell you whether an operation is even possible before you calculate any number.</div>
             </article>
-            <article id="matrix-compatibility" class="concept-card">
+            <article id="matrix-compatibility" class='@CardClass("matrix-compatibility", "concept-card")'>
                 <span class="term queue">COMPATIBILITY</span>
                 <h3>Different operations have different shape rules</h3>
                 <p>Addition, subtraction and Hadamard multiplication require the same dimensions. For <code>A×B</code>, the number of columns in A must equal the number of rows in B.</p>
@@ -419,7 +444,7 @@
         <div class="concept-lesson-links"><a href="/structures/matrix">Open Matrix lab →</a></div>
     </section>
 
-    <section id="graph" class="concept-section">
+    <section id="graph" class='@SectionClass("graph")'>
         <div class="section-heading">
             <span>S7</span>
             <div><h2>Graph: vertices, edges and adjacency</h2><p>A graph models relationships. Vertices are entities; edges describe which entities are connected and may also carry direction or weight.</p></div>
@@ -435,7 +460,7 @@
         <div class="plain-note"><strong>Graph structure vs graph algorithm</strong><p>Adding/removing vertices and edges changes the graph. BFS or DFS should not mutate those structural edges; they add temporary traversal state such as frontier, visited and parent on top of the same graph.</p></div>
     </section>
 
-    <section id="red-black" class="concept-section">
+    <section id="red-black" class='@SectionClass("red-black")'>
         <div class="section-heading">
             <span>S8</span>
             <div><h2>Red-Black invariants and black-height</h2><p>Red-Black Tree keeps the same BST ordering, but it controls shape indirectly through color rules instead of AVL's exact balance factor.</p></div>
@@ -473,7 +498,7 @@
         </div>
     </section>
 
-    <section id="bubble-sort" class="concept-section">
+    <section id="bubble-sort" class='@SectionClass("bubble-sort")'>
         <div class="section-heading">
             <span>A1</span>
             <div><h2>Bubble Sort: neighbors, passes, and a sorted suffix</h2><p>Bubble Sort is a simple place to learn what a sorting algorithm actually does one decision at a time.</p></div>
@@ -523,7 +548,7 @@
         </div>
     </section>
 
-    <section id="selection-sort" class="concept-section">
+    <section id="selection-sort" class='@SectionClass("selection-sort")'>
         <div class="section-heading">
             <span>A2</span>
             <div><h2>Selection Sort: scan, remember, then swap</h2><p>Selection Sort separates finding the next value from moving it into place.</p></div>
@@ -573,7 +598,7 @@
         </div>
     </section>
 
-    <section id="insertion-sort" class="concept-section">
+    <section id="insertion-sort" class='@SectionClass("insertion-sort")'>
         <div class="section-heading">
             <span>A3</span>
             <div><h2>Insertion Sort: key, sorted prefix, gap, and insertion point</h2><p>Insertion Sort keeps a sorted prefix and integrates one new value at a time instead of repeatedly sorting everything again.</p></div>
@@ -623,7 +648,7 @@
         </div>
     </section>
 
-    <section id="merge-sort" class="concept-section">
+    <section id="merge-sort" class='@SectionClass("merge-sort")'>
         <div class="section-heading">
             <span>A4</span>
             <div><h2>Merge Sort: divide, runs, merge fronts, and auxiliary memory</h2><p>Merge Sort becomes simple once you trust one invariant: every merge combines two runs that are already sorted.</p></div>
@@ -674,7 +699,7 @@
     </section>
 
 
-    <section id="quick-sort" class="concept-section">
+    <section id="quick-sort" class='@SectionClass("quick-sort")'>
         <div class="section-heading">
             <span>A5</span>
             <div><h2>Quick Sort: pivot, partition, then recurse</h2><p>Quick Sort earns its speed by finishing a pivot position (or an equal-pivot band) and recursively solving only the unfinished regions around it.</p></div>
@@ -688,7 +713,7 @@
         <div class="concept-lesson-links"><a href="/sorting/quick">Open the Quick Sort lab →</a><a href="/sorting/merge">Compare with Merge Sort →</a></div>
     </section>
 
-    <section id="heap-sort" class="concept-section">
+    <section id="heap-sort" class='@SectionClass("heap-sort")'>
         <div class="section-heading">
             <span>A6</span>
             <div><h2>Heap Sort: build a Max Heap, extract the root, shrink the boundary</h2><p>Heap Sort reuses one array as two logical regions: an active Max Heap on the left and a permanently finished sorted suffix on the right.</p></div>
@@ -704,14 +729,60 @@
         <div class="concept-lesson-links"><a href="/sorting/heap">Open the Heap Sort lab →</a><a href="/structures/binary-heap">Review Binary Heap →</a><a href="/sorting/quick">Compare with Quick Sort →</a></div>
     </section>
 
+    <section id="linear-search" class='@SectionClass("linear-search")'>
+        <div class="section-heading">
+            <span>Q1</span>
+            <div><h2>Linear Search: inspect left to right and stop at the first match</h2><p>Linear Search needs no ordering assumption. Its power is simplicity; its cost is that an unchecked position cannot be ruled out without reading it.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class='@CardClass("linear-search", "concept-card")'>
+                <span class="term">SCAN</span>
+                <h3>Index 0 → n−1, one comparison at a time</h3>
+                <p>Compare <code>a[i]</code> with the target. If they differ, increment <code>i</code>. If they are equal, return immediately. If the loop ends, return not found.</p>
+                <div class="example"><strong>Invariant:</strong> before checking index i, every smaller index has already been ruled out.</div>
+            </article>
+            <article class='@CardClass("linear-search", "concept-card")'>
+                <span class="term queue">FIRST OCCURRENCE</span>
+                <h3>Duplicates do not change the stop rule</h3>
+                <p>If the target appears more than once, canonical Linear Search returns the first matching index because it never skips an earlier position and stops on the first equality.</p>
+                <div class="example"><strong>Example:</strong> [5, 2, 7, 2] searching for 2 returns index 1, not index 3.</div>
+            </article>
+            <article class='@CardClass("linear-search-complexity", "concept-card")'>
+                <span class="term">COMPLEXITY</span>
+                <h3>Best Θ(1); average and worst Θ(n)</h3>
+                <p>A target at index 0 needs one comparison. A missing target or a first occurrence at the last index requires all n comparisons. In general, the concrete run cost equals the length of the visited prefix.</p>
+                <div class="example"><strong>Space:</strong> O(1) additional algorithmic state — target, index and counters only.</div>
+            </article>
+            <article class='@CardClass("linear-search", "concept-card")'>
+                <span class="term queue">MEMORY</span>
+                <h3>Search reads slots; it does not move them</h3>
+                <p>The teaching implementation uses a fixed element array. Values, references and stable identities stay in the same slots for the whole run. Visual State changes only to show which slot is current, checked or found.</p>
+                <div class="example"><strong>CRUD:</strong> reads are safe; insert/update/delete during an active traversal requires restart because the checked-index history can become invalid.</div>
+            </article>
+            <article class='@CardClass("linear-vs-binary-search", "concept-card")'>
+                <span class="term">LINEAR vs BINARY</span>
+                <h3>Linear needs no sorted input; Binary needs order to skip work</h3>
+                <p>Linear Search can search arbitrary unsorted data but may inspect every value. Binary Search can discard half of a sorted random-access range after each comparison, giving logarithmic search growth.</p>
+                <div class="example"><strong>Rule of thumb:</strong> one-off/unsorted → Linear; sorted and repeatedly searched → Binary is often the better next algorithm.</div>
+            </article>
+            <article class='@CardClass("linear-vs-binary-search", "concept-card")'>
+                <span class="term queue">NO FAKE ADVANCED MODE</span>
+                <h3>An optimization must preserve the same useful contract</h3>
+                <p>This lab keeps the canonical first-match algorithm instead of adding a mode that only hides a bound check or changes semantics. The meaningful conceptual upgrade is Binary Search when its sorted-data precondition is available.</p>
+                <div class="example"><strong>Next:</strong> Binary Search will reuse the same predict/step/memory/practice learning pattern.</div>
+            </article>
+        </div>
+        <div class="concept-lesson-links"><a href="/search/linear">Open the Linear Search lab →</a><a href="/learn/concepts/big-o">Review Big-O →</a></div>
+    </section>
+
     <section class="concept-section implementation-note">
         <div class="section-heading">
             <span>✓</span>
-            <div><h2>Implemented from scratch</h2><p>The learning structures do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, Matrix, Graph, or balancing algorithms to ready-made framework collections.</p></div>
+            <div><h2>Implemented from scratch</h2><p>The learning structures and algorithms do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, Matrix, Graph, sorting, Linear Search, or balancing behavior to ready-made framework collections/search helpers.</p></div>
         </div>
         <div class="plain-note">
             <strong>What our code does itself</strong>
-            <p>Linear structures keep and grow their own raw array and move references with manual loops. BST, AVL, and Red-Black Tree keep explicit node links and perform their own comparisons, transplants, recoloring, and rotations. BST Balance uses our own Day-Stout-Warren vine/compression logic over those same node references. Heap uses its own growable raw array and manual index swaps for bubble-up/bubble-down instead of PriorityQueue or a library heap. Matrix uses its own row-major <code>double[]</code>, manual cell/index loops, row operations, multiplication and elimination instead of a numerical or linear-algebra library. Graph keeps canonical vertex/edge objects, manual adjacency lists over our own dynamic-array storage, and reuses ManualMatrix for the synchronized adjacency table instead of a graph package or dictionary-backed graph. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the taught data-structure algorithms for us.</p>
+            <p>Linear structures keep and grow their own raw array and move references with manual loops. BST, AVL, and Red-Black Tree keep explicit node links and perform their own comparisons, transplants, recoloring, and rotations. BST Balance uses our own Day-Stout-Warren vine/compression logic over those same node references. Heap uses its own growable raw array and manual index swaps for bubble-up/bubble-down instead of PriorityQueue or a library heap. Matrix uses its own row-major <code>double[]</code>, manual cell/index loops, row operations, multiplication and elimination instead of a numerical or linear-algebra library. Graph keeps canonical vertex/edge objects, manual adjacency lists over our own dynamic-array storage, and reuses ManualMatrix for the synchronized adjacency table instead of a graph package or dictionary-backed graph. Linear Search uses its own explicit index loop and does not call LINQ First/Contains or a framework search helper. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the taught data-structure algorithms for us.</p>
         </div>
     </section>
 
@@ -724,3 +795,113 @@
         <a href="https://doc.rust-lang.org/std/vec/struct.Vec.html" target="_blank" rel="noreferrer">Rust Vec ↗</a>
     </section>
 </div>
+
+@code {
+    [Parameter]
+    public string? Topic { get; set; }
+
+    private string? NormalizedTopic => NormalizeTopic(Topic);
+
+    private bool HasFocusedTopic =>
+        !string.IsNullOrWhiteSpace(NormalizedTopic) && IsKnownTopic(NormalizedTopic);
+
+    private string? FocusedSection => NormalizedTopic switch
+    {
+        "binary-heap" or "general-heap" => "heap",
+        "matrix-compatibility" => "matrix",
+        "linear-search-complexity" or "linear-vs-binary-search" => "linear-search",
+        _ => NormalizedTopic
+    };
+
+    private string PageTitleText => HasFocusedTopic
+        ? $"{FocusedTitle} — Concepts & Memory"
+        : "Learn the basics — Algorithm Visualizer";
+
+    private string FocusedTitle => NormalizedTopic switch
+    {
+        "visual-vs-memory" => "Visual state vs memory state",
+        "memory" => "Memory, references, Count and Capacity",
+        "identity" => "Value vs identity",
+        "big-o" => "Big-O and algorithmic growth",
+        "queue-stack" => "Queue & Stack: LIFO and FIFO",
+        "bst" => "Binary Search Tree: height and search paths",
+        "bst-balancing" => "BST balancing with Day-Stout-Warren",
+        "binary-heap" => "Binary Heap",
+        "general-heap" => "Generalized d-ary Heap",
+        "avl-balance" => "AVL balancing and rotations",
+        "matrix" => "Matrix: dimensions and memory",
+        "matrix-compatibility" => "Matrix operation compatibility",
+        "graph" => "Graph: vertices, edges and adjacency",
+        "red-black" => "Red-Black Tree invariants",
+        "bubble-sort" => "Bubble Sort",
+        "selection-sort" => "Selection Sort",
+        "insertion-sort" => "Insertion Sort",
+        "merge-sort" => "Merge Sort",
+        "quick-sort" => "Quick Sort",
+        "heap-sort" => "Heap Sort",
+        "linear-search" => "Linear Search",
+        "linear-search-complexity" => "Linear Search complexity",
+        "linear-vs-binary-search" => "Linear Search vs Binary Search",
+        _ => "Concepts & Memory"
+    };
+
+    private string? FocusedLabHref => NormalizedTopic switch
+    {
+        "visual-vs-memory" or "memory" or "identity" => "/structures/queue-stack",
+        "big-o" => "/sorting/bubble",
+        "queue-stack" => "/structures/queue-stack",
+        "bst" or "bst-balancing" => "/structures/bst",
+        "binary-heap" => "/structures/binary-heap",
+        "general-heap" => "/structures/heap",
+        "avl-balance" => "/structures/avl",
+        "matrix" or "matrix-compatibility" => "/structures/matrix",
+        "graph" => "/structures/graph",
+        "red-black" => "/structures/red-black",
+        "bubble-sort" => "/sorting/bubble",
+        "selection-sort" => "/sorting/selection",
+        "insertion-sort" => "/sorting/insertion",
+        "merge-sort" => "/sorting/merge",
+        "quick-sort" => "/sorting/quick",
+        "heap-sort" => "/sorting/heap",
+        "linear-search" or "linear-search-complexity" or "linear-vs-binary-search" => "/search/linear",
+        _ => null
+    };
+
+    private string SectionClass(string section) =>
+        HasFocusedTopic && string.Equals(FocusedSection, section, StringComparison.OrdinalIgnoreCase)
+            ? "concept-section focused-topic"
+            : "concept-section";
+
+    private string CardClass(string topic, string baseClass) =>
+        HasFocusedTopic && string.Equals(NormalizedTopic, topic, StringComparison.OrdinalIgnoreCase)
+            ? $"{baseClass} focused-subtopic"
+            : baseClass;
+
+    private static string? NormalizeTopic(string? topic)
+    {
+        if (string.IsNullOrWhiteSpace(topic))
+        {
+            return null;
+        }
+
+        return topic.Trim().ToLowerInvariant() switch
+        {
+            "lifo-fifo" => "queue-stack",
+            "tree-height" => "bst",
+            "matrices" => "matrix",
+            "heap" => "binary-heap",
+            var value => value
+        };
+    }
+
+    private static bool IsKnownTopic(string topic) => topic switch
+    {
+        "visual-vs-memory" or "memory" or "identity" or "big-o" or
+        "queue-stack" or "bst" or "bst-balancing" or "binary-heap" or
+        "general-heap" or "avl-balance" or "matrix" or "matrix-compatibility" or
+        "graph" or "red-black" or "bubble-sort" or "selection-sort" or
+        "insertion-sort" or "merge-sort" or "quick-sort" or "heap-sort" or
+        "linear-search" or "linear-search-complexity" or "linear-vs-binary-search" => true,
+        _ => false
+    };
+}

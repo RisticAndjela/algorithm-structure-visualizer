@@ -1,9 +1,4 @@
-@inject NavigationManager Navigation
-
-<a href="@Href"
-   @attributes="AdditionalAttributes"
-   @onclick="NavigateToConcept"
-   @onclick:preventDefault="true">
+<a href="@ResolvedHref" @attributes="AdditionalAttributes">
     @ChildContent
 </a>
 
@@ -17,10 +12,33 @@
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
-    private void NavigateToConcept()
+    private string ResolvedHref
     {
-        // A full browser navigation lets the native fragment behavior place the
-        // requested Concepts & Memory section correctly without authored JS.
-        Navigation.NavigateTo(Href, forceLoad: true);
+        get
+        {
+            const string fragmentPrefix = "/learn/concepts#";
+            const string routePrefix = "/learn/concepts/";
+
+            if (Href.StartsWith(fragmentPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return $"{routePrefix}{NormalizeTopic(Href[fragmentPrefix.Length..])}";
+            }
+
+            if (Href.StartsWith(routePrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return $"{routePrefix}{NormalizeTopic(Href[routePrefix.Length..])}";
+            }
+
+            return Href;
+        }
     }
+
+    private static string NormalizeTopic(string topic) => topic.Trim().ToLowerInvariant() switch
+    {
+        "lifo-fifo" => "queue-stack",
+        "tree-height" => "bst",
+        "matrices" => "matrix",
+        "heap" => "binary-heap",
+        var value => value
+    };
 }

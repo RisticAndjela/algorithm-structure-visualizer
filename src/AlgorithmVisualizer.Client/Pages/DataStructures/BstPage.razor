@@ -16,7 +16,7 @@
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="bst-learn-title">One comparison decides the next branch.</h2>
             <p>A BST repeats one rule: smaller goes left, larger goes right. Search, insert, and delete all depend on that ordering. This lab also lets you explicitly rebalance an existing BST so you can compare shape before and after.</p>
-            <ConceptLink Href="/learn/concepts#bst-balancing">Open BST height &amp; balancing →</ConceptLink>
+            <ConceptLink Href="/learn/concepts/bst-balancing">Open BST height &amp; balancing →</ConceptLink>
         </div>
         <div class="learn-grid">
             <article class="learn-card purple"><span>ORDER</span><strong>left &lt; node &lt; right</strong><small>This lab rejects duplicate keys so the invariant stays strict.</small></article>
@@ -50,7 +50,7 @@
             <strong>Before every step:</strong>
             <p>compare the target with the highlighted node and predict whether the next link will be left or right.</p>
         </div>
-        <ConceptLink Href="/learn/concepts#big-o">Why height changes the cost →</ConceptLink>
+        <ConceptLink Href="/learn/concepts/big-o">Why height changes the cost →</ConceptLink>
     </section>
 
     <section class="lab-shell">
@@ -145,8 +145,8 @@
         </div>
 
         <div class="lesson-reference-links" aria-label="Concepts and memory links">
-            <ConceptLink Href="/learn/concepts#bst">BST concepts →</ConceptLink>
-            <ConceptLink Href="/learn/concepts#visual-vs-memory">BST visual vs memory →</ConceptLink>
+            <ConceptLink Href="/learn/concepts/bst">BST concepts →</ConceptLink>
+            <ConceptLink Href="/learn/concepts/visual-vs-memory">BST visual vs memory →</ConceptLink>
         </div>
 
         @if (_activeStateView == StateView.Visual)
@@ -270,7 +270,7 @@
                         <strong>@GetMemoryHeadline(_lastResult)</strong>
                         <p>@GetMemoryExplanation(_lastResult)</p>
                     </div>
-                    <ConceptLink class="popup-learn" Href="/learn/concepts#visual-vs-memory">Visual state vs Memory state →</ConceptLink>
+                    <ConceptLink class="popup-learn" Href="/learn/concepts/visual-vs-memory">Visual state vs Memory state →</ConceptLink>
                 </div>
             }
 
@@ -295,13 +295,13 @@
     private static readonly int[] SampleValues = [50, 30, 70, 20, 40, 60, 80];
     private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
     [
-        new(1, "Build a real BST", ["Insert at least five different values.", "Use both a left and a right branch.", "Notice that the drawing follows the comparison rule."], "/learn/concepts#tree-height"),
-        new(2, "Search: found and missing", ["Search for one value that exists.", "Search for one value that does not exist.", "Compare where each path stops."], "/learn/concepts#big-o"),
-        new(3, "Delete a leaf", ["Build a tree with at least one leaf.", "Delete a node with no children.", "Confirm only its parent link becomes empty."], "/learn/concepts#memory"),
-        new(4, "Delete a node with one child", ["Create a node that has exactly one child.", "Delete that parent node.", "Watch its child move into the old position."], "/learn/concepts#memory"),
-        new(5, "Delete a node with two children", ["Delete a node that has both left and right children.", "Watch the simulator find the in-order successor.", "Open Memory state after the delete."], "/learn/concepts#visual-vs-memory"),
-        new(6, "Try a duplicate key", ["Insert any value once.", "Insert the same value again.", "Confirm the second insert is rejected and Count does not change."], "/learn/concepts#tree-height"),
-        new(7, "Balance a skewed BST", ["Reset and insert increasing values such as 10, 20, 30, 40, 50, 60, 70.", "Run Balance BST and step through vine + compression phases.", "Open Memory state and verify the same node IDs remain while links change."], "/learn/concepts#bst-balancing")
+        new(1, "Build a real BST", ["Insert at least five different values.", "Use both a left and a right branch.", "Notice that the drawing follows the comparison rule."], "/learn/concepts/bst"),
+        new(2, "Search: found and missing", ["Search for one value that exists.", "Search for one value that does not exist.", "Compare where each path stops."], "/learn/concepts/big-o"),
+        new(3, "Delete a leaf", ["Build a tree with at least one leaf.", "Delete a node with no children.", "Confirm only its parent link becomes empty."], "/learn/concepts/memory"),
+        new(4, "Delete a node with one child", ["Create a node that has exactly one child.", "Delete that parent node.", "Watch its child move into the old position."], "/learn/concepts/memory"),
+        new(5, "Delete a node with two children", ["Delete a node that has both left and right children.", "Watch the simulator find the in-order successor.", "Open Memory state after the delete."], "/learn/concepts/visual-vs-memory"),
+        new(6, "Try a duplicate key", ["Insert any value once.", "Insert the same value again.", "Confirm the second insert is rejected and Count does not change."], "/learn/concepts/bst"),
+        new(7, "Balance a skewed BST", ["Reset and insert increasing values such as 10, 20, 30, 40, 50, 60, 70.", "Run Balance BST and step through vine + compression phases.", "Open Memory state and verify the same node IDs remain while links change."], "/learn/concepts/bst-balancing")
     ];
 
     private int? _value;
@@ -845,8 +845,8 @@
 
     private static string GetResultLearnHref(BstOperationResult result) =>
         result.Operation == BstOperationKind.Balance
-            ? "/learn/concepts#bst-balancing"
-            : "/learn/concepts#tree-height";
+            ? "/learn/concepts/bst-balancing"
+            : "/learn/concepts/bst";
 
     private static string GetResultLearnLabel(BstOperationResult result) =>
         result.Operation == BstOperationKind.Balance

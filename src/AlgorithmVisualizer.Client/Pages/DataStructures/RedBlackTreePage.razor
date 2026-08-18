@@ -16,7 +16,7 @@
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="redblack-learn-title">BST ordering stays. Color rules keep paths short.</h2>
             <p>A Red-Black Tree is still a BST: smaller goes left, larger goes right. The extra color rules prevent one root-to-leaf path from becoming arbitrarily longer than another.</p>
-            <ConceptLink Href="/learn/concepts#red-black">Open Red-Black invariants &amp; black-height →</ConceptLink>
+            <ConceptLink Href="/learn/concepts/red-black">Open Red-Black invariants &amp; black-height →</ConceptLink>
         </div>
         <div class="learn-grid">
             <article class="learn-card purple"><span>ROOT</span><strong>Root is always black</strong><small>New nodes start red, but the final root may never remain red.</small></article>
@@ -49,7 +49,7 @@
             <strong>Do not memorize colors as decoration.</strong>
             <p>Ask which invariant is broken: red parent + red child, or unequal black-height after deletion. The parent/uncle/sibling colors tell you whether to recolor, rotate, or move the problem upward.</p>
         </div>
-        <ConceptLink Href="/learn/concepts#red-black">See the invariants →</ConceptLink>
+        <ConceptLink Href="/learn/concepts/red-black">See the invariants →</ConceptLink>
     </section>
 
     <section class="lab-shell">
@@ -139,8 +139,8 @@
         </div>
 
         <div class="lesson-reference-links" aria-label="Concepts and memory links">
-            <ConceptLink Href="/learn/concepts#red-black">Red-Black concepts →</ConceptLink>
-            <ConceptLink Href="/learn/concepts#visual-vs-memory">Red-Black links & memory →</ConceptLink>
+            <ConceptLink Href="/learn/concepts/red-black">Red-Black concepts →</ConceptLink>
+            <ConceptLink Href="/learn/concepts/visual-vs-memory">Red-Black links & memory →</ConceptLink>
         </div>
 
         @if (_activeStateView == StateView.Visual)
@@ -234,7 +234,7 @@
                         <strong>@GetPlainRunSummary(_lastResult)</strong>
                         <p>@GetComplexityExplanation(_lastResult)</p>
                     </div>
-                    <ConceptLink class="popup-learn" Href="/learn/concepts#red-black">Learn how Red-Black keeps h logarithmic →</ConceptLink>
+                    <ConceptLink class="popup-learn" Href="/learn/concepts/red-black">Learn how Red-Black keeps h logarithmic →</ConceptLink>
                 </div>
             }
             else
@@ -251,7 +251,7 @@
                         <strong>@GetMemoryHeadline(_lastResult)</strong>
                         <p>@GetMemoryExplanation(_lastResult)</p>
                     </div>
-                    <ConceptLink class="popup-learn" Href="/learn/concepts#visual-vs-memory">Visual state vs Memory state →</ConceptLink>
+                    <ConceptLink class="popup-learn" Href="/learn/concepts/visual-vs-memory">Visual state vs Memory state →</ConceptLink>
                 </div>
             }
 
@@ -274,12 +274,12 @@
     private static readonly int[] SampleValues = [10, 20, 30, 5, 15, 1, 14];
     private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
     [
-        new(1, "Root must finish black", ["Clear the tree.", "Insert one value.", "Step through the run and verify that the new red node is recolored black because it is the root."], "/learn/concepts#red-black"),
-        new(2, "Repair a red uncle", ["Clear the tree.", "Insert 10, 5, 15, then 1.", "Predict recoloring before any rotation: parent and uncle become black while grandparent becomes red."], "/learn/concepts#red-black"),
-        new(3, "Repair a triangle", ["Clear the tree.", "Insert 10, 30, then 20.", "Watch the first rotation straighten the triangle before the line repair."], "/learn/concepts#red-black"),
-        new(4, "Repair a line", ["Clear the tree.", "Insert 10, 20, then 30.", "Predict that recoloring plus one left rotation makes 20 the root."], "/learn/concepts#red-black"),
-        new(5, "Delete a black node", ["Build 11, 2, 14, 1, 7, 15, 5, 8, 4.", "Delete 1 and inspect the sibling-based fix-up.", "Open Memory state to verify colors and rewired references."], "/learn/concepts#red-black"),
-        new(6, "Search ignores color", ["Build any Red-Black Tree that has recolored or rotated.", "Search for one present value.", "Search for one missing value and verify that both follow only BST key comparisons."], "/learn/concepts#big-o")
+        new(1, "Root must finish black", ["Clear the tree.", "Insert one value.", "Step through the run and verify that the new red node is recolored black because it is the root."], "/learn/concepts/red-black"),
+        new(2, "Repair a red uncle", ["Clear the tree.", "Insert 10, 5, 15, then 1.", "Predict recoloring before any rotation: parent and uncle become black while grandparent becomes red."], "/learn/concepts/red-black"),
+        new(3, "Repair a triangle", ["Clear the tree.", "Insert 10, 30, then 20.", "Watch the first rotation straighten the triangle before the line repair."], "/learn/concepts/red-black"),
+        new(4, "Repair a line", ["Clear the tree.", "Insert 10, 20, then 30.", "Predict that recoloring plus one left rotation makes 20 the root."], "/learn/concepts/red-black"),
+        new(5, "Delete a black node", ["Build 11, 2, 14, 1, 7, 15, 5, 8, 4.", "Delete 1 and inspect the sibling-based fix-up.", "Open Memory state to verify colors and rewired references."], "/learn/concepts/red-black"),
+        new(6, "Search ignores color", ["Build any Red-Black Tree that has recolored or rotated.", "Search for one present value.", "Search for one missing value and verify that both follow only BST key comparisons."], "/learn/concepts/big-o")
     ];
 
     private int? _value;

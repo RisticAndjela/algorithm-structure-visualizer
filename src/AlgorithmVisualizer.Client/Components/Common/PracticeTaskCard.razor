@@ -42,7 +42,7 @@
     <div class="practice-task-actions">
         @if (!string.IsNullOrWhiteSpace(HelpHref))
         {
-            <a href="@HelpHref">Need the concept? →</a>
+            <ConceptLink Href="@HelpHref">Need the concept? →</ConceptLink>
         }
         <div class="practice-task-buttons">
             @if (Completed && HasEvidence)

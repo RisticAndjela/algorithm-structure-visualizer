@@ -1,0 +1,75 @@
+@using AlgorithmVisualizer.Core.Algorithms.Search.Linear
+
+<section class="linear-search-visualization" aria-label="Linear Search visual state">
+    @if (Snapshot.Count == 0)
+    {
+        <div class="empty-state">
+            <strong>The array is empty.</strong>
+            <span>Run the search to see why Linear Search can conclude “not found” with 0 comparisons.</span>
+        </div>
+    }
+    else
+    {
+        <div class="target-banner">
+            <span>TARGET</span>
+            <strong>@Snapshot.Target</strong>
+            <small>Scan from index 0 and stop at the first equal value.</small>
+        </div>
+
+        <div class="array-track" role="list" aria-label="Linear Search array">
+            @for (var index = 0; index < Snapshot.Elements.Length; index++)
+            {
+                var element = Snapshot.Elements[index];
+                <article @key="element.OriginalIndex" class="search-item @StateClass(element.VisualState)" role="listitem">
+                    <span class="index-label">index @index</span>
+                    <strong>@element.Value</strong>
+                    <span class="identity-label">item #@(element.OriginalIndex + 1)</span>
+                    <span class="state-label">@StateLabel(element.VisualState)</span>
+                </article>
+            }
+        </div>
+
+        <div class="visual-guide">
+            <article class="guide-part current"><span>CURRENT INDEX</span><strong>@CurrentText</strong><small>The only value being compared right now.</small></article>
+            <article class="guide-part checked"><span>CHECKED</span><strong>@Snapshot.CheckedCount / @Snapshot.Count</strong><small>Every earlier index has already been ruled out.</small></article>
+            <article class="guide-part result"><span>RESULT</span><strong>@ResultText</strong><small>Linear Search stops immediately when the first match appears.</small></article>
+        </div>
+
+        <div class="legend" aria-label="Linear Search legend">
+            <span><i class="swatch current"></i>Current comparison</span>
+            <span><i class="swatch checked"></i>Checked / no match</span>
+            <span><i class="swatch found"></i>First match</span>
+            <span><i class="swatch unvisited"></i>Not visited yet</span>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public LinearSearchSnapshot Snapshot { get; set; } = default!;
+
+    private string CurrentText => Snapshot.CurrentIndex >= 0
+        ? $"index {Snapshot.CurrentIndex} · value {Snapshot.Elements[Snapshot.CurrentIndex].Value}"
+        : Snapshot.Phase == LinearSearchPhase.Complete ? "Run complete" : "Not started";
+
+    private string ResultText => Snapshot.FoundIndex is int found
+        ? $"Found at index {found}"
+        : (Snapshot.Phase is LinearSearchPhase.NotFound or LinearSearchPhase.Complete) && Snapshot.CheckedCount == Snapshot.Count
+            ? "Not found"
+            : "Still searching";
+
+    private static string StateClass(LinearSearchElementVisualState state) => state switch
+    {
+        LinearSearchElementVisualState.Current => "is-current",
+        LinearSearchElementVisualState.Checked => "is-checked",
+        LinearSearchElementVisualState.Found => "is-found",
+        _ => "is-unvisited"
+    };
+
+    private static string StateLabel(LinearSearchElementVisualState state) => state switch
+    {
+        LinearSearchElementVisualState.Current => "COMPARE",
+        LinearSearchElementVisualState.Checked => "NO MATCH",
+        LinearSearchElementVisualState.Found => "FOUND",
+        _ => "UNVISITED"
+    };
+}

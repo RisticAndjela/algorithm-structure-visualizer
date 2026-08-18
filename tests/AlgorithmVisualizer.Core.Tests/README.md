@@ -124,3 +124,14 @@ The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctnes
 - an already valid Max Heap needs zero Floyd build swaps but still requires all root extractions to sort;
 - equal-value identity can reverse, demonstrating that Heap Sort is not stable;
 - the one-element zero-work boundary and mutation-restart capability flags.
+
+
+## Search coverage
+
+`Algorithms/Search/LinearSearchSimulationTests.cs` verifies:
+
+- first-index best case with one comparison;
+- missing target full scan;
+- duplicate target returns the first occurrence;
+- empty-array zero-comparison boundary;
+- search does not reorder or mutate input values.

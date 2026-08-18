@@ -16,7 +16,7 @@
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="avl-learn-title">BST ordering stays. AVL adds one repair rule.</h2>
             <p>Insert and search follow the same left/right rule as our BST. After a mutation, AVL walks upward, measures balance, and rotates only when a node becomes too heavy on one side.</p>
-            <ConceptLink Href="/learn/concepts#avl-balance">Open AVL balance &amp; rotations →</ConceptLink>
+            <ConceptLink Href="/learn/concepts/avl-balance">Open AVL balance &amp; rotations →</ConceptLink>
         </div>
         <div class="learn-grid">
             <article class="learn-card purple"><span>BALANCE</span><strong>BF = h(left) − h(right)</strong><small>Every node must finish with balance factor −1, 0, or +1.</small></article>
@@ -49,7 +49,7 @@
             <strong>Before a rotation:</strong>
             <p>read the first unbalanced node's BF, then inspect its heavy child. That pair tells you LL, RR, LR, or RL before anything moves.</p>
         </div>
-        <ConceptLink Href="/learn/concepts#avl-balance">How to choose the rotation →</ConceptLink>
+        <ConceptLink Href="/learn/concepts/avl-balance">How to choose the rotation →</ConceptLink>
     </section>
 
     <section class="lab-shell">
@@ -139,8 +139,8 @@
         </div>
 
         <div class="lesson-reference-links" aria-label="Concepts and memory links">
-            <ConceptLink Href="/learn/concepts#avl-balance">AVL concepts →</ConceptLink>
-            <ConceptLink Href="/learn/concepts#visual-vs-memory">AVL links & memory →</ConceptLink>
+            <ConceptLink Href="/learn/concepts/avl-balance">AVL concepts →</ConceptLink>
+            <ConceptLink Href="/learn/concepts/visual-vs-memory">AVL links & memory →</ConceptLink>
         </div>
 
         @if (_activeStateView == StateView.Visual)
@@ -233,7 +233,7 @@
                         <strong>@GetPlainRunSummary(_lastResult)</strong>
                         <p>@GetComplexityExplanation(_lastResult)</p>
                     </div>
-                    <ConceptLink class="popup-learn" Href="/learn/concepts#avl-balance">Learn how AVL keeps h logarithmic →</ConceptLink>
+                    <ConceptLink class="popup-learn" Href="/learn/concepts/avl-balance">Learn how AVL keeps h logarithmic →</ConceptLink>
                 </div>
             }
             else
@@ -249,7 +249,7 @@
                         <strong>@GetMemoryHeadline(_lastResult)</strong>
                         <p>@GetMemoryExplanation(_lastResult)</p>
                     </div>
-                    <ConceptLink class="popup-learn" Href="/learn/concepts#visual-vs-memory">Visual state vs Memory state →</ConceptLink>
+                    <ConceptLink class="popup-learn" Href="/learn/concepts/visual-vs-memory">Visual state vs Memory state →</ConceptLink>
                 </div>
             }
 
@@ -274,12 +274,12 @@
     private static readonly int[] SampleValues = [30, 20, 10, 40, 50, 25, 35];
     private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
     [
-        new(1, "Trigger an LL repair", ["Clear the tree.", "Insert 30, then 20, then 10.", "Predict that 20 becomes the new root before the right rotation."], "/learn/concepts#avl-balance"),
-        new(2, "Trigger an RR repair", ["Clear the tree.", "Insert 10, then 20, then 30.", "Predict that 20 becomes the new root before the left rotation."], "/learn/concepts#avl-balance"),
-        new(3, "Trigger an LR repair", ["Clear the tree.", "Insert 30, then 10, then 20.", "Watch the child rotate first, then the unbalanced ancestor."], "/learn/concepts#avl-balance"),
-        new(4, "Trigger an RL repair", ["Clear the tree.", "Insert 10, then 30, then 20.", "Watch the mirrored two-rotation repair."], "/learn/concepts#avl-balance"),
-        new(5, "Delete and rebalance", ["Build 9, 5, 10, 0, 6, 11, -1, 1, 2.", "Delete 10 and observe an upward rebalance.", "Open Memory state to inspect the rewired references."], "/learn/concepts#visual-vs-memory"),
-        new(6, "Search after rotations", ["Build any AVL tree that has rotated.", "Search for one value that exists.", "Search for one missing value and compare where the balanced paths stop."], "/learn/concepts#big-o")
+        new(1, "Trigger an LL repair", ["Clear the tree.", "Insert 30, then 20, then 10.", "Predict that 20 becomes the new root before the right rotation."], "/learn/concepts/avl-balance"),
+        new(2, "Trigger an RR repair", ["Clear the tree.", "Insert 10, then 20, then 30.", "Predict that 20 becomes the new root before the left rotation."], "/learn/concepts/avl-balance"),
+        new(3, "Trigger an LR repair", ["Clear the tree.", "Insert 30, then 10, then 20.", "Watch the child rotate first, then the unbalanced ancestor."], "/learn/concepts/avl-balance"),
+        new(4, "Trigger an RL repair", ["Clear the tree.", "Insert 10, then 30, then 20.", "Watch the mirrored two-rotation repair."], "/learn/concepts/avl-balance"),
+        new(5, "Delete and rebalance", ["Build 9, 5, 10, 0, 6, 11, -1, 1, 2.", "Delete 10 and observe an upward rebalance.", "Open Memory state to inspect the rewired references."], "/learn/concepts/visual-vs-memory"),
+        new(6, "Search after rotations", ["Build any AVL tree that has rotated.", "Search for one value that exists.", "Search for one missing value and compare where the balanced paths stop."], "/learn/concepts/big-o")
     ];
 
     private int? _value;

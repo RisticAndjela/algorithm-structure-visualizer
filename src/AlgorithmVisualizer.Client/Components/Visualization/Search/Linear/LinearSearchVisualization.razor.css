@@ -1,0 +1,75 @@
+.linear-search-visualization {
+    min-height: 21rem;
+    display: grid;
+    align-content: center;
+    gap: 1.25rem;
+    padding: clamp(1.2rem, 3vw, 2rem);
+    overflow-x: auto;
+    background-image: radial-gradient(#dfe1eb 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+.empty-state { min-height: 14rem; display: grid; place-content: center; gap: .45rem; text-align: center; color: var(--color-text-soft); }
+.empty-state strong { color: var(--color-text); font-size: 1.05rem; }
+
+.target-banner {
+    width: fit-content;
+    justify-self: center;
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    padding: .65rem .9rem;
+    border: 1px solid #d9d3ff;
+    border-radius: .8rem;
+    background: #f8f6ff;
+}
+.target-banner span { color: var(--color-primary); font-size: .72rem; font-weight: 850; letter-spacing: .08em; }
+.target-banner strong { min-width: 2rem; font-size: 1.15rem; text-align: center; }
+.target-banner small { color: var(--color-text-soft); }
+
+.array-track { min-width: max-content; display: flex; align-items: stretch; justify-content: center; gap: .7rem; padding: 1rem .25rem; }
+.search-item {
+    width: 6.4rem; min-height: 7.7rem; display: grid; grid-template-rows: auto 1fr auto auto;
+    align-items: center; justify-items: center; gap: .35rem; padding: .7rem .65rem;
+    border: 1px solid var(--color-border-strong); border-radius: 1rem; color: var(--color-text);
+    background: #fff; box-shadow: var(--shadow-sm);
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+.search-item strong { align-self: center; font-size: 1.75rem; letter-spacing: -.04em; }
+.index-label, .identity-label, .state-label { font-weight: 750; }
+.index-label { color: var(--color-text-muted); font-size: .82rem; }
+.identity-label { color: #676d7d; font-size: .84rem; }
+.state-label { min-height: 1.55rem; display: inline-flex; align-items: center; padding: .2rem .42rem; border-radius: .42rem; color: #777d8d; background: #f3f4f7; font-size: .72rem; letter-spacing: .04em; }
+
+.search-item.is-current { border-color: #7c70ea; background: #f5f2ff; transform: translateY(-.3rem); box-shadow: 0 0 0 4px rgba(104, 88, 210, .09), var(--shadow-sm); }
+.search-item.is-current .state-label { color: #4939b9; background: #e4dfff; }
+.search-item.is-checked { border-color: #cbd0da; background: #f7f8fa; opacity: .76; }
+.search-item.is-checked .state-label { color: #656b78; background: #e9ebef; }
+.search-item.is-found { border-color: #66b8a8; background: #eefaf7; transform: translateY(-.3rem); box-shadow: 0 0 0 4px rgba(54, 160, 140, .09), var(--shadow-sm); }
+.search-item.is-found .state-label { color: #116f65; background: #d0eee7; }
+.search-item.is-unvisited { background: #fff; }
+
+.visual-guide { min-width: min(100%, 36rem); width: min(100%, 52rem); justify-self: center; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem; }
+.guide-part { min-height: 6.4rem; display: grid; align-content: center; gap: .26rem; padding: .9rem 1rem; border: 1px solid var(--color-border); border-radius: .9rem; background: rgba(255,255,255,.94); }
+.guide-part > span { color: var(--color-text-muted); font-size: .72rem; font-weight: 850; letter-spacing: .08em; }
+.guide-part strong { font-size: .98rem; }
+.guide-part small { color: var(--color-text-soft); font-size: .86rem; line-height: 1.42; }
+.guide-part.current { border-color: #d7d0ff; background: #f9f7ff; }
+.guide-part.checked { border-color: #dfe2e8; background: #fafbfc; }
+.guide-part.result { border-color: #cce9e2; background: #f6fcfa; }
+
+.legend { min-width: max-content; display: flex; flex-wrap: wrap; justify-content: center; gap: .65rem 1rem; color: var(--color-text-soft); font-size: .88rem; font-weight: 650; }
+.legend span { display: inline-flex; align-items: center; gap: .42rem; }
+.swatch { width: .78rem; height: .78rem; display: inline-block; border: 1px solid var(--color-border-strong); border-radius: .22rem; background: #fff; }
+.swatch.current { border-color: #7c70ea; background: #ece8ff; }
+.swatch.checked { border-color: #cbd0da; background: #f0f1f4; }
+.swatch.found { border-color: #66b8a8; background: #def4ee; }
+.swatch.unvisited { background: #fff; }
+
+@media (max-width: 760px) {
+    .linear-search-visualization { padding: 1rem; }
+    .array-track { justify-content: flex-start; }
+    .search-item { width: 5.6rem; min-height: 7.2rem; }
+    .visual-guide { grid-template-columns: 1fr; min-width: 18rem; }
+    .target-banner { align-items: flex-start; flex-wrap: wrap; }
+}
