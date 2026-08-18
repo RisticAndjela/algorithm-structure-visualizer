@@ -415,6 +415,10 @@
     background: var(--color-secondary-soft);
 }
 
+.status-pill.live.advanced i {
+    background: #d95151;
+}
+
 .status-pill.planned {
     border: 1px solid var(--color-border);
     color: #8a8f9e;

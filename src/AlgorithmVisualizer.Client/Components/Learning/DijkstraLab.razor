@@ -26,7 +26,7 @@
 
     <header class="module-header">
         <div class="header-copy">
-            <div class="module-eyebrow"><span>WEIGHTED SHORTEST PATH</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <div class="module-eyebrow"><span>SEARCH &amp; TRAVERSAL · ADVANCED</span><span class="separator">/</span><span class="live-status advanced-status"><i></i> Advanced · Interactive</span></div>
             <h1>Dijkstra's Algorithm</h1>
             <p>Reuse the existing Graph representation, compare linear minimum selection with a manual binary min-heap frontier, and watch every edge relaxation update dist[] and parent[].</p>
         </div>
@@ -132,7 +132,10 @@
 
         <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
 
-        <div class="state-tabs" role="tablist"><button type="button" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual State</button><button type="button" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory State</button></div>
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist"><button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual State</button><button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory State</button></div>
+            <p>@(_view == StateView.Visual ? "See tentative distances, the settled region and each relaxation on the graph." : "See dist[], parent[], settled[] and the active minimum-selection frontier behind the picture.")</p>
+        </div>
         <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/dijkstra">Algorithm rule →</ConceptLink><ConceptLink Href="/learn/concepts/dijkstra-relaxation">Relaxation →</ConceptLink><ConceptLink Href="/learn/concepts/dijkstra-complexity">Complexity →</ConceptLink><a href="/structures/binary-heap">Review Binary Heap →</a></div>
 
         <div class="state-surface">
@@ -167,7 +170,7 @@
         </div>
     </section>
 
-    <NextLessonCard Eyebrow="NEXT GRAPH ALGORITHM" Level="02 · Advanced" Title="Topological Sort" Description="Move from shortest paths to dependency order in directed acyclic graphs and compare Kahn's Queue with DFS reverse postorder." Href="/graph-algorithms/topological" LinkLabel="Open Topological Sort" />
+    <NextLessonCard Eyebrow="NEXT SEARCH &amp; TRAVERSAL LESSON" Level="06 · Advanced" Title="Minimum Spanning Tree · Prim & Kruskal" Description="Move from shortest weighted routes to minimum-cost connectivity and compare Prim with Kruskal over the same Graph foundation." Href="/graph-algorithms/mst" LinkLabel="Open Minimum Spanning Tree" />
 </div>
 
 @if (_lastRunPopupOpen && _result is not null)

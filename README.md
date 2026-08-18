@@ -11,7 +11,7 @@ The project is built with **Blazor WebAssembly and C#**. Its goal is not only to
 - what the time complexity means for the current run;
 - how the visual representation differs from the way the data is stored in memory.
 
-The application now has twenty-three fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **Binary Heap (Min/Max)**, **Heap (generalized d-ary)**, **AVL Tree**, **Matrix**, **Graph**, **Red-Black Tree**, **Bubble Sort**, **Selection Sort**, **Insertion Sort**, **Merge Sort**, **Quick Sort**, **Heap Sort**, **Linear Search**, **Binary Search**, **Breadth-First Search (BFS)**, **Depth-First Search (DFS)**, **Dijkstra**, **Topological Sort**, **Minimum Spanning Tree (Prim/Kruskal)**, **Vector**, and **Gradient Descent** as the first two AI/ML foundation labs. The Home page, sidebar, Concepts & Memory navigation, and Next Lesson flow expose these modules one-to-one in the same curriculum order instead of grouping several finished lessons behind one card. Every live lab deep-links to the exact Concepts & Memory topic through dedicated Blazor routes such as `/learn/concepts/linear-search`; the shared C# `ConceptLink` component performs normal Blazor navigation without authored JavaScript or cross-page fragment timing.
+The application now has twenty-three fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **Binary Heap (Min/Max)**, **Heap (generalized d-ary)**, **AVL Tree**, **Vector**, **Matrix**, **Graph**, **Red-Black Tree**, **Bubble Sort**, **Selection Sort**, **Insertion Sort**, **Merge Sort**, **Quick Sort**, **Heap Sort**, **Topological Sort**, **Linear Search**, **Binary Search**, **Breadth-First Search (BFS)**, **Depth-First Search (DFS)**, **Dijkstra**, **Minimum Spanning Tree (Prim/Kruskal)**, and **Gradient Descent**. Vector is taught in Data Structures and then reused as a numerical dependency by Machine Learning. The Home page, sidebar, Concepts & Memory navigation, and Next Lesson flow expose these modules one-to-one in the same curriculum order instead of grouping several finished lessons behind one card. Every live lab deep-links to the exact Concepts & Memory topic through dedicated Blazor routes such as `/learn/concepts/linear-search`; the shared C# `ConceptLink` component performs normal Blazor navigation without authored JavaScript or cross-page fragment timing.
 
 ---
 
@@ -22,27 +22,27 @@ The application now has twenty-three fully implemented learning modules: **Queue
 - Queue
 - Stack
 - Binary Search Tree (BST)
-- AVL Tree
-- Red-Black Tree
-- Heap (generalized d-ary Min/Max)
 - Binary Heap (Min/Max)
+- Heap (generalized d-ary Min/Max)
+- AVL Tree
+- Vector (data structure / numerical structure)
 - Matrix
 - Graph
+- Red-Black Tree
 - Bubble Sort
 - Selection Sort
 - Insertion Sort
 - Merge Sort
 - Quick Sort
 - Heap Sort
+- Topological Sort (Advanced Sorting)
 - Linear Search
 - Binary Search
 - Breadth-First Search (BFS)
 - Depth-First Search (DFS)
-- Dijkstra
-- Topological Sort
-- Minimum Spanning Tree (Prim/Kruskal)
-- Vector (AI/ML foundation)
-- Gradient Descent (AI/ML optimization foundation)
+- Dijkstra (Advanced Search & Traversal)
+- Minimum Spanning Tree (Prim/Kruskal) (Advanced Search & Traversal)
+- Gradient Descent (Machine Learning optimization foundation)
 - shared simulation runtime;
 - play, pause and adjustable simulation speed;
 - manual step forward;
@@ -59,7 +59,8 @@ The application now has twenty-three fully implemented learning modules: **Queue
 - optional result explanation popups;
 - Concepts & Memory learning page;
 - shared learner-facing module chrome in `wwwroot/css/learning-modules.css`, using the mature Queue & Stack / BST / Matrix / Graph visual language for sorting Learn First panels, module headers, tips, reference links, and lesson progression;
-- difficulty-ordered curriculum navigation with reusable `NextLessonCard` links: Queue & Stack → BST → Binary Heap → d-ary Heap → AVL → Matrix → Graph → Red-Black Tree, then Bubble → Selection → Insertion → Merge → Quick → Heap Sort, then Linear Search → Binary Search → BFS → DFS, then Dijkstra → Topological Sort → Minimum Spanning Tree, then AI/ML Foundations continues Vector → Gradient Descent → Linear Regression (planned);
+- one application-wide curriculum hierarchy: Learn → Data Structures → Sorting → Search & Traversal → Machine Learning; advanced live lessons use a red difficulty dot, while planned lessons keep the neutral planned marker; Graph algorithms are classified inside those algorithm tracks rather than forming a separate navigation section: Topological Sort is Sorting; Dijkstra and MST are Search & Traversal;
+- difficulty-ordered curriculum navigation with reusable `NextLessonCard` links: Queue & Stack → BST → Binary Heap → d-ary Heap → AVL → Vector → Matrix → Graph → Red-Black Tree, then Bubble → Selection → Insertion → Merge → Quick → Heap Sort → Topological Sort (Advanced), then Linear Search → Binary Search → BFS → DFS → Dijkstra (Advanced) → Minimum Spanning Tree (Advanced), then Machine Learning starts with Gradient Descent → Linear Regression (planned);
 - exact route-based links from every live lab to the relevant Concepts & Memory topic, plus reverse links from the concept sections back to the matching lesson;
 - BST insert, search, delete, explicit DSW balance, and reset;
 - BST leaf / one-child / two-child deletion simulation;
@@ -136,7 +137,7 @@ The application now has twenty-three fully implemented learning modules: **Queue
 
 All sorting pages now use the same learner-facing design language as the mature data-structure modules instead of a separate sorting-specific landing-page style. Live sorting labs opt into `learning-module-page learning-module-shell`; their **LEARN FIRST** area uses the shared explanation + 2×2 concept-card pattern, followed by the same compact module-header, smart-tip, bordered lab panels, compact Visual/Memory switch with an adjacent explanation, Guided Practice styling, exact Concepts & Memory links, and reusable Next Lesson navigation. Quick Sort and Heap Sort are both live labs using the shared learning shell. `LearningPlaceholder` remains the required shell for future not-yet-implemented lessons so a future implementation replaces only the TODO workspace rather than inventing another design.
 
-The sidebar and Concepts & Memory page use explicit easy → hard ordering. Concepts & Memory starts with shared foundations (Visual vs Memory, memory, identity, Big-O), then presents data-structure lessons in curriculum order, sorting lessons from Bubble through Heap Sort, and the search/traversal track progressing from Linear Search to Binary Search, BFS, and DFS. Dedicated topic routes such as `/learn/concepts/bst`, `/learn/concepts/matrix`, `/learn/concepts/heap-sort`, and `/learn/concepts/linear-search` let each module land on the exact explanation it needs without cross-page fragment scrolling. Every lesson page exposes a `NextLessonCard`, and the concept sections link back to the corresponding lab.
+The sidebar and Concepts & Memory page use explicit easy → hard ordering. Concepts & Memory starts with shared foundations (Visual vs Memory, memory, identity, Big-O), then presents data-structure lessons in curriculum order, sorting lessons from Bubble through Heap Sort and advanced Topological Sort, then the search/traversal track progressing from Linear Search to Binary Search, BFS, DFS, advanced Dijkstra, and advanced Minimum Spanning Tree. Dedicated topic routes such as `/learn/concepts/bst`, `/learn/concepts/matrix`, `/learn/concepts/heap-sort`, and `/learn/concepts/linear-search` let each module land on the exact explanation it needs without cross-page fragment scrolling. Every lesson page exposes a `NextLessonCard`, and the concept sections link back to the corresponding lab.
 
 ### Bubble Sort module details
 
@@ -212,9 +213,9 @@ All currently planned base data-structure modules in the specification are now r
 
 #### Sorting algorithms
 
-All six sorting lessons in the current curriculum are live: Bubble, Selection, Insertion, Merge, Quick, and Heap Sort.
+All seven sorting lessons in the current curriculum are live: Bubble, Selection, Insertion, Merge, Quick, Heap Sort, and advanced Topological Sort.
 
-Linear Search, Binary Search, BFS, DFS, Dijkstra, Topological Sort, and Minimum Spanning Tree are live. BFS/DFS reuse the existing Graph representation and manual Queue/Stack foundations; Dijkstra reuses the same Graph and adds manual linear-minimum and binary-min-heap priority selection over non-negative weighted edges; Topological Sort reuses the same directed Graph with Kahn indegree/FIFO and DFS reverse-postorder variants.
+Linear Search, Binary Search, BFS, DFS, advanced Dijkstra, and advanced Minimum Spanning Tree are live in Search & Traversal. Topological Sort is live as the advanced final Sorting lesson. BFS/DFS reuse the existing Graph representation and manual Queue/Stack foundations; Dijkstra reuses the same Graph and adds manual linear-minimum and binary-min-heap priority selection over non-negative weighted edges; Topological Sort reuses the same directed Graph with Kahn indegree/FIFO and DFS reverse-postorder variants.
 
 ---
 
@@ -1412,7 +1413,7 @@ The structure foundation includes our custom Queue, Stack, BST, AVL, Red-Black, 
 
 **Matrix: implemented as the pre-Graph row-major module with direct cell editing, bulk custom-value input with automatic dimension detection, arithmetic, multiplication, transpose, powers, determinant, minors/cofactors, elementary row operations, REF/RREF/rank, inverse, equation solving, graph-adjacency presets, Visual/Memory views, a row-list-first memory explanation with expandable real `double[]` backing storage, continuously auto-tracked guided practice with optional Start/Restart setup and active progress, and automatic three-view Last Run explanations.**
 
-The project now has reusable manual linear structures, three reusable manual tree foundations, two reusable heap views of the same family, a reusable Matrix foundation, a live reusable Graph structure, complete BFS/DFS traversal labs, a complete Dijkstra weighted-shortest-path lab, a complete Topological Sort dependency-order lab, a complete Prim/Kruskal MST lab, live AI/ML Vector and Gradient Descent foundation labs, and six complete sorting labs: Bubble Sort, Selection Sort, Insertion Sort, Merge Sort, Quick Sort, and Heap Sort.
+The project now has reusable manual linear structures, three reusable manual tree foundations, two reusable heap views of the same family, a reusable Matrix foundation, a live reusable Graph structure, complete BFS/DFS traversal labs, a complete Dijkstra weighted-shortest-path lab, a complete Topological Sort dependency-order lab, a complete Prim/Kruskal MST lab, a live Vector data-structure lab plus the Gradient Descent Machine Learning foundation, and seven complete Sorting lessons: Bubble Sort, Selection Sort, Insertion Sort, Merge Sort, Quick Sort, Heap Sort, and advanced Topological Sort.
 
 ### Matrix memory visualization
 
@@ -1447,7 +1448,7 @@ Every completed Graph action now has a learner-facing explanation layer. The Las
 
 ## Topological Sort dependency ordering
 
-Topological Sort is the second live advanced graph-algorithm lab and reuses the existing `GraphSnapshot`. The input must be directed; weighted directed graphs are accepted but weights are ignored because only dependency direction matters. **Basic · Kahn Queue** computes `indegree[]`, enqueues every zero-in-degree vertex in a head-index FIFO backed by the project `ManualDynamicArray<int>`, emits one ready vertex and decrements outgoing neighbors. **Advanced · DFS Postorder** uses recursive white/gray/black visitation, treats any gray-to-gray edge as a cycle, stores finish order in a manual postorder buffer and reverses that buffer only after a cycle-free traversal. Both variants are `O(V + E)` time and `O(V)` extra state, never mutate the source Graph, and reject cyclic input as having no valid ordering. The Client adds Visual/Memory state, DAG prediction, Last Run explanation, behavior-based auto-practice and SQLite-backed evidence snapshots.
+Topological Sort is the live advanced graph-ordering lab classified as the final **Sorting** lesson, and it reuses the existing `GraphSnapshot`. The input must be directed; weighted directed graphs are accepted but weights are ignored because only dependency direction matters. **Basic · Kahn Queue** computes `indegree[]`, enqueues every zero-in-degree vertex in a head-index FIFO backed by the project `ManualDynamicArray<int>`, emits one ready vertex and decrements outgoing neighbors. **Advanced · DFS Postorder** uses recursive white/gray/black visitation, treats any gray-to-gray edge as a cycle, stores finish order in a manual postorder buffer and reverses that buffer only after a cycle-free traversal. Both variants are `O(V + E)` time and `O(V)` extra state, never mutate the source Graph, and reject cyclic input as having no valid ordering. The Client adds Visual/Memory state, DAG prediction, Last Run explanation, behavior-based auto-practice and SQLite-backed evidence snapshots.
 
 ## Linear Search
 
@@ -1502,25 +1503,26 @@ Breadth-First Search and Depth-First Search are now live graph-search modules at
 - No project-owned JavaScript, framework `Queue<T>`/`Stack<T>`, graph package, or LINQ traversal implements BFS/DFS behavior.
 
 
-## AI / ML Phase 1 — Vector foundation
+## Data Structures — Vector
 
-Route: `/ml-foundations/vector`
+Route: `/structures/vector`
+Client page: `Pages/DataStructures/VectorPage.razor`
 
 Core namespace: `AlgorithmVisualizer.Core.DataStructures.Vector`
 
-Vector is the first live AI/ML foundation module. `ManualVector` owns contiguous project-managed `double[]` storage and does not delegate the taught mathematics to `System.Numerics.Vector<T>`, LINQ vector helpers, or a numerical library. `VectorSimulation` publishes each component read, contribution, accumulator update, and result write through the existing simulation runtime.
+Vector is a live Data Structures module and reusable numerical foundation. `ManualVector` owns contiguous project-managed `double[]` storage and does not delegate the taught mathematics to `System.Numerics.Vector<T>`, LINQ vector helpers, or a numerical library. `VectorSimulation` publishes each component read, contribution, accumulator update, and result write through the existing simulation runtime.
 
-Implemented operations: addition, subtraction, scalar multiplication, Hadamard product, dot product, L1 norm, L2 norm, L2 normalization, Euclidean distance, Manhattan distance, and cosine similarity. Equal-dimension preconditions are explicit, zero-vector normalization is rejected, and cosine similarity rejects zero-length operands. The Client provides Visual/Memory state, prediction, playback, Last Run explanations, behavior-based auto-complete practice, and SQLite-backed evidence. Gradient Descent now reuses this Core for gradient L2 norm, learning-rate scaling and parameter subtraction. Upcoming regression, KNN, K-Means, and PCA modules should continue reusing the same primitives rather than cloning vector loops.
+Implemented operations: addition, subtraction, scalar multiplication, Hadamard product, dot product, L1 norm, L2 norm, L2 normalization, Euclidean distance, Manhattan distance, and cosine similarity. Equal-dimension preconditions are explicit, zero-vector normalization is rejected, and cosine similarity rejects zero-length operands. The Client follows the beginner-first learning shell: two compact A/B editors, four starter operations (add, dot product, L2 length, Euclidean distance), progressive disclosure for the remaining tools, prediction, playback before the Visual/Memory switch, concise run metrics, concrete Vector-use connections, Last Run explanations, behavior-based auto-complete practice, and SQLite-backed evidence. Vector has no fake implementation-choice panel because there is only one taught manual storage implementation. Gradient Descent reuses this Core for gradient L2 norm, learning-rate scaling and parameter subtraction. Machine Learning modules such as Gradient Descent, regression, KNN, K-Means, and PCA should continue reusing the same primitives rather than cloning vector loops.
 
 
-## AI / ML Phase 1 — Gradient Descent
+## Machine Learning — Gradient Descent
 
 Route: `/ml-foundations/gradient-descent`
 
 Core namespace: `AlgorithmVisualizer.Core.MachineLearning.Optimization.GradientDescent`
 
-Gradient Descent is the second live AI/ML foundation module. It minimizes the transparent convex objective `J(theta) = 1/2 * Σ curvature[i] * (theta[i] - target[i])²`, which keeps the optimization mechanics visible before a supervised model is introduced. The objective-specific loss and analytical gradient use explicit C# loops. The optimizer then **reuses the existing `VectorSimulation`** for L2 gradient norm, `eta * gradient`, and `theta - eta*gradient`, so the ML layer does not duplicate Vector arithmetic.
+Gradient Descent is the first live Machine Learning module. It minimizes the transparent convex objective `J(theta) = 1/2 * Σ curvature[i] * (theta[i] - target[i])²`, which keeps the optimization mechanics visible before a supervised model is introduced. The objective-specific loss and analytical gradient use explicit C# loops. The optimizer then **reuses the existing `VectorSimulation`** for L2 gradient norm, `eta * gradient`, and `theta - eta*gradient`, so the ML layer does not duplicate Vector arithmetic.
 
-The Client exposes the established **Learn First → Build → Predict → Watch → Visual/Memory → Explain → Guided Practice** workflow. Basic mode uses a fixed learning rate; Advanced mode uses inverse learning-rate decay. Runs may converge by gradient tolerance, stop at the iteration budget, or trigger a controlled divergence guard after repeated loss growth. Visual State shows the two-parameter loss landscape and committed optimization path plus theta/gradient/scaled-gradient/next-theta vectors. Memory State shows aligned vector slots and conceptual double offsets. Configuration edits require a fresh run because a timeline represents one stable objective and optimizer setup.
+The Client follows the same global lesson order as the rest of the application: **Learn First → header → tip → implementation choice → Build → Predict → Watch → Visual/Memory → When it fits → Guided Practice → Next Lesson**. Basic mode uses a fixed learning rate; Advanced mode uses inverse learning-rate decay. The default Build step now shows only the example, starting point and step size; iteration budget, tolerance and decay are progressively disclosed as advanced settings so the first run is not overloaded with optimizer terminology. Runs may converge by gradient tolerance, stop at the iteration budget, or trigger a controlled divergence guard after repeated loss growth. Visual State shows the two-parameter loss landscape and committed optimization path plus theta/gradient/scaled-gradient/next-theta vectors. Memory State shows aligned vector slots and conceptual double offsets. Configuration edits require a fresh run because a timeline represents one stable objective and optimizer setup.
 
 Seven behavior-based practice tasks cover loss reduction, gradient-tolerance convergence, controlled divergence, narrow-valley sensitivity, the full iteration-budget stop, learning-rate decay, and convergence to a non-zero target. The Core is additionally tested with a three-parameter objective so the drawn 2D lesson does not become a 2D-only optimizer. Completion evidence is persisted through the existing SQLite-backed practice store. Linear Regression is linked as the next planned model and explicitly remains a TODO placeholder rather than fake interactivity.

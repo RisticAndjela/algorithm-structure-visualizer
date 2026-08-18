@@ -156,15 +156,16 @@
 
         <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
 
-        <div class="learning-controls">
-            <div class="state-tabs">
-                <button class="@(_view == StateView.Visual ? "active" : "")" @onclick="() => SetStateView(StateView.Visual)">Visual state</button>
-                <button class="@(_view == StateView.Memory ? "active" : "")" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist">
+                <button role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : "")" @onclick="() => SetStateView(StateView.Visual)">Visual State</button>
+                <button role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : "")" @onclick="() => SetStateView(StateView.Memory)">Memory State</button>
             </div>
-            <div class="lesson-reference-links" aria-label="Graph learning links">
-                <ConceptLink Href="/learn/concepts/graph">Graph concepts →</ConceptLink>
-                <ConceptLink Href="/learn/concepts/visual-vs-memory">Concepts &amp; memory →</ConceptLink>
-            </div>
+            <p>@(_view == StateView.Visual ? "See vertices and edges in the teaching canvas." : "See the same graph through adjacency storage and matrix/list memory views.")</p>
+        </div>
+        <div class="lesson-reference-links" aria-label="Graph learning links">
+            <ConceptLink Href="/learn/concepts/graph">Graph concepts →</ConceptLink>
+            <ConceptLink Href="/learn/concepts/visual-vs-memory">Concepts &amp; memory →</ConceptLink>
         </div>
 
         <section class="state-panel">
@@ -229,7 +230,7 @@
     <NextLessonCard Title="Red-Black Tree"
                     Description="Finish the structure track with the most rule-heavy self-balancing tree in the current curriculum."
                     Href="/structures/red-black"
-                    Level="08 · Advanced"
+                    Level="09 · Advanced"
                     LinkLabel="Open Red-Black lesson" />
 
 </div>

@@ -1,6 +1,6 @@
 # Manual Vector
 
-`ManualVector` is the mathematical-vector foundation for the AI/ML learning track.
+`ManualVector` is the project-owned numerical Vector data structure. It is taught in the Data Structures track and reused later by Machine Learning.
 
 ## Storage rule
 
@@ -24,4 +24,4 @@ Binary operations that pair components require equal dimensions. L2 normalizatio
 
 ## Why this module exists
 
-The same concepts are reused by later ML modules: Gradient Descent parameter vectors, linear/logistic model weights, KNN distances, K-Means centroids, PCA projections, and neural-network tensors at a larger scale.
+Vector is useful on its own whenever ordered numeric components must keep stable indexes. The same Core implementation is then reused by later ML modules: Gradient Descent parameter vectors, linear/logistic model weights, KNN distances, K-Means centroids, PCA projections, and neural-network tensors at a larger scale.

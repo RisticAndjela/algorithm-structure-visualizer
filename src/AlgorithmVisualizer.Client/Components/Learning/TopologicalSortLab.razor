@@ -26,7 +26,7 @@
 
     <header class="module-header">
         <div class="header-copy">
-            <div class="module-eyebrow"><span>DEPENDENCY ORDER</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <div class="module-eyebrow"><span>SORTING · ADVANCED</span><span class="separator">/</span><span class="live-status advanced-status"><i></i> Advanced · Interactive</span></div>
             <h1>Topological Sort</h1>
             <p>Reuse the same Graph representation and compare Kahn's indegree Queue with DFS reverse postorder. Both are real O(V + E) C# implementations and both reject cycles.</p>
         </div>
@@ -121,7 +121,10 @@
 
         <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
 
-        <div class="state-tabs" role="tablist"><button type="button" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual State</button><button type="button" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory State</button></div>
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist"><button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual State</button><button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory State</button></div>
+            <p>@(_view == StateView.Visual ? "See which dependencies are ready, emitted or blocked by a cycle." : "See indegree/Queue state for Kahn or color/postorder state for the DFS variant.")</p>
+        </div>
         <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/topological-sort">Algorithm rule →</ConceptLink><ConceptLink Href="/learn/concepts/topological-kahn">Kahn Queue →</ConceptLink><ConceptLink Href="/learn/concepts/topological-dfs">DFS postorder →</ConceptLink><ConceptLink Href="/learn/concepts/topological-cycle">Cycle detection →</ConceptLink></div>
 
         <div class="state-surface">
@@ -156,7 +159,7 @@
         </div>
     </section>
 
-    <NextLessonCard Eyebrow="NEXT GRAPH ALGORITHM" Level="Advanced" Title="Minimum Spanning Tree · Prim & Kruskal" Description="Compare cut-based growth with globally sorted edges and Union-Find over the same undirected Graph foundation." Href="/graph-algorithms/mst" LinkLabel="Open Minimum Spanning Tree" />
+    <NextLessonCard Eyebrow="NEXT TRACK · SEARCH &amp; TRAVERSAL" Level="01 · Beginner" Title="Linear Search" Description="The sorting track is complete. Start search with the simplest rule: inspect values from left to right until the target is found." Href="/search/linear" LinkLabel="Open Linear Search" />
 </div>
 
 @if (_lastRunPopupOpen && _result is not null)

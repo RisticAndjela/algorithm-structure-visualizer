@@ -527,6 +527,25 @@ button:disabled {
     white-space: nowrap;
 }
 
+
+.state-tabs-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 1rem 0 .7rem;
+    padding: .15rem .05rem;
+}
+
+.state-tabs-row > p {
+    max-width: 48rem;
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: .95rem;
+    line-height: 1.5;
+    text-align: right;
+}
+
 .learning-controls {
     display: flex;
     align-items: center;
@@ -981,11 +1000,14 @@ button:disabled {
 
 @media (max-width: 900px) {
     .learning-controls,
+    .state-tabs-row,
     .practice-heading,
     .last-run-heading {
         align-items: flex-start;
         flex-direction: column;
     }
+
+    .state-tabs-row > p { text-align: left; }
 
     .concept-links,
     .lab-options {

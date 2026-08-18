@@ -145,7 +145,10 @@
 
         <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
 
-        <div class="state-tabs" role="tablist"><button type="button" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual State</button><button type="button" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory State</button></div>
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist"><button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual State</button><button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory State</button></div>
+            <p>@(_view == StateView.Visual ? "See the visit order, current vertex and frontier directly on the graph." : $"See the same run as visited state plus the {FrontierRule} used to choose what comes next.")</p>
+        </div>
         <div class="lesson-reference-links"><ConceptLink Href="@ConceptHref">Traversal rule →</ConceptLink><ConceptLink Href="@ComplexityHref">Complexity →</ConceptLink><a href="/structures/queue-stack">Review Queue &amp; Stack →</a></div>
 
         <div class="state-surface">

@@ -175,6 +175,12 @@
     box-shadow: 0 0 0 3px rgba(40, 166, 143, .1);
 }
 
+.nav-status.advanced,
+.status-dot.advanced {
+    background: #d95151;
+    box-shadow: 0 0 0 3px rgba(217, 81, 81, .1);
+}
+
 .nav-status.soon,
 .status-dot.soon {
     border: 1px solid #bdc1cc;

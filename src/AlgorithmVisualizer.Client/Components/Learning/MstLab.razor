@@ -26,7 +26,7 @@
 
     <header class="module-header">
         <div class="header-copy">
-            <div class="module-eyebrow"><span>MINIMUM SPANNING TREE</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <div class="module-eyebrow"><span>SEARCH &amp; TRAVERSAL · ADVANCED</span><span class="separator">/</span><span class="live-status advanced-status"><i></i> Advanced · Interactive</span></div>
             <h1>Prim &amp; Kruskal</h1>
             <p>Reuse the existing Graph representation and compare a manual min-heap cut frontier with a manually sorted edge list plus Union-Find.</p>
         </div>
@@ -129,7 +129,10 @@
             </div>
         </div>
         <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
-        <div class="state-tabs" role="tablist"><button type="button" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual State</button><button type="button" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory State</button></div>
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist"><button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual State</button><button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory State</button></div>
+            <p>@(_view == StateView.Visual ? "See chosen, rejected and candidate edges directly on the graph." : "See the frontier or Union-Find state that explains why each edge is accepted or rejected.")</p>
+        </div>
         <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/mst">MST rule →</ConceptLink><ConceptLink Href="/learn/concepts/mst-prim">Prim cut →</ConceptLink><ConceptLink Href="/learn/concepts/mst-kruskal">Kruskal + DSU →</ConceptLink><ConceptLink Href="/learn/concepts/mst-complexity">Complexity →</ConceptLink></div>
         <div class="state-surface">
             @if (_view == StateView.Visual)
@@ -163,7 +166,7 @@
         </div>
     </section>
 
-    <NextLessonCard Eyebrow="NEXT TRACK · AI / ML FOUNDATIONS" Level="Phase 1 · Foundation" Title="Vector" Description="The classical graph track is complete. Start the AI/ML extension with manual vector arithmetic that later powers optimization, regression, KNN, K-Means and PCA." Href="/ml-foundations/vector" LinkLabel="Open Vector foundation" />
+    <NextLessonCard Eyebrow="NEXT TRACK · MACHINE LEARNING" Level="01 · Foundation" Title="Gradient Descent" Description="The Search & Traversal track is complete. Start Machine Learning with one optimization rule: follow the slope, control the step size and stop when the slope is small." Href="/ml-foundations/gradient-descent" LinkLabel="Open Gradient Descent" />
 </div>
 
 @if (_lastRunPopupOpen && _result is not null)

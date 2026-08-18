@@ -1,19 +1,19 @@
 @page "/ml-foundations/linear-regression"
 
-<PageTitle>Linear Regression — AI/ML Foundations — Algorithm Visualizer</PageTitle>
+<PageTitle>Linear Regression — Machine Learning — Algorithm Visualizer</PageTitle>
 
 <LearningPlaceholder
-    Eyebrow="AI / ML PHASE 1"
+    Eyebrow="MACHINE LEARNING · 02"
     Title="Linear Regression"
-    Description="The next model will combine feature vectors, prediction error and the live Gradient Descent foundation to learn weights instead of duplicating optimizer logic."
+    Description="The next lesson will fit a line to examples, measure prediction error and reuse the live Gradient Descent optimizer to improve the model."
     Complexity="Θ(k · m · n)"
-    ComplexityNote="planned training loop: k updates, m samples, n features"
-    Concepts="prediction · residual · mean squared error · weights · bias · Gradient Descent"
-    LearnTitle="Fit a line by minimizing prediction error."
-    LearnSummary="Linear Regression will be the first supervised model: compute predictions from vectors, measure residuals, then reuse Gradient Descent to move the weights."
-    LearnCards="PREDICT|ŷ = w·x + b|A feature vector and parameter vector meet in a dot product.;;ERROR|Residual = prediction − target|Each sample tells us how wrong the current model is.;;LOSS|MSE aggregates errors|The training objective summarizes many residuals into one score.;;TRAIN|Reuse Gradient Descent|The model supplies the gradient; the existing optimizer pattern moves parameters."
+    ComplexityNote="planned: k training steps, m examples, n input values"
+    Concepts="prediction · error · mean squared error · weights · Gradient Descent"
+    LearnTitle="Fit a line by making prediction error smaller."
+    LearnSummary="Keep the idea simple: make a prediction, compare it with the real answer, measure the error, then use Gradient Descent to improve the parameters."
+    LearnCards="PREDICT|Make one estimate|The model combines input values with weights to produce a number.;;COMPARE|Check prediction vs target|The difference tells us how wrong this example is.;;MEASURE|Combine errors into one loss|Mean squared error summarizes the training error.;;IMPROVE|Reuse Gradient Descent|The model provides the loss and gradient; the existing optimizer moves the parameters."
     ConceptHref="/learn/concepts/linear-regression"
-    TipTitle="Do not hide the optimizer inside the model."
-    TipText="The Linear Regression lesson should expose model-specific prediction and gradient logic while reusing the Vector and Gradient Descent foundations already learned."
-    FocusText="Keep prediction, residual, loss and parameter update visually separate so training is understandable rather than a single opaque Fit() call."
-    PromptText="Which part belongs to the model, and which part belongs to the optimizer?" />
+    TipTitle="Separate the model from the optimizer."
+    TipText="Linear Regression should explain prediction and error. Gradient Descent should remain the reusable part that updates parameters."
+    FocusText="Show prediction → error → loss → update as separate visible steps."
+    PromptText="Which step measures the model, and which step changes it?" />

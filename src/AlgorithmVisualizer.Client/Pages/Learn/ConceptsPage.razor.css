@@ -65,6 +65,23 @@
     font-weight: 750;
 }
 
+
+.concept-jump a.advanced-link {
+    display: inline-flex;
+    align-items: center;
+    gap: .38rem;
+}
+
+.concept-jump a.advanced-link::before {
+    content: "";
+    width: .42rem;
+    height: .42rem;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: #d95151;
+    box-shadow: 0 0 0 3px rgba(217, 81, 81, .10);
+}
+
 .concept-section {
     scroll-margin-top: 1rem;
     display: grid;

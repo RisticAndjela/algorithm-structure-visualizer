@@ -234,17 +234,22 @@ The Server owns persistence only. It must not contain sorting, tree, graph, heap
 This preserves the architectural rule: Core teaches algorithms, Client visualizes them, and Server persists learning state.
 
 
-## Vector / AI-ML numerical foundation
+## Vector / reusable numerical data structure
 
-`DataStructures/Vector/ManualVector` is a reusable numerical primitive stored in a contiguous project-owned `double[]`. It belongs in Core because later ML algorithms need vector arithmetic independently of rendering. `VectorSimulation` owns renderer-neutral state for aligned component reads, result writes and scalar reductions. The Client owns text parsing, operation selection, Visual/Memory presentation, prediction, playback review, practice state and SQLite evidence.
+`DataStructures/Vector/ManualVector` is a reusable numerical data structure stored in a contiguous project-owned `double[]`. The learner-facing route is `/structures/vector` and its live Client page lives under `Pages/DataStructures/VectorPage.razor`; Machine Learning consumes it as a dependency rather than presenting Vector as a separate ML lesson. `VectorSimulation` owns renderer-neutral state for aligned component reads, result writes and scalar reductions. The Client owns text parsing, operation selection, Visual/Memory presentation, prediction, playback review, practice state and SQLite evidence.
 
 The Vector module must remain dependency-light: no numerical package, `System.Numerics.Vector<T>`, or framework search/aggregation helper may replace the explicit loops being taught. Gradient Descent now reuses this Core for L2 norm, scalar multiplication and subtraction; later regression, KNN, K-Means and PCA modules should follow the same composition rule.
 
 
-## Gradient Descent / ML optimization boundary
+## Gradient Descent / Machine Learning optimization boundary
 
 `MachineLearning/Optimization/GradientDescent/GradientDescentSimulation` owns optimizer-specific orchestration and the analytical gradient of the lesson's convex quadratic objective. It does **not** own generic vector arithmetic. An internal immediate `ISimulationRuntime` lets it call the existing renderer-neutral `VectorSimulation` for gradient L2 norm, scalar multiplication and subtraction without replaying nested Vector lesson steps into the outer Gradient Descent timeline.
 
 The live Client route `/ml-foundations/gradient-descent` owns input parsing, Basic/Advanced variant selection, categorical prediction, loss-landscape/path rendering, Visual/Memory presentation, playback history, popup explanations and persisted practice evidence. The Core remains renderer-neutral. Runtime working state is O(n); Client-visible review history intentionally stores O(k·n) snapshots to support rewind and visualization.
 
-Linear Regression at `/ml-foundations/linear-regression` is currently a planned `LearningPlaceholder`. When implemented, model-specific prediction/loss/gradient logic should compose with the existing Vector and Gradient Descent foundations rather than moving numerical behavior into Client or Server code.
+Linear Regression at `/ml-foundations/linear-regression` is currently a planned `LearningPlaceholder`. When implemented, model-specific prediction/loss/gradient logic should compose with the Data Structures Vector foundation and the existing Gradient Descent optimizer rather than moving numerical behavior into Client or Server code.
+
+
+## Curriculum classification boundary
+
+The UI does not expose a separate graph-algorithm curriculum track. `Topological Sort` is classified under **Sorting**, while `Dijkstra` and `Minimum Spanning Tree` are classified under **Search & Traversal**. Their existing graph-algorithm routes and reusable Graph-based Core implementations remain unchanged; the red Advanced status marker communicates difficulty without duplicating navigation categories.

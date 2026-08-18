@@ -50,9 +50,10 @@
                 <a href="#binary-heap">Binary Heap</a>
                 <a href="#general-heap">d-ary Heap</a>
                 <a href="#avl-balance">AVL</a>
+                <a href="#vector">Vector</a>
                 <a href="#matrix">Matrix</a>
                 <a href="#graph">Graph</a>
-                <a href="#red-black">Red-Black Tree</a>
+                <a class="advanced-link" href="#red-black">Red-Black Tree</a>
             </div>
             <div class="concept-jump-group">
                 <span>SORTING · EASY → HARD</span>
@@ -61,24 +62,20 @@
                 <a href="#insertion-sort">Insertion</a>
                 <a href="#merge-sort">Merge</a>
                 <a href="#quick-sort">Quick</a>
-                <a href="#heap-sort">Heap Sort</a>
+                <a class="advanced-link" href="#heap-sort">Heap Sort</a>
+                <a class="advanced-link" href="#topological-sort">Topological Sort</a>
             </div>
             <div class="concept-jump-group">
-                <span>SEARCH · EASY → HARD</span>
+                <span>SEARCH &amp; TRAVERSAL · EASY → HARD</span>
                 <a href="#linear-search">Linear Search</a>
                 <a href="#binary-search">Binary Search</a>
                 <a href="#bfs">Breadth-First Search</a>
                 <a href="#dfs">Depth-First Search</a>
+                <a class="advanced-link" href="#dijkstra">Dijkstra</a>
+                <a class="advanced-link" href="#mst">Minimum Spanning Tree</a>
             </div>
             <div class="concept-jump-group">
-                <span>GRAPH ALGORITHMS</span>
-                <a href="#dijkstra">Dijkstra</a>
-                <a href="#topological-sort">Topological Sort</a>
-                <a href="#mst">Minimum Spanning Tree</a>
-            </div>
-            <div class="concept-jump-group">
-                <span>AI / ML FOUNDATIONS</span>
-                <a href="#vector">Vector</a>
+                <span>MACHINE LEARNING</span>
                 <a href="#gradient-descent">Gradient Descent</a>
                 <a href="#linear-regression">Linear Regression</a>
             </div>
@@ -407,10 +404,28 @@
         </div>
     </section>
 
+    <section id="vector" class='@SectionClass("vector")'>
+        <div class="section-heading">
+            <span>S6</span>
+            <div><h2>Vector: one ordered dimension of numeric data</h2><p>A vector is an ordered sequence of numbers. Each component has a stable index, so position is part of the structure and cannot be silently rearranged.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article id="vector-memory" class='@CardClass("vector-memory", "concept-card")'><span class="term">DOUBLE[]</span><h3>One mathematical vector can live in contiguous memory</h3><p>Our <code>ManualVector</code> stores every component in a project-owned raw <code>double[]</code>. Component <code>i</code> maps directly to slot <code>i</code>; the lab shows a conceptual 8-byte offset for each double.</p><div class="example"><strong>Dimension 3:</strong> values [2, -1, 3] occupy slots 0, 1 and 2 in that exact order.</div></article>
+            <article id="vector-dot-product" class='@CardClass("vector-dot-product", "concept-card")'><span class="term queue">DOT PRODUCT</span><h3>Multiply matching components, then reduce to one scalar</h3><p><code>A·B = Σ A[i]B[i]</code>. The dimensions must match because each position is paired with the same semantic position in the other vector.</p><div class="example"><strong>ML bridge:</strong> a linear model score starts from the dot product between feature vector x and weight vector w.</div></article>
+            <article id="vector-norms" class='@CardClass("vector-norms", "concept-card")'><span class="term">NORMS</span><h3>L1 and L2 measure magnitude in different ways</h3><p><code>||A||₁ = Σ|A[i]|</code>. <code>||A||₂ = √ΣA[i]²</code>. L2 normalization divides every component by the L2 norm and is undefined for the zero vector.</p><div class="example"><strong>[3,4]:</strong> L2 norm = 5, normalized vector = [0.6, 0.8].</div></article>
+            <article id="vector-similarity" class='@CardClass("vector-similarity", "concept-card")'><span class="term queue">DISTANCE + ANGLE</span><h3>Euclidean, Manhattan and cosine answer different questions</h3><p>Euclidean measures straight-line distance, Manhattan sums axis-aligned differences, and cosine similarity compares direction through <code>(A·B)/(||A||||B||)</code>.</p><div class="example"><strong>Use case:</strong> KNN can choose a distance metric; embedding systems often care about cosine direction.</div></article>
+            <article id="vector-ml" class='@CardClass("vector-ml", "concept-card")'><span class="term">REUSE</span><h3>Later algorithms reuse vector arithmetic instead of duplicating it</h3><p>Gradient Descent now uses Vector Core for norm, scaling and subtraction. Linear and logistic regression use dot products. KNN and K-Means use distances. PCA projects data onto vector directions.</p><div class="example"><strong>Live reuse:</strong> open Gradient Descent and watch θ − η∇J use the same project-owned vector primitives.</div></article>
+            <article class="concept-card"><span class="term queue">DIMENSION</span><h3>Dimension mismatch is a correctness error</h3><p>Component-wise operations, dot product, distances and cosine similarity require equal dimensions. The lab rejects mismatched inputs rather than truncating the longer vector.</p><div class="example"><strong>Why:</strong> dropping one feature would silently change the meaning of the data.</div></article>
+        </div>
+        <div class="concept-lesson-links"><a href="/structures/vector">Open Vector data-structure lab →</a><a href="/structures/matrix">Continue to Matrix →</a></div>
+    </section>
+
+
+
     <section id="matrix" class='@SectionClass("matrix")'>
         <span id="matrices" class="anchor-target" aria-hidden="true"></span>
         <div class="section-heading">
-            <span>S6</span>
+            <span>S7</span>
             <div><h2>Matrix: dimensions, memory and why it matters</h2><p>A matrix is a rectangular grid of values. The shape is part of the data, and many operations are legal only when dimensions are compatible.</p></div>
         </div>
         <div class="concept-grid two">
@@ -459,55 +474,10 @@
         <div class="concept-lesson-links"><a href="/structures/matrix">Open Matrix lab →</a></div>
     </section>
 
-    <section id="vector" class='@SectionClass("vector")'>
-        <div class="section-heading">
-            <span>ML1</span>
-            <div><h2>Vector: the numerical building block behind ML parameters, features and embeddings</h2><p>A vector is an ordered one-dimensional sequence of numbers. The component index has meaning: feature 0, feature 1, weight 0 and weight 1 cannot be silently swapped.</p></div>
-        </div>
-        <div class="concept-grid two">
-            <article id="vector-memory" class='@CardClass("vector-memory", "concept-card")'><span class="term">DOUBLE[]</span><h3>One mathematical vector can live in contiguous memory</h3><p>Our <code>ManualVector</code> stores every component in a project-owned raw <code>double[]</code>. Component <code>i</code> maps directly to slot <code>i</code>; the lab shows a conceptual 8-byte offset for each double.</p><div class="example"><strong>Dimension 3:</strong> values [2, -1, 3] occupy slots 0, 1 and 2 in that exact order.</div></article>
-            <article id="vector-dot-product" class='@CardClass("vector-dot-product", "concept-card")'><span class="term queue">DOT PRODUCT</span><h3>Multiply matching components, then reduce to one scalar</h3><p><code>A·B = Σ A[i]B[i]</code>. The dimensions must match because each position is paired with the same semantic position in the other vector.</p><div class="example"><strong>ML bridge:</strong> a linear model score starts from the dot product between feature vector x and weight vector w.</div></article>
-            <article id="vector-norms" class='@CardClass("vector-norms", "concept-card")'><span class="term">NORMS</span><h3>L1 and L2 measure magnitude in different ways</h3><p><code>||A||₁ = Σ|A[i]|</code>. <code>||A||₂ = √ΣA[i]²</code>. L2 normalization divides every component by the L2 norm and is undefined for the zero vector.</p><div class="example"><strong>[3,4]:</strong> L2 norm = 5, normalized vector = [0.6, 0.8].</div></article>
-            <article id="vector-similarity" class='@CardClass("vector-similarity", "concept-card")'><span class="term queue">DISTANCE + ANGLE</span><h3>Euclidean, Manhattan and cosine answer different questions</h3><p>Euclidean measures straight-line distance, Manhattan sums axis-aligned differences, and cosine similarity compares direction through <code>(A·B)/(||A||||B||)</code>.</p><div class="example"><strong>Use case:</strong> KNN can choose a distance metric; embedding systems often care about cosine direction.</div></article>
-            <article id="vector-ml" class='@CardClass("vector-ml", "concept-card")'><span class="term">ML FOUNDATION</span><h3>Later algorithms reuse vector arithmetic instead of duplicating it</h3><p>Gradient Descent now uses Vector Core for norm, scaling and subtraction. Linear and logistic regression use dot products. KNN and K-Means use distances. PCA projects data onto vector directions.</p><div class="example"><strong>Live reuse:</strong> open Gradient Descent and watch θ − η∇J use the same project-owned vector primitives.</div></article>
-            <article class="concept-card"><span class="term queue">DIMENSION</span><h3>Dimension mismatch is a correctness error</h3><p>Component-wise operations, dot product, distances and cosine similarity require equal dimensions. The lab rejects mismatched inputs rather than truncating the longer vector.</p><div class="example"><strong>Why:</strong> dropping one feature would silently change the meaning of the data.</div></article>
-        </div>
-        <div class="concept-lesson-links"><a href="/ml-foundations/vector">Open Vector AI/ML foundation lab →</a><a href="/ml-foundations/gradient-descent">Continue to Gradient Descent →</a></div>
-    </section>
-
-    <section id="gradient-descent" class='@SectionClass("gradient-descent")'>
-        <div class="section-heading">
-            <span>ML2</span>
-            <div><h2>Gradient Descent: follow the slope, control the step, stop deliberately</h2><p>Gradient Descent minimizes a differentiable loss by repeatedly moving a parameter vector opposite the gradient. The live lab isolates optimizer behavior on a convex quadratic surface before regression adds model-specific prediction logic.</p></div>
-        </div>
-        <div class="concept-grid two">
-            <article id="gradient-descent-loss" class='@CardClass("gradient-descent-loss", "concept-card")'><span class="term">LOSS</span><h3>The objective turns parameter quality into one scalar</h3><p>The teaching objective is <code>J(θ)=½Σ cᵢ(θᵢ−targetᵢ)²</code>. Positive curvature means one convex minimum exists at <code>target</code>.</p><div class="example"><strong>Why this bowl?</strong> It exposes optimization mechanics without hiding them inside a model API.</div></article>
-            <article id="gradient-descent-update" class='@CardClass("gradient-descent-update", "concept-card")'><span class="term queue">UPDATE</span><h3>Subtract the scaled gradient vector</h3><p><code>θ ← θ − η∇J(θ)</code>. The gradient points toward local increase, so subtraction moves downhill. Component i of every vector refers to the same parameter axis.</p><div class="example"><strong>Reuse:</strong> the live Core calls Vector L2 norm, scalar multiplication and subtraction rather than reimplementing those loops.</div></article>
-            <article id="gradient-descent-learning-rate" class='@CardClass("gradient-descent-learning-rate", "concept-card")'><span class="term">LEARNING RATE η</span><h3>Step size changes behavior even when the gradient is correct</h3><p>A small η can improve loss too slowly to meet the iteration budget. A suitable η converges. An overly large η can overshoot repeatedly and make loss grow.</p><div class="example"><strong>Advanced lab:</strong> learning-rate decay uses <code>ηₜ=η₀/(1+decay·t)</code>.</div></article>
-            <article id="gradient-descent-convergence" class='@CardClass("gradient-descent-convergence", "concept-card")'><span class="term queue">CONVERGENCE</span><h3>A stopping rule makes “done” measurable</h3><p>This lesson converges when <code>||∇J||₂ ≤ tolerance</code>. It can also stop at the maximum iteration count, or classify repeated loss growth as divergence.</p><div class="example"><strong>Important:</strong> hitting max iterations does not necessarily mean the update rule is wrong; η may simply be too small.</div></article>
-            <article class="concept-card"><span class="term">FULL GRADIENT</span><h3>Phase 1 is deterministic before SGD adds sampling noise</h3><p>The current objective computes every gradient component on every update. Stochastic and mini-batch variants belong later with SGD, Momentum and Adam.</p></article>
-            <article class="concept-card"><span class="term queue">COMPLEXITY</span><h3>n parameters per update, k updates per run</h3><p>For this explicit objective, one loss/gradient/update pass is Θ(n), so k updates are Θ(k·n). Working optimizer state is O(n); O(k·n) review history is kept only for educational rewind and plotting.</p></article>
-        </div>
-        <div class="concept-lesson-links"><a href="/ml-foundations/gradient-descent">Open Gradient Descent lab →</a><a href="/ml-foundations/vector">Review Vector foundation →</a></div>
-    </section>
-
-    <section id="linear-regression" class='@SectionClass("linear-regression")'>
-        <div class="section-heading">
-            <span>ML3</span>
-            <div><h2>Linear Regression: planned first supervised model</h2><p>The model will predict a continuous value with a weighted sum, measure residuals, aggregate error with mean squared error, and reuse the existing Gradient Descent foundation for training.</p></div>
-        </div>
-        <div class="concept-grid two">
-            <article class="concept-card"><span class="term">PREDICTION</span><h3>Features and weights meet in a dot product</h3><p><code>ŷ = w·x + b</code>. Vector dimension and index semantics therefore remain part of model correctness.</p></article>
-            <article class="concept-card"><span class="term queue">RESIDUAL</span><h3>Prediction minus target exposes sample error</h3><p>A residual keeps the direction of error; squared error then prevents positive and negative residuals from cancelling.</p></article>
-            <article class="concept-card"><span class="term">TRAINING</span><h3>The model should supply the gradient, not duplicate the optimizer</h3><p>Linear Regression will implement prediction, MSE and their derivatives, then reuse the established Gradient Descent parameter-update pattern.</p></article>
-            <article class="concept-card"><span class="term queue">STATUS</span><h3>The simulation is intentionally still planned</h3><p>The concept route exists so curriculum links are not dead, but no fake interactive Linear Regression behavior is presented before its implementation commit.</p></article>
-        </div>
-        <div class="concept-lesson-links"><a href="/ml-foundations/linear-regression">Preview Linear Regression lesson →</a><a href="/ml-foundations/gradient-descent">Review optimizer foundation →</a></div>
-    </section>
 
     <section id="graph" class='@SectionClass("graph")'>
         <div class="section-heading">
-            <span>S7</span>
+            <span>S8</span>
             <div><h2>Graph: vertices, edges and adjacency</h2><p>A graph models relationships. Vertices are entities; edges describe which entities are connected and may also carry direction or weight.</p></div>
         </div>
         <div class="concept-grid two">
@@ -523,7 +493,7 @@
 
     <section id="red-black" class='@SectionClass("red-black")'>
         <div class="section-heading">
-            <span>S8</span>
+            <span>S9</span>
             <div><h2>Red-Black invariants and black-height</h2><p>Red-Black Tree keeps the same BST ordering, but it controls shape indirectly through color rules instead of AVL's exact balance factor.</p></div>
         </div>
         <div class="concept-grid two">
@@ -790,6 +760,24 @@
         <div class="concept-lesson-links"><a href="/sorting/heap">Open the Heap Sort lab →</a><a href="/structures/binary-heap">Review Binary Heap →</a><a href="/sorting/quick">Compare with Quick Sort →</a></div>
     </section>
 
+    <section id="topological-sort" class='@SectionClass("topological-sort")'>
+        <div class="section-heading">
+            <span>A7</span>
+            <div><h2>Topological Sort: put every prerequisite before its dependent</h2><p>A topological order exists exactly for directed acyclic graphs (DAGs). It is an ordering constraint, not a shortest-path or numeric sorting problem.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class='@CardClass("topological-sort", "concept-card")'><span class="term">ORDER</span><h3>Every directed edge must point forward</h3><p>If the graph contains u → v, then u must appear earlier than v in the output. Several different outputs may all be correct when multiple vertices are simultaneously dependency-free.</p><div class="example"><strong>Correctness check:</strong> for every edge, position[u] &lt; position[v].</div></article>
+            <article class='@CardClass("topological-dag", "concept-card")'><span class="term queue">DAG</span><h3>Cycles make dependency order impossible</h3><p>A directed cycle says A must come before B, B before C, and C before A. No linear order can satisfy all of those conditions at once.</p><div class="example"><strong>Precondition:</strong> the graph must be directed. Edge weights are irrelevant and may be ignored.</div></article>
+            <article class='@CardClass("topological-kahn", "concept-card")'><span class="term">KAHN</span><h3>indegree[] reveals what is ready</h3><p>Compute the number of incoming prerequisites for every vertex. Enqueue all indegree-0 vertices, emit one, and decrement the indegree of each outgoing neighbor.</p><div class="example"><strong>Cycle signal:</strong> if the ready Queue becomes empty before V vertices are emitted, the remaining subgraph contains a cycle.</div></article>
+            <article class='@CardClass("topological-dfs", "concept-card")'><span class="term">DFS</span><h3>Reverse finishing time</h3><p>DFS marks white vertices gray while they are on the active recursion path and black after every outgoing neighbor finishes. Append black vertices to postorder, then reverse that buffer.</p><div class="example"><strong>Cycle signal:</strong> an edge to a gray vertex is a back edge and proves a directed cycle.</div></article>
+            <article class='@CardClass("topological-cycle", "concept-card")'><span class="term">CYCLE</span><h3>Cycle detection is part of the result</h3><p>The lab does not return a misleading partial order. Kahn exposes the point where no ready vertex remains; DFS exposes the gray-to-gray back edge.</p><div class="example"><strong>Self-loop:</strong> v → v is already a directed cycle, so no topological order exists.</div></article>
+            <article class='@CardClass("topological-complexity", "concept-card")'><span class="term">O(V + E)</span><h3>Both variants inspect the graph linearly</h3><p>Kahn computes/decrements indegrees and processes each adjacency entry once. DFS colors each vertex and inspects each outgoing adjacency entry once.</p><div class="example"><strong>Extra memory:</strong> O(V) for indegree/Queue/output or color/recursion/postorder.</div></article>
+        </div>
+        <div class="concept-lesson-links"><a href="/graph-algorithms/topological">Open the Topological Sort lab →</a><a href="/search/dfs">Review DFS →</a><a href="/structures/queue-stack">Review Queue →</a></div>
+    </section>
+
+
+
     <section id="linear-search" class='@SectionClass("linear-search")'>
         <div class="section-heading">
             <span>Q1</span>
@@ -930,26 +918,9 @@
         <div class="concept-lesson-links"><a href="/graph-algorithms/dijkstra">Open the Dijkstra lab →</a><a href="/search/bfs">Compare with BFS →</a><a href="/structures/binary-heap">Review Binary Heap →</a></div>
     </section>
 
-    <section id="topological-sort" class='@SectionClass("topological-sort")'>
-        <div class="section-heading">
-            <span>G4</span>
-            <div><h2>Topological Sort: put every prerequisite before its dependent</h2><p>A topological order exists exactly for directed acyclic graphs (DAGs). It is an ordering constraint, not a shortest-path or numeric sorting problem.</p></div>
-        </div>
-        <div class="concept-grid two">
-            <article class='@CardClass("topological-sort", "concept-card")'><span class="term">ORDER</span><h3>Every directed edge must point forward</h3><p>If the graph contains u → v, then u must appear earlier than v in the output. Several different outputs may all be correct when multiple vertices are simultaneously dependency-free.</p><div class="example"><strong>Correctness check:</strong> for every edge, position[u] &lt; position[v].</div></article>
-            <article class='@CardClass("topological-dag", "concept-card")'><span class="term queue">DAG</span><h3>Cycles make dependency order impossible</h3><p>A directed cycle says A must come before B, B before C, and C before A. No linear order can satisfy all of those conditions at once.</p><div class="example"><strong>Precondition:</strong> the graph must be directed. Edge weights are irrelevant and may be ignored.</div></article>
-            <article class='@CardClass("topological-kahn", "concept-card")'><span class="term">KAHN</span><h3>indegree[] reveals what is ready</h3><p>Compute the number of incoming prerequisites for every vertex. Enqueue all indegree-0 vertices, emit one, and decrement the indegree of each outgoing neighbor.</p><div class="example"><strong>Cycle signal:</strong> if the ready Queue becomes empty before V vertices are emitted, the remaining subgraph contains a cycle.</div></article>
-            <article class='@CardClass("topological-dfs", "concept-card")'><span class="term">DFS</span><h3>Reverse finishing time</h3><p>DFS marks white vertices gray while they are on the active recursion path and black after every outgoing neighbor finishes. Append black vertices to postorder, then reverse that buffer.</p><div class="example"><strong>Cycle signal:</strong> an edge to a gray vertex is a back edge and proves a directed cycle.</div></article>
-            <article class='@CardClass("topological-cycle", "concept-card")'><span class="term">CYCLE</span><h3>Cycle detection is part of the result</h3><p>The lab does not return a misleading partial order. Kahn exposes the point where no ready vertex remains; DFS exposes the gray-to-gray back edge.</p><div class="example"><strong>Self-loop:</strong> v → v is already a directed cycle, so no topological order exists.</div></article>
-            <article class='@CardClass("topological-complexity", "concept-card")'><span class="term">O(V + E)</span><h3>Both variants inspect the graph linearly</h3><p>Kahn computes/decrements indegrees and processes each adjacency entry once. DFS colors each vertex and inspects each outgoing adjacency entry once.</p><div class="example"><strong>Extra memory:</strong> O(V) for indegree/Queue/output or color/recursion/postorder.</div></article>
-        </div>
-        <div class="concept-lesson-links"><a href="/graph-algorithms/topological">Open the Topological Sort lab →</a><a href="/search/dfs">Review DFS →</a><a href="/structures/queue-stack">Review Queue →</a></div>
-    </section>
-
-
     <section id="mst" class='@SectionClass("mst")'>
         <div class="section-heading">
-            <span>G5</span>
+            <span>G4</span>
             <div><h2>Minimum Spanning Tree: minimum total connectivity without cycles</h2><p>For a connected undirected graph, an MST includes every vertex, uses exactly V − 1 edges, contains no cycle, and minimizes the sum of selected edge weights.</p></div>
         </div>
         <div class="concept-grid two">
@@ -964,6 +935,39 @@
         </div>
         <div class="concept-lesson-links"><a href="/graph-algorithms/mst">Open the MST lab →</a><a href="/graph-algorithms/dijkstra">Compare with Dijkstra →</a><a href="/structures/binary-heap">Review Binary Heap →</a></div>
     </section>
+    <section id="gradient-descent" class='@SectionClass("gradient-descent")'>
+        <div class="section-heading">
+            <span>ML1</span>
+            <div><h2>Gradient Descent: slope → step → repeat</h2><p>Start with the simple idea: loss says how bad the current point is, the gradient gives the uphill direction, and Gradient Descent moves the other way. The live lab uses a simple bowl-shaped loss so the movement is easy to see.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article id="gradient-descent-loss" class='@CardClass("gradient-descent-loss", "concept-card")'><span class="term">1 · LOSS</span><h3>Turn the current point into one “how bad is it?” number</h3><p>The teaching objective is <code>J(θ)=½Σ cᵢ(θᵢ−targetᵢ)²</code>. Positive curvature means one convex minimum exists at <code>target</code>.</p><div class="example"><strong>Why this bowl?</strong> It exposes optimization mechanics without hiding them inside a model API.</div></article>
+            <article id="gradient-descent-update" class='@CardClass("gradient-descent-update", "concept-card")'><span class="term queue">2 · MOVE</span><h3>Move opposite the gradient</h3><p><code>θ ← θ − η∇J(θ)</code>. The gradient points toward local increase, so subtraction moves downhill. Component i of every vector refers to the same parameter axis.</p><div class="example"><strong>Reuse:</strong> the live Core calls Vector L2 norm, scalar multiplication and subtraction rather than reimplementing those loops.</div></article>
+            <article id="gradient-descent-learning-rate" class='@CardClass("gradient-descent-learning-rate", "concept-card")'><span class="term">3 · STEP SIZE</span><h3>The learning rate controls how far you move</h3><p>A small η can improve loss too slowly to meet the iteration budget. A suitable η converges. An overly large η can overshoot repeatedly and make loss grow.</p><div class="example"><strong>Advanced lab:</strong> learning-rate decay uses <code>ηₜ=η₀/(1+decay·t)</code>.</div></article>
+            <article id="gradient-descent-convergence" class='@CardClass("gradient-descent-convergence", "concept-card")'><span class="term queue">4 · STOP</span><h3>Stop when the slope is small enough</h3><p>This lesson converges when <code>||∇J||₂ ≤ tolerance</code>. It can also stop at the maximum iteration count, or classify repeated loss growth as divergence.</p><div class="example"><strong>Important:</strong> hitting max iterations does not necessarily mean the update rule is wrong; η may simply be too small.</div></article>
+            <article class="concept-card"><span class="term">FULL GRADIENT</span><h3>Phase 1 is deterministic before SGD adds sampling noise</h3><p>The current objective computes every gradient component on every update. Stochastic and mini-batch variants belong later with SGD, Momentum and Adam.</p></article>
+            <article class="concept-card"><span class="term queue">COMPLEXITY</span><h3>n parameters per update, k updates per run</h3><p>For this explicit objective, one loss/gradient/update pass is Θ(n), so k updates are Θ(k·n). Working optimizer state is O(n); O(k·n) review history is kept only for educational rewind and plotting.</p></article>
+        </div>
+        <div class="concept-lesson-links"><a href="/ml-foundations/gradient-descent">Open Gradient Descent lab →</a><a href="/structures/vector">Review Vector structure →</a></div>
+    </section>
+
+
+
+    <section id="linear-regression" class='@SectionClass("linear-regression")'>
+        <div class="section-heading">
+            <span>ML2</span>
+            <div><h2>Linear Regression: planned first supervised model</h2><p>The model will predict a continuous value with a weighted sum, measure residuals, aggregate error with mean squared error, and reuse the existing Gradient Descent foundation for training.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class="concept-card"><span class="term">PREDICTION</span><h3>Features and weights meet in a dot product</h3><p><code>ŷ = w·x + b</code>. Vector dimension and index semantics therefore remain part of model correctness.</p></article>
+            <article class="concept-card"><span class="term queue">RESIDUAL</span><h3>Prediction minus target exposes sample error</h3><p>A residual keeps the direction of error; squared error then prevents positive and negative residuals from cancelling.</p></article>
+            <article class="concept-card"><span class="term">TRAINING</span><h3>The model should supply the gradient, not duplicate the optimizer</h3><p>Linear Regression will implement prediction, MSE and their derivatives, then reuse the established Gradient Descent parameter-update pattern.</p></article>
+            <article class="concept-card"><span class="term queue">STATUS</span><h3>The simulation is intentionally still planned</h3><p>The concept route exists so curriculum links are not dead, but no fake interactive Linear Regression behavior is presented before its implementation commit.</p></article>
+        </div>
+        <div class="concept-lesson-links"><a href="/ml-foundations/linear-regression">Preview Linear Regression lesson →</a><a href="/ml-foundations/gradient-descent">Review optimizer foundation →</a></div>
+    </section>
+
+
 
     <section class="concept-section implementation-note">
         <div class="section-heading">
@@ -1030,7 +1034,7 @@
         "avl-balance" => "AVL balancing and rotations",
         "matrix" => "Matrix: dimensions and memory",
         "matrix-compatibility" => "Matrix operation compatibility",
-        "vector" => "Vector foundations for AI and ML",
+        "vector" => "Vector structure and indexed numeric storage",
         "vector-memory" => "Vector memory and component indexing",
         "vector-dot-product" => "Vector dot product",
         "vector-norms" => "Vector norms and normalization",
@@ -1092,7 +1096,7 @@
         "general-heap" => "/structures/heap",
         "avl-balance" => "/structures/avl",
         "matrix" or "matrix-compatibility" => "/structures/matrix",
-        "vector" or "vector-memory" or "vector-dot-product" or "vector-norms" or "vector-similarity" or "vector-ml" => "/ml-foundations/vector",
+        "vector" or "vector-memory" or "vector-dot-product" or "vector-norms" or "vector-similarity" or "vector-ml" => "/structures/vector",
         "gradient-descent" or "gradient-descent-loss" or "gradient-descent-update" or "gradient-descent-learning-rate" or "gradient-descent-convergence" => "/ml-foundations/gradient-descent",
         "linear-regression" => "/ml-foundations/linear-regression",
         "graph" => "/structures/graph",

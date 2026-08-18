@@ -54,16 +54,16 @@
 
     <section class="quick-stats" aria-label="Implemented learning modules">
         <div><strong>23</strong><span>interactive modules</span></div>
-        <div><strong>8</strong><span>data-structure labs</span></div>
+        <div><strong>9</strong><span>data-structure labs</span></div>
         <div><strong>13</strong><span>classical algorithm labs</span></div>
-        <div><strong>2</strong><span>AI/ML foundation labs</span></div>
+        <div><strong>1</strong><span>live ML foundation lab</span></div>
     </section>
 
     <section class="foundation-callout" aria-labelledby="foundation-title">
         <div class="foundation-copy">
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="foundation-title">Use Concepts &amp; Memory when a label is unclear.</h2>
-            <p>It is the shared reference for Visual vs Memory State, identity, Big-O, tree height, heap indexing, matrix storage, graph adjacency, every implemented sorting strategy, Linear/Binary Search, graph traversal with BFS/DFS, weighted shortest paths with Dijkstra, dependency order, minimum spanning trees with Prim/Kruskal, and the Vector + Gradient Descent foundations for AI/ML.</p>
+            <p>It is the shared reference for Visual vs Memory State, identity, Big-O, tree height, heap indexing, matrix storage, graph adjacency, every implemented sorting strategy, Linear/Binary Search, graph traversal with BFS/DFS, weighted shortest paths with Dijkstra, dependency order, minimum spanning trees with Prim/Kruskal, plus Vector fundamentals and the Gradient Descent ML foundation.</p>
         </div>
         <div class="foundation-links">
             <ConceptLink Href="/learn/concepts/visual-vs-memory"><strong>Visual vs memory</strong><span>What the picture shows vs what is stored →</span></ConceptLink>
@@ -75,7 +75,7 @@
     <section class="learning-section" id="learning-path">
         <div class="section-heading">
             <div>
-                <span class="section-kicker">DATA STRUCTURES · 01–08</span>
+                <span class="section-kicker">DATA STRUCTURES · 01–09</span>
                 <h2>Build the storage model first.</h2>
             </div>
             <p>Each card opens one real lab. The order matches the sidebar and the Next lesson navigation, so there is no hidden or grouped step in the learning path.</p>
@@ -127,8 +127,17 @@
                 <span class="card-link">Open lesson <b>→</b></span>
             </a>
 
-            <a class="path-card available module-card" href="/structures/matrix">
+            <a class="path-card available module-card" href="/structures/vector">
                 <div class="card-topline"><span class="path-index">06 · INTERMEDIATE</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="path-icon matrix-icon"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                <h3>Vector</h3>
+                <p>Store an ordered numeric sequence and learn component operations, dot products, norms, distance and similarity.</p>
+                <div class="concept-row"><span>double[]</span><span>Indexes</span><span>Dot product</span></div>
+                <span class="card-link">Open lesson <b>→</b></span>
+            </a>
+
+            <a class="path-card available module-card" href="/structures/matrix">
+                <div class="card-topline"><span class="path-index">07 · INTERMEDIATE</span><span class="status-pill live"><i></i> Ready</span></div>
                 <div class="path-icon matrix-icon"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
                 <h3>Matrix</h3>
                 <p>Work from dimensions and row-major storage through multiplication, RREF, inverse and rank.</p>
@@ -137,7 +146,7 @@
             </a>
 
             <a class="path-card available module-card" href="/structures/graph">
-                <div class="card-topline"><span class="path-index">07 · INTERMEDIATE</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="card-topline"><span class="path-index">08 · INTERMEDIATE</span><span class="status-pill live"><i></i> Ready</span></div>
                 <div class="path-icon graph-icon"><i></i><i></i><i></i><i></i></div>
                 <h3>Graph</h3>
                 <p>Build one topology and compare synchronized adjacency-list and adjacency-matrix representations.</p>
@@ -146,7 +155,7 @@
             </a>
 
             <a class="path-card available module-card" href="/structures/red-black">
-                <div class="card-topline"><span class="path-index">08 · ADVANCED</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="card-topline"><span class="path-index">09 · ADVANCED</span><span class="status-pill live advanced"><i></i> Ready</span></div>
                 <div class="path-icon tree-icon"><i></i><i></i><i></i><i></i><i></i></div>
                 <h3>Red-Black Tree</h3>
                 <p>Track color invariants, black-height, recoloring and insert/delete fix-up cases.</p>
@@ -159,7 +168,7 @@
     <section class="learning-section sorting-home-section">
         <div class="section-heading">
             <div>
-                <span class="section-kicker">SORTING · 01–06</span>
+                <span class="section-kicker">SORTING · 01–07</span>
                 <h2>Compare strategies, not just final arrays.</h2>
             </div>
             <p>Every sorting lab uses the same Build → Predict → Watch → Explain → Practice rhythm, while Visual and Memory State expose the behavior unique to that algorithm.</p>
@@ -197,10 +206,16 @@
                 <div class="concept-row"><span>Pivot</span><span>Partition</span><span>3-way</span></div><span class="card-link">Open lesson <b>→</b></span>
             </a>
             <a class="path-card available module-card" href="/sorting/heap">
-                <div class="card-topline"><span class="path-index">06 · ADVANCED</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="card-topline"><span class="path-index">06 · ADVANCED</span><span class="status-pill live advanced"><i></i> Ready</span></div>
                 <div class="path-icon sort-icon"><i></i><i></i><i></i><i></i><i></i></div>
                 <h3>Heap Sort</h3><p>Build a Max Heap in the same array, extract the root and grow a final sorted suffix.</p>
                 <div class="concept-row"><span>Floyd</span><span>Θ(n log n)</span><span>O(1) extra</span></div><span class="card-link">Open lesson <b>→</b></span>
+            </a>
+            <a class="path-card available module-card" href="/graph-algorithms/topological">
+                <div class="card-topline"><span class="path-index">07 · ADVANCED</span><span class="status-pill live advanced"><i></i> Ready</span></div>
+                <div class="path-icon graph-icon"><i></i><i></i><i></i><i></i></div>
+                <h3>Topological Sort</h3><p>Order directed dependencies with Kahn's Queue or DFS reverse postorder, and reject cycles that make a valid ordering impossible.</p>
+                <div class="concept-row"><span>DAG</span><span>Indegree</span><span>O(V + E)</span></div><span class="card-link">Open lesson <b>→</b></span>
             </a>
         </div>
     </section>
@@ -208,10 +223,10 @@
     <section class="learning-section search-home-section">
         <div class="section-heading">
             <div>
-                <span class="section-kicker">SEARCH &amp; TRAVERSAL · 01–04</span>
+                <span class="section-kicker">SEARCH &amp; TRAVERSAL · 01–06</span>
                 <h2>Find values by following the evidence.</h2>
             </div>
-            <p>Start with value search, then move onto graph reachability and compare Queue-driven breadth with Stack-driven depth.</p>
+            <p>Start with value search, move through graph traversal, then finish with advanced weighted search and minimum-connectivity problems.</p>
         </div>
 
         <div class="path-grid module-grid">
@@ -239,67 +254,43 @@
                 <h3>Depth-First Search</h3><p>Compare recursive call-stack DFS with an explicit manual Stack and watch backtracking through one branch at a time.</p>
                 <div class="concept-row"><span>Stack</span><span>Backtrack</span><span>O(V + E)</span></div><span class="card-link">Open lesson <b>→</b></span>
             </a>
-        </div>
-    </section>
-
-    <section class="learning-section graph-algorithms-home-section">
-        <div class="section-heading">
-            <div>
-                <span class="section-kicker">GRAPH ALGORITHMS · 01–03</span>
-                <h2>Move from reachability to paths, dependency order and minimum connectivity.</h2>
-            </div>
-            <p>These modules reuse the same Graph foundation: Dijkstra adds weighted shortest-path relaxation, Topological Sort orders directed dependencies, and Prim/Kruskal minimize total connectivity cost in undirected graphs.</p>
-        </div>
-
-        <div class="path-grid module-grid">
             <a class="path-card available module-card" href="/graph-algorithms/dijkstra">
-                <div class="card-topline"><span class="path-index">01 · ADVANCED</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="card-topline"><span class="path-index">05 · ADVANCED</span><span class="status-pill live advanced"><i></i> Ready</span></div>
                 <div class="path-icon graph-icon"><i></i><i></i><i></i><i></i></div>
-                <h3>Dijkstra</h3><p>Relax non-negative weighted edges, settle the smallest tentative distance, and compare linear minimum selection with a manual binary min-heap frontier.</p>
+                <h3>Dijkstra</h3><p>Search a weighted graph for shortest paths by relaxing non-negative edges and always expanding the best current distance.</p>
                 <div class="concept-row"><span>Relaxation</span><span>Shortest path</span><span>Min-heap</span></div><span class="card-link">Open lesson <b>→</b></span>
             </a>
-            <a class="path-card available module-card" href="/graph-algorithms/topological">
-                <div class="card-topline"><span class="path-index">02 · ADVANCED</span><span class="status-pill live"><i></i> Ready</span></div>
-                <div class="path-icon graph-icon"><i></i><i></i><i></i><i></i></div>
-                <h3>Topological Sort</h3><p>Order directed dependencies with Kahn's indegree Queue or DFS reverse postorder, and detect cycles that make scheduling impossible.</p>
-                <div class="concept-row"><span>DAG</span><span>Indegree</span><span>O(V + E)</span></div><span class="card-link">Open lesson <b>→</b></span>
-            </a>
             <a class="path-card available module-card" href="/graph-algorithms/mst">
-                <div class="card-topline"><span class="path-index">03 · ADVANCED</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="card-topline"><span class="path-index">06 · ADVANCED</span><span class="status-pill live advanced"><i></i> Ready</span></div>
                 <div class="path-icon graph-icon"><i></i><i></i><i></i><i></i></div>
-                <h3>Minimum Spanning Tree</h3><p>Compare Prim's min-edge frontier with Kruskal's manual edge sort and Union-Find, including disconnected minimum spanning forests.</p>
+                <h3>Minimum Spanning Tree</h3><p>Find the cheapest set of edges that keeps the graph connected, then compare Prim with Kruskal and Union-Find.</p>
                 <div class="concept-row"><span>Prim</span><span>Kruskal</span><span>Union-Find</span></div><span class="card-link">Open lesson <b>→</b></span>
             </a>
         </div>
     </section>
 
+
     <section class="learning-section ai-home-section">
         <div class="section-heading">
             <div>
-                <span class="section-kicker">AI / ML FOUNDATIONS · PHASE 1</span>
-                <h2>Reuse the classical foundations inside machine learning.</h2>
+                <span class="section-kicker">MACHINE LEARNING · 01–02</span>
+                <h2>Start with one optimization idea, then use it in a model.</h2>
             </div>
-            <p>This track starts with reusable numerical primitives and then composes them into models. Vector and Gradient Descent are live; Linear Regression is the next model.</p>
+            <p>Vector now lives with Data Structures. The ML track starts with Gradient Descent, then applies that optimizer inside Linear Regression.</p>
         </div>
 
         <div class="path-grid module-grid">
-            <a class="path-card available module-card" href="/ml-foundations/vector">
-                <div class="card-topline"><span class="path-index">01 · FOUNDATION</span><span class="status-pill live"><i></i> Ready</span></div>
-                <div class="path-icon matrix-icon"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-                <h3>Vector</h3><p>Build feature/parameter vectors and step through dot products, norms, normalization, distances and cosine similarity over manual double[] storage.</p>
-                <div class="concept-row"><span>Dot product</span><span>Norms</span><span>Similarity</span></div><span class="card-link">Open lesson <b>→</b></span>
-            </a>
             <a class="path-card available module-card" href="/ml-foundations/gradient-descent">
-                <div class="card-topline"><span class="path-index">02 · OPTIMIZATION</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="card-topline"><span class="path-index">01 · FOUNDATION</span><span class="status-pill live"><i></i> Ready</span></div>
                 <div class="path-icon sort-icon"><i></i><i></i><i></i><i></i><i></i></div>
-                <h3>Gradient Descent</h3><p>Watch loss, gradients and parameter updates while the optimizer reuses the existing Vector Core for norm, scaling and subtraction.</p>
-                <div class="concept-row"><span>Gradient</span><span>Learning rate</span><span>Convergence</span></div><span class="card-link">Open lesson <b>→</b></span>
+                <h3>Gradient Descent</h3><p>Follow one simple loop: measure the slope, take a controlled step downhill, and repeat until the slope is small.</p>
+                <div class="concept-row"><span>Slope</span><span>Step size</span><span>Stop rule</span></div><span class="card-link">Open lesson <b>→</b></span>
             </a>
             <a class="path-card module-card planned-card" href="/ml-foundations/linear-regression">
-                <div class="card-topline"><span class="path-index">03 · MODEL</span><span class="status-pill">Planned</span></div>
+                <div class="card-topline"><span class="path-index">02 · MODEL</span><span class="status-pill planned">Planned</span></div>
                 <div class="path-icon sort-icon"><i></i><i></i><i></i><i></i><i></i></div>
-                <h3>Linear Regression</h3><p>Combine feature vectors, prediction error and the Gradient Descent foundation to train the first supervised model.</p>
-                <div class="concept-row"><span>Prediction</span><span>MSE</span><span>Training</span></div><span class="card-link">Preview lesson <b>→</b></span>
+                <h3>Linear Regression</h3><p>Fit a line to examples, measure prediction error, and reuse Gradient Descent to improve the model.</p>
+                <div class="concept-row"><span>Prediction</span><span>Error</span><span>Training</span></div><span class="card-link">Preview lesson <b>→</b></span>
             </a>
         </div>
     </section>

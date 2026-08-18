@@ -1,10 +1,11 @@
 # Machine Learning Core
 
-This namespace contains project-owned numerical and ML teaching implementations.
+This namespace contains project-owned Machine Learning teaching implementations.
 
-Live Phase 1 foundations currently include:
+Live Machine Learning modules currently include:
 
-1. `Vector` under `DataStructures/Vector` — the reusable numerical primitive.
-2. `Optimization/GradientDescent` — explicit loss/gradient logic that reuses Vector Core for vector arithmetic.
+1. `Optimization/GradientDescent` — explicit loss/gradient logic that reuses the existing Data Structures `ManualVector` implementation for vector arithmetic.
 
-Planned classical ML consumers include Linear Regression, Logistic Regression, KNN, KD-Tree, K-Means, Decision Tree and PCA. New lessons should reuse existing manual primitives rather than reimplementing them.
+`DataStructures/Vector` is intentionally taught in the Data Structures track, not duplicated here. It remains a reusable numerical dependency for Gradient Descent and future Linear Regression, Logistic Regression, KNN, K-Means, PCA and neural-network lessons.
+
+Planned Phase 1 models include Linear Regression, Logistic Regression, KNN, KD-Tree, K-Means, Decision Tree and PCA. New lessons should reuse existing manual primitives rather than reimplementing them.
