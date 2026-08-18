@@ -1,0 +1,22 @@
+.lr-plot-card { display: grid; gap: .7rem; }
+.lr-plot-header { display: grid; grid-template-columns: 1.5fr repeat(2, minmax(0, .55fr)); border: 1px solid var(--color-border); border-radius: .75rem; overflow: hidden; background: #fbfbfd; }
+.lr-plot-header > div { display: grid; gap: .12rem; padding: .65rem .75rem; }
+.lr-plot-header > div + div { border-left: 1px solid var(--color-border); }
+.lr-plot-header span { color: var(--color-text-muted); font-size: .68rem; font-weight: 850; letter-spacing: .07em; }
+.lr-plot-header strong { font-size: .94rem; }
+svg { width: 100%; min-height: 22rem; }
+.plot-bg { fill: #fbfbfd; stroke: var(--color-border); }
+.grid-line { stroke: #ececf2; stroke-width: 1; }
+.axis-line { stroke: #b9bdc9; stroke-width: 1.4; }
+.model-line { stroke: var(--color-primary); stroke-width: 4; stroke-linecap: round; }
+.training-point { fill: #fff; stroke: #2f3440; stroke-width: 3; }
+.prediction-point { fill: var(--color-primary); stroke: #fff; stroke-width: 2; }
+.residual-line { stroke: #d58b44; stroke-width: 2; stroke-dasharray: 5 5; }
+.lr-plot-legend { display: flex; flex-wrap: wrap; gap: .9rem; color: var(--color-text-soft); font-size: .82rem; font-weight: 700; }
+.lr-plot-legend span { display: inline-flex; align-items: center; gap: .38rem; }
+.lr-plot-legend i { width: .72rem; height: .72rem; display: inline-block; border-radius: 50%; }
+.lr-plot-legend .actual { border: 2px solid #2f3440; background: #fff; }
+.lr-plot-legend .prediction { background: var(--color-primary); }
+.lr-plot-legend .residual { width: 1rem; height: 0; border-top: 2px dashed #d58b44; border-radius: 0; }
+.lr-plot-legend .line { width: 1rem; height: 0; border-top: 3px solid var(--color-primary); border-radius: 0; }
+@media (max-width: 760px) { .lr-plot-header { grid-template-columns: 1fr; } .lr-plot-header > div + div { border-left: 0; border-top: 1px solid var(--color-border); } svg { min-height: 17rem; } }

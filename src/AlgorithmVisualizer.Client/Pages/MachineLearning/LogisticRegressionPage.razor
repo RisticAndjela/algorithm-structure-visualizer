@@ -1,0 +1,19 @@
+@page "/ml-foundations/logistic-regression"
+
+<PageTitle>Logistic Regression — Machine Learning — Algorithm Visualizer</PageTitle>
+
+<LearningPlaceholder
+    Eyebrow="MACHINE LEARNING · PHASE 1 STEP 4"
+    Title="Logistic Regression"
+    Description="The next model will keep a weighted linear score, map it through a sigmoid, and learn a binary decision boundary from classification examples."
+    Complexity="Θ(k · n)"
+    ComplexityNote="planned: k updates across n examples in the first binary-classification lab"
+    Concepts="linear score · sigmoid · probability · binary classification · cross-entropy"
+    LearnTitle="Turn a linear score into a probability."
+    LearnSummary="Linear Regression predicts an unrestricted number. Logistic Regression keeps the weighted sum, then uses a sigmoid so the output stays between 0 and 1."
+    LearnCards="SCORE|Build a weighted sum|Start with the same w·x + b pattern.;;SIGMOID|Map score to 0–1|Large positive scores move toward 1; large negative scores move toward 0.;;CLASSIFY|Choose a threshold|A probability can become a binary decision.;;TRAIN|Reduce classification loss|Gradient-based updates will improve the boundary."
+    ConceptHref="/learn/concepts/logistic-regression"
+    TipTitle="Regression is in the name, but the task is classification."
+    TipText="The model outputs a probability and is normally used to separate two classes."
+    FocusText="Keep score, sigmoid probability, threshold decision, and loss as separate visible steps."
+    PromptText="What changes when the score crosses zero?" />

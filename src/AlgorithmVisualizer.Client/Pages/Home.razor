@@ -53,17 +53,17 @@
     </section>
 
     <section class="quick-stats" aria-label="Implemented learning modules">
-        <div><strong>23</strong><span>interactive modules</span></div>
+        <div><strong>24</strong><span>interactive modules</span></div>
         <div><strong>9</strong><span>data-structure labs</span></div>
         <div><strong>13</strong><span>classical algorithm labs</span></div>
-        <div><strong>1</strong><span>live ML foundation lab</span></div>
+        <div><strong>2</strong><span>live ML foundation labs</span></div>
     </section>
 
     <section class="foundation-callout" aria-labelledby="foundation-title">
         <div class="foundation-copy">
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="foundation-title">Use Concepts &amp; Memory when a label is unclear.</h2>
-            <p>It is the shared reference for Visual vs Memory State, identity, Big-O, tree height, heap indexing, matrix storage, graph adjacency, every implemented sorting strategy, Linear/Binary Search, graph traversal with BFS/DFS, weighted shortest paths with Dijkstra, dependency order, minimum spanning trees with Prim/Kruskal, plus Vector fundamentals and the Gradient Descent ML foundation.</p>
+            <p>It is the shared reference for Visual vs Memory State, identity, Big-O, tree height, heap indexing, matrix storage, graph adjacency, every implemented sorting strategy, Linear/Binary Search, graph traversal with BFS/DFS, weighted shortest paths with Dijkstra, dependency order, minimum spanning trees with Prim/Kruskal, plus Vector fundamentals, Gradient Descent, and the live Linear Regression training model.</p>
         </div>
         <div class="foundation-links">
             <ConceptLink Href="/learn/concepts/visual-vs-memory"><strong>Visual vs memory</strong><span>What the picture shows vs what is stored →</span></ConceptLink>
@@ -273,10 +273,10 @@
     <section class="learning-section ai-home-section">
         <div class="section-heading">
             <div>
-                <span class="section-kicker">MACHINE LEARNING · 01–02</span>
-                <h2>Start with one optimization idea, then use it in a model.</h2>
+                <span class="section-kicker">MACHINE LEARNING · 01–03</span>
+                <h2>Start with optimization, then use it to train models.</h2>
             </div>
-            <p>Vector now lives with Data Structures. The ML track starts with Gradient Descent, then applies that optimizer inside Linear Regression.</p>
+            <p>Vector now lives with Data Structures. The ML track starts with Gradient Descent, applies it inside Linear Regression, then prepares the classification version: Logistic Regression.</p>
         </div>
 
         <div class="path-grid module-grid">
@@ -286,11 +286,17 @@
                 <h3>Gradient Descent</h3><p>Follow one simple loop: measure the slope, take a controlled step downhill, and repeat until the slope is small.</p>
                 <div class="concept-row"><span>Slope</span><span>Step size</span><span>Stop rule</span></div><span class="card-link">Open lesson <b>→</b></span>
             </a>
-            <a class="path-card module-card planned-card" href="/ml-foundations/linear-regression">
-                <div class="card-topline"><span class="path-index">02 · MODEL</span><span class="status-pill planned">Planned</span></div>
+            <a class="path-card available module-card" href="/ml-foundations/linear-regression">
+                <div class="card-topline"><span class="path-index">02 · MODEL</span><span class="status-pill live"><i></i> Ready</span></div>
                 <div class="path-icon sort-icon"><i></i><i></i><i></i><i></i><i></i></div>
-                <h3>Linear Regression</h3><p>Fit a line to examples, measure prediction error, and reuse Gradient Descent to improve the model.</p>
-                <div class="concept-row"><span>Prediction</span><span>Error</span><span>Training</span></div><span class="card-link">Preview lesson <b>→</b></span>
+                <h3>Linear Regression</h3><p>Fit a line to examples, inspect residuals and MSE, and train weight + bias with Gradient Descent.</p>
+                <div class="concept-row"><span>Prediction</span><span>Residual</span><span>MSE</span></div><span class="card-link">Open lesson <b>→</b></span>
+            </a>
+            <a class="path-card module-card planned-card" href="/ml-foundations/logistic-regression">
+                <div class="card-topline"><span class="path-index">03 · CLASSIFICATION</span><span class="status-pill planned">Planned</span></div>
+                <div class="path-icon sort-icon"><i></i><i></i><i></i><i></i><i></i></div>
+                <h3>Logistic Regression</h3><p>Keep the weighted score, add sigmoid probability, and learn a binary decision boundary.</p>
+                <div class="concept-row"><span>Sigmoid</span><span>Probability</span><span>Classes</span></div><span class="card-link">Preview lesson <b>→</b></span>
             </a>
         </div>
     </section>

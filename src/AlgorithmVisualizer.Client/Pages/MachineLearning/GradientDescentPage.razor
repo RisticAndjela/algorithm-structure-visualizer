@@ -27,7 +27,7 @@
 
     <header class="module-header">
         <div class="header-copy">
-            <div class="module-eyebrow"><span>MACHINE LEARNING</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <div class="module-eyebrow"><span>MACHINE LEARNING · PHASE 1 STEP 2</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
             <h1>Gradient Descent</h1>
             <p>Choose a starting point and step size. Then watch the C# loop calculate the slope, move the parameters and decide whether to stop.</p>
         </div>
@@ -68,11 +68,11 @@
             <div class="preset-panel">
                 <span class="control-label">START WITH AN EXAMPLE</span>
                 <div class="preset-row">
-                    <button type="button" @onclick="() => LoadPreset(Preset.Balanced)" disabled="@IsBusy">Normal step</button>
-                    <button type="button" @onclick="() => LoadPreset(Preset.Slow)" disabled="@IsBusy">Too small step</button>
-                    <button type="button" @onclick="() => LoadPreset(Preset.Overshoot)" disabled="@IsBusy">Too large step</button>
-                    <button type="button" @onclick="() => LoadPreset(Preset.AtMinimum)" disabled="@IsBusy">Already at minimum</button>
-                    <button type="button" @onclick="() => LoadPreset(Preset.Shifted)" disabled="@IsBusy">Different target</button>
+                    <button type="button" class="@PresetButtonClass(Preset.Balanced)" @onclick="() => LoadPreset(Preset.Balanced)" disabled="@IsBusy">Normal step</button>
+                    <button type="button" class="@PresetButtonClass(Preset.Slow)" @onclick="() => LoadPreset(Preset.Slow)" disabled="@IsBusy">Too small step</button>
+                    <button type="button" class="@PresetButtonClass(Preset.Overshoot)" @onclick="() => LoadPreset(Preset.Overshoot)" disabled="@IsBusy">Too large step</button>
+                    <button type="button" class="@PresetButtonClass(Preset.AtMinimum)" @onclick="() => LoadPreset(Preset.AtMinimum)" disabled="@IsBusy">Already at minimum</button>
+                    <button type="button" class="@PresetButtonClass(Preset.Shifted)" @onclick="() => LoadPreset(Preset.Shifted)" disabled="@IsBusy">Different target</button>
                 </div>
             </div>
             <div class="graph-lab-panel">
@@ -117,17 +117,15 @@
 
     <section class="predict-section" aria-labelledby="gd-predict-title">
         <div class="heading-with-step"><span class="step-number">2</span><div><span class="section-kicker">PREDICT</span><h2 id="gd-predict-title">Will the first step make the loss better or worse?</h2><p>Choose before you run it. The simulator checks the real first update.</p></div></div>
-        <div class="prediction-row">
-            <select value="@PredictionSelectValue" @onchange="PredictionChanged" disabled="@IsBusy">
-                <option value="">Choose prediction…</option>
-                @foreach (var prediction in PredictionOptions)
-                {
-                    <option value="@prediction.Value.ToString()">@prediction.Label</option>
-                }
-            </select>
+        <div class="prediction-card">
+            <div class="prediction-actions">
+                <button type="button" class="@PredictionButtonClass(LossPrediction.Down)" @onclick="() => SetPrediction(LossPrediction.Down)" disabled="@IsBusy">Loss goes down</button>
+                <button type="button" class="@PredictionButtonClass(LossPrediction.Up)" @onclick="() => SetPrediction(LossPrediction.Up)" disabled="@IsBusy">Loss goes up</button>
+                <button type="button" class="@PredictionButtonClass(LossPrediction.Same)" @onclick="() => SetPrediction(LossPrediction.Same)" disabled="@IsBusy">Almost unchanged</button>
+            </div>
             @if (_predictionAnswered)
             {
-                <span class="prediction-feedback @(_predictionCorrect ? "correct" : "wrong")">@PredictionFeedback</span>
+                <p class="prediction-feedback @(_predictionCorrect ? "correct" : "incorrect")">@PredictionFeedback</p>
             }
         </div>
     </section>
@@ -136,12 +134,12 @@
         <div class="lab-heading">
             <div class="heading-with-step"><span class="step-number">3</span><div><span class="section-kicker">WATCH THE REAL C# RUN</span><h2 id="gd-lab-title">Watch one loop repeat: slope → step → new point.</h2></div></div>
             <div class="lab-actions">
-                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Auto-open explanation</span></label>
-                <button class="sort-button" type="button" @onclick="RunAsync" disabled="@IsBusy"><span>▶</span> Run Gradient Descent</button>
+                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Open explanation after run</span></label>
                 @if (_lastResult is not null)
                 {
-                    <button type="button" @onclick="OpenLastRunPopup">Last run explanation</button>
+                    <button class="secondary-action" type="button" @onclick="OpenLastRunPopup">Last explanation</button>
                 }
+                <button class="sort-button" type="button" @onclick="RunAsync" disabled="@IsBusy"><span>▶</span> Run Gradient Descent</button>
             </div>
         </div>
 
@@ -149,8 +147,8 @@
 
         <div class="state-tabs-row">
             <div class="state-tabs" role="tablist">
-                <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual State</button>
-                <button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory State</button>
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual state</button>
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory state</button>
             </div>
             <p>@ViewExplanation</p>
         </div>
@@ -212,7 +210,7 @@
         </div>
     </section>
 
-    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="02 · Planned" Title="Linear Regression" Description="Use the optimizer you just learned to improve a prediction model." Href="/ml-foundations/linear-regression" LinkLabel="Preview Linear Regression" />
+    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="03 · Interactive" Title="Linear Regression" Description="Use the optimizer you just learned to fit a real prediction model to training points." Href="/ml-foundations/linear-regression" LinkLabel="Open Linear Regression" />
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)
@@ -254,6 +252,7 @@
     private string _decayText = "0.15";
     private string? _inputError;
     private ObjectivePreset _objective = ObjectivePreset.Balanced;
+    private Preset? _preset = Preset.Balanced;
     private GradientDescentVariant _variant = GradientDescentVariant.FixedLearningRate;
     private bool _showRunPopups = true;
     private bool _showAdvancedSettings;
@@ -271,13 +270,6 @@
         new(ObjectivePreset.Balanced, "SIMPLE", "Simple bowl", "The best point is [0, 0]. Both directions slope toward it."),
         new(ObjectivePreset.NarrowValley, "STEEP + SHALLOW", "Uneven bowl", "One direction changes much faster than the other."),
         new(ObjectivePreset.Shifted, "MOVED MINIMUM", "Different target", "The best point is [2, -1], so the goal is not always zero.")
-    ];
-
-    private static readonly PredictionOption[] PredictionOptions =
-    [
-        new(LossPrediction.Down, "Loss goes down", "The first update improves the objective."),
-        new(LossPrediction.Up, "Loss goes up", "The first step overshoots and makes the objective worse."),
-        new(LossPrediction.Same, "Almost unchanged", "The start is already flat or the step is tiny.")
     ];
 
     private static readonly PracticeTaskDefinition[] PracticeTasks =
@@ -303,7 +295,6 @@
     private string PredictionFeedback => _predictionCorrect ? "Correct — your first-step prediction matched the actual loss change." : $"Not quite. The first committed update made loss {ActualFirstStepDirection}.";
     private string ActualFirstStepDirection => FirstStepDirection(_lastResult);
     private string LastRunHeadline => _lastResult is null ? "Gradient Descent run" : _lastResult.Diverged ? "The steps moved away from the minimum." : _lastResult.Converged ? "The slope became small enough to stop." : "The run used all allowed steps.";
-    private string PredictionSelectValue => _prediction?.ToString() ?? string.Empty;
     private string CurrentObjectiveTitle => ObjectiveOptions.First(option => option.Kind == _objective).Title;
     private string CurrentObjectiveDescription => ObjectiveOptions.First(option => option.Kind == _objective).Description;
 
@@ -316,26 +307,18 @@
         ApplyInputs();
     }
 
-    private void PredictionChanged(ChangeEventArgs args)
-    {
-        if (Enum.TryParse<LossPrediction>(args.Value?.ToString(), out var prediction)) SetPrediction(prediction);
-        else
-        {
-            _prediction = null;
-            _predictionAnswered = false;
-            _predictionCorrect = false;
-        }
-    }
-
-    private void Theta0Changed(ChangeEventArgs args) { _theta0Text = args.Value?.ToString() ?? string.Empty; ClearReview(); }
-    private void Theta1Changed(ChangeEventArgs args) { _theta1Text = args.Value?.ToString() ?? string.Empty; ClearReview(); }
-    private void LearningRateChanged(ChangeEventArgs args) { _learningRateText = args.Value?.ToString() ?? string.Empty; ClearReview(); }
-    private void IterationsChanged(ChangeEventArgs args) { _iterationsText = args.Value?.ToString() ?? string.Empty; ClearReview(); }
-    private void ToleranceChanged(ChangeEventArgs args) { _toleranceText = args.Value?.ToString() ?? string.Empty; ClearReview(); }
-    private void DecayChanged(ChangeEventArgs args) { _decayText = args.Value?.ToString() ?? string.Empty; ClearReview(); }
-    private void SelectObjective(ObjectivePreset kind) { if (IsBusy) return; _objective = kind; ClearReview(); ApplyInputs(); }
-    private void SelectVariant(GradientDescentVariant variant) { if (IsBusy) return; _variant = variant; ClearReview(); ApplyInputs(); }
+    private void Theta0Changed(ChangeEventArgs args) { _theta0Text = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
+    private void Theta1Changed(ChangeEventArgs args) { _theta1Text = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
+    private void LearningRateChanged(ChangeEventArgs args) { _learningRateText = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
+    private void IterationsChanged(ChangeEventArgs args) { _iterationsText = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
+    private void ToleranceChanged(ChangeEventArgs args) { _toleranceText = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
+    private void DecayChanged(ChangeEventArgs args) { _decayText = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
+    private void SelectObjective(ObjectivePreset kind) { if (IsBusy) return; _objective = kind; ClearPresetSelection(); ClearReview(); ApplyInputs(); }
+    private void SelectVariant(GradientDescentVariant variant) { if (IsBusy) return; _variant = variant; ClearPresetSelection(); ClearReview(); ApplyInputs(); }
     private void SetPrediction(LossPrediction value) { if (IsBusy) return; _prediction = value; _predictionAnswered = false; }
+    private string PredictionButtonClass(LossPrediction value) => _prediction == value ? "active" : string.Empty;
+    private string PresetButtonClass(Preset value) => _preset == value ? "active" : string.Empty;
+    private void ClearPresetSelection() => _preset = null;
     private void ToggleAdvancedSettings() { if (!IsBusy) _showAdvancedSettings = !_showAdvancedSettings; }
 
     private void ApplyInputs()
@@ -409,7 +392,7 @@
 
     private void EvaluatePrediction(GradientDescentRunResult result)
     {
-        _predictionAnswered = _prediction.HasValue && result.History.Length >= 2;
+        _predictionAnswered = _prediction.HasValue;
         if (!_predictionAnswered) return;
         _predictionCorrect = FirstStepPrediction(result) == _prediction.Value;
     }
@@ -422,7 +405,7 @@
         return delta < 0d ? LossPrediction.Down : LossPrediction.Up;
     }
 
-    private static string FirstStepDirection(GradientDescentRunResult? result) => result is null || result.History.Length < 2 ? "unavailable" : FirstStepPrediction(result) switch { LossPrediction.Down => "go down", LossPrediction.Up => "go up", _ => "stay almost unchanged" };
+    private static string FirstStepDirection(GradientDescentRunResult? result) => result is null ? "unavailable" : FirstStepPrediction(result) switch { LossPrediction.Down => "go down", LossPrediction.Up => "go up", _ => "stay almost unchanged" };
 
     private void StartTask(int taskId)
     {
@@ -435,6 +418,7 @@
     private void LoadPreset(Preset preset, bool keepActiveTask = false)
     {
         if (IsBusy) return;
+        _preset = preset;
         switch (preset)
         {
             case Preset.Slow: SetInputs(ObjectivePreset.Balanced, 5d, -3d, 0.01d, 6, 0.000001d, 0.15d, GradientDescentVariant.FixedLearningRate); break;
@@ -516,7 +500,6 @@
 
     private sealed record RunFrame(string StepText, GradientDescentSnapshot Snapshot);
     private sealed record ObjectiveOption(ObjectivePreset Kind, string Kicker, string Title, string Description);
-    private sealed record PredictionOption(LossPrediction Value, string Label, string Description);
     private sealed record PracticeTaskDefinition(int Id, string Title, string Goal, string Suggested, Preset Preset);
     private enum ObjectivePreset { Balanced, NarrowValley, Shifted }
     private enum LossPrediction { Down, Up, Same }

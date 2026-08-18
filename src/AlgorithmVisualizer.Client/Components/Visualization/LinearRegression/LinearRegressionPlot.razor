@@ -1,0 +1,94 @@
+@using System.Globalization
+@using AlgorithmVisualizer.Core.MachineLearning.Supervised.LinearRegression
+
+<section class="lr-plot-card" aria-label="Linear Regression visual state">
+    <div class="lr-plot-header">
+        <div><span>MODEL</span><strong>ŷ = @Format(Snapshot.Weight)·x + @FormatSignedBias(Snapshot.Bias)</strong></div>
+        <div><span>MSE</span><strong>@Format(Snapshot.Loss)</strong></div>
+        <div><span>UPDATE</span><strong>@Snapshot.Iteration</strong></div>
+    </div>
+
+    <svg viewBox="0 0 760 390" role="img" aria-label="Training points, current regression line, predictions, and residuals">
+        <rect x="54" y="24" width="670" height="310" rx="16" class="plot-bg" />
+        @for (var tick = 0; tick <= 4; tick++)
+        {
+            var x = 54d + (tick * 167.5d);
+            var y = 24d + (tick * 77.5d);
+            <line x1="@F(x)" y1="24" x2="@F(x)" y2="334" class="grid-line" />
+            <line x1="54" y1="@F(y)" x2="724" y2="@F(y)" class="grid-line" />
+        }
+
+        <line x1="54" y1="334" x2="724" y2="334" class="axis-line" />
+        <line x1="54" y1="24" x2="54" y2="334" class="axis-line" />
+
+        <line x1="@F(MapX(XMin))" y1="@F(MapY(Predict(XMin)))" x2="@F(MapX(XMax))" y2="@F(MapY(Predict(XMax)))" class="model-line" />
+
+        @for (var index = 0; index < Snapshot.Count; index++)
+        {
+            var cx = MapX(Snapshot.X[index]);
+            var actualY = MapY(Snapshot.Y[index]);
+            var predictedY = MapY(Snapshot.Predictions[index]);
+            <line x1="@F(cx)" y1="@F(actualY)" x2="@F(cx)" y2="@F(predictedY)" class="residual-line" />
+            <circle cx="@F(cx)" cy="@F(predictedY)" r="5" class="prediction-point" />
+            <circle cx="@F(cx)" cy="@F(actualY)" r="7" class="training-point" />
+        }
+    </svg>
+
+    <div class="lr-plot-legend">
+        <span><i class="actual"></i>Training point</span>
+        <span><i class="prediction"></i>Current prediction</span>
+        <span><i class="residual"></i>Residual</span>
+        <span><i class="line"></i>Current line</span>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public LinearRegressionSnapshot Snapshot { get; set; } = default!;
+
+    private double XMin => Min(Snapshot.X) - XPadding;
+    private double XMax => Max(Snapshot.X) + XPadding;
+    private double YMin
+    {
+        get
+        {
+            var min = Min(Snapshot.Y);
+            var predictionMin = Min(Snapshot.Predictions);
+            if (predictionMin < min) min = predictionMin;
+            return min - YPadding;
+        }
+    }
+    private double YMax
+    {
+        get
+        {
+            var max = Max(Snapshot.Y);
+            var predictionMax = Max(Snapshot.Predictions);
+            if (predictionMax > max) max = predictionMax;
+            return max + YPadding;
+        }
+    }
+    private double XPadding => Math.Max(0.5d, (Max(Snapshot.X) - Min(Snapshot.X)) * 0.12d);
+    private double YPadding => Math.Max(1d, (Max(Snapshot.Y) - Min(Snapshot.Y)) * 0.18d);
+
+    private double Predict(double x) => (Snapshot.Weight * x) + Snapshot.Bias;
+    private double MapX(double x) => 54d + (((x - XMin) / Math.Max(1e-9, XMax - XMin)) * 670d);
+    private double MapY(double y) => 334d - (((y - YMin) / Math.Max(1e-9, YMax - YMin)) * 310d);
+
+    private static double Min(IReadOnlyList<double> values)
+    {
+        var min = values[0];
+        for (var index = 1; index < values.Count; index++) if (values[index] < min) min = values[index];
+        return min;
+    }
+
+    private static double Max(IReadOnlyList<double> values)
+    {
+        var max = values[0];
+        for (var index = 1; index < values.Count; index++) if (values[index] > max) max = values[index];
+        return max;
+    }
+
+    private static string Format(double value) => Math.Abs(value) < 1e-12 ? "0" : value.ToString("0.###", CultureInfo.InvariantCulture);
+    private static string FormatSignedBias(double value) => value < 0d ? $"− {Format(Math.Abs(value))}" : $"+ {Format(value)}";
+    private static string F(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
+}

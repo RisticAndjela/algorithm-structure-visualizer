@@ -164,3 +164,8 @@ The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctnes
 ## Gradient Descent coverage
 
 `MachineLearning/Optimization/GradientDescentSimulationTests.cs` verifies stable fixed-rate convergence, zero-update convergence when theta already equals the target, controlled divergence under an overly aggressive learning rate, Advanced learning-rate decay reducing the effective eta, arbitrary three-parameter optimization, and configuration rejection for dimension mismatch.
+
+
+## Linear Regression coverage
+
+`MachineLearning/Supervised/LinearRegressionSimulationTests.cs` verifies fitting a simple positive-slope line, zero-update convergence for an already-fitted line, learning a negative trend, the oversized-learning-rate divergence guard, and configuration rejection when X/Y point counts differ.

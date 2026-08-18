@@ -238,7 +238,7 @@ This preserves the architectural rule: Core teaches algorithms, Client visualize
 
 `DataStructures/Vector/ManualVector` is a reusable numerical data structure stored in a contiguous project-owned `double[]`. The learner-facing route is `/structures/vector` and its live Client page lives under `Pages/DataStructures/VectorPage.razor`; Machine Learning consumes it as a dependency rather than presenting Vector as a separate ML lesson. `VectorSimulation` owns renderer-neutral state for aligned component reads, result writes and scalar reductions. The Client owns text parsing, operation selection, Visual/Memory presentation, prediction, playback review, practice state and SQLite evidence.
 
-The Vector module must remain dependency-light: no numerical package, `System.Numerics.Vector<T>`, or framework search/aggregation helper may replace the explicit loops being taught. Gradient Descent now reuses this Core for L2 norm, scalar multiplication and subtraction; later regression, KNN, K-Means and PCA modules should follow the same composition rule.
+The Vector module must remain dependency-light: no numerical package, `System.Numerics.Vector<T>`, or framework search/aggregation helper may replace the explicit loops being taught. Gradient Descent reuses this Core for L2 norm, scalar multiplication and subtraction. Linear Regression reuses `ManualVector` for aligned training X/Y, prediction and residual storage. Later Logistic Regression, KNN, K-Means and PCA modules should follow the same composition rule.
 
 
 ## Gradient Descent / Machine Learning optimization boundary
@@ -247,7 +247,11 @@ The Vector module must remain dependency-light: no numerical package, `System.Nu
 
 The live Client route `/ml-foundations/gradient-descent` owns input parsing, Basic/Advanced variant selection, categorical prediction, loss-landscape/path rendering, Visual/Memory presentation, playback history, popup explanations and persisted practice evidence. The Core remains renderer-neutral. Runtime working state is O(n); Client-visible review history intentionally stores O(k·n) snapshots to support rewind and visualization.
 
-Linear Regression at `/ml-foundations/linear-regression` is currently a planned `LearningPlaceholder`. When implemented, model-specific prediction/loss/gradient logic should compose with the Data Structures Vector foundation and the existing Gradient Descent optimizer rather than moving numerical behavior into Client or Server code.
+## Linear Regression / first supervised-model boundary
+
+`MachineLearning/Supervised/LinearRegression/LinearRegressionSimulation` owns the first supervised model. It uses project-owned `ManualVector` instances for training X/Y values, current predictions and residuals, while weight and bias remain scalar parameters. Prediction, MSE, analytical `dw`/`db`, and full-batch parameter updates are explicit Core loops. The implementation follows the Gradient Descent update rule conceptually without delegating training to a framework optimizer or moving model math into the Client.
+
+The live Client route `/ml-foundations/linear-regression` owns dataset presets/custom parsing, beginner-visible weight/bias/learning-rate controls, progressive disclosure of stopping controls, first-update prediction, SVG line/residual rendering, Visual/Memory presentation, playback review, popup explanations, and persisted practice evidence. Logistic Regression at `/ml-foundations/logistic-regression` is the next planned `LearningPlaceholder`.
 
 
 ## Curriculum classification boundary
