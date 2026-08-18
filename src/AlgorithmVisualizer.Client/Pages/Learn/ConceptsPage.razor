@@ -74,6 +74,7 @@
                 <span>GRAPH ALGORITHMS</span>
                 <a href="#dijkstra">Dijkstra</a>
                 <a href="#topological-sort">Topological Sort</a>
+                <a href="#mst">Minimum Spanning Tree</a>
             </div>
         </nav>
 
@@ -893,14 +894,33 @@
         <div class="concept-lesson-links"><a href="/graph-algorithms/topological">Open the Topological Sort lab →</a><a href="/search/dfs">Review DFS →</a><a href="/structures/queue-stack">Review Queue →</a></div>
     </section>
 
+
+    <section id="mst" class='@SectionClass("mst")'>
+        <div class="section-heading">
+            <span>G5</span>
+            <div><h2>Minimum Spanning Tree: minimum total connectivity without cycles</h2><p>For a connected undirected graph, an MST includes every vertex, uses exactly V − 1 edges, contains no cycle, and minimizes the sum of selected edge weights.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class='@CardClass("mst", "concept-card")'><span class="term">TREE</span><h3>Span all vertices with no redundant cycle</h3><p>A spanning tree is about connectivity, not shortest routes from one source. If the graph is connected, selecting V − 1 safe edges is enough to connect all V vertices.</p><div class="example"><strong>Goal:</strong> minimize the total weight of the selected tree edges.</div></article>
+            <article class='@CardClass("mst-prim", "concept-card")'><span class="term queue">PRIM</span><h3>Choose the lightest edge crossing the cut</h3><p>Start from one vertex. Keep candidate edges that leave the current tree and repeatedly select the minimum edge whose other endpoint is still outside.</p><div class="example"><strong>Memory:</strong> inForest[] plus a manual min-heap frontier backed by the existing ManualHeapArray.</div></article>
+            <article class='@CardClass("mst-kruskal", "concept-card")'><span class="term">KRUSKAL</span><h3>Sort edges globally and join different components</h3><p>Inspect edges from lightest to heaviest. DSU/Union-Find answers whether the two endpoints already belong to the same component; if they do, the edge would create a cycle and is skipped.</p><div class="example"><strong>DSU:</strong> parent[] + rank[], path compression and union by rank.</div></article>
+            <article class='@CardClass("mst-forest", "concept-card")'><span class="term queue">DISCONNECTED</span><h3>No single MST exists across disconnected components</h3><p>Prim and Kruskal can still build a minimum spanning forest: one minimum tree per connected component. The lab reports that honestly instead of labeling the result as one spanning tree.</p><div class="example"><strong>Forest edge count:</strong> V − numberOfComponents.</div></article>
+            <article class='@CardClass("mst-negative", "concept-card")'><span class="term">NEGATIVE WEIGHTS</span><h3>Negative and zero edges are valid for MST</h3><p>MST algorithms do not use Dijkstra's settled-distance proof. A negative edge is simply a low-cost connection and can be selected whenever it is cycle-safe.</p><div class="example"><strong>Contrast:</strong> Dijkstra rejects negative weights; Prim and Kruskal do not.</div></article>
+            <article class='@CardClass("mst-comparison", "concept-card")'><span class="term queue">PRIM vs KRUSKAL</span><h3>Different local decisions, same minimum total weight</h3><p>With ties, Prim and Kruskal may choose different valid edge sets. For the same connected weighted graph, however, both must produce an MST with the same minimum total weight.</p><div class="example"><strong>Choice:</strong> Prim fits adjacency + priority frontier; Kruskal fits edge lists + sorting + DSU.</div></article>
+            <article class='@CardClass("mst-complexity", "concept-card")'><span class="term">COMPLEXITY</span><h3>Both implementations are O(E log E)</h3><p>Prim's project-owned edge heap performs logarithmic push/pop work for frontier candidates. Kruskal manually merge-sorts E edge indexes, then DSU operations are near-constant amortized.</p><div class="example"><strong>Extra memory:</strong> O(V + E) for frontier/sorted edge indexes plus membership or DSU state.</div></article>
+            <article class="concept-card"><span class="term">MST vs SHORTEST PATH</span><h3>Minimum total network cost is not minimum route cost</h3><p>An MST minimizes the sum of all chosen connections. Dijkstra minimizes the path from one source to each destination. An MST path between two vertices can be longer than their true shortest path in the original graph.</p></article>
+        </div>
+        <div class="concept-lesson-links"><a href="/graph-algorithms/mst">Open the MST lab →</a><a href="/graph-algorithms/dijkstra">Compare with Dijkstra →</a><a href="/structures/binary-heap">Review Binary Heap →</a></div>
+    </section>
+
     <section class="concept-section implementation-note">
         <div class="section-heading">
             <span>✓</span>
-            <div><h2>Implemented from scratch</h2><p>The learning structures and algorithms do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, Matrix, Graph, sorting, Linear Search, Binary Search, BFS, DFS, Dijkstra, Topological Sort, or balancing behavior to ready-made framework collections/search helpers.</p></div>
+            <div><h2>Implemented from scratch</h2><p>The learning structures and algorithms do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, Matrix, Graph, sorting, Linear Search, Binary Search, BFS, DFS, Dijkstra, Topological Sort, Minimum Spanning Tree, or balancing behavior to ready-made framework collections/search helpers.</p></div>
         </div>
         <div class="plain-note">
             <strong>What our code does itself</strong>
-            <p>Linear structures keep and grow their own raw array and move references with manual loops. BST, AVL, and Red-Black Tree keep explicit node links and perform their own comparisons, transplants, recoloring, and rotations. BST Balance uses our own Day-Stout-Warren vine/compression logic over those same node references. Heap uses its own growable raw array and manual index swaps for bubble-up/bubble-down instead of PriorityQueue or a library heap. Matrix uses its own row-major <code>double[]</code>, manual cell/index loops, row operations, multiplication and elimination instead of a numerical or linear-algebra library. Graph keeps canonical vertex/edge objects, manual adjacency lists over our own dynamic-array storage, and reuses ManualMatrix for the synchronized adjacency table instead of a graph package or dictionary-backed graph. Linear Search uses its own explicit index loop and does not call LINQ First/Contains or a framework search helper. Binary Search uses its own iterative left/right/mid loop and does not call Array.BinarySearch or another framework binary-search helper. BFS uses the existing Graph adjacency snapshot plus the project's manual dynamic-array storage as a FIFO Queue; DFS uses recursive calls or the same manual storage as an explicit LIFO Stack. Neither delegates traversal to a graph library or framework Queue/Stack collection. Dijkstra reuses that same Graph snapshot, performs its own relaxation/minimum selection, and in Advanced mode uses a project-owned binary min-heap instead of <code>PriorityQueue&lt;TElement, TPriority&gt;</code>. Topological Sort also reuses the same Graph snapshot: Kahn mode maintains indegree[] and a head-index FIFO over the project manual array, while DFS mode uses white/gray/black recursion plus a manual postorder buffer; neither delegates ordering or cycle detection to a graph library. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the taught data-structure algorithms for us.</p>
+            <p>Linear structures keep and grow their own raw array and move references with manual loops. BST, AVL, and Red-Black Tree keep explicit node links and perform their own comparisons, transplants, recoloring, and rotations. BST Balance uses our own Day-Stout-Warren vine/compression logic over those same node references. Heap uses its own growable raw array and manual index swaps for bubble-up/bubble-down instead of PriorityQueue or a library heap. Matrix uses its own row-major <code>double[]</code>, manual cell/index loops, row operations, multiplication and elimination instead of a numerical or linear-algebra library. Graph keeps canonical vertex/edge objects, manual adjacency lists over our own dynamic-array storage, and reuses ManualMatrix for the synchronized adjacency table instead of a graph package or dictionary-backed graph. Linear Search uses its own explicit index loop and does not call LINQ First/Contains or a framework search helper. Binary Search uses its own iterative left/right/mid loop and does not call Array.BinarySearch or another framework binary-search helper. BFS uses the existing Graph adjacency snapshot plus the project's manual dynamic-array storage as a FIFO Queue; DFS uses recursive calls or the same manual storage as an explicit LIFO Stack. Neither delegates traversal to a graph library or framework Queue/Stack collection. Dijkstra reuses that same Graph snapshot, performs its own relaxation/minimum selection, and in Advanced mode uses a project-owned binary min-heap instead of <code>PriorityQueue&lt;TElement, TPriority&gt;</code>. Topological Sort also reuses the same Graph snapshot: Kahn mode maintains indegree[] and a head-index FIFO over the project manual array, while DFS mode uses white/gray/black recursion plus a manual postorder buffer; neither delegates ordering or cycle detection to a graph library. MST reuses the same undirected Graph snapshot: Prim uses the existing ManualHeapArray as a min-edge frontier, while Kruskal manually merge-sorts edge indexes and uses a hand-written DSU with path compression and union by rank. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the taught data-structure algorithms for us.</p>
         </div>
     </section>
 
@@ -934,6 +954,7 @@
         "dfs-complexity" or "dfs-stack" => "dfs",
         "dijkstra-relaxation" or "dijkstra-priority" or "dijkstra-negative" or "dijkstra-complexity" => "dijkstra",
         "topological-dag" or "topological-kahn" or "topological-dfs" or "topological-cycle" or "topological-complexity" => "topological-sort",
+        "mst-prim" or "mst-kruskal" or "mst-forest" or "mst-negative" or "mst-comparison" or "mst-complexity" => "mst",
         _ => NormalizedTopic
     };
 
@@ -985,6 +1006,13 @@
         "topological-dfs" => "DFS reverse postorder",
         "topological-cycle" => "Topological Sort cycle detection",
         "topological-complexity" => "Topological Sort complexity",
+        "mst" => "Minimum Spanning Tree",
+        "mst-prim" => "Prim and the cut frontier",
+        "mst-kruskal" => "Kruskal and Union-Find",
+        "mst-forest" => "Minimum spanning forests",
+        "mst-negative" => "MST with negative and zero weights",
+        "mst-comparison" => "Prim vs Kruskal",
+        "mst-complexity" => "MST complexity",
         _ => "Concepts & Memory"
     };
 
@@ -1012,6 +1040,7 @@
         "dfs" or "dfs-complexity" or "dfs-stack" => "/search/dfs",
         "dijkstra" or "dijkstra-relaxation" or "dijkstra-priority" or "dijkstra-negative" or "dijkstra-complexity" => "/graph-algorithms/dijkstra",
         "topological-sort" or "topological-dag" or "topological-kahn" or "topological-dfs" or "topological-cycle" or "topological-complexity" => "/graph-algorithms/topological",
+        "mst" or "mst-prim" or "mst-kruskal" or "mst-forest" or "mst-negative" or "mst-comparison" or "mst-complexity" => "/graph-algorithms/mst",
         _ => null
     };
 
@@ -1053,7 +1082,8 @@
         "binary-search" or "binary-search-complexity" or "binary-search-duplicates" or
         "bfs" or "bfs-complexity" or "dfs" or "dfs-complexity" or "dfs-stack" or
         "dijkstra" or "dijkstra-relaxation" or "dijkstra-priority" or "dijkstra-negative" or "dijkstra-complexity" or
-        "topological-sort" or "topological-dag" or "topological-kahn" or "topological-dfs" or "topological-cycle" or "topological-complexity" => true,
+        "topological-sort" or "topological-dag" or "topological-kahn" or "topological-dfs" or "topological-cycle" or "topological-complexity" or
+        "mst" or "mst-prim" or "mst-kruskal" or "mst-forest" or "mst-negative" or "mst-comparison" or "mst-complexity" => true,
         _ => false
     };
 }

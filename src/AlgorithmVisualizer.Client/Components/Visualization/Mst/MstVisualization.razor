@@ -1,0 +1,99 @@
+@using AlgorithmVisualizer.Core.Algorithms.GraphSpanningTree.Mst
+@using AlgorithmVisualizer.Core.DataStructures.Graph
+@using AlgorithmVisualizer.Client.Components.Visualization.Graphs
+
+<section class="mst-visual" aria-label="Minimum Spanning Tree visual state">
+    <div class="mst-summary-strip">
+        <div><span>SELECTED</span><strong>@Snapshot.SelectedEdgeIndices.Length</strong><small>@SelectedSummary</small></div>
+        <div><span>TOTAL WEIGHT</span><strong>@Snapshot.TotalWeight.ToString("0.###")</strong><small>@(Snapshot.ComponentCount <= 1 ? "tree candidate" : $"{Snapshot.ComponentCount} forest components")</small></div>
+        <div><span>@FrontierTitle.ToUpperInvariant()</span><strong>@FrontierCount</strong><small>@FrontierSummary</small></div>
+    </div>
+
+    <GraphVisualization Snapshot="@VisualGraph" ShowDefaultLegend="false" />
+
+    <div class="selected-strip">
+        <span>SELECTED FOREST EDGES</span>
+        <div class="selected-slots">
+            @if (Snapshot.SelectedEdgeIndices.Length == 0)
+            {
+                <span class="empty-selected">No edge selected yet</span>
+            }
+            else
+            {
+                @foreach (var edgeIndex in Snapshot.SelectedEdgeIndices)
+                {
+                    <span class="selected-edge">@EdgeText(edgeIndex)</span>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="mst-legend" aria-label="MST state legend">
+        <span><i class="selected"></i>Selected MST/forest edge</span>
+        <span><i class="candidate"></i>Current candidate</span>
+        <span><i class="rejected"></i>Rejected cycle edge</span>
+        <span><i class="forest"></i>Vertex already connected</span>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public MstSnapshot Snapshot { get; set; } = new(
+        new(false, true, 0, 0, [], [], []), [], [], [], [], -1, -1, -1, -1,
+        0d, 0, 0, 0, 0, 0, 0, 0, 0, MstPhase.Ready, MstVariant.Prim, 0);
+
+    private string FrontierTitle => Snapshot.Variant == MstVariant.Prim ? "Min frontier" : "Sorted edges";
+    private int FrontierCount => Snapshot.Variant == MstVariant.Prim ? Snapshot.Frontier.Length : Snapshot.SortedEdgeIndices.Length;
+    private string FrontierSummary => Snapshot.Variant == MstVariant.Prim
+        ? $"{Snapshot.FrontierPushes} pushes · {Snapshot.FrontierPops} pops"
+        : $"{Snapshot.SortComparisons} sort comparisons · {Snapshot.CycleSkips} cycle skips";
+    private string SelectedSummary => Snapshot.SelectedEdgeIndices.Length == 0 ? "none yet" : string.Join(" · ", Snapshot.SelectedEdgeIndices.Select(EdgeText));
+
+    private GraphSnapshot VisualGraph
+    {
+        get
+        {
+            var selected = Snapshot.SelectedEdgeIndices.ToHashSet();
+            var vertices = new GraphVertexSnapshot[Snapshot.Graph.Vertices.Length];
+            for (var index = 0; index < vertices.Length; index++)
+            {
+                var original = Snapshot.Graph.Vertices[index];
+                var state = Snapshot.Vertices.Length > index ? Snapshot.Vertices[index].State : MstVertexState.Normal;
+                vertices[index] = original with
+                {
+                    VisualState = state switch
+                    {
+                        MstVertexState.Current => GraphVertexVisualState.Source,
+                        MstVertexState.Candidate => GraphVertexVisualState.Target,
+                        MstVertexState.InForest => GraphVertexVisualState.Matched,
+                        _ => GraphVertexVisualState.Normal
+                    }
+                };
+            }
+
+            var edges = new GraphEdgeSnapshot[Snapshot.Graph.Edges.Length];
+            for (var index = 0; index < edges.Length; index++)
+            {
+                var original = Snapshot.Graph.Edges[index];
+                edges[index] = original with
+                {
+                    VisualState = selected.Contains(index)
+                        ? GraphEdgeVisualState.Matched
+                        : index == Snapshot.RejectedEdgeIndex
+                            ? GraphEdgeVisualState.Removing
+                            : index == Snapshot.CandidateEdgeIndex
+                                ? GraphEdgeVisualState.Checking
+                                : GraphEdgeVisualState.Normal
+                };
+            }
+            return Snapshot.Graph with { Vertices = vertices, Edges = edges };
+        }
+    }
+
+    private string EdgeText(int edgeIndex)
+    {
+        if (edgeIndex < 0 || edgeIndex >= Snapshot.Graph.Edges.Length) return "?";
+        var edge = Snapshot.Graph.Edges[edgeIndex];
+        return $"{edge.FromLabel}—{edge.ToLabel} ({edge.Weight:0.###})";
+    }
+}

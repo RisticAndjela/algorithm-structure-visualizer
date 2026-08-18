@@ -15,6 +15,7 @@ algorithm-structure-visualizer/
 │  │  ├─ Algorithms/GraphTraversal/
 │  │  ├─ Algorithms/GraphShortestPath/Dijkstra/
 │  │  ├─ Algorithms/GraphOrdering/Topological/
+│  │  ├─ Algorithms/GraphSpanningTree/Mst/
 │  │  └─ Simulation/
 │  ├─ AlgorithmVisualizer.Client/
 │  │  ├─ Components/
@@ -188,7 +189,7 @@ The dedicated Binary Heap specialization adds:
 
 ### Graph
 
-The Graph structure module adds canonical `GraphVertex`/`GraphEdge` objects, manually stored adjacency lists, and a synchronized adjacency matrix backed by the existing `ManualMatrix`. Graph Core has no fixed eight-vertex cap; `ManualMatrix` is reusable storage whose dimensions follow the graph, while MatrixPage keeps its separate 8×8 teaching/input limit. The Client renders topology separately from representation memory, scrolls large matrix views internally, and uses ring-then-grid automatic topology placement before optional manual dragging. BFS and DFS are now live algorithm modules that consume this exact Graph snapshot instead of introducing a second graph representation. Dijkstra now follows this reuse pattern: it consumes the same Graph snapshot and adds renderer-neutral shortest-path state. Topological Sort now follows the same reuse pattern; MST should continue it.
+The Graph structure module adds canonical `GraphVertex`/`GraphEdge` objects, manually stored adjacency lists, and a synchronized adjacency matrix backed by the existing `ManualMatrix`. Graph Core has no fixed eight-vertex cap; `ManualMatrix` is reusable storage whose dimensions follow the graph, while MatrixPage keeps its separate 8×8 teaching/input limit. The Client renders topology separately from representation memory, scrolls large matrix views internally, and uses ring-then-grid automatic topology placement before optional manual dragging. BFS and DFS are now live algorithm modules that consume this exact Graph snapshot instead of introducing a second graph representation. Dijkstra now follows this reuse pattern: it consumes the same Graph snapshot and adds renderer-neutral shortest-path state. Topological Sort and Minimum Spanning Tree now follow the same reuse pattern. MST adds only renderer-neutral forest/DSU/frontier state over the existing undirected Graph snapshot.
 
 ### Breadth-First Search and Depth-First Search
 
@@ -200,7 +201,7 @@ Dijkstra reuses the immutable Graph snapshot and renderer-neutral simulation run
 
 ## Planned extension path
 
-Future graph/path modules should reuse the same Core/runtime/Client separation rather than duplicating playback infrastructure. Dijkstra is live: Basic mode uses manual linear minimum selection and Advanced mode uses a Dijkstra-specific binary min-heap built on the existing `ManualHeapArray` storage priority frontier with lazy stale entries. Topological Sort is live and reuses the established Graph plus the manual Queue/recursive DFS foundations. MST remains future and should reuse Graph/Heap/Union-Find foundations where they are genuine algorithmic dependencies.
+Future graph/path modules should reuse the same Core/runtime/Client separation rather than duplicating playback infrastructure. Dijkstra is live: Basic mode uses manual linear minimum selection and Advanced mode uses a Dijkstra-specific binary min-heap built on the existing `ManualHeapArray` storage priority frontier with lazy stale entries. Topological Sort is live and reuses the established Graph plus the manual Queue/recursive DFS foundations. MST is live: Prim reuses Graph plus existing ManualHeapArray storage, while Kruskal adds manual merge-sort ordering and a hand-written Union-Find/DSU.
 
 
 ## Matrix module
@@ -232,3 +233,8 @@ Graph drag coordinates are Client-only world coordinates keyed by stable vertex 
 The Server owns persistence only. It must not contain sorting, tree, graph, heap, matrix, traversal, or simulation logic. SQLite stores learner state in `LearningState(UserId, StateKey, StateValue, UpdatedAtUtc)`. `UserId` comes from a long-lived HttpOnly anonymous cookie created by the server. Database access uses `Microsoft.Data.Sqlite` with parameterized SQL and an upsert on `(UserId, StateKey)`.
 
 This preserves the architectural rule: Core teaches algorithms, Client visualizes them, and Server persists learning state.
+
+
+### Minimum Spanning Tree
+
+MST consumes the immutable undirected `GraphSnapshot`. Prim owns `inForest[]`, component state, selected edge indexes and a minimum cut-edge frontier backed by the existing `ManualHeapArray<T>`. Kruskal owns manually merge-sorted edge indexes plus DSU `parent[]`/`rank[]` arrays with path compression and union by rank. Negative/zero weights are legal, directed input is rejected, and disconnected input yields a renderer-neutral minimum spanning forest result. The Client owns presets, prediction, playback frames, Visual/Memory presentation and SQLite-backed practice evidence.

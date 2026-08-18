@@ -40,7 +40,8 @@ public sealed record GraphNeighborSnapshot(
     string Label,
     Guid EdgeId,
     double Weight,
-    int VertexIndex = -1);
+    int VertexIndex = -1,
+    int EdgeIndex = -1);
 
 public sealed record GraphVertexSnapshot(
     int Index,

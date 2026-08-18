@@ -1,0 +1,94 @@
+@using AlgorithmVisualizer.Core.Algorithms.GraphSpanningTree.Mst
+
+<section class="mst-memory" aria-label="Minimum Spanning Tree memory state">
+    <div class="memory-intro">
+        <span>MEMORY STATE</span>
+        <strong>@MemoryHeadline</strong>
+        <p>@MemoryExplanation</p>
+    </div>
+
+    @if (Snapshot.Variant == MstVariant.Prim)
+    {
+        <div class="frontier-card">
+            <div class="card-heading"><span>MANUAL MIN-HEAP FRONTIER</span><strong>cut edges ordered by weight</strong></div>
+            <div class="frontier-list">
+                @if (Snapshot.Frontier.Length == 0)
+                {
+                    <span class="empty-slot">empty</span>
+                }
+                else
+                {
+                    @for (var index = 0; index < Snapshot.Frontier.Length; index++)
+                    {
+                        var item = Snapshot.Frontier[index];
+                        <span class="frontier-slot @(item.Stale ? "stale" : string.Empty)"><small>@index</small><strong>@Label(item.FromIndex)→@Label(item.ToIndex)</strong><em>w=@item.Weight.ToString("0.###")</em></span>
+                    }
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="frontier-card">
+            <div class="card-heading"><span>MANUALLY SORTED EDGE ORDER</span><strong>ascending weight, stable tie by edge index</strong></div>
+            <div class="frontier-list">
+                @foreach (var edgeIndex in Snapshot.SortedEdgeIndices)
+                {
+                    <span class="frontier-slot"><small>#@edgeIndex</small><strong>@EdgeText(edgeIndex)</strong></span>
+                }
+            </div>
+        </div>
+    }
+
+    <div class="table-scroll">
+        <table>
+            <thead>
+            @if (Snapshot.Variant == MstVariant.Prim)
+            {
+                <tr><th>Index</th><th>Vertex</th><th>inForest[]</th><th>Component</th><th>State</th></tr>
+            }
+            else
+            {
+                <tr><th>Index</th><th>Vertex</th><th>parent[]</th><th>rank[]</th><th>Component root</th></tr>
+            }
+            </thead>
+            <tbody>
+            @foreach (var vertex in Snapshot.Vertices)
+            {
+                <tr class="@RowClass(vertex.State)">
+                    <td>@vertex.Index</td><td><strong>@vertex.Label</strong></td>
+                    @if (Snapshot.Variant == MstVariant.Prim)
+                    {
+                        <td>@(vertex.InForest ? "true" : "false")</td><td>@(vertex.Component < 0 ? "—" : vertex.Component)</td><td>@StateLabel(vertex.State)</td>
+                    }
+                    else
+                    {
+                        <td>@vertex.DsuParent</td><td>@vertex.DsuRank</td><td>@vertex.Component</td>
+                    }
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="memory-note"><strong>No Graph mutation:</strong><span>@MemoryNote</span></div>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public MstSnapshot Snapshot { get; set; } = new(
+        new(false, true, 0, 0, [], [], []), [], [], [], [], -1, -1, -1, -1,
+        0d, 0, 0, 0, 0, 0, 0, 0, 0, MstPhase.Ready, MstVariant.Prim, 0);
+
+    private string MemoryHeadline => Snapshot.Variant == MstVariant.Prim ? "inForest[] + manual edge heap" : "parent[] + rank[] + sorted edge indexes";
+    private string MemoryExplanation => Snapshot.Variant == MstVariant.Prim
+        ? "Prim grows one connected component at a time. The source Graph stays unchanged; inForest[] marks membership and the existing ManualHeapArray storage keeps candidate cut edges ordered by minimum weight."
+        : "Kruskal stores no growing graph copy. It manually sorts edge indexes, then DSU parent[]/rank[] answers whether two endpoints are already connected before an edge is accepted.";
+    private string MemoryNote => Snapshot.Variant == MstVariant.Prim
+        ? "Popping a stale frontier edge does not delete a graph edge. It only discards a candidate whose target has already joined the forest."
+        : "Path compression rewrites DSU parent[] references only. It does not change the actual Graph or the final selected edge identities.";
+    private string Label(int index) => index >= 0 && index < Snapshot.Graph.VertexCount ? Snapshot.Graph.Vertices[index].Label : "?";
+    private string EdgeText(int index) { if(index<0||index>=Snapshot.Graph.Edges.Length)return "?"; var e=Snapshot.Graph.Edges[index]; return $"{e.FromLabel}—{e.ToLabel} · {e.Weight:0.###}"; }
+    private static string StateLabel(MstVertexState state) => state switch { MstVertexState.InForest => "in forest", MstVertexState.Current => "current", MstVertexState.Candidate => "candidate", _ => "outside" };
+    private static string RowClass(MstVertexState state) => state switch { MstVertexState.Current => "current", MstVertexState.Candidate => "candidate", MstVertexState.InForest => "selected", _ => string.Empty };
+}

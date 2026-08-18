@@ -152,3 +152,5 @@ The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctnes
 - Dijkstra: cheaper detours, Basic/Advanced equivalence, stale priority entries, disconnected infinity, zero-weight support, and negative-weight rejection.
 
 - Topological Sort: Kahn and DFS valid-order checks, multiple sources, cycle detection, weighted-edge ignoring, undirected rejection, and single-vertex boundary.
+
+- MST tests cover Prim/Kruskal minimum-weight agreement, negative/zero weights, disconnected forests, Kruskal cycle rejection, directed precondition rejection, and the single-vertex boundary.

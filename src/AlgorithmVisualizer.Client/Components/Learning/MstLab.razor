@@ -1,0 +1,330 @@
+@using AlgorithmVisualizer.Core.Algorithms.GraphSpanningTree.Mst
+@using AlgorithmVisualizer.Core.DataStructures.Graph
+@using AlgorithmVisualizer.Client.Components.Visualization.Mst
+@implements IDisposable
+@inject SimulationState SimulationState
+@inject MstSimulation Mst
+@inject GraphSimulation Graph
+@inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
+
+<div class="mst-page learning-module-page learning-module-shell">
+    <section class="learn-launchpad" aria-labelledby="mst-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="mst-learn-title">A minimum spanning tree connects every vertex with the cheapest cycle-free edge set.</h2>
+            <p>For a connected undirected graph, an MST uses exactly V − 1 edges. Prim grows one tree across the current cut; Kruskal grows many components and joins them with globally light edges.</p>
+            <ConceptLink class="learn-launchpad-link" Href="/learn/concepts/mst">Open MST concepts &amp; memory →</ConceptLink>
+        </div>
+        <div class="learn-grid">
+            <article class="learn-card purple"><span>SPAN</span><strong>Reach every vertex</strong><small>A connected MST contains all vertices but only the edges needed to keep them connected.</small></article>
+            <article class="learn-card blue"><span>NO CYCLE</span><strong>V − 1 selected edges</strong><small>Any extra edge inside one connected tree would close a cycle.</small></article>
+            <article class="learn-card mint"><span>PRIM</span><strong>Grow across the cut</strong><small>Always choose the lightest frontier edge that reaches a vertex outside the current tree.</small></article>
+            <article class="learn-card gold"><span>KRUSKAL</span><strong>Join DSU components</strong><small>Inspect globally sorted edges and reject any edge whose endpoints are already connected.</small></article>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow"><span>MINIMUM SPANNING TREE</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <h1>Prim &amp; Kruskal</h1>
+            <p>Reuse the existing Graph representation and compare a manual min-heap cut frontier with a manually sorted edge list plus Union-Find.</p>
+        </div>
+        <div class="complexity-summary" aria-label="MST complexity">
+            <div><span>Time</span><strong>O(E log E)</strong><small>heap frontier or manual edge sort</small></div>
+            <div><span>Extra space</span><strong>O(V + E)</strong><small>frontier / sorted edges / DSU</small></div>
+            <div><span>Mutation</span><strong>Restart</strong><small>graph changes invalidate selected edges</small></div>
+        </div>
+    </header>
+
+    <section class="smart-tip">
+        <span class="tip-icon">✦</span>
+        <div><strong>Negative weights are valid here.</strong><p>Unlike Dijkstra, MST algorithms do not settle shortest path distances. A negative edge can simply be a very attractive connection and is safe if it does not create a cycle.</p></div>
+        <ConceptLink Href="/learn/concepts/mst-negative">MST vs Dijkstra weights →</ConceptLink>
+    </section>
+
+    <section class="implementation-section">
+        <div class="section-heading-row"><div><span class="section-kicker">ALGORITHM CHOICE</span><h2>Same minimum forest, different way to prevent cycles.</h2></div></div>
+        <div class="variant-grid">
+            <button type="button" class="variant-card @(_variant == MstVariant.Prim ? "active" : string.Empty)" @onclick="() => SetVariant(MstVariant.Prim)" disabled="@IsBusy">
+                <span>PRIM · CUT FRONTIER</span><strong>Manual min-edge heap</strong><p>Start from one vertex and repeatedly take the lightest edge crossing from the current tree to an outside vertex.</p><small>Reuses ManualHeapArray · start vertex matters for tie order.</small>
+            </button>
+            <button type="button" class="variant-card @(_variant == MstVariant.Kruskal ? "active" : string.Empty)" @onclick="() => SetVariant(MstVariant.Kruskal)" disabled="@IsBusy">
+                <span>KRUSKAL · UNION-FIND</span><strong>Manual merge sort + DSU</strong><p>Sort all edges by weight, then accept an edge only when its endpoints belong to different components.</p><small>Path compression + union by rank · no graph library.</small>
+            </button>
+        </div>
+    </section>
+
+    <section class="builder-section">
+        <div class="section-heading-row">
+            <div class="heading-with-step"><span class="step-number">1</span><div><span class="section-kicker">CHOOSE THE GRAPH</span><h2>Use an undirected preset or reuse your Graph lab state.</h2><p>Weighted and unweighted graphs are valid. Zero and negative weights are valid. Directed graphs are rejected before the algorithm starts.</p></div></div>
+            <a class="concept-link" href="/structures/graph">Open Graph builder →</a>
+        </div>
+        <div class="graph-source-grid">
+            <div class="preset-panel">
+                <span class="control-label">PRESETS</span>
+                <div class="preset-row">
+                    <button type="button" @onclick="() => LoadPreset(MstPreset.Classic)" disabled="@IsBusy">Classic</button>
+                    <button type="button" @onclick="() => LoadPreset(MstPreset.EqualWeights)" disabled="@IsBusy">Equal weights</button>
+                    <button type="button" @onclick="() => LoadPreset(MstPreset.NegativeAndZero)" disabled="@IsBusy">Negative + zero</button>
+                    <button type="button" @onclick="() => LoadPreset(MstPreset.Disconnected)" disabled="@IsBusy">Disconnected</button>
+                    <button type="button" @onclick="() => LoadPreset(MstPreset.CycleHeavy)" disabled="@IsBusy">Cycle-heavy</button>
+                    <button type="button" @onclick="() => LoadPreset(MstPreset.Unweighted)" disabled="@IsBusy">Unweighted</button>
+                    <button type="button" @onclick="() => LoadPreset(MstPreset.DirectedInvalid)" disabled="@IsBusy">Directed invalid</button>
+                    <button type="button" @onclick="() => LoadPreset(MstPreset.Single)" disabled="@IsBusy">Single</button>
+                </div>
+            </div>
+            <div class="graph-lab-panel">
+                <span class="control-label">YOUR GRAPH LAB STATE</span>
+                <strong>@GraphLabSummary</strong>
+                <button type="button" class="secondary-action" @onclick="UseGraphLabSnapshot" disabled="@(IsBusy || Graph.CreateSnapshot().VertexCount == 0)">Use current Graph lab snapshot</button>
+            </div>
+        </div>
+        <div class="start-row">
+            <label>
+                <span>PRIM START VERTEX</span>
+                <select value="@_startIndex" @onchange="StartChanged" disabled="@(IsBusy || _variant != MstVariant.Prim)">
+                    @foreach (var vertex in _graph.Vertices)
+                    {
+                        <option value="@vertex.Index">@vertex.Label</option>
+                    }
+                </select>
+            </label>
+            <div class="graph-mode"><span>@(_graph.Directed ? "Directed · invalid" : "Undirected")</span><span>@(_graph.Weighted ? "Weighted" : "Unweighted = weight 1")</span><span>@_graph.VertexCount vertices</span><span>@_graph.EdgeCount edges</span></div>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(_inputMessage))
+        {
+            <div class="@InputMessageClass">@_inputMessage</div>
+        }
+    </section>
+
+    <section class="predict-section">
+        <div class="heading-with-step"><span class="step-number">2</span><div><span class="section-kicker">PREDICT</span><h2>Which edge will be selected first?</h2><p>Prim looks only at edges leaving the start vertex. Kruskal looks at the globally lightest non-cycle edge. Ties use the lower edge index.</p></div></div>
+        <div class="prediction-row">
+            <select value="@_predictionEdge" @onchange="PredictionChanged" disabled="@IsBusy">
+                <option value="-2">Choose prediction…</option>
+                <option value="-1">No edge will be selected</option>
+                @for (var index = 0; index < _graph.Edges.Length; index++)
+                {
+                    <option value="@index">@EdgeText(index)</option>
+                }
+            </select>
+            @if (_predictionAnswered)
+            {
+                <span class="prediction-feedback @(_predictionCorrect ? "correct" : "wrong")">@PredictionFeedback</span>
+            }
+        </div>
+    </section>
+
+    <section class="lab-section">
+        <div class="lab-heading">
+            <div class="heading-with-step"><span class="step-number">3</span><div><span class="section-kicker">WATCH THE REAL C# RUN</span><h2>Watch edge choice, cycle rejection and component growth.</h2></div></div>
+            <div class="lab-actions">
+                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Auto-open explanation</span></label>
+                <button class="sort-button" type="button" @onclick="RunAsync" disabled="@IsBusy"><span>▶</span> Run @(VariantLabel(_variant))</button>
+                @if (_result is not null)
+                {
+                    <button type="button" @onclick="OpenLastRun">Last run explanation</button>
+                }
+            </div>
+        </div>
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+        <div class="state-tabs" role="tablist"><button type="button" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual State</button><button type="button" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory State</button></div>
+        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/mst">MST rule →</ConceptLink><ConceptLink Href="/learn/concepts/mst-prim">Prim cut →</ConceptLink><ConceptLink Href="/learn/concepts/mst-kruskal">Kruskal + DSU →</ConceptLink><ConceptLink Href="/learn/concepts/mst-complexity">Complexity →</ConceptLink></div>
+        <div class="state-surface">
+            @if (_view == StateView.Visual)
+            {
+                <MstVisualization Snapshot="@DisplayedSnapshot" />
+            }
+            else
+            {
+                <MstMemoryVisualization Snapshot="@DisplayedSnapshot" />
+            }
+        </div>
+    </section>
+
+    <section class="fit-section">
+        <div class="section-heading-row"><div><span class="section-kicker">WHEN IT FITS</span><h2>Use MST when the goal is cheap connectivity, not shortest routes from one source.</h2></div></div>
+        <div class="fit-grid">
+            <article class="fit-card"><span>GOOD FIT</span><strong>Network design</strong><p>Connect sites, devices or locations while minimizing total selected connection cost.</p></article>
+            <article class="fit-card"><span>PRIM</span><strong>Grow locally from one component</strong><p>Natural when adjacency access and a min-priority frontier are already available.</p></article>
+            <article class="fit-card"><span>KRUSKAL</span><strong>Think globally by edges</strong><p>Natural when edges are easy to sort and DSU can cheaply test whether a cycle would form.</p></article>
+            <article class="fit-card"><span>NOT DIJKSTRA</span><strong>Total tree cost ≠ shortest path cost</strong><p>An MST minimizes the sum of selected tree edges; it does not guarantee shortest routes from a chosen source.</p></article>
+        </div>
+    </section>
+
+    <section class="practice-section">
+        <div class="practice-heading"><div><span class="section-kicker">GUIDED PRACTICE</span><h2>Tasks auto-complete from any matching undirected graph.</h2><p>Start task only loads a convenient scenario. Extra vertices and edges are allowed whenever the required MST/forest behavior still occurs.</p></div><strong>@_completedTaskIds.Count / @PracticeTasks.Length complete</strong></div>
+        <div class="practice-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                <PracticeTaskCard TaskId="@task.Id" Title="@task.Title" Description="@task.Goal" InputText="@task.Suggested" HelpHref="@task.HelpHref" Completed="@_completedTaskIds.Contains(task.Id)" Active="@(_activeTaskId == task.Id)" Busy="@IsBusy" HasEvidence="@(GetTaskEvidence(task.Id) is not null)" Start="@(() => StartTask(task.Id))" OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
+            }
+        </div>
+    </section>
+
+    <NextLessonCard Eyebrow="GRAPH ALGORITHMS COMPLETE SO FAR" Level="Review" Title="Compare Graph algorithms" Description="You now have reachability, shortest paths, dependency ordering and minimum spanning connectivity over the same Graph foundation." Href="/structures/graph" LinkLabel="Return to Graph foundation" />
+</div>
+
+@if (_lastRunPopupOpen && _result is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRun">
+        <section class="run-popup" role="dialog" aria-modal="true" @onclick:stopPropagation="true">
+            <header><div><span class="section-kicker">LAST RUN</span><h2>@LastRunHeadline</h2></div><button type="button" class="popup-close" @onclick="CloseLastRun">×</button></header>
+            <div class="popup-body">
+                <p>@LastRunExplanation</p>
+                <div class="popup-metrics">
+                    @foreach (var metric in LastRunMetrics)
+                    {
+                        <div><span>@metric.Label</span><strong>@metric.Value</strong></div>
+                    }
+                </div>
+                <p class="popup-memory">@LastRunMemory</p>
+            </div>
+        </section>
+    </div>
+}
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
+
+@code {
+    private const string ModuleKey = "mst";
+    private const string LegacyKey = "algorithm-visualizer.mst.completed-tasks.v1";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.mst.result-popups.v1";
+    private readonly List<RunFrame> _frames = [];
+    private readonly HashSet<int> _completedTaskIds = [];
+    private PracticeModuleProgress _practiceProgress = new();
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
+    private GraphSnapshot _graph = MstPresets.Create(MstPreset.Classic);
+    private MstVariant _variant = MstVariant.Prim;
+    private int _startIndex;
+    private int _predictionEdge = -2;
+    private bool _predictionAnswered;
+    private bool _predictionCorrect;
+    private string? _inputMessage;
+    private string? _lastValidationError;
+    private MstResult? _result;
+    private string? _lastCapturedStep;
+    private int _frameIndex = -1;
+    private bool _lastRunPopupOpen;
+    private bool _storageLoaded;
+    private bool _showRunPopups = true;
+    private int? _activeTaskId;
+    private StateView _view = StateView.Visual;
+    private string? _lastPrimSignature;
+    private double? _lastPrimWeight;
+    private string? _lastKruskalSignature;
+    private double? _lastKruskalWeight;
+
+    private string InputMessageClass => _lastValidationError is null ? "input-message" : "input-message warning";
+    private bool IsBusy => SimulationState.IsRunning;
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_frames.Count > 0 && _frameIndex < _frames.Count - 1) || SimulationState.IsRunning;
+    private int TimelineCount => _frames.Count;
+    private int TimelinePosition => _frameIndex >= 0 ? _frameIndex + 1 : 0;
+    private string DisplayedStepText => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].StepText : SimulationState.CurrentStepText;
+    private MstSnapshot DisplayedSnapshot => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].Snapshot : Mst.CreateSnapshot();
+    private string GraphLabSummary { get { var s = Graph.CreateSnapshot(); return s.VertexCount == 0 ? "Graph lab is empty." : $"{s.VertexCount} vertices · {s.EdgeCount} edges · {(s.Directed ? "directed" : "undirected")} · {(s.Weighted ? "weighted" : "unweighted")}"; } }
+    private string PredictionFeedback => _predictionCorrect ? "Correct — that is the first edge this deterministic implementation selects." : $"This implementation selects {ExpectedFirstEdgeText()} first.";
+    private string LastRunHeadline => _result is null ? "Minimum Spanning Tree" : _result.IsMinimumSpanningTree ? $"MST weight = {_result.TotalWeight:0.###}" : $"Minimum spanning forest · {_result.ComponentCount} components";
+    private string LastRunExplanation => _result is null ? string.Empty : _result.IsMinimumSpanningTree ? $"{VariantLabel(_result.Variant)} selected {_result.SelectedEdgeIndices.Length} edges for {_result.Graph.VertexCount} vertices with total weight {_result.TotalWeight:0.###}. Every selected edge was safe: it connected two previously separated parts without creating a cycle." : $"{VariantLabel(_result.Variant)} selected a minimum spanning forest with {_result.ComponentCount} components. The graph is disconnected, so no single spanning tree can include every vertex.";
+    private string LastRunMemory => _result is null ? string.Empty : _result.Variant == MstVariant.Prim ? "Prim kept inForest[] plus a project-owned ManualHeapArray frontier of cut edges. Stale candidates were skipped after their target had already joined the forest." : "Kruskal manually merge-sorted edge indexes and used parent[]/rank[] DSU state with path compression and union by rank. The source Graph never changed.";
+    private IReadOnlyList<PracticeEvidenceMetric> LastRunMetrics => _result is null ? [] : [new("Selected", _result.SelectedEdgeIndices.Length.ToString()), new("Weight", _result.TotalWeight.ToString("0.###")), new("Components", _result.ComponentCount.ToString()), new(_result.Variant == MstVariant.Prim ? "Heap pops" : "Cycle skips", (_result.Variant == MstVariant.Prim ? _result.FrontierPops : _result.CycleSkips).ToString())];
+
+    private static readonly PracticeTaskDefinition[] PracticeTasks =
+    [
+        new(1,"Build a real MST","Use any connected undirected graph with at least four vertices and finish with exactly V − 1 selected edges.","Classic connected graph",MstPreset.Classic,MstVariant.Prim,"/learn/concepts/mst"),
+        new(2,"Grow with Prim's cut frontier","Complete any non-trivial Prim run where the manual min-heap frontier chooses at least one edge.","Classic · Prim",MstPreset.Classic,MstVariant.Prim,"/learn/concepts/mst-prim"),
+        new(3,"Reject a Kruskal cycle","Use Kruskal on any graph where at least one inspected edge is skipped because its endpoints are already connected.","Cycle-heavy · Kruskal",MstPreset.CycleHeavy,MstVariant.Kruskal,"/learn/concepts/mst-kruskal"),
+        new(4,"Accept a negative edge","Build any valid MST/forest that actually selects at least one negative-weight edge.","Negative + zero",MstPreset.NegativeAndZero,MstVariant.Kruskal,"/learn/concepts/mst-negative"),
+        new(5,"Accept a zero-weight edge","Build any valid MST/forest that selects a zero-weight edge.","Negative + zero",MstPreset.NegativeAndZero,MstVariant.Prim,"/learn/concepts/mst-negative"),
+        new(6,"Handle equal-weight choices","Complete any connected graph containing at least two equal edge weights. Any deterministic minimum tree is valid.","Equal weights",MstPreset.EqualWeights,MstVariant.Prim,"/learn/concepts/mst"),
+        new(7,"Produce a minimum spanning forest","Use any disconnected undirected graph and finish with more than one component instead of falsely claiming one MST.","Disconnected",MstPreset.Disconnected,MstVariant.Kruskal,"/learn/concepts/mst-forest"),
+        new(8,"Handle an unweighted graph","Run either algorithm on an undirected unweighted graph where every stored edge behaves as weight 1.","Unweighted",MstPreset.Unweighted,MstVariant.Prim,"/learn/concepts/mst"),
+        new(9,"Protect the undirected precondition","Attempt MST on any directed graph and let the lab reject it before edge selection starts.","Directed invalid",MstPreset.DirectedInvalid,MstVariant.Prim,"/learn/concepts/mst"),
+        new(10,"Test the one-vertex boundary","Use exactly one undirected vertex. The valid spanning tree has zero selected edges and total weight 0.","Single",MstPreset.Single,MstVariant.Prim,"/learn/concepts/mst"),
+        new(11,"Make Prim and Kruskal agree","Run both algorithms on the same connected weighted graph and verify they produce the same minimum total weight, even if tie edges differ.","Classic · run both",MstPreset.Classic,MstVariant.Prim,"/learn/concepts/mst-comparison")
+    ];
+
+    protected override void OnInitialized() { SimulationState.Changed += HandleSimulationChanged; LoadPreset(MstPreset.Classic); }
+    protected override async Task OnAfterRenderAsync(bool firstRender) { if(!firstRender||_storageLoaded)return; _storageLoaded=true; _practiceProgress=PracticeProgress.Load(ModuleKey,LegacyKey,PracticeTasks.Select(t=>t.Id)); _completedTaskIds.Clear(); foreach(var id in _practiceProgress.CompletedTaskIds)_completedTaskIds.Add(id); var setting=LearningStore.GetItem(PopupSettingStorageKey); if(bool.TryParse(setting,out var show))_showRunPopups=show; await InvokeAsync(StateHasChanged); }
+
+    private void LoadPreset(MstPreset preset) { if(IsBusy)return; ClearReview(); _graph=MstPresets.Create(preset); _startIndex=0; _predictionEdge=-2; _predictionAnswered=false; _lastValidationError=null; _inputMessage=$"Loaded {preset} preset."; Mst.LoadGraph(_graph); Mst.Configure(_variant,_startIndex); }
+    private void UseGraphLabSnapshot() { if(IsBusy)return; var s=Graph.CreateSnapshot(); if(s.VertexCount==0){_inputMessage="Build at least one vertex in Graph lab first.";return;} ClearReview(); _graph=s; _startIndex=0; _predictionEdge=-2; _predictionAnswered=false; _lastValidationError=null; _inputMessage=s.Directed?"Using the current directed Graph snapshot. MST will reject it because spanning-tree edges must be undirected.":"Using the current undirected Graph snapshot."; Mst.LoadGraph(_graph); Mst.Configure(_variant,_startIndex); }
+    private void SetVariant(MstVariant variant) { if(IsBusy)return; _variant=variant; ClearReview(); Mst.LoadGraph(_graph); Mst.Configure(variant,_startIndex); _predictionEdge=-2; _predictionAnswered=false; }
+    private void StartChanged(ChangeEventArgs args) { if(!int.TryParse(args.Value?.ToString(),out var v)||v<0||v>=_graph.VertexCount)return; _startIndex=v; ClearReview(); Mst.LoadGraph(_graph); Mst.Configure(_variant,_startIndex); }
+    private void PredictionChanged(ChangeEventArgs args) { if(!int.TryParse(args.Value?.ToString(),out _predictionEdge))_predictionEdge=-2; _predictionAnswered=_predictionEdge!=-2; _predictionCorrect=_predictionAnswered&&_predictionEdge==ExpectedFirstEdge(); }
+
+    private async Task RunAsync()
+    {
+        if(IsBusy)return;
+        _lastValidationError=null;
+        if(!MstSimulation.TryValidateGraph(_graph,out var validationError)) { _lastValidationError=validationError; _inputMessage=validationError; EvaluateDirectedTask(validationError??"MST requires an undirected graph."); return; }
+        PrepareRun(); var token=SimulationState.Start($"Start {VariantLabel(_variant)} minimum spanning forest.");
+        try { _result=await Mst.BuildAsync(_graph,_variant,_startIndex,token); if(IsCurrent(token)){SimulationState.Complete("Minimum spanning forest complete."); _predictionCorrect=_predictionAnswered&&_predictionEdge==(_result.SelectedEdgeIndices.Length>0?_result.SelectedEdgeIndices[0]:-1); TrackVariantAgreement(_result); EvaluatePractice(_result); if(_showRunPopups)_lastRunPopupOpen=true;} }
+        catch(OperationCanceledException) when(token.IsCancellationRequested){}
+        catch(Exception ex){if(IsCurrent(token))SimulationState.Complete("MST stopped.");_inputMessage=ex.Message;}
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void PrepareRun(){SimulationState.Reset();_frames.Clear();_frameIndex=-1;_lastCapturedStep=null;_result=null;_lastRunPopupOpen=false;_inputMessage=null;Mst.LoadGraph(_graph);Mst.Configure(_variant,_startIndex);}
+    private void HandleSimulationChanged(){if(SimulationState.IsRunning)Capture();_=InvokeAsync(StateHasChanged);}
+    private void Capture(){var text=SimulationState.CurrentStepText;if(string.IsNullOrWhiteSpace(text)||string.Equals(text,_lastCapturedStep,StringComparison.Ordinal))return;_lastCapturedStep=text;_frames.Add(new RunFrame(text,Mst.CreateSnapshot()));_frameIndex=_frames.Count-1;}
+    private bool IsCurrent(CancellationToken token)=>!token.IsCancellationRequested&&SimulationState.SimulationCancellationToken==token;
+    private void ClearReview(){SimulationState.Reset();_frames.Clear();_frameIndex=-1;_lastCapturedStep=null;_result=null;_lastRunPopupOpen=false;}
+    private Task PlayTimelineAsync(){if(_frames.Count>0)_frameIndex=_frames.Count-1;SimulationState.Resume();return InvokeAsync(StateHasChanged);}
+    private Task PauseTimelineAsync(){SimulationState.Pause();return Task.CompletedTask;}
+    private Task StepBackAsync(){if(SimulationState.IsRunning&&!SimulationState.IsPaused)SimulationState.Pause();if(_frameIndex>0)_frameIndex--;return InvokeAsync(StateHasChanged);}
+    private Task StepForwardAsync(){if(_frameIndex>=0&&_frameIndex<_frames.Count-1){_frameIndex++;return InvokeAsync(StateHasChanged);}if(SimulationState.IsRunning)SimulationState.Step();return Task.CompletedTask;}
+    private Task ResetPlaybackAsync(){SimulationState.Reset();_frames.Clear();_frameIndex=-1;_lastCapturedStep=null;return InvokeAsync(StateHasChanged);}
+    private void ToggleRunPopups(ChangeEventArgs args){_showRunPopups=args.Value is bool value?value:bool.TryParse(args.Value?.ToString(),out var parsed)&&parsed;LearningStore.SetItem(PopupSettingStorageKey,_showRunPopups.ToString());}
+    private void OpenLastRun()=>_lastRunPopupOpen=_result is not null; private void CloseLastRun()=>_lastRunPopupOpen=false;
+
+    private void StartTask(int taskId){if(IsBusy)return;var task=PracticeTasks.First(t=>t.Id==taskId);_activeTaskId=taskId;LoadPreset(task.Preset);_activeTaskId=taskId;_variant=task.Variant;Mst.Configure(_variant,_startIndex);}
+    private void EvaluatePractice(MstResult result)
+    {
+        foreach(var task in PracticeTasks)
+        {
+            if(task.Id==9)continue;
+            if(_completedTaskIds.Contains(task.Id)&&GetTaskEvidence(task.Id)is not null&&_activeTaskId!=task.Id)continue;
+            var completed=task.Id switch
+            {
+                1=>result.Graph.VertexCount>=4&&result.IsMinimumSpanningTree,
+                2=>result.Variant==MstVariant.Prim&&result.FrontierPops>0&&result.SelectedEdgeIndices.Length>0,
+                3=>result.Variant==MstVariant.Kruskal&&result.CycleSkips>0,
+                4=>SelectedWeightMatches(result,w=>w<0d),
+                5=>SelectedWeightMatches(result,w=>Math.Abs(w)<=1e-9),
+                6=>result.IsMinimumSpanningTree&&HasEqualWeights(result.Graph),
+                7=>result.ComponentCount>1&&result.IsMinimumSpanningForest,
+                8=>!result.Graph.Weighted&&result.IsMinimumSpanningForest,
+                10=>result.Graph.VertexCount==1&&result.SelectedEdgeIndices.Length==0&&Math.Abs(result.TotalWeight)<=1e-9,
+                11=>PrimAndKruskalAgree(result),
+                _=>false
+            };
+            if(completed)CompleteTask(task,result);
+        }
+    }
+    private void EvaluateDirectedTask(string validationError){var task=PracticeTasks.First(t=>t.Id==9);if(!_graph.Directed)return;if(_completedTaskIds.Contains(task.Id)&&GetTaskEvidence(task.Id)is not null&&_activeTaskId!=task.Id)return;var evidence=new PracticeCompletionEvidence(task.Id,task.Title,"MST rejected a directed graph",validationError,"No frontier, edge sort or DSU run was started; the Graph remained unchanged.","Rejecting direction is part of the algorithm contract: MST connectivity assumes symmetric undirected edges.",[new("Graph","Directed"),new("Run started","No"),new("Edges",_graph.EdgeCount.ToString())],$"{_graph.VertexCount} vertices · validation stopped before MST");_completedTaskIds.Add(task.Id);PracticeProgress.Complete(ModuleKey,_practiceProgress,task.Id,evidence);if(_activeTaskId==task.Id)_activeTaskId=null;}
+    private void CompleteTask(PracticeTaskDefinition task,MstResult result){var evidence=new PracticeCompletionEvidence(task.Id,task.Title,result.IsMinimumSpanningTree?"A minimum spanning tree completed the required behavior":"A minimum spanning forest completed the required behavior",$"{VariantLabel(result.Variant)} selected {FormatEdges(result.SelectedEdgeIndices)} with total weight {result.TotalWeight:0.###}. The tracker matched structural behavior rather than one hardcoded graph.",result.Variant==MstVariant.Prim?"Prim used inForest[] and the existing ManualHeapArray-based edge frontier.":"Kruskal used manually merge-sorted edge indexes plus DSU parent[]/rank[] with path compression and union by rank.","The selected edges connect as much of the undirected graph as possible at minimum total cost without cycles. Extra graph content is allowed when the requested property still holds.",[new("Selected",result.SelectedEdgeIndices.Length.ToString()),new("Weight",result.TotalWeight.ToString("0.###")),new("Components",result.ComponentCount.ToString()),new("Cycle skips",result.CycleSkips.ToString())],$"{VariantLabel(result.Variant)} · {(result.Graph.Weighted?"weighted":"unweighted")} · {(result.IsConnected?"connected":"disconnected")}");_completedTaskIds.Add(task.Id);PracticeProgress.Complete(ModuleKey,_practiceProgress,task.Id,evidence);if(_activeTaskId==task.Id)_activeTaskId=null;}
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId)=>PracticeProgress.GetEvidence(_practiceProgress,taskId); private void OpenTaskEvidence(int taskId)=>_practiceEvidencePopup=GetTaskEvidence(taskId); private void CloseTaskEvidence()=>_practiceEvidencePopup=null;
+
+    private int ExpectedFirstEdge()
+    {
+        if(_graph.Directed||_graph.Edges.Length==0)return -1;
+        var best=-1;var bestWeight=double.PositiveInfinity;
+        if(_variant==MstVariant.Kruskal){for(var i=0;i<_graph.Edges.Length;i++){var e=_graph.Edges[i];if(e.FromIndex==e.ToIndex)continue;if(e.Weight<bestWeight-1e-9||(Math.Abs(e.Weight-bestWeight)<=1e-9&&(best<0||i<best))){best=i;bestWeight=e.Weight;}}return best;}
+        for(var i=0;i<_graph.Edges.Length;i++){var e=_graph.Edges[i];if(e.FromIndex==e.ToIndex)continue;if(e.FromIndex!=_startIndex&&e.ToIndex!=_startIndex)continue;if(e.Weight<bestWeight-1e-9||(Math.Abs(e.Weight-bestWeight)<=1e-9&&(best<0||i<best))){best=i;bestWeight=e.Weight;}}return best;
+    }
+    private string ExpectedFirstEdgeText(){var i=ExpectedFirstEdge();return i<0?"no edge":EdgeText(i);}
+    private void TrackVariantAgreement(MstResult result){var sig=GraphSignature(result.Graph);if(result.Variant==MstVariant.Prim){_lastPrimSignature=sig;_lastPrimWeight=result.TotalWeight;}else{_lastKruskalSignature=sig;_lastKruskalWeight=result.TotalWeight;}}
+    private bool PrimAndKruskalAgree(MstResult result)=>result.IsMinimumSpanningTree&&_lastPrimSignature is not null&&_lastKruskalSignature is not null&&_lastPrimSignature==_lastKruskalSignature&&Math.Abs((_lastPrimWeight??double.NaN)-(_lastKruskalWeight??double.NaN))<=1e-9;
+    private static string GraphSignature(GraphSnapshot graph){var vertexIds=new string[graph.Vertices.Length];for(var i=0;i<graph.Vertices.Length;i++)vertexIds[i]=graph.Vertices[i].Id.ToString("N");var edgeIds=new string[graph.Edges.Length];for(var i=0;i<graph.Edges.Length;i++){var e=graph.Edges[i];edgeIds[i]=$"{e.Id:N}:{e.Weight:0.########}";}return $"{string.Join(",",vertexIds)}|{string.Join(";",edgeIds)}";}
+    private static bool SelectedWeightMatches(MstResult result,Func<double,bool> predicate){for(var i=0;i<result.SelectedEdgeIndices.Length;i++){var edgeIndex=result.SelectedEdgeIndices[i];if(edgeIndex>=0&&edgeIndex<result.Graph.Edges.Length&&predicate(result.Graph.Edges[edgeIndex].Weight))return true;}return false;}
+    private static bool HasEqualWeights(GraphSnapshot graph){for(var i=0;i<graph.Edges.Length;i++)for(var j=i+1;j<graph.Edges.Length;j++)if(Math.Abs(graph.Edges[i].Weight-graph.Edges[j].Weight)<=1e-9)return true;return false;}
+    private string EdgeText(int index){if(index<0||index>=_graph.Edges.Length)return "?";var e=_graph.Edges[index];return $"{e.FromLabel}—{e.ToLabel} · w={e.Weight:0.###}";}
+    private string FormatEdges(int[] indices){if(indices.Length==0)return "no edges";var values=new string[indices.Length];for(var i=0;i<indices.Length;i++)values[i]=EdgeText(indices[i]);return string.Join(", ",values);}
+    private static string VariantLabel(MstVariant variant)=>variant==MstVariant.Prim?"Prim":"Kruskal";
+    public void Dispose()=>SimulationState.Changed-=HandleSimulationChanged;
+    private sealed record RunFrame(string StepText,MstSnapshot Snapshot);
+    private sealed record PracticeTaskDefinition(int Id,string Title,string Goal,string Suggested,MstPreset Preset,MstVariant Variant,string HelpHref);
+    private enum StateView{Visual,Memory}
+}

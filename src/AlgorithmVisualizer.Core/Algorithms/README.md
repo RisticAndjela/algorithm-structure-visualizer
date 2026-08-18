@@ -181,3 +181,5 @@ Linear Search, Binary Search, BFS, DFS, Dijkstra, and Topological Sort are live.
 Core namespace: `AlgorithmVisualizer.Core.Algorithms.GraphOrdering.Topological`
 
 Topological Sort consumes the existing directed `GraphSnapshot`. Kahn mode uses explicit `indegree[]` plus a head-index FIFO over `ManualDynamicArray<int>`. DFS mode uses recursive white/gray/black visitation plus a manual postorder buffer and manual reverse. Both are `O(V + E)` time / `O(V)` extra space, ignore edge weights, reject undirected input, and report directed cycles rather than returning a misleading ordering.
+
+- **Minimum Spanning Tree / Forest** — Prim with the existing manual heap storage and Kruskal with manual merge sort + DSU/Union-Find. Both reuse the canonical undirected Graph snapshot.
