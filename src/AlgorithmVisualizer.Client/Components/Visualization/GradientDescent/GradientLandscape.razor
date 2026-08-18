@@ -3,11 +3,18 @@
 @using AlgorithmVisualizer.Core.MachineLearning.Optimization.GradientDescent
 
 <section class="gradient-landscape" aria-label="Gradient descent parameter landscape">
-    <div class="landscape-copy">
-        <span>PARAMETER SPACE</span>
-        <strong>Contours represent equal-loss regions.</strong>
-        <small>The path shows each committed parameter vector. The center marker is the target/minimum.</small>
+    <div class="gradient-summary-strip">
+        <div><span>UPDATE</span><strong>@Snapshot.Iteration</strong><small>@PhaseLabel</small></div>
+        <div><span>LOSS J(θ)</span><strong>@FormatValue(Snapshot.Loss)</strong><small>lower is better</small></div>
+        <div><span>GRADIENT NORM</span><strong>@FormatValue(Snapshot.GradientNorm)</strong><small>||∇J||₂</small></div>
+        <div><span>EFFECTIVE η</span><strong>@FormatValue(Snapshot.EffectiveLearningRate)</strong><small>step multiplier</small></div>
     </div>
+
+    <div class="landscape-copy">
+        <div><span>PARAMETER SPACE</span><strong>Contours show equal-loss regions.</strong></div>
+        <small>The path connects committed parameter vectors. The green point marks the minimum; purple marks the current θ.</small>
+    </div>
+
     <div class="landscape-canvas">
         <svg viewBox="0 0 100 100" role="img" aria-label="Gradient descent path toward the loss minimum" preserveAspectRatio="none">
             <ellipse class="loss-contour outer" cx="@CenterX" cy="@CenterY" rx="@ContourRx(31)" ry="@ContourRy(31)" />
@@ -35,6 +42,13 @@
         <div class="landscape-label minimum-label" style="left:@Percent(CenterX);top:@Percent(CenterY);">minimum</div>
         <div class="landscape-label current-label" style="left:@Percent(CurrentX);top:@Percent(CurrentY);">θ</div>
     </div>
+
+    <div class="gradient-legend" aria-label="Gradient Descent visual legend">
+        <span><i class="path"></i>Committed path</span>
+        <span><i class="current"></i>Current θ</span>
+        <span><i class="candidate"></i>Candidate θ′</span>
+        <span><i class="minimum"></i>Minimum</span>
+    </div>
 </section>
 
 @code {
@@ -47,6 +61,16 @@
     private double CandidateX => Snapshot.NextParameters.Length > 0 ? MapX(Snapshot.NextParameters[0]) : CurrentX;
     private double CandidateY => Snapshot.NextParameters.Length > 1 ? MapY(Snapshot.NextParameters[1]) : CurrentY;
     private bool HasCandidate => Snapshot.Phase == GradientDescentPhase.UpdatingParameters;
+    private string PhaseLabel => Snapshot.Phase switch
+    {
+        GradientDescentPhase.ComputingGradient => "computing gradient",
+        GradientDescentPhase.ScalingGradient => "scaling gradient",
+        GradientDescentPhase.UpdatingParameters => "updating parameters",
+        GradientDescentPhase.EvaluatingLoss => "evaluating loss",
+        GradientDescentPhase.Complete => "completed",
+        GradientDescentPhase.Diverged => "diverged",
+        _ => "ready"
+    };
 
     private string PathPoints
     {
@@ -83,5 +107,6 @@
     private static string CoordinateX(double value) => FormatCoordinate(MapX(value));
     private static string CoordinateY(double value) => FormatCoordinate(MapY(value));
     private static string FormatCoordinate(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
+    private static string FormatValue(double value) => Math.Abs(value) < 1e-12 ? "0" : value.ToString("0.####", CultureInfo.InvariantCulture);
     private static string Percent(double value) => $"{FormatCoordinate(value)}%";
 }
