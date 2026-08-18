@@ -44,7 +44,7 @@ The application now has twelve fully implemented learning modules: **Queue & Sta
 - per-run complexity explanation;
 - deletion and memory-shift explanation;
 - guided practice tasks with automatic completion;
-- persistent learning progress in browser storage;
+- learning progress kept in C# application-session state; durable persistence is reserved for a future C# backend/API;
 - optional result explanation popups;
 - Concepts & Memory learning page;
 - shared learner-facing module chrome in `wwwroot/css/learning-modules.css`, using the mature Queue & Stack / BST / Matrix / Graph visual language for sorting Learn First panels, module headers, tips, reference links, and lesson progression;
@@ -189,7 +189,7 @@ Implemented capabilities include direct editing/resizing, presets (zero, identit
 
 No numerical or linear-algebra library performs these taught operations. The live Graph module reuses this Matrix implementation for adjacency-matrix representation rather than creating a second matrix engine.
 
-The Client imports `Microsoft.JSInterop` globally because interactive learning pages use `IJSRuntime` for browser-side task progress persistence. This keeps Razor pages compile-safe without repeating JS interop imports in every module.
+The Client contains no project-owned JavaScript and no `IJSRuntime` calls. Learning progress and popup preferences are currently kept in the scoped C# `LearningSessionStore`, which survives navigation for the lifetime of the running Blazor WebAssembly application. A full browser reload starts a new WebAssembly process and clears that session state; durable persistence should be implemented later through a C# HTTP API/database rather than by reintroducing browser-storage JavaScript interop. Framework-generated Blazor bootstrap/runtime JavaScript remains part of the .NET WebAssembly platform and is not application logic.
 
 ### Planned
 
@@ -621,7 +621,7 @@ The Red-Black lab supports:
 - Memory state with node identity, color, root/parent/left/right references, and explicit `null → NIL(B)` child explanations;
 - optional Last Run popups;
 - guided practice for root-black, red-uncle, triangle, line, delete-fix-up, and search behavior;
-- persistent task completion in browser storage.
+- task completion kept in the scoped C# application-session store.
 
 The `LEARN FIRST` section intentionally follows the established Queue & Stack / BST / AVL visual hierarchy instead of introducing a separate design language.
 
@@ -1245,7 +1245,7 @@ This keeps algorithms independent from rendering concerns.
 - Razor components
 - CSS isolation
 - WebAssembly
-- minimal browser JS interop for local browser storage
+- no project-owned JavaScript or JS interop; browser-session state is kept in C#
 - xUnit + Microsoft.NET.Test.Sdk for Core unit tests
 
 The algorithmic and simulation logic is implemented in C#.
@@ -1402,6 +1402,6 @@ Graph UI markup follows a strict Razor rule: whenever `@if`, `@foreach`, `@for`,
 
 ### Graph guided practice and explanations
 
-Graph now follows the same learning-completion contract as the mature Queue/Stack, tree, and Heap modules. Guided Practice is no longer static reading: the learner starts a task, the page observes real `GraphSimulation` results plus the current graph snapshot, validates the requested topology/operation, marks completion automatically, and persists completed task IDs in browser `localStorage`. Tasks cover undirected symmetry, directed asymmetry, a real zero-weight edge, incident-edge cleanup during vertex deletion, sparse list-vs-matrix inspection, and a branch/cycle topology prepared for later BFS/DFS.
+Graph now follows the same learning-completion contract as the mature Queue/Stack, tree, and Heap modules. Guided Practice is no longer static reading: the learner starts a task, the page observes real `GraphSimulation` results plus the current graph snapshot, validates the requested topology/operation, marks completion automatically, and keeps completed task IDs in the scoped C# learning-session store. Tasks cover undirected symmetry, directed asymmetry, a real zero-weight edge, incident-edge cleanup during vertex deletion, sparse list-vs-matrix inspection, and a branch/cycle topology prepared for later BFS/DFS.
 
-Every completed Graph action now has a learner-facing explanation layer. The Last Run card can reopen a dismissible interactive explanation with three views: the action that happened, how the adjacency list and Matrix-backed representation changed together, and why the operation matters for later graph algorithms. Automatic result explanations can be disabled and that preference is persisted locally. The Graph `Result popups` toggle now lives in the Playground header beside `Last run explanation`, matching the established Queue/Stack, BST, AVL, and Heap interaction pattern instead of creating a graph-specific preference strip below the result. The Graph lab also exposes direct `Graph concepts` and `Concepts & memory` links beside the Visual/Memory controls so theory is always reachable from the working area.
+Every completed Graph action now has a learner-facing explanation layer. The Last Run card can reopen a dismissible interactive explanation with three views: the action that happened, how the adjacency list and Matrix-backed representation changed together, and why the operation matters for later graph algorithms. Automatic result explanations can be disabled and that preference is retained in C# for the lifetime of the running Blazor application session. The Graph `Result popups` toggle now lives in the Playground header beside `Last run explanation`, matching the established Queue/Stack, BST, AVL, and Heap interaction pattern instead of creating a graph-specific preference strip below the result. The Graph lab also exposes direct `Graph concepts` and `Concepts & memory` links beside the Visual/Memory controls so theory is always reachable from the working area.

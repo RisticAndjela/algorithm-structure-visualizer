@@ -3,10 +3,9 @@
 @using System.Text.Json
 @using AlgorithmVisualizer.Client.Components.Visualization.Trees
 @using AlgorithmVisualizer.Core.DataStructures.Trees.RedBlack
-@using Microsoft.JSInterop
 @inject SimulationState SimulationState
 @inject RedBlackSimulation Tree
-@inject IJSRuntime JS
+@inject LearningSessionStore LearningStore
 
 <PageTitle>Red-Black Tree Lab — Algorithm Visualizer</PageTitle>
 
@@ -64,7 +63,7 @@
                     <button class="last-run-button" type="button" @onclick="OpenLastRunPopup">Last run explanation</button>
                 }
                 <label class="popup-toggle">
-                    <input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopupsAsync" />
+                    <input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" />
                     <span>Result popups</span>
                 </label>
             </div>
@@ -258,7 +257,7 @@
             }
 
             <footer>
-                <label class="popup-toggle inside"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopupsAsync" /><span>Show automatically after future Red-Black runs</span></label>
+                <label class="popup-toggle inside"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Show automatically after future Red-Black runs</span></label>
             </footer>
         </section>
     </div>
@@ -326,7 +325,7 @@
         _storageLoaded = true;
         try
         {
-            var completedJson = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { CompletedTasksStorageKey });
+            var completedJson = LearningStore.GetItem(CompletedTasksStorageKey);
             if (!string.IsNullOrWhiteSpace(completedJson))
             {
                 var completed = JsonSerializer.Deserialize<int[]>(completedJson) ?? [];
@@ -336,7 +335,7 @@
                 }
             }
 
-            var popupSetting = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { PopupSettingStorageKey });
+            var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
             if (bool.TryParse(popupSetting, out var showPopups))
             {
                 _showRunPopups = showPopups;
@@ -344,7 +343,7 @@
         }
         catch
         {
-            // The Red-Black lab remains fully usable when browser storage is unavailable.
+            // The Red-Black lab remains fully usable if session-state restoration fails.
         }
 
         await InvokeAsync(StateHasChanged);
@@ -588,7 +587,7 @@
         _activeTaskId = null;
         _practiceEvents.Clear();
         _memoryOpenedDuringTask = false;
-        _ = PersistCompletedTasksAsync();
+        PersistCompletedTasks();
     }
 
     private string GetActiveTaskProgressText(int taskId) => taskId switch
@@ -602,18 +601,18 @@
         _ => string.Empty
     };
 
-    private async Task PersistCompletedTasksAsync()
+    private void PersistCompletedTasks()
     {
         try
         {
-            await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { CompletedTasksStorageKey, JsonSerializer.Serialize(_completedTaskIds.OrderBy(id => id).ToArray()) });
+            LearningStore.SetItem(CompletedTasksStorageKey, JsonSerializer.Serialize(_completedTaskIds.OrderBy(id => id).ToArray()));
         }
         catch
         {
         }
     }
 
-    private async Task ToggleRunPopupsAsync(ChangeEventArgs args)
+    private void ToggleRunPopups(ChangeEventArgs args)
     {
         _showRunPopups = args.Value is bool boolValue
             ? boolValue
@@ -621,7 +620,7 @@
 
         try
         {
-            await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { PopupSettingStorageKey, _showRunPopups.ToString() });
+            LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString());
         }
         catch
         {

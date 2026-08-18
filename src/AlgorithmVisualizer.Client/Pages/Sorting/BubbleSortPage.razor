@@ -4,7 +4,7 @@
 @implements IDisposable
 @inject SimulationState SimulationState
 @inject BubbleSortSimulation BubbleSort
-@inject IJSRuntime JS
+@inject LearningSessionStore LearningStore
 
 <PageTitle>Bubble Sort — Algorithm Visualizer</PageTitle>
 
@@ -139,7 +139,7 @@
                 <h2 id="visualizer-title">Follow every compare, decision, and swap.</h2>
             </div>
             <div class="lab-actions">
-                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopupsAsync" /><span>Open explanation after run</span></label>
+                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Open explanation after run</span></label>
                 @if (_lastResult is not null)
                 {
                     <button class="secondary-action" type="button" @onclick="OpenLastRunPopup">Last explanation</button>
@@ -424,7 +424,7 @@
         _storageLoaded = true;
         try
         {
-            var completedJson = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { CompletedTasksStorageKey });
+            var completedJson = LearningStore.GetItem(CompletedTasksStorageKey);
             if (!string.IsNullOrWhiteSpace(completedJson))
             {
                 var completed = System.Text.Json.JsonSerializer.Deserialize<int[]>(completedJson) ?? [];
@@ -434,7 +434,7 @@
                 }
             }
 
-            var popupSetting = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { PopupSettingStorageKey });
+            var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
             if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
         }
         catch
@@ -689,7 +689,7 @@
         _activeTaskId = null;
         _practiceResults.Clear();
         _memoryOpenedDuringTask = false;
-        _ = PersistCompletedTasksAsync();
+        PersistCompletedTasks();
     }
 
     private string GetActiveTaskProgressText(int taskId)
@@ -713,24 +713,24 @@
         };
     }
 
-    private async Task PersistCompletedTasksAsync()
+    private void PersistCompletedTasks()
     {
         try
         {
             var json = System.Text.Json.JsonSerializer.Serialize(_completedTaskIds.OrderBy(id => id).ToArray());
-            await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { CompletedTasksStorageKey, json });
+            LearningStore.SetItem(CompletedTasksStorageKey, json);
         }
         catch
         {
         }
     }
 
-    private async Task ToggleRunPopupsAsync(ChangeEventArgs args)
+    private void ToggleRunPopups(ChangeEventArgs args)
     {
         _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed;
         try
         {
-            await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { PopupSettingStorageKey, _showRunPopups.ToString() });
+            LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString());
         }
         catch
         {

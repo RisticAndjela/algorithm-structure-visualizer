@@ -8,16 +8,16 @@
 
 `GraphVisualization` allows direct pointer dragging of vertices. Manual positions are UI-only overrides keyed by stable vertex ID. The component recalculates edge paths, arrows, reverse-edge curves, self-loops and weight-label positions from those coordinates on every render, so connections follow a dragged node without mutating the Core graph. `Reset layout` discards the overrides and restores the automatic ring/grid placement.
 
-A tiny ES module (`wwwroot/js/graph-drag.js`) is used only for SVG pointer capture, viewport measurement, and scroll compensation. It does not own graph data, run graph algorithms or persist layout state.
+Graph dragging is handled entirely by Blazor pointer events and C# component state. There is no project-owned JavaScript module or `IJSRuntime` dependency in the graph visualization. Leaving the SVG safely terminates a drag because browser pointer capture is intentionally not requested through JavaScript.
 
 Dragged vertices are positioned through a stable SVG `<g transform="translate(x y)">` wrapper. Dynamic SVG coordinates are formatted with invariant culture, and non-finite pointer/world values are rejected before they can enter layout state. This prevents a click or tiny drag from producing an invalid `<foreignObject>` coordinate and making the vertex disappear.
 
 
 ## Content-bounded unbounded canvas
 
-The visual workspace has no fixed drag boundary. Manual vertex coordinates may move in every direction. The component measures the visible viewport and derives the SVG stage from the base viewport plus the current graph extents and padding large enough for node circles, weighted labels, curved reverse edges and self-loops. Therefore scrollbars appear only when current graph content actually extends outside the visible region; there is no permanently allocated 10,000×10,000 blank canvas.
+The visual workspace has no fixed drag clamp. Manual vertex coordinates may move in every direction. The C# component derives the SVG stage from a logical base viewport plus the current graph extents and safety padding, so the workspace grows with content instead of allocating a permanently huge blank canvas. `Reset layout` clears manual positions and restores automatic placement.
 
-World coordinates are separate from rendered stage coordinates. If content expands into negative X/Y space, the stage origin shifts and the component compensates the scroll offset after render so the learner does not see the rest of the graph jump. Moving content back inside the base viewport shrinks the extra scroll range. `Reset layout` clears manual world positions and resets scroll to the automatic-layout origin.
+Because project-owned JavaScript was removed, the component no longer performs DOM viewport measurement or programmatic native-scroll compensation. The graph keeps a fixed logical teaching viewport in C# and relies on normal browser overflow for any stage area that extends beyond it.
 
 ## Learning contract around the visualization
 

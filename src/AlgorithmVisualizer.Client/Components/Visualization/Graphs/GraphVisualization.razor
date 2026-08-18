@@ -1,8 +1,5 @@
 @using AlgorithmVisualizer.Core.DataStructures.Graph
 @using Microsoft.AspNetCore.Components.Web
-@using System.Text.Json.Serialization
-@implements IAsyncDisposable
-@inject Microsoft.JSInterop.IJSRuntime JS
 
 <div class="graph-visualization">
     <div class="visualization-heading">
@@ -27,14 +24,15 @@
     }
     else
     {
-        <div class="graph-canvas" @ref="_canvasElement">
-            <svg @ref="_svgElement"
+        <div class="graph-canvas">
+            <svg
                  style="@StageStyle"
                  role="img"
                  aria-label="Interactive graph topology. Drag vertices in any direction; the scrollable workspace grows with graph content."
                  @onpointermove="HandlePointerMove"
-                 @onpointerup="EndDragAsync"
-                 @onpointercancel="EndDragAsync">
+                 @onpointerup="EndDrag"
+                 @onpointercancel="EndDrag"
+                 @onpointerleave="EndDragOnLeave">
                 <defs>
                     <marker id="graph-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
                         <path d="M0,0 L8,4 L0,8 Z" class="arrow-head"></path>
@@ -78,7 +76,7 @@
                     <g @key="vertex.Id"
                        class="vertex-group"
                        transform="translate(@F(position.X) @F(position.Y))"
-                       @onpointerdown="@(args => BeginDragAsync(vertex.Id, vertex.Index, args))"
+                       @onpointerdown="@(args => BeginDrag(vertex.Id, vertex.Index, args))"
                        @onpointerdown:preventDefault="true"
                        @onpointerdown:stopPropagation="true">
                         <foreignObject x="-48" y="-48" width="96" height="96" class="vertex-object">
@@ -115,9 +113,6 @@
     [Parameter, EditorRequired]
     public GraphSnapshot Snapshot { get; set; } = new(false, false, 0, 0, Array.Empty<GraphVertexSnapshot>(), Array.Empty<GraphEdgeSnapshot>(), Array.Empty<GraphMatrixCellSnapshot>());
 
-    private ElementReference _canvasElement;
-    private ElementReference _svgElement;
-    private Microsoft.JSInterop.IJSObjectReference? _dragModule;
     private ManualVertexPosition[] _manualPositions = Array.Empty<ManualVertexPosition>();
     private Guid? _draggedVertexId;
     private long _dragPointerId;
@@ -131,65 +126,16 @@
     private double _stageOriginY;
     private double _stageWidth = DefaultViewportWidth;
     private double _stageHeight = DefaultViewportHeight;
-    private double _pendingScrollX;
-    private double _pendingScrollY;
-    private bool _resetScrollRequested;
 
     private string? ArrowMarker => Snapshot.Directed ? "url(#graph-arrow)" : null;
     private string ModeLabel => $"{(Snapshot.Directed ? "Directed" : "Undirected")} · {(Snapshot.Weighted ? "Weighted" : "Unweighted")}";
     private bool HasManualLayout => _manualPositions.Length > 0;
-    private string StageStyle => $"width:{F(_stageWidth)}px;height:{F(_stageHeight)}px";
+    private string StageStyle => $"width:{F(_stageWidth)}px;min-width:100%;height:{F(_stageHeight)}px";
 
     protected override void OnParametersSet()
     {
         PruneManualPositions();
-        RecalculateStageBounds(preserveViewport: false);
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        try
-        {
-            _dragModule ??= await JS.InvokeAsync<Microsoft.JSInterop.IJSObjectReference>("import", "./js/graph-drag.js");
-
-            var viewport = await _dragModule.InvokeAsync<ViewportSize>("measureViewport", _canvasElement);
-            if (viewport.IsFinite && viewport.Width > 0 && viewport.Height > 0)
-            {
-                var widthChanged = Math.Abs(viewport.Width - _viewportWidth) > 2d;
-                var heightChanged = Math.Abs(viewport.Height - _viewportHeight) > 2d;
-                if (widthChanged || heightChanged)
-                {
-                    _viewportWidth = Math.Max(320d, viewport.Width);
-                    _viewportHeight = Math.Max(320d, viewport.Height);
-                    RecalculateStageBounds(preserveViewport: false);
-                    StateHasChanged();
-                    return;
-                }
-            }
-
-            if (_resetScrollRequested)
-            {
-                _resetScrollRequested = false;
-                _pendingScrollX = 0d;
-                _pendingScrollY = 0d;
-                await _dragModule.InvokeVoidAsync("resetScroll", _canvasElement);
-                return;
-            }
-
-            if (Math.Abs(_pendingScrollX) > .01d || Math.Abs(_pendingScrollY) > .01d)
-            {
-                var scrollX = _pendingScrollX;
-                var scrollY = _pendingScrollY;
-                _pendingScrollX = 0d;
-                _pendingScrollY = 0d;
-                await _dragModule.InvokeVoidAsync("adjustScroll", _canvasElement, scrollX, scrollY);
-            }
-        }
-        catch
-        {
-            // The graph remains usable without measurements; dragging simply falls back
-            // to the current viewport dimensions until JS interop becomes available.
-        }
+        RecalculateStageBounds();
     }
 
     private Point Position(Guid vertexId, int fallbackIndex)
@@ -241,7 +187,7 @@
             AutoLayoutMargin + (row * yStep));
     }
 
-    private async Task BeginDragAsync(Guid vertexId, int fallbackIndex, PointerEventArgs args)
+    private void BeginDrag(Guid vertexId, int fallbackIndex, PointerEventArgs args)
     {
         if (args.PointerType == "mouse" && args.Button != 0)
         {
@@ -254,23 +200,12 @@
             return;
         }
 
-        try
-        {
-            _dragModule ??= await JS.InvokeAsync<Microsoft.JSInterop.IJSObjectReference>("import", "./js/graph-drag.js");
-            await _dragModule.InvokeVoidAsync("beginDrag", _svgElement, args.PointerId);
-
-            _draggedVertexId = vertexId;
-            _dragPointerId = args.PointerId;
-            _dragWorldX = current.X;
-            _dragWorldY = current.Y;
-            _lastClientX = args.ClientX;
-            _lastClientY = args.ClientY;
-        }
-        catch
-        {
-            _draggedVertexId = null;
-            _dragPointerId = 0;
-        }
+        _draggedVertexId = vertexId;
+        _dragPointerId = args.PointerId;
+        _dragWorldX = current.X;
+        _dragWorldY = current.Y;
+        _lastClientX = args.ClientX;
+        _lastClientY = args.ClientY;
     }
 
     private void HandlePointerMove(PointerEventArgs args)
@@ -298,32 +233,34 @@
         }
 
         SetManualPosition(vertexId, _dragWorldX, _dragWorldY);
-        RecalculateStageBounds(preserveViewport: true);
+        RecalculateStageBounds();
     }
 
-    private async Task EndDragAsync(PointerEventArgs args)
+    private void EndDrag(PointerEventArgs args)
     {
         if (_draggedVertexId is null || args.PointerId != _dragPointerId)
         {
             return;
         }
 
-        try
+        ClearDragState();
+    }
+
+    private void EndDragOnLeave(PointerEventArgs args)
+    {
+        // Without JavaScript pointer capture, leaving the SVG is the safe boundary
+        // for a drag. This prevents a stale drag state if the pointer is released
+        // outside the graph surface.
+        if (_draggedVertexId is not null && args.PointerId == _dragPointerId)
         {
-            if (_dragModule is not null)
-            {
-                await _dragModule.InvokeVoidAsync("endDrag", _svgElement, _dragPointerId);
-            }
+            ClearDragState();
         }
-        catch
-        {
-            // Pointer capture may already have been released by the browser.
-        }
-        finally
-        {
-            _draggedVertexId = null;
-            _dragPointerId = 0;
-        }
+    }
+
+    private void ClearDragState()
+    {
+        _draggedVertexId = null;
+        _dragPointerId = 0;
     }
 
     private void SetManualPosition(Guid vertexId, double x, double y)
@@ -396,11 +333,8 @@
         return false;
     }
 
-    private void RecalculateStageBounds(bool preserveViewport)
+    private void RecalculateStageBounds()
     {
-        var oldOriginX = _stageOriginX;
-        var oldOriginY = _stageOriginY;
-
         if (Snapshot.VertexCount == 0)
         {
             _stageOriginX = 0d;
@@ -443,11 +377,6 @@
         _stageWidth = Math.Max(_viewportWidth, rightBound - _stageOriginX);
         _stageHeight = Math.Max(_viewportHeight, bottomBound - _stageOriginY);
 
-        if (preserveViewport)
-        {
-            _pendingScrollX += oldOriginX - _stageOriginX;
-            _pendingScrollY += oldOriginY - _stageOriginY;
-        }
     }
 
     private void ResetLayout()
@@ -455,8 +384,7 @@
         _manualPositions = Array.Empty<ManualVertexPosition>();
         _draggedVertexId = null;
         _dragPointerId = 0;
-        RecalculateStageBounds(preserveViewport: false);
-        _resetScrollRequested = true;
+        RecalculateStageBounds();
     }
 
     private string EdgePath(GraphEdgeSnapshot edge, Point from, Point to)
@@ -563,31 +491,6 @@
 
     private static string FormatWeight(double value) => value.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
     private static string F(double value) => value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_dragModule is not null)
-        {
-            try
-            {
-                await _dragModule.DisposeAsync();
-            }
-            catch
-            {
-                // Component disposal should not fail if the JS runtime is already gone.
-            }
-        }
-    }
-
-    private sealed class ViewportSize
-    {
-        [JsonPropertyName("width")]
-        public double Width { get; set; }
-
-        [JsonPropertyName("height")]
-        public double Height { get; set; }
-        public bool IsFinite => double.IsFinite(Width) && double.IsFinite(Height);
-    }
 
     private readonly record struct ManualVertexPosition(Guid VertexId, double X, double Y);
     private readonly record struct Point(double X, double Y)

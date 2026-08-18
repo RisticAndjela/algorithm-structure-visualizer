@@ -3,10 +3,9 @@
 @using System.Text.Json
 @using AlgorithmVisualizer.Client.Components.Visualization.Heap
 @using AlgorithmVisualizer.Core.DataStructures.Heap
-@using Microsoft.JSInterop
 @inject SimulationState SimulationState
 @inject HeapSimulation Heap
-@inject IJSRuntime JS
+@inject LearningSessionStore LearningStore
 
 <PageTitle>Binary Heap Lab — Algorithm Visualizer</PageTitle>
 
@@ -58,7 +57,7 @@
                 {
                     <button class="last-run-button" type="button" @onclick="OpenLastRunPopup">Last run explanation</button>
                 }
-                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopupsAsync" /><span>Result popups</span></label>
+                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Result popups</span></label>
             </div>
         </div>
 
@@ -284,14 +283,14 @@
         _storageLoaded = true;
         try
         {
-            var completedJson = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { CompletedTasksStorageKey });
+            var completedJson = LearningStore.GetItem(CompletedTasksStorageKey);
             if (!string.IsNullOrWhiteSpace(completedJson))
             {
                 var completed = JsonSerializer.Deserialize<int[]>(completedJson) ?? [];
                 foreach (var id in completed.Where(id => PracticeTasks.Any(task => task.Id == id))) _completedTaskIds.Add(id);
             }
 
-            var popupSetting = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { PopupSettingStorageKey });
+            var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
             if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
         }
         catch { }
@@ -448,7 +447,7 @@
         _activeTaskId = null;
         _practiceEvents.Clear();
         _memoryOpenedDuringTask = false;
-        _ = PersistCompletedTasksAsync();
+        PersistCompletedTasks();
     }
 
     private string GetActiveTaskProgressText(int taskId) => taskId switch
@@ -462,8 +461,8 @@
         _ => string.Empty
     };
 
-    private async Task PersistCompletedTasksAsync() { try { await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { CompletedTasksStorageKey, JsonSerializer.Serialize(_completedTaskIds.OrderBy(id => id).ToArray()) }); } catch { } }
-    private async Task ToggleRunPopupsAsync(ChangeEventArgs args) { _showRunPopups = args.Value is bool b ? b : bool.TryParse(args.Value?.ToString(), out var p) && p; try { await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { PopupSettingStorageKey, _showRunPopups.ToString() }); } catch { } }
+    private void PersistCompletedTasks() { try { LearningStore.SetItem(CompletedTasksStorageKey, JsonSerializer.Serialize(_completedTaskIds.OrderBy(id => id).ToArray())); } catch { } }
+    private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups = args.Value is bool b ? b : bool.TryParse(args.Value?.ToString(), out var p) && p; try { LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); } catch { } }
 
     private void OpenLastRunPopup() { if (_lastResult is null) return; _popupTab = _lastResult.Operation is HeapOperationKind.ExtractRoot or HeapOperationKind.Delete ? ResultPopupTab.Memory : ResultPopupTab.Run; _lastRunPopupOpen = true; }
     private void CloseLastRunPopup() => _lastRunPopupOpen = false;

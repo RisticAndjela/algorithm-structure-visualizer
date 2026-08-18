@@ -24,6 +24,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 // In Blazor WebAssembly a scoped service lives for the browser application lifetime.
 // The concrete state is used by UI controls, while Core code depends only on ISimulationRuntime.
 builder.Services.AddScoped<SimulationState>();
+builder.Services.AddScoped<LearningSessionStore>();
 builder.Services.AddScoped<ISimulationRuntime>(serviceProvider =>
     serviceProvider.GetRequiredService<SimulationState>());
 

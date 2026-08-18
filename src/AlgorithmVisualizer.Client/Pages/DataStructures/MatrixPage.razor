@@ -5,7 +5,7 @@
 @using AlgorithmVisualizer.Client.Components.Visualization.Matrix
 @implements IDisposable
 @inject SimulationState SimulationState
-@inject IJSRuntime JS
+@inject LearningSessionStore LearningStore
 
 <PageTitle>Matrix — Algorithm Visualizer</PageTitle>
 
@@ -276,7 +276,7 @@
                 {
                     <button class="last-run-button" type="button" @onclick="OpenLastRunPopup">Explain last run</button>
                 }
-                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopupsAsync" /><span>Auto explanation</span></label>
+                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Auto explanation</span></label>
             </div>
         </div>
 
@@ -370,7 +370,7 @@
             {
                 <div class="popup-body"><h3>@GetWhyHeadline(_lastResult)</h3><p>@GetWhyExplanation(_lastResult)</p><a class="popup-concept-link" href="/learn/concepts#matrix">Open the Matrix concept guide →</a></div>
             }
-            <footer><label class="popup-toggle inside"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopupsAsync" /><span>Show automatically after future Matrix runs</span></label></footer>
+            <footer><label class="popup-toggle inside"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Show automatically after future Matrix runs</span></label></footer>
         </section>
     </div>
 }
@@ -458,11 +458,11 @@
         if (!firstRender) return;
         try
         {
-            var json = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { CompletedTasksStorageKey });
+            var json = LearningStore.GetItem(CompletedTasksStorageKey);
             if (!string.IsNullOrWhiteSpace(json))
                 foreach (var id in JsonSerializer.Deserialize<int[]>(json) ?? []) _completedTasks.Add(id);
 
-            var popupSetting = await JS.InvokeAsync<string?>("localStorage.getItem", new object?[] { PopupSettingStorageKey });
+            var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
             if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
         }
         catch { }
@@ -835,7 +835,7 @@
         _ => string.Empty
     };
 
-    private async Task ToggleRunPopupsAsync(ChangeEventArgs args)
+    private void ToggleRunPopups(ChangeEventArgs args)
     {
         _showRunPopups = args.Value is bool boolValue
             ? boolValue
@@ -843,7 +843,7 @@
 
         try
         {
-            await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { PopupSettingStorageKey, _showRunPopups.ToString() });
+            LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString());
         }
         catch { }
     }
@@ -917,7 +917,7 @@
 
     private async Task PersistTasksAsync()
     {
-        try { await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { CompletedTasksStorageKey, JsonSerializer.Serialize(_completedTasks.OrderBy(x => x).ToArray()) }); } catch { }
+        try { LearningStore.SetItem(CompletedTasksStorageKey, JsonSerializer.Serialize(_completedTasks.OrderBy(x => x).ToArray())); } catch { }
     }
 
     private void HandleStateChanged() { if (SimulationState.IsRunning) CaptureFrame(); RequestRender(); }

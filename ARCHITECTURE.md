@@ -92,7 +92,7 @@ Examples:
 - Red-Black Tree uses explicit `RedBlackNode` references and a color field, treats null children as conceptual black NIL leaves, and implements recoloring plus insertion/deletion fix-up with manual rotations rather than a library balanced tree.
 - Heap family modules use a shared custom raw-array-backed `ManualHeapArray<HeapElement>`, explicit index arithmetic, and manual swaps rather than `PriorityQueue`, `List`, sorting, or another library heap. `HeapSimulation` is the Binary Heap (`d=2`) specialization; `DaryHeapSimulation` generalizes relationships to configurable `d`.
 
-Infrastructure types such as `Task`, `CancellationToken`, `SemaphoreSlim`, `Guid`, Blazor services, and browser storage interop are allowed because they do not implement the taught algorithm.
+Infrastructure types such as `Task`, `CancellationToken`, `SemaphoreSlim`, `Guid`, and Blazor services are allowed because they do not implement the taught algorithm. Project-owned JavaScript and JS interop are intentionally excluded; durable browser-independent persistence should use a C# backend/API when introduced.
 
 ## Visual state vs Memory state
 
