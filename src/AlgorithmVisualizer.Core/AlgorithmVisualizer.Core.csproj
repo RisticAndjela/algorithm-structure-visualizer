@@ -2,4 +2,17 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
+
+  <!--
+    KNN was introduced as a new nested source folder. Keep these two compile items
+    explicit so IDE/MSBuild project evaluation cannot leave the new namespace out
+    when this repository is updated through incremental patch ZIPs. Remove first
+    because SDK projects already include **/*.cs by default; re-include once here.
+  -->
+  <ItemGroup>
+    <Compile Remove="MachineLearning/Supervised/Knn/KnnModels.cs" />
+    <Compile Remove="MachineLearning/Supervised/Knn/KnnSimulation.cs" />
+    <Compile Include="MachineLearning/Supervised/Knn/KnnModels.cs" />
+    <Compile Include="MachineLearning/Supervised/Knn/KnnSimulation.cs" />
+  </ItemGroup>
 </Project>
