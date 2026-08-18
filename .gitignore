@@ -21,3 +21,8 @@ Thumbs.db
 
 # Local AI agent instructions (shipped locally, intentionally not committed)
 /AGENTS.md
+
+# Local learning-state database
+src/AlgorithmVisualizer.Server/App_Data/
+*.db-shm
+*.db-wal

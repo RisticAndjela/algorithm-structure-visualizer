@@ -21,6 +21,13 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
+// The hosted ASP.NET Core project serves the WASM client and the persistence API
+// from the same origin, so HttpClient needs no CORS setup or browser-storage JS.
+builder.Services.AddScoped(_ => new HttpClient
+{
+    BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
+});
+
 // In Blazor WebAssembly a scoped service lives for the browser application lifetime.
 // The concrete state is used by UI controls, while Core code depends only on ISimulationRuntime.
 builder.Services.AddScoped<SimulationState>();
@@ -44,4 +51,9 @@ builder.Services.AddScoped<MergeSortSimulation>();
 builder.Services.AddScoped<QuickSortSimulation>();
 builder.Services.AddScoped<HeapSortSimulation>();
 
-await builder.Build().RunAsync();
+var host = builder.Build();
+
+// Load persisted progress/preferences before Razor pages render so existing synchronous
+// GetItem calls see the SQL-backed state immediately.
+await host.Services.GetRequiredService<LearningSessionStore>().InitializeAsync();
+await host.RunAsync();

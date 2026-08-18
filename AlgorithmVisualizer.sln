@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlgorithmVisualizer.Core", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlgorithmVisualizer.Client", "src\AlgorithmVisualizer.Client\AlgorithmVisualizer.Client.csproj", "{CF8BEA99-6A28-41A4-A5F4-51107682CA71}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlgorithmVisualizer.Server", "src\AlgorithmVisualizer.Server\AlgorithmVisualizer.Server.csproj", "{32F90109-3E24-41F8-A75D-47B39091F10F}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlgorithmVisualizer.Core.Tests", "tests\AlgorithmVisualizer.Core.Tests\AlgorithmVisualizer.Core.Tests.csproj", "{4C7B55AB-3A37-4772-8BDA-E6EC7E36FDC2}"
 EndProject
 Global
@@ -26,6 +28,10 @@ Global
 		{CF8BEA99-6A28-41A4-A5F4-51107682CA71}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CF8BEA99-6A28-41A4-A5F4-51107682CA71}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CF8BEA99-6A28-41A4-A5F4-51107682CA71}.Release|Any CPU.Build.0 = Release|Any CPU
+		{32F90109-3E24-41F8-A75D-47B39091F10F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{32F90109-3E24-41F8-A75D-47B39091F10F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{32F90109-3E24-41F8-A75D-47B39091F10F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{32F90109-3E24-41F8-A75D-47B39091F10F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

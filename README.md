@@ -44,7 +44,7 @@ The application now has twelve fully implemented learning modules: **Queue & Sta
 - per-run complexity explanation;
 - deletion and memory-shift explanation;
 - guided practice tasks with automatic completion;
-- learning progress kept in C# application-session state; durable persistence is reserved for a future C# backend/API;
+- learning progress and popup preferences persisted through a C# ASP.NET Core API into SQLite;
 - optional result explanation popups;
 - Concepts & Memory learning page;
 - shared learner-facing module chrome in `wwwroot/css/learning-modules.css`, using the mature Queue & Stack / BST / Matrix / Graph visual language for sorting Learn First panels, module headers, tips, reference links, and lesson progression;
@@ -189,7 +189,7 @@ Implemented capabilities include direct editing/resizing, presets (zero, identit
 
 No numerical or linear-algebra library performs these taught operations. The live Graph module reuses this Matrix implementation for adjacency-matrix representation rather than creating a second matrix engine.
 
-The Client contains no project-owned JavaScript and no `IJSRuntime` calls. Learning progress and popup preferences are currently kept in the scoped C# `LearningSessionStore`, which survives navigation for the lifetime of the running Blazor WebAssembly application. A full browser reload starts a new WebAssembly process and clears that session state; durable persistence should be implemented later through a C# HTTP API/database rather than by reintroducing browser-storage JavaScript interop. Framework-generated Blazor bootstrap/runtime JavaScript remains part of the .NET WebAssembly platform and is not application logic.
+The Client contains no project-owned JavaScript and no `IJSRuntime` calls. Learning progress and popup preferences are loaded by the scoped C# `LearningSessionStore` from the same-origin ASP.NET Core API and persisted in SQLite. The server identifies an anonymous browser with an HttpOnly cookie, so persistence survives full browser reloads and browser restarts without `localStorage` or application-level JavaScript. Framework-generated Blazor bootstrap/runtime JavaScript remains part of the .NET WebAssembly platform and is not application logic.
 
 ### Planned
 
@@ -432,7 +432,7 @@ The BST lab reuses the shared asynchronous simulation runtime and supports:
 - Visual state;
 - Memory state;
 - optional Last Run popups;
-- guided practice with local completion persistence;
+- guided practice with SQLite-backed completion persistence;
 - explicit DSW balancing with a skewed-tree practice task.
 
 The Visual state uses an ordered tree layout by key. The Memory state shows the root reference plus each node object's parent/left/right references. Screen coordinates are never described as memory addresses.
@@ -522,7 +522,7 @@ The AVL lab supports:
 - highlighted unbalanced, rotation-pivot, rotating, and restored-balanced states;
 - Memory state with root/parent/left/right references and cached height;
 - optional Last Run popups;
-- guided rotation practice with local completion persistence.
+- guided rotation practice with SQLite-backed completion persistence.
 
 The Learn First section includes compact LL/RR/LR/RL recipes so a learner can predict the repair before running it.
 
@@ -1157,14 +1157,15 @@ The page starts with short beginner-friendly explanations and provides links to 
 
 # Architecture
 
-The solution is split into two main projects.
+The solution is split into three main runtime projects plus the Core test project.
 
 ```text
 AlgorithmVisualizer.sln
 
 src/
 ├── AlgorithmVisualizer.Core/
-└── AlgorithmVisualizer.Client/
+├── AlgorithmVisualizer.Client/
+└── AlgorithmVisualizer.Server/
 ```
 
 ## `AlgorithmVisualizer.Core`
@@ -1219,7 +1220,7 @@ Responsibilities include:
 - simulation history;
 - guided practice;
 - result modals;
-- browser-local learning preferences and progress.
+- learning preferences and progress loaded from/persisted to the C# backend.
 
 The Core project depends on the simulation runtime through:
 
@@ -1235,6 +1236,20 @@ SimulationState
 
 This keeps algorithms independent from rendering concerns.
 
+## `AlgorithmVisualizer.Server`
+
+ASP.NET Core host and persistence layer.
+
+Responsibilities include:
+
+- serving the Blazor WebAssembly client;
+- same-origin `/api/learning-state` endpoints;
+- anonymous learner identity through an HttpOnly cookie;
+- SQLite persistence for Guided Practice completion and learning preferences;
+- automatic database/schema creation at startup.
+
+The SQLite file defaults to `src/AlgorithmVisualizer.Server/App_Data/learning-state.db` and is intentionally git-ignored. The persistence layer uses explicit parameterized SQL through `Microsoft.Data.Sqlite`; it does not implement or replace any taught data structure or algorithm.
+
 ---
 
 # Technology
@@ -1245,7 +1260,9 @@ This keeps algorithms independent from rendering concerns.
 - Razor components
 - CSS isolation
 - WebAssembly
-- no project-owned JavaScript or JS interop; browser-session state is kept in C#
+- ASP.NET Core backend hosted in C#
+- SQLite persistence through `Microsoft.Data.Sqlite` and explicit parameterized SQL
+- no project-owned JavaScript or JS interop
 - xUnit + Microsoft.NET.Test.Sdk for Core unit tests
 
 The algorithmic and simulation logic is implemented in C#.
@@ -1266,17 +1283,17 @@ From the repository root:
 
 ```bash
 dotnet restore
-dotnet run --project src/AlgorithmVisualizer.Client
+dotnet run --project src/AlgorithmVisualizer.Server
 ```
 
 Or:
 
 ```bash
-cd src/AlgorithmVisualizer.Client
+cd src/AlgorithmVisualizer.Server
 dotnet run
 ```
 
-The development server will print the local application URL.
+The ASP.NET Core host serves both the Blazor WebAssembly client and the SQLite-backed learning-state API from the same origin. The server prints the local application URL.
 
 ---
 
@@ -1404,4 +1421,4 @@ Graph UI markup follows a strict Razor rule: whenever `@if`, `@foreach`, `@for`,
 
 Graph now follows the same learning-completion contract as the mature Queue/Stack, tree, and Heap modules. Guided Practice is no longer static reading: the learner starts a task, the page observes real `GraphSimulation` results plus the current graph snapshot, validates the requested topology/operation, marks completion automatically, and keeps completed task IDs in the scoped C# learning-session store. Tasks cover undirected symmetry, directed asymmetry, a real zero-weight edge, incident-edge cleanup during vertex deletion, sparse list-vs-matrix inspection, and a branch/cycle topology prepared for later BFS/DFS.
 
-Every completed Graph action now has a learner-facing explanation layer. The Last Run card can reopen a dismissible interactive explanation with three views: the action that happened, how the adjacency list and Matrix-backed representation changed together, and why the operation matters for later graph algorithms. Automatic result explanations can be disabled and that preference is retained in C# for the lifetime of the running Blazor application session. The Graph `Result popups` toggle now lives in the Playground header beside `Last run explanation`, matching the established Queue/Stack, BST, AVL, and Heap interaction pattern instead of creating a graph-specific preference strip below the result. The Graph lab also exposes direct `Graph concepts` and `Concepts & memory` links beside the Visual/Memory controls so theory is always reachable from the working area.
+Every completed Graph action now has a learner-facing explanation layer. The Last Run card can reopen a dismissible interactive explanation with three views: the action that happened, how the adjacency list and Matrix-backed representation changed together, and why the operation matters for later graph algorithms. Automatic result explanations can be disabled and that preference is persisted by the C# backend in SQLite. The Graph `Result popups` toggle now lives in the Playground header beside `Last run explanation`, matching the established Queue/Stack, BST, AVL, and Heap interaction pattern instead of creating a graph-specific preference strip below the result. The Graph lab also exposes direct `Graph concepts` and `Concepts & memory` links beside the Visual/Memory controls so theory is always reachable from the working area.

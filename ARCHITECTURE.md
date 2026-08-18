@@ -10,33 +10,19 @@ algorithm-structure-visualizer/
 ├─ src/
 │  ├─ AlgorithmVisualizer.Core/
 │  │  ├─ DataStructures/
-│  │  │  ├─ Linear/
-│  │  │  │  ├─ ManualDynamicArray.cs
-│  │  │  │  ├─ Stack/
-│  │  │  │  └─ Queue/
-│  │  │  ├─ Trees/
-│  │  │  │  ├─ Bst/             # implemented
-│  │  │  │  ├─ Avl/             # implemented
-│  │  │  │  └─ RedBlack/        # implemented
-│  │  │  └─ Heap/               # live generalized d-ary Heap + Binary Heap
-│  │  ├─ Algorithms/Sorting/    # planned modules
+│  │  ├─ Algorithms/Sorting/
 │  │  └─ Simulation/
-│  │     ├─ Contracts/
-│  │     └─ SimulationAlgorithmBase.cs
-│  └─ AlgorithmVisualizer.Client/
-│     ├─ Components/
-│     │  ├─ Common/
-│     │  └─ Visualization/
-│     │     ├─ Linear/
-│     │     ├─ Trees/
-│     │     └─ Heap/
-│     ├─ Pages/
-│     │  ├─ DataStructures/
-│     │  ├─ Learn/
-│     │  └─ Sorting/
-│     ├─ State/
-│     ├─ Layout/
-│     └─ wwwroot/
+│  ├─ AlgorithmVisualizer.Client/
+│  │  ├─ Components/
+│  │  ├─ Pages/
+│  │  ├─ State/
+│  │  ├─ Layout/
+│  │  └─ wwwroot/
+│  └─ AlgorithmVisualizer.Server/
+│     ├─ Persistence/
+│     │  └─ LearningStateDatabase.cs
+│     ├─ Program.cs
+│     └─ appsettings.json
 └─ tests/
 ```
 
@@ -61,7 +47,7 @@ Core responsibilities include:
 - playback history review;
 - guided tasks;
 - result popups;
-- browser-local preferences/progress.
+- learning preferences/progress through the C# persistence API.
 
 ## Simulation runtime
 
@@ -92,7 +78,7 @@ Examples:
 - Red-Black Tree uses explicit `RedBlackNode` references and a color field, treats null children as conceptual black NIL leaves, and implements recoloring plus insertion/deletion fix-up with manual rotations rather than a library balanced tree.
 - Heap family modules use a shared custom raw-array-backed `ManualHeapArray<HeapElement>`, explicit index arithmetic, and manual swaps rather than `PriorityQueue`, `List`, sorting, or another library heap. `HeapSimulation` is the Binary Heap (`d=2`) specialization; `DaryHeapSimulation` generalizes relationships to configurable `d`.
 
-Infrastructure types such as `Task`, `CancellationToken`, `SemaphoreSlim`, `Guid`, and Blazor services are allowed because they do not implement the taught algorithm. Project-owned JavaScript and JS interop are intentionally excluded; durable browser-independent persistence should use a C# backend/API when introduced.
+Infrastructure types such as `Task`, `CancellationToken`, `SemaphoreSlim`, `Guid`, Blazor services, ASP.NET Core, `HttpClient`, and `Microsoft.Data.Sqlite` are allowed because they do not implement the taught algorithm. Project-owned JavaScript and JS interop are intentionally excluded. Learning progress/preferences are persisted by the C# Server project through explicit parameterized SQL in SQLite.
 
 ## Visual state vs Memory state
 
@@ -220,3 +206,11 @@ The Matrix page established a readability floor that Graph now tightens: normal 
 ### Graph visual workspace
 
 Graph drag coordinates are Client-only world coordinates keyed by stable vertex ID. They never enter Core graph topology. The SVG stage is a content-bounded unbounded workspace: it dynamically expands only to the current visual extents (plus rendering padding), supports negative world coordinates through a render-origin offset, and compensates scroll when that origin moves left/up.
+
+## Server / persistence boundary
+
+`AlgorithmVisualizer.Server` hosts the Blazor WebAssembly static assets and a same-origin learning-state API. The Client never talks to browser `localStorage`; `LearningSessionStore` loads persisted key/value state with `HttpClient` before the first Razor page renders and mirrors later changes back to the server.
+
+The Server owns persistence only. It must not contain sorting, tree, graph, heap, matrix, traversal, or simulation logic. SQLite stores learner state in `LearningState(UserId, StateKey, StateValue, UpdatedAtUtc)`. `UserId` comes from a long-lived HttpOnly anonymous cookie created by the server. Database access uses `Microsoft.Data.Sqlite` with parameterized SQL and an upsert on `(UserId, StateKey)`.
+
+This preserves the architectural rule: Core teaches algorithms, Client visualizes them, and Server persists learning state.
