@@ -165,4 +165,12 @@ Complexity taught by the module:
 - traversal time: `O(V + E)`;
 - recursion or explicit stack plus visited state: `O(V)`.
 
-Linear Search, Binary Search, BFS, and DFS are live.
+### Dijkstra shortest paths
+
+Route: `/graph-algorithms/dijkstra`
+
+Core namespace: `AlgorithmVisualizer.Core.Algorithms.GraphShortestPath.Dijkstra`
+
+Dijkstra consumes the existing `GraphSnapshot`, rejects negative weights, permits zero weights, and records `dist[]`, `parent[]`, `settled[]`, settlement order, edge checks and relaxation updates. Basic mode selects the next minimum with an explicit linear scan (`O(V² + E)`). Advanced mode uses a project-owned binary min-heap with lazy priority entries (`O((V + E) log V)`) and never delegates to `PriorityQueue<TElement,TPriority>`.
+
+Linear Search, Binary Search, BFS, DFS, and Dijkstra are live.

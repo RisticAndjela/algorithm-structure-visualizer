@@ -70,6 +70,10 @@
                 <a href="#bfs">Breadth-First Search</a>
                 <a href="#dfs">Depth-First Search</a>
             </div>
+            <div class="concept-jump-group">
+                <span>GRAPH ALGORITHMS</span>
+                <a href="#dijkstra">Dijkstra</a>
+            </div>
         </nav>
 
         <section class="concepts-start" aria-label="Quick start concepts">
@@ -856,14 +860,30 @@
         <div class="concept-lesson-links"><a href="/search/dfs">Open the DFS lab →</a><a href="/structures/queue-stack">Review Stack →</a><a href="/search/bfs">Compare with BFS →</a></div>
     </section>
 
+    <section id="dijkstra" class='@SectionClass("dijkstra")'>
+        <div class="section-heading">
+            <span>G3</span>
+            <div><h2>Dijkstra: relaxation plus minimum tentative distance</h2><p>Dijkstra solves single-source shortest paths when every edge weight is non-negative.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class='@CardClass("dijkstra", "concept-card")'><span class="term">SETTLE</span><h3>The smallest tentative distance becomes final</h3><p>Start with dist[start] = 0 and every other distance = ∞. Repeatedly choose the smallest finite unsettled distance, settle that vertex, then inspect its outgoing edges.</p><div class="example"><strong>Invariant:</strong> with non-negative edges, a path discovered later cannot return through unsettled vertices and become cheaper than the minimum being settled now.</div></article>
+            <article class='@CardClass("dijkstra-relaxation", "concept-card")'><span class="term queue">RELAX</span><h3>Try to improve a neighbor</h3><p>For edge u → v with weight w, compute candidate = dist[u] + w. If candidate &lt; dist[v], replace dist[v] and set parent[v] = u.</p><div class="example"><strong>Parent chain:</strong> follow parent[] backwards from a destination to reconstruct the shortest path.</div></article>
+            <article class='@CardClass("dijkstra-priority", "concept-card")'><span class="term">PRIORITY</span><h3>Basic scan vs manual min-heap</h3><p>The Basic implementation scans all unsettled vertices for the minimum, giving O(V² + E). Advanced mode uses a project-owned binary min-heap priority frontier for O((V + E) log V).</p><div class="example"><strong>Lazy decrease:</strong> a better distance pushes a new heap entry. Older larger priorities become stale and are skipped when popped.</div></article>
+            <article class='@CardClass("dijkstra-negative", "concept-card")'><span class="term">PRECONDITION</span><h3>Negative weights invalidate Dijkstra</h3><p>If a negative edge can appear later, a vertex that looked final may become cheaper after settlement. The lab therefore rejects negative-weight input instead of visualizing a mathematically invalid run.</p><div class="example"><strong>Allowed:</strong> zero-weight edges. <strong>Not allowed:</strong> any weight below zero.</div></article>
+            <article class='@CardClass("dijkstra-complexity", "concept-card")'><span class="term">COMPLEXITY</span><h3>Selection data structure changes the runtime</h3><p>Relaxation still inspects adjacency entries. The difference is how the next smallest tentative vertex is selected: O(V) scanning per round versus logarithmic min-heap push/pop work.</p><div class="example"><strong>Memory:</strong> dist[], parent[], settled[] are O(V); advanced mode adds a frontier whose lazy entries can exceed V transiently.</div></article>
+            <article class="concept-card"><span class="term">BFS vs DIJKSTRA</span><h3>Equal weights do not need a priority queue</h3><p>If every edge has the same cost, BFS already gives minimum edge count in O(V + E). Dijkstra is useful when different non-negative weights change which route is cheapest.</p></article>
+        </div>
+        <div class="concept-lesson-links"><a href="/graph-algorithms/dijkstra">Open the Dijkstra lab →</a><a href="/search/bfs">Compare with BFS →</a><a href="/structures/binary-heap">Review Binary Heap →</a></div>
+    </section>
+
     <section class="concept-section implementation-note">
         <div class="section-heading">
             <span>✓</span>
-            <div><h2>Implemented from scratch</h2><p>The learning structures and algorithms do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, Matrix, Graph, sorting, Linear Search, Binary Search, BFS, DFS, or balancing behavior to ready-made framework collections/search helpers.</p></div>
+            <div><h2>Implemented from scratch</h2><p>The learning structures and algorithms do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, Matrix, Graph, sorting, Linear Search, Binary Search, BFS, DFS, Dijkstra, or balancing behavior to ready-made framework collections/search helpers.</p></div>
         </div>
         <div class="plain-note">
             <strong>What our code does itself</strong>
-            <p>Linear structures keep and grow their own raw array and move references with manual loops. BST, AVL, and Red-Black Tree keep explicit node links and perform their own comparisons, transplants, recoloring, and rotations. BST Balance uses our own Day-Stout-Warren vine/compression logic over those same node references. Heap uses its own growable raw array and manual index swaps for bubble-up/bubble-down instead of PriorityQueue or a library heap. Matrix uses its own row-major <code>double[]</code>, manual cell/index loops, row operations, multiplication and elimination instead of a numerical or linear-algebra library. Graph keeps canonical vertex/edge objects, manual adjacency lists over our own dynamic-array storage, and reuses ManualMatrix for the synchronized adjacency table instead of a graph package or dictionary-backed graph. Linear Search uses its own explicit index loop and does not call LINQ First/Contains or a framework search helper. Binary Search uses its own iterative left/right/mid loop and does not call Array.BinarySearch or another framework binary-search helper. BFS uses the existing Graph adjacency snapshot plus the project's manual dynamic-array storage as a FIFO Queue; DFS uses recursive calls or the same manual storage as an explicit LIFO Stack. Neither delegates traversal to a graph library or framework Queue/Stack collection. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the taught data-structure algorithms for us.</p>
+            <p>Linear structures keep and grow their own raw array and move references with manual loops. BST, AVL, and Red-Black Tree keep explicit node links and perform their own comparisons, transplants, recoloring, and rotations. BST Balance uses our own Day-Stout-Warren vine/compression logic over those same node references. Heap uses its own growable raw array and manual index swaps for bubble-up/bubble-down instead of PriorityQueue or a library heap. Matrix uses its own row-major <code>double[]</code>, manual cell/index loops, row operations, multiplication and elimination instead of a numerical or linear-algebra library. Graph keeps canonical vertex/edge objects, manual adjacency lists over our own dynamic-array storage, and reuses ManualMatrix for the synchronized adjacency table instead of a graph package or dictionary-backed graph. Linear Search uses its own explicit index loop and does not call LINQ First/Contains or a framework search helper. Binary Search uses its own iterative left/right/mid loop and does not call Array.BinarySearch or another framework binary-search helper. BFS uses the existing Graph adjacency snapshot plus the project's manual dynamic-array storage as a FIFO Queue; DFS uses recursive calls or the same manual storage as an explicit LIFO Stack. Neither delegates traversal to a graph library or framework Queue/Stack collection. Dijkstra reuses that same Graph snapshot, performs its own relaxation/minimum selection, and in Advanced mode uses a project-owned binary min-heap instead of PriorityQueue<TElement,TPriority>. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the taught data-structure algorithms for us.</p>
         </div>
     </section>
 
@@ -895,6 +915,7 @@
         "linear-vs-binary-search" => "binary-search",
         "bfs-complexity" => "bfs",
         "dfs-complexity" or "dfs-stack" => "dfs",
+        "dijkstra-relaxation" or "dijkstra-priority" or "dijkstra-negative" or "dijkstra-complexity" => "dijkstra",
         _ => NormalizedTopic
     };
 
@@ -935,6 +956,11 @@
         "dfs" => "Depth-First Search",
         "dfs-complexity" => "DFS complexity",
         "dfs-stack" => "DFS: recursive vs explicit Stack",
+        "dijkstra" => "Dijkstra shortest paths",
+        "dijkstra-relaxation" => "Dijkstra relaxation",
+        "dijkstra-priority" => "Dijkstra priority frontier",
+        "dijkstra-negative" => "Why Dijkstra rejects negative weights",
+        "dijkstra-complexity" => "Dijkstra complexity",
         _ => "Concepts & Memory"
     };
 
@@ -960,6 +986,7 @@
         "binary-search" or "binary-search-complexity" or "binary-search-duplicates" or "linear-vs-binary-search" => "/search/binary",
         "bfs" or "bfs-complexity" => "/search/bfs",
         "dfs" or "dfs-complexity" or "dfs-stack" => "/search/dfs",
+        "dijkstra" or "dijkstra-relaxation" or "dijkstra-priority" or "dijkstra-negative" or "dijkstra-complexity" => "/graph-algorithms/dijkstra",
         _ => null
     };
 
@@ -999,7 +1026,8 @@
         "insertion-sort" or "merge-sort" or "quick-sort" or "heap-sort" or
         "linear-search" or "linear-search-complexity" or "linear-vs-binary-search" or
         "binary-search" or "binary-search-complexity" or "binary-search-duplicates" or
-        "bfs" or "bfs-complexity" or "dfs" or "dfs-complexity" or "dfs-stack" => true,
+        "bfs" or "bfs-complexity" or "dfs" or "dfs-complexity" or "dfs-stack" or
+        "dijkstra" or "dijkstra-relaxation" or "dijkstra-priority" or "dijkstra-negative" or "dijkstra-complexity" => true,
         _ => false
     };
 }

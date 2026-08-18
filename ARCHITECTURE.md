@@ -13,6 +13,7 @@ algorithm-structure-visualizer/
 │  │  ├─ Algorithms/Sorting/
 │  │  ├─ Algorithms/Search/
 │  │  ├─ Algorithms/GraphTraversal/
+│  │  ├─ Algorithms/GraphShortestPath/Dijkstra/
 │  │  └─ Simulation/
 │  ├─ AlgorithmVisualizer.Client/
 │  │  ├─ Components/
@@ -80,6 +81,7 @@ Examples:
 - Red-Black Tree uses explicit `RedBlackNode` references and a color field, treats null children as conceptual black NIL leaves, and implements recoloring plus insertion/deletion fix-up with manual rotations rather than a library balanced tree.
 - Heap family modules use a shared custom raw-array-backed `ManualHeapArray<HeapElement>`, explicit index arithmetic, and manual swaps rather than `PriorityQueue`, `List`, sorting, or another library heap. `HeapSimulation` is the Binary Heap (`d=2`) specialization; `DaryHeapSimulation` generalizes relationships to configurable `d`.
 - BFS consumes the existing Graph snapshot and implements FIFO scheduling over the project's manual dynamic-array storage with a head cursor rather than framework `Queue<T>`; dequeue advances the cursor instead of shifting the array. `GraphNeighborSnapshot.VertexIndex` gives BFS/DFS direct access to the adjacent vertex in the immutable snapshot, preserving the taught `O(V + E)` traversal rather than hiding an `O(V)` lookup inside each edge inspection. DFS consumes the same Graph; recursive mode exposes real call-stack/backtracking behavior and iterative mode uses the same manual storage as an explicit LIFO frontier rather than framework `Stack<T>`.
+- Dijkstra consumes the same Graph snapshot. Basic mode selects the next finite unsettled minimum with an explicit linear scan. Advanced mode uses a Dijkstra-specific binary min-heap frontier built on the existing `ManualHeapArray<T>` storage, with lazy duplicate entries instead of framework `PriorityQueue<TElement,TPriority>`. Both variants share the same explicit relaxation logic and reject negative edge weights before traversal.
 
 Infrastructure types such as `Task`, `CancellationToken`, `SemaphoreSlim`, `Guid`, Blazor services, ASP.NET Core, `HttpClient`, and `Microsoft.Data.Sqlite` are allowed because they do not implement the taught algorithm. Project-owned JavaScript and JS interop are intentionally excluded. Learning progress/preferences are persisted by the C# Server project through explicit parameterized SQL in SQLite.
 
@@ -185,15 +187,19 @@ The dedicated Binary Heap specialization adds:
 
 ### Graph
 
-The Graph structure module adds canonical `GraphVertex`/`GraphEdge` objects, manually stored adjacency lists, and a synchronized adjacency matrix backed by the existing `ManualMatrix`. Graph Core has no fixed eight-vertex cap; `ManualMatrix` is reusable storage whose dimensions follow the graph, while MatrixPage keeps its separate 8×8 teaching/input limit. The Client renders topology separately from representation memory, scrolls large matrix views internally, and uses ring-then-grid automatic topology placement before optional manual dragging. BFS and DFS are now live algorithm modules that consume this exact Graph snapshot instead of introducing a second graph representation. Dijkstra, topological sort and MST should continue the same reuse pattern and use the already-live Heap/linear foundations where appropriate.
+The Graph structure module adds canonical `GraphVertex`/`GraphEdge` objects, manually stored adjacency lists, and a synchronized adjacency matrix backed by the existing `ManualMatrix`. Graph Core has no fixed eight-vertex cap; `ManualMatrix` is reusable storage whose dimensions follow the graph, while MatrixPage keeps its separate 8×8 teaching/input limit. The Client renders topology separately from representation memory, scrolls large matrix views internally, and uses ring-then-grid automatic topology placement before optional manual dragging. BFS and DFS are now live algorithm modules that consume this exact Graph snapshot instead of introducing a second graph representation. Dijkstra now follows this reuse pattern: it consumes the same Graph snapshot and adds renderer-neutral shortest-path state. Topological sort and MST should continue the same reuse pattern.
 
 ### Breadth-First Search and Depth-First Search
 
 Both graph traversals keep Core independent from Blazor and use the existing renderer-neutral simulation runtime. BFS records `visited[]`, `parent[]`, unweighted `distance[]`, visit order, edge checks and its FIFO frontier. DFS records `visited[]`, `parent[]`, `depth[]`, visit order, edge checks and either recursive call-stack or explicit-LIFO state. Directed graphs follow outgoing adjacency only; weights are deliberately ignored. Graph mutation invalidates the current traversal snapshot and requires restart.
 
+### Dijkstra
+
+Dijkstra reuses the immutable Graph snapshot and renderer-neutral simulation runtime. Core owns `dist[]`, `parent[]`, `settled[]`, settlement order, relaxation metrics and either a linear tentative-set scan or a custom binary min-heap frontier. Negative weights are validated and rejected before a run; zero weights are valid. The Client adds only learning/presentation state and persists practice evidence through the existing C# API + SQLite path.
+
 ## Planned extension path
 
-Future graph/path modules should reuse the same Core/runtime/Client separation rather than duplicating playback infrastructure. Dijkstra, topological sorting and MST remain future modules and should reuse the established Graph plus Stack/Queue/Heap foundations when they are genuine algorithmic dependencies.
+Future graph/path modules should reuse the same Core/runtime/Client separation rather than duplicating playback infrastructure. Dijkstra is live: Basic mode uses manual linear minimum selection and Advanced mode uses a Dijkstra-specific binary min-heap built on the existing `ManualHeapArray` storage priority frontier with lazy stale entries. Topological sorting and MST remain future modules and should reuse the established Graph plus Stack/Queue/Heap foundations when they are genuine algorithmic dependencies.
 
 
 ## Matrix module

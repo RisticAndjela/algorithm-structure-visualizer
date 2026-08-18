@@ -1,0 +1,102 @@
+@using AlgorithmVisualizer.Core.Algorithms.GraphShortestPath.Dijkstra
+@using AlgorithmVisualizer.Core.DataStructures.Graph
+@using AlgorithmVisualizer.Client.Components.Visualization.Graphs
+
+<section class="dijkstra-visual" aria-label="Dijkstra visual state">
+    <div class="dijkstra-summary-strip">
+        <div><span>SETTLED</span><strong>@Snapshot.SettledOrderIndices.Length / @Snapshot.VertexCount</strong><small>@SettledText</small></div>
+        <div><span>RELAXATIONS</span><strong>@Snapshot.RelaxationAttempts</strong><small>@Snapshot.DistanceUpdates distance updates</small></div>
+        <div><span>FRONTIER</span><strong>@Snapshot.FrontierEntries.Length</strong><small>@FrontierLabel</small></div>
+    </div>
+
+    <GraphVisualization Snapshot="@VisualGraph" ShowDefaultLegend="false" />
+
+    <div class="distance-grid" aria-label="Tentative distances">
+        @foreach (var vertex in Snapshot.Vertices)
+        {
+            <article class="distance-card @DistanceClass(vertex.State)">
+                <span>@vertex.Label</span>
+                <strong>@FormatDistance(vertex.Distance)</strong>
+                <small>@(vertex.Settled ? "final" : double.IsFinite(vertex.Distance) ? "tentative" : "unreached")</small>
+            </article>
+        }
+    </div>
+
+    <div class="dijkstra-legend" aria-label="Dijkstra state legend">
+        <span><i class="unreached"></i>Unreached</span>
+        <span><i class="frontier"></i>Tentative</span>
+        <span><i class="current"></i>Current minimum</span>
+        <span><i class="neighbor"></i>Relaxing edge</span>
+        <span><i class="settled"></i>Settled</span>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public DijkstraSnapshot Snapshot { get; set; } = new(
+        new(false, true, 0, 0, [], [], []), [], [], [], -1, -1, null,
+        0, 0, 0, 0, 0, 0, DijkstraPhase.Ready, DijkstraVariant.LinearScan);
+
+    private string FrontierLabel => Snapshot.Variant == DijkstraVariant.MinHeap ? "manual min-heap entries" : "finite unsettled vertices";
+    private string SettledText => FormatLabels(Snapshot.SettledOrderIndices);
+
+    private GraphSnapshot VisualGraph
+    {
+        get
+        {
+            var vertices = new GraphVertexSnapshot[Snapshot.Graph.Vertices.Length];
+            for (var index = 0; index < vertices.Length; index++)
+            {
+                var original = Snapshot.Graph.Vertices[index];
+                var dijkstra = Snapshot.Vertices.Length > index ? Snapshot.Vertices[index] : null;
+                var visualState = dijkstra?.State switch
+                {
+                    DijkstraVertexState.Current => GraphVertexVisualState.Source,
+                    DijkstraVertexState.InspectingNeighbor => GraphVertexVisualState.Target,
+                    DijkstraVertexState.Frontier => GraphVertexVisualState.Neighbor,
+                    DijkstraVertexState.Settled => GraphVertexVisualState.Matched,
+                    _ => GraphVertexVisualState.Normal
+                };
+                vertices[index] = original with { VisualState = visualState };
+            }
+
+            var edges = new GraphEdgeSnapshot[Snapshot.Graph.Edges.Length];
+            for (var index = 0; index < edges.Length; index++)
+            {
+                var original = Snapshot.Graph.Edges[index];
+                edges[index] = original with
+                {
+                    VisualState = Snapshot.CurrentEdgeId == original.Id
+                        ? GraphEdgeVisualState.Checking
+                        : GraphEdgeVisualState.Normal
+                };
+            }
+
+            return Snapshot.Graph with { Vertices = vertices, Edges = edges };
+        }
+    }
+
+    private string FormatLabels(int[] indices)
+    {
+        if (indices.Length == 0) return "none yet";
+        var labels = new string[indices.Length];
+        for (var index = 0; index < indices.Length; index++)
+        {
+            var vertexIndex = indices[index];
+            labels[index] = vertexIndex >= 0 && vertexIndex < Snapshot.Graph.Vertices.Length
+                ? Snapshot.Graph.Vertices[vertexIndex].Label
+                : "?";
+        }
+        return string.Join(" → ", labels);
+    }
+
+    private static string FormatDistance(double value) => double.IsPositiveInfinity(value) ? "∞" : value.ToString("0.###");
+    private static string DistanceClass(DijkstraVertexState state) => state switch
+    {
+        DijkstraVertexState.Current => "current",
+        DijkstraVertexState.InspectingNeighbor => "checking",
+        DijkstraVertexState.Settled => "settled",
+        DijkstraVertexState.Frontier => "frontier",
+        _ => string.Empty
+    };
+}

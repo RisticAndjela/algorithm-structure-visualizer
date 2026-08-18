@@ -11,4 +11,4 @@ Implemented:
 
 BFS reuses the project Graph representation and a manual FIFO frontier. DFS reuses the same Graph and offers real recursive traversal plus a manual explicit-LIFO variant. Neither traversal delegates the taught behavior to framework `Queue<T>`/`Stack<T>` or an external graph library.
 
-Future graph algorithms such as Dijkstra, topological sorting, and minimum spanning trees should build on the same existing Graph representation rather than creating a second graph model.
+Dijkstra is now live under the graph-algorithm track and reuses the same existing Graph representation. Future topological sorting and minimum spanning tree modules should do the same rather than creating a second graph model.

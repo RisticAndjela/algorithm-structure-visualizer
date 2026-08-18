@@ -149,3 +149,4 @@ The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctnes
 ### Graph traversal coverage
 - BFS: level-order distances, directed outgoing-only reachability, cycle de-duplication.
 - DFS: recursive depth/backtracking, iterative explicit-stack traversal, disconnected components.
+- Dijkstra: cheaper detours, Basic/Advanced equivalence, stale priority entries, disconnected infinity, zero-weight support, and negative-weight rejection.

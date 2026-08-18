@@ -263,9 +263,9 @@
     private string LastRunMemory => Kind == GraphTraversalLessonKind.BreadthFirst ? "The graph stayed read-only. visited[], parent[], distance[] and the manual queue were the traversal-specific O(V) state." : "The graph stayed read-only. visited[], parent[], depth[] and either the call stack or manual explicit stack were the traversal-specific O(V) state.";
     private IReadOnlyList<PracticeEvidenceMetric> LastRunMetrics => Kind == GraphTraversalLessonKind.BreadthFirst && _bfsResult is not null ? [new("Reached", $"{_bfsResult.ReachableCount}/{_graph.VertexCount}"), new("Edge checks", _bfsResult.EdgeChecks.ToString()), new("Max queue", _bfsResult.MaxQueueSize.ToString())] : _dfsResult is not null ? [new("Reached", $"{_dfsResult.ReachableCount}/{_graph.VertexCount}"), new("Edge checks", _dfsResult.EdgeChecks.ToString()), new("Backtracks", _dfsResult.BacktrackCount.ToString())] : [];
     private string NextTitle => Kind == GraphTraversalLessonKind.BreadthFirst ? "Depth-First Search" : "Dijkstra";
-    private string NextLevel => Kind == GraphTraversalLessonKind.BreadthFirst ? "Intermediate" : "Coming next";
+    private string NextLevel => Kind == GraphTraversalLessonKind.BreadthFirst ? "Intermediate" : "Advanced";
     private string NextDescription => Kind == GraphTraversalLessonKind.BreadthFirst ? "Compare Queue-driven layer expansion with Stack-driven deep exploration." : "Reuse the same graph foundation, then add edge weights and priority-driven relaxation.";
-    private string NextHref => Kind == GraphTraversalLessonKind.BreadthFirst ? "/search/dfs" : "/structures/graph";
+    private string NextHref => Kind == GraphTraversalLessonKind.BreadthFirst ? "/search/dfs" : "/graph-algorithms/dijkstra";
 
     private IReadOnlyList<(string Tag,string Title,string Text)> FitCards => Kind == GraphTraversalLessonKind.BreadthFirst
         ? [("GOOD FIT","Unweighted shortest edge count","BFS first discovery gives minimum number of edges from the start."),("GOOD FIT","Level-order exploration","Use it when near vertices should be processed before farther ones."),("NOT THE TOOL","Weighted shortest path","Use Dijkstra when edge weights change path cost.")]

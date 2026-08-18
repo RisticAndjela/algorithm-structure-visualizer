@@ -16,6 +16,7 @@ using AlgorithmVisualizer.Core.Algorithms.Sorting.HeapSort;
 using AlgorithmVisualizer.Core.Algorithms.Search.Linear;
 using AlgorithmVisualizer.Core.Algorithms.Search.Binary;
 using AlgorithmVisualizer.Core.Algorithms.GraphTraversal;
+using AlgorithmVisualizer.Core.Algorithms.GraphShortestPath.Dijkstra;
 using AlgorithmVisualizer.Core.Simulation.Contracts;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -59,6 +60,7 @@ builder.Services.AddScoped<BinarySearchSimulation>();
 builder.Services.AddScoped<BinarySearchInputSorter>();
 builder.Services.AddScoped<BreadthFirstSearchSimulation>();
 builder.Services.AddScoped<DepthFirstSearchSimulation>();
+builder.Services.AddScoped<DijkstraSimulation>();
 
 var host = builder.Build();
 

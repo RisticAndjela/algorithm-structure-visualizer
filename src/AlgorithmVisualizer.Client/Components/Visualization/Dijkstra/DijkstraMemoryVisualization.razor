@@ -1,0 +1,82 @@
+@using AlgorithmVisualizer.Core.Algorithms.GraphShortestPath.Dijkstra
+
+<section class="dijkstra-memory" aria-label="Dijkstra memory state">
+    <div class="memory-intro">
+        <span>MEMORY STATE</span>
+        <strong>dist[] + parent[] + settled[] + @FrontierName</strong>
+        <p>The graph stays read-only. Dijkstra stores one tentative distance, one parent and one settled flag per vertex. The advanced variant additionally keeps a manual binary min-heap of priority entries.</p>
+    </div>
+
+    <div class="frontier-card">
+        <div class="card-heading"><span>@FrontierName.ToUpperInvariant()</span><strong>@FrontierRule</strong></div>
+        <div class="frontier-slots">
+            @if (Snapshot.FrontierEntries.Length == 0)
+            {
+                <span class="empty-slot">empty</span>
+            }
+            else
+            {
+                @for (var index = 0; index < Snapshot.FrontierEntries.Length; index++)
+                {
+                    var entry = Snapshot.FrontierEntries[index];
+                    <span class="frontier-slot @(entry.Stale ? "stale" : string.Empty)">
+                        <small>@index</small><strong>@Label(entry.VertexIndex) · @FormatDistance(entry.Priority)</strong>
+                    </span>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="table-scroll">
+        <table>
+            <thead><tr><th>Index</th><th>Vertex</th><th>dist[]</th><th>parent[]</th><th>settled[]</th><th>State</th></tr></thead>
+            <tbody>
+            @foreach (var vertex in Snapshot.Vertices)
+            {
+                <tr class="@RowClass(vertex.State)">
+                    <td>@vertex.Index</td>
+                    <td><strong>@vertex.Label</strong></td>
+                    <td>@FormatDistance(vertex.Distance)</td>
+                    <td>@ParentLabel(vertex.ParentIndex)</td>
+                    <td>@(vertex.Settled ? "true" : "false")</td>
+                    <td>@StateLabel(vertex.State)</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="memory-note">
+        <strong>Why can the heap contain stale entries?</strong>
+        <span>The advanced variant does not hide a decrease-key operation. When a better distance is found, it pushes a new entry. An older larger entry may remain in the heap until it reaches the root, where the algorithm detects and discards it.</span>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public DijkstraSnapshot Snapshot { get; set; } = new(
+        new(false, true, 0, 0, [], [], []), [], [], [], -1, -1, null,
+        0, 0, 0, 0, 0, 0, DijkstraPhase.Ready, DijkstraVariant.LinearScan);
+
+    private string FrontierName => Snapshot.Variant == DijkstraVariant.MinHeap ? "Priority frontier" : "Tentative set";
+    private string FrontierRule => Snapshot.Variant == DijkstraVariant.MinHeap ? "Binary min-heap · minimum priority at root" : "Choose minimum by scanning all unsettled vertices";
+    private string Label(int index) => index >= 0 && index < Snapshot.Graph.Vertices.Length ? Snapshot.Graph.Vertices[index].Label : "?";
+    private string ParentLabel(int index) => index >= 0 ? Label(index) : "—";
+    private static string FormatDistance(double value) => double.IsPositiveInfinity(value) ? "∞" : value.ToString("0.###");
+    private static string StateLabel(DijkstraVertexState state) => state switch
+    {
+        DijkstraVertexState.Frontier => "tentative",
+        DijkstraVertexState.Current => "current minimum",
+        DijkstraVertexState.InspectingNeighbor => "relaxing",
+        DijkstraVertexState.Settled => "settled",
+        _ => "unreached"
+    };
+    private static string RowClass(DijkstraVertexState state) => state switch
+    {
+        DijkstraVertexState.Current => "current",
+        DijkstraVertexState.InspectingNeighbor => "checking",
+        DijkstraVertexState.Frontier => "frontier",
+        DijkstraVertexState.Settled => "settled",
+        _ => string.Empty
+    };
+}

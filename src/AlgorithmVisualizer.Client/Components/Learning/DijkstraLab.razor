@@ -1,0 +1,515 @@
+@using AlgorithmVisualizer.Core.Algorithms.GraphShortestPath.Dijkstra
+@using AlgorithmVisualizer.Core.DataStructures.Graph
+@using AlgorithmVisualizer.Client.Components.Visualization.Dijkstra
+@implements IDisposable
+@inject SimulationState SimulationState
+@inject DijkstraSimulation Dijkstra
+@inject GraphSimulation Graph
+@inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
+
+<div class="dijkstra-page learning-module-page learning-module-shell">
+    <section class="learn-launchpad" aria-labelledby="dijkstra-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="dijkstra-learn-title">Dijkstra grows a shortest-path region by settling the smallest tentative distance.</h2>
+            <p>Start with distance 0, relax outgoing edges, and repeatedly choose the unsettled vertex with the smallest known cost. Once a vertex is settled, non-negative weights guarantee that its distance is final.</p>
+            <ConceptLink class="learn-launchpad-link" Href="/learn/concepts/dijkstra">Open Dijkstra concepts &amp; memory →</ConceptLink>
+        </div>
+        <div class="learn-grid">
+            <article class="learn-card purple"><span>TENTATIVE</span><strong>∞ until evidence improves it</strong><small>dist[] stores the best path cost found so far, not a final answer until settlement.</small></article>
+            <article class="learn-card blue"><span>RELAX</span><strong>Try current distance + edge weight</strong><small>Replace a neighbor's distance only when the candidate is strictly smaller.</small></article>
+            <article class="learn-card mint"><span>SETTLE</span><strong>Minimum becomes final</strong><small>Non-negative weights are the reason an unsettled route cannot later beat the current minimum.</small></article>
+            <article class="learn-card gold"><span>LIMIT</span><strong>No negative edges</strong><small>The Graph structure may store them, but this algorithm must reject them instead of teaching an invalid result.</small></article>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow"><span>WEIGHTED SHORTEST PATH</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <h1>Dijkstra's Algorithm</h1>
+            <p>Reuse the existing Graph representation, compare linear minimum selection with a manual binary min-heap frontier, and watch every edge relaxation update dist[] and parent[].</p>
+        </div>
+        <div class="complexity-summary" aria-label="Dijkstra complexity">
+            <div><span>Time</span><strong>@TimeComplexity</strong><small>@TimeComplexityNote</small></div>
+            <div><span>Extra space</span><strong>O(V + frontier)</strong><small>dist, parent, settled and optional heap</small></div>
+            <div><span>Mutation</span><strong>Restart</strong><small>graph/weight changes invalidate the run</small></div>
+        </div>
+    </header>
+
+    <section class="smart-tip">
+        <span class="tip-icon">✦</span>
+        <div><strong>Relaxation is the heart of the algorithm.</strong><p>If <code>dist[u] + w(u,v) &lt; dist[v]</code>, update both <code>dist[v]</code> and <code>parent[v]</code>. Selection strategy changes performance, not this rule.</p></div>
+        <ConceptLink Href="/learn/concepts/dijkstra-relaxation">Why relaxation works →</ConceptLink>
+    </section>
+
+    <section class="implementation-section">
+        <div class="section-heading-row"><div><span class="section-kicker">IMPLEMENTATION CHOICE</span><h2>Same shortest paths, different minimum-selection cost.</h2></div></div>
+        <div class="variant-grid">
+            <button type="button" class="variant-card @(_variant == DijkstraVariant.LinearScan ? "active" : string.Empty)" @onclick="() => SetVariant(DijkstraVariant.LinearScan)" disabled="@IsBusy">
+                <span>BASIC · LINEAR SCAN</span><strong>Search every unsettled vertex</strong><p>Each round manually scans dist[] to find the smallest finite unsettled value.</p><small>O(V² + E) · easiest version to inspect.</small>
+            </button>
+            <button type="button" class="variant-card @(_variant == DijkstraVariant.MinHeap ? "active" : string.Empty)" @onclick="() => SetVariant(DijkstraVariant.MinHeap)" disabled="@IsBusy">
+                <span>ADVANCED · MIN-HEAP</span><strong>Manual priority frontier</strong><p>A project-owned binary min-heap stores tentative priorities. Better distances push new entries; stale ones are skipped later.</p><small>O((V + E) log V) · no PriorityQueue&lt;T&gt;.</small>
+            </button>
+        </div>
+    </section>
+
+    <section class="builder-section">
+        <div class="section-heading-row">
+            <div class="heading-with-step"><span class="step-number">1</span><div><span class="section-kicker">CHOOSE THE GRAPH</span><h2>Use a weighted preset or reuse your Graph lab state.</h2><p>Unweighted graph edges are valid and behave as weight 1. Zero-weight edges are valid. Negative weights are deliberately rejected.</p></div></div>
+            <a class="concept-link" href="/structures/graph">Open Graph builder →</a>
+        </div>
+
+        <div class="graph-source-grid">
+            <div class="preset-panel">
+                <span class="control-label">PRESETS</span>
+                <div class="preset-row">
+                    <button type="button" @onclick="() => LoadPreset(DijkstraPreset.CheaperDetour)" disabled="@IsBusy">Cheaper detour</button>
+                    <button type="button" @onclick="() => LoadPreset(DijkstraPreset.ReRelaxation)" disabled="@IsBusy">Re-relaxation</button>
+                    <button type="button" @onclick="() => LoadPreset(DijkstraPreset.Directed)" disabled="@IsBusy">Directed</button>
+                    <button type="button" @onclick="() => LoadPreset(DijkstraPreset.Disconnected)" disabled="@IsBusy">Disconnected</button>
+                    <button type="button" @onclick="() => LoadPreset(DijkstraPreset.ZeroWeight)" disabled="@IsBusy">Zero weight</button>
+                    <button type="button" @onclick="() => LoadPreset(DijkstraPreset.NegativeEdge)" disabled="@IsBusy">Negative edge</button>
+                    <button type="button" @onclick="() => LoadPreset(DijkstraPreset.Single)" disabled="@IsBusy">Single</button>
+                </div>
+            </div>
+            <div class="graph-lab-panel">
+                <span class="control-label">YOUR GRAPH LAB STATE</span>
+                <strong>@GraphLabSummary</strong>
+                <button type="button" class="secondary-action" @onclick="UseGraphLabSnapshot" disabled="@(IsBusy || Graph.CreateSnapshot().VertexCount == 0)">Use current Graph lab snapshot</button>
+            </div>
+        </div>
+
+        <div class="start-row">
+            <label>
+                <span>START VERTEX</span>
+                <select value="@_startIndex" @onchange="StartChanged" disabled="@IsBusy">
+                    @foreach (var vertex in _graph.Vertices)
+                    {
+                        <option value="@vertex.Index">@vertex.Label</option>
+                    }
+                </select>
+            </label>
+            <div class="graph-mode"><span>@(_graph.Directed ? "Directed" : "Undirected")</span><span>@(_graph.Weighted ? "Weighted" : "Unweighted = weight 1")</span><span>@_graph.VertexCount vertices</span><span>@_graph.EdgeCount edges</span></div>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(_inputMessage))
+        {
+            <div class="@InputMessageClass">@_inputMessage</div>
+        }
+    </section>
+
+    <section class="predict-section">
+        <div class="heading-with-step"><span class="step-number">2</span><div><span class="section-kicker">PREDICT</span><h2>Which vertex will be settled second?</h2><p>After the start relaxes its outgoing edges, choose the smallest tentative distance. Ties use the lower vertex index in both implementations.</p></div></div>
+        <div class="prediction-row">
+            <select value="@_prediction" @onchange="PredictionChanged" disabled="@IsBusy">
+                <option value="-2">Choose prediction…</option>
+                <option value="-1">No second settled vertex</option>
+                @foreach (var vertex in _graph.Vertices)
+                {
+                    <option value="@vertex.Index">@vertex.Label</option>
+                }
+            </select>
+            @if (_predictionAnswered)
+            {
+                <span class="prediction-feedback @(_predictionCorrect ? "correct" : "wrong")">@PredictionFeedback</span>
+            }
+        </div>
+    </section>
+
+    <section class="lab-section">
+        <div class="lab-heading">
+            <div class="heading-with-step"><span class="step-number">3</span><div><span class="section-kicker">WATCH THE REAL C# RUN</span><h2>Watch minimum selection, relaxation and settlement.</h2></div></div>
+            <div class="lab-actions">
+                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Auto-open explanation</span></label>
+                <button class="sort-button" type="button" @onclick="RunAsync" disabled="@IsBusy"><span>▶</span> Run Dijkstra</button>
+                @if (_result is not null)
+                {
+                    <button type="button" @onclick="OpenLastRun">Last run explanation</button>
+                }
+            </div>
+        </div>
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+
+        <div class="state-tabs" role="tablist"><button type="button" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual State</button><button type="button" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory State</button></div>
+        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/dijkstra">Algorithm rule →</ConceptLink><ConceptLink Href="/learn/concepts/dijkstra-relaxation">Relaxation →</ConceptLink><ConceptLink Href="/learn/concepts/dijkstra-complexity">Complexity →</ConceptLink><a href="/structures/binary-heap">Review Binary Heap →</a></div>
+
+        <div class="state-surface">
+            @if (_view == StateView.Visual)
+            {
+                <DijkstraVisualization Snapshot="@DisplayedSnapshot" />
+            }
+            else
+            {
+                <DijkstraMemoryVisualization Snapshot="@DisplayedSnapshot" />
+            }
+        </div>
+    </section>
+
+    <section class="fit-section">
+        <div class="section-heading-row"><div><span class="section-kicker">WHEN IT FITS</span><h2>Use Dijkstra when path cost is non-negative and weights matter.</h2></div></div>
+        <div class="fit-grid">
+            <article class="fit-card"><span>GOOD FIT</span><strong>Weighted shortest paths</strong><p>Road costs, latency, distance or any additive non-negative edge cost.</p></article>
+            <article class="fit-card"><span>GOOD FIT</span><strong>One source, many destinations</strong><p>A complete run produces the shortest known distance and parent chain to every reachable vertex.</p></article>
+            <article class="fit-card"><span>USE BFS INSTEAD</span><strong>Every edge has equal cost</strong><p>BFS gives shortest edge count with a simpler O(V + E) queue traversal.</p></article>
+            <article class="fit-card"><span>INVALID INPUT</span><strong>Negative edge weights</strong><p>Dijkstra's settlement proof breaks. This lab rejects the run rather than showing a misleading result.</p></article>
+        </div>
+    </section>
+
+    <section class="practice-section">
+        <div class="practice-heading"><div><span class="section-kicker">GUIDED PRACTICE</span><h2>Tasks auto-complete from any matching weighted graph.</h2><p>Start task only loads a convenient preset. Extra vertices and edges are allowed whenever the required shortest-path behavior still occurs.</p></div><strong>@_completedTaskIds.Count / @PracticeTasks.Length complete</strong></div>
+        <div class="practice-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                <PracticeTaskCard TaskId="@task.Id" Title="@task.Title" Description="@task.Goal" InputText="@task.Suggested" HelpHref="@task.HelpHref" Completed="@_completedTaskIds.Contains(task.Id)" Active="@(_activeTaskId == task.Id)" Busy="@IsBusy" HasEvidence="@(GetTaskEvidence(task.Id) is not null)" Start="@(() => StartTask(task.Id))" OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
+            }
+        </div>
+    </section>
+
+    <NextLessonCard Eyebrow="NEXT GRAPH ALGORITHM" Level="Coming next" Title="Topological Sort" Description="Move from shortest paths to dependency order in directed acyclic graphs." Href="/structures/graph" />
+</div>
+
+@if (_lastRunPopupOpen && _result is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRun">
+        <section class="run-popup" role="dialog" aria-modal="true" @onclick:stopPropagation="true">
+            <header><div><span class="section-kicker">LAST RUN</span><h2>@LastRunHeadline</h2></div><button type="button" class="popup-close" @onclick="CloseLastRun">×</button></header>
+            <div class="popup-body">
+                <p>@LastRunExplanation</p>
+                <div class="popup-metrics">
+                    @foreach (var metric in LastRunMetrics)
+                    {
+                        <div><span>@metric.Label</span><strong>@metric.Value</strong></div>
+                    }
+                </div>
+                <p class="popup-memory">@LastRunMemory</p>
+            </div>
+        </section>
+    </div>
+}
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
+
+@code {
+    private const string ModuleKey = "dijkstra";
+    private const string LegacyKey = "algorithm-visualizer.dijkstra.completed-tasks.v1";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.dijkstra.result-popups.v1";
+
+    private readonly List<RunFrame> _frames = [];
+    private readonly HashSet<int> _completedTaskIds = [];
+    private PracticeModuleProgress _practiceProgress = new();
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
+    private GraphSnapshot _graph = DijkstraPresets.Create(DijkstraPreset.CheaperDetour);
+    private DijkstraVariant _variant = DijkstraVariant.LinearScan;
+    private int _startIndex;
+    private int _prediction = -2;
+    private bool _predictionAnswered;
+    private bool _predictionCorrect;
+    private string? _inputMessage;
+    private string? _lastValidationError;
+    private DijkstraResult? _result;
+    private string? _lastCapturedStep;
+    private int _frameIndex = -1;
+    private bool _lastRunPopupOpen;
+    private bool _storageLoaded;
+    private bool _showRunPopups = true;
+    private int? _activeTaskId;
+    private StateView _view = StateView.Visual;
+
+    private string InputMessageClass => _lastValidationError is null ? "input-message" : "input-message warning";
+    private string TimeComplexity => _variant == DijkstraVariant.LinearScan ? "O(V² + E)" : "O((V + E) log V)";
+    private string TimeComplexityNote => _variant == DijkstraVariant.LinearScan ? "manual minimum scan" : "manual binary min-heap frontier";
+    private bool IsBusy => SimulationState.IsRunning;
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_frames.Count > 0 && _frameIndex < _frames.Count - 1) || SimulationState.IsRunning;
+    private int TimelineCount => _frames.Count;
+    private int TimelinePosition => _frameIndex >= 0 ? _frameIndex + 1 : 0;
+    private string DisplayedStepText => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].StepText : SimulationState.CurrentStepText;
+    private DijkstraSnapshot DisplayedSnapshot => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].Snapshot : Dijkstra.CreateSnapshot();
+    private string GraphLabSummary { get { var s = Graph.CreateSnapshot(); return s.VertexCount == 0 ? "Graph lab is empty." : $"{s.VertexCount} vertices · {s.EdgeCount} edges · {(s.Directed ? "directed" : "undirected")} · {(s.Weighted ? "weighted" : "unweighted")}"; } }
+    private string PredictionFeedback => _predictionCorrect ? "Correct — that is the smallest tentative distance after the start is relaxed." : $"The second settled vertex is {SecondSettledLabel}. Compare the start's outgoing edge costs.";
+    private string SecondSettledLabel { get { var expected = ExpectedSecondSettled(); return expected < 0 ? "none" : Label(expected); } }
+    private string LastRunHeadline => _result is null ? "Dijkstra" : $"Dijkstra settled {_result.ReachableCount} reachable vertices";
+    private string LastRunExplanation => _result is null ? string.Empty : $"Starting at {Label(_result.StartIndex)}, {_result.Variant} Dijkstra settled {FormatOrder(_result.SettledOrderIndices)}. Every successful relaxation replaced a larger tentative distance and updated the parent that reconstructs the shortest path.";
+    private string LastRunMemory => _result?.Variant == DijkstraVariant.MinHeap ? "The graph stayed read-only. dist[], parent[] and settled[] used O(V) state; the manual priority frontier may contain multiple entries for one vertex until stale priorities are popped and discarded." : "The graph stayed read-only. dist[], parent[] and settled[] used O(V) state; the basic mode selected the next minimum by scanning those arrays instead of allocating a priority queue.";
+    private IReadOnlyList<PracticeEvidenceMetric> LastRunMetrics => _result is null ? [] : [new("Reached", $"{_result.ReachableCount}/{_graph.VertexCount}"), new("Relaxations", _result.RelaxationAttempts.ToString()), new("Updates", _result.DistanceUpdates.ToString()), new(_result.Variant == DijkstraVariant.MinHeap ? "Stale pops" : "Min scans", _result.Variant == DijkstraVariant.MinHeap ? _result.StalePops.ToString() : _result.SelectionComparisons.ToString())];
+
+    private static readonly PracticeTaskDefinition[] PracticeTasks =
+    [
+        new(1,"Improve a tentative distance","Run any graph where at least one reachable non-start vertex receives a better distance after its first discovery.","Re-relaxation preset · start A",DijkstraPreset.ReRelaxation,"A",DijkstraVariant.LinearScan,"/learn/concepts/dijkstra-relaxation"),
+        new(2,"Beat a direct edge with a detour","Find any vertex that has a direct edge from the start but a cheaper multi-edge shortest path.","Cheaper detour preset · start A",DijkstraPreset.CheaperDetour,"A",DijkstraVariant.LinearScan,"/learn/concepts/dijkstra"),
+        new(3,"Leave unreachable vertices at infinity","Use a graph where the chosen start cannot reach every vertex.","Disconnected preset · start A",DijkstraPreset.Disconnected,"A",DijkstraVariant.LinearScan,"/learn/concepts/dijkstra"),
+        new(4,"Respect edge direction","Use a directed graph where outgoing direction leaves at least one vertex unreachable from the start.","Directed preset · start A",DijkstraPreset.Directed,"A",DijkstraVariant.LinearScan,"/learn/concepts/graph"),
+        new(5,"Use a zero-weight edge","Complete Dijkstra on any graph that contains a zero-weight edge and reaches beyond the start.","Zero-weight preset · start A",DijkstraPreset.ZeroWeight,"A",DijkstraVariant.LinearScan,"/learn/concepts/dijkstra-relaxation"),
+        new(6,"Skip a stale priority entry","Use Advanced Min-Heap mode on a case where a vertex gets improved after an older priority was already pushed.","Re-relaxation preset · Advanced",DijkstraPreset.ReRelaxation,"A",DijkstraVariant.MinHeap,"/learn/concepts/dijkstra-priority"),
+        new(7,"Test the one-vertex boundary","Use exactly one vertex. Distance to the start must remain 0 and the run settles it once.","Single preset",DijkstraPreset.Single,"A",DijkstraVariant.LinearScan,"/learn/concepts/dijkstra"),
+        new(8,"Protect the negative-weight precondition","Attempt Dijkstra on any graph containing a negative edge and let the lab reject it instead of producing distances.","Negative-edge preset",DijkstraPreset.NegativeEdge,"A",DijkstraVariant.LinearScan,"/learn/concepts/dijkstra-negative")
+    ];
+
+    protected override void OnInitialized()
+    {
+        SimulationState.Changed += HandleSimulationChanged;
+        LoadPreset(DijkstraPreset.CheaperDetour);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _storageLoaded) return;
+        _storageLoaded = true;
+        _practiceProgress = PracticeProgress.Load(ModuleKey, LegacyKey, PracticeTasks.Select(task => task.Id));
+        _completedTaskIds.Clear();
+        foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id);
+        var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
+        if (bool.TryParse(popupSetting, out var show)) _showRunPopups = show;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void LoadPreset(DijkstraPreset preset)
+    {
+        if (IsBusy) return;
+        ClearReview();
+        _graph = DijkstraPresets.Create(preset);
+        _startIndex = 0;
+        _prediction = -2;
+        _predictionAnswered = false;
+        _lastValidationError = null;
+        _inputMessage = $"Loaded {preset} preset.";
+        Dijkstra.LoadGraph(_graph);
+        Dijkstra.Configure(_variant);
+    }
+
+    private void UseGraphLabSnapshot()
+    {
+        if (IsBusy) return;
+        var snapshot = Graph.CreateSnapshot();
+        if (snapshot.VertexCount == 0) { _inputMessage = "Build at least one vertex in Graph lab first."; return; }
+        ClearReview();
+        _graph = snapshot;
+        _startIndex = 0;
+        _prediction = -2;
+        _predictionAnswered = false;
+        _lastValidationError = null;
+        _inputMessage = snapshot.Weighted ? "Using the current weighted Graph lab snapshot." : "Using the current unweighted Graph lab snapshot; each edge costs 1.";
+        Dijkstra.LoadGraph(_graph);
+        Dijkstra.Configure(_variant);
+    }
+
+    private void SetVariant(DijkstraVariant variant)
+    {
+        if (IsBusy) return;
+        _variant = variant;
+        ClearReview();
+        Dijkstra.LoadGraph(_graph);
+        Dijkstra.Configure(variant);
+        _prediction = -2;
+        _predictionAnswered = false;
+    }
+
+    private void StartChanged(ChangeEventArgs args)
+    {
+        if (!int.TryParse(args.Value?.ToString(), out var value) || value < 0 || value >= _graph.VertexCount) return;
+        _startIndex = value;
+        ClearReview();
+        Dijkstra.LoadGraph(_graph);
+        Dijkstra.Configure(_variant);
+        _prediction = -2;
+        _predictionAnswered = false;
+    }
+
+    private void PredictionChanged(ChangeEventArgs args)
+    {
+        if (!int.TryParse(args.Value?.ToString(), out _prediction)) _prediction = -2;
+        if (_prediction == -2) { _predictionAnswered = false; return; }
+        _predictionAnswered = true;
+        _predictionCorrect = _prediction == ExpectedSecondSettled();
+    }
+
+    private async Task RunAsync()
+    {
+        if (IsBusy || _graph.VertexCount == 0) return;
+        _lastValidationError = null;
+        if (!DijkstraSimulation.TryValidateGraph(_graph, out var validationError))
+        {
+            _lastValidationError = validationError;
+            _inputMessage = validationError;
+            EvaluateNegativeWeightTask(validationError ?? "Invalid Dijkstra graph.");
+            return;
+        }
+
+        PrepareRun();
+        var token = SimulationState.Start($"Start Dijkstra from {Label(_startIndex)}.");
+        try
+        {
+            _result = await Dijkstra.TraverseAsync(_graph, _startIndex, _variant, token);
+            if (IsCurrent(token))
+            {
+                SimulationState.Complete("Dijkstra complete.");
+                EvaluatePractice(_result);
+                if (_showRunPopups) _lastRunPopupOpen = true;
+            }
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            if (IsCurrent(token)) SimulationState.Complete("Dijkstra stopped.");
+            _inputMessage = exception.Message;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void PrepareRun()
+    {
+        SimulationState.Reset();
+        _frames.Clear();
+        _frameIndex = -1;
+        _lastCapturedStep = null;
+        _result = null;
+        _lastRunPopupOpen = false;
+        _inputMessage = null;
+        Dijkstra.LoadGraph(_graph);
+        Dijkstra.Configure(_variant);
+    }
+
+    private void HandleSimulationChanged()
+    {
+        if (SimulationState.IsRunning) Capture();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void Capture()
+    {
+        var text = SimulationState.CurrentStepText;
+        if (string.IsNullOrWhiteSpace(text) || string.Equals(text, _lastCapturedStep, StringComparison.Ordinal)) return;
+        _lastCapturedStep = text;
+        _frames.Add(new RunFrame(text, Dijkstra.CreateSnapshot()));
+        _frameIndex = _frames.Count - 1;
+    }
+
+    private bool IsCurrent(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;
+    private void ClearReview() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; _result = null; _lastRunPopupOpen = false; }
+    private Task PlayTimelineAsync() { if (_frames.Count > 0) _frameIndex = _frames.Count - 1; SimulationState.Resume(); return InvokeAsync(StateHasChanged); }
+    private Task PauseTimelineAsync() { SimulationState.Pause(); return Task.CompletedTask; }
+    private Task StepBackAsync() { if (SimulationState.IsRunning && !SimulationState.IsPaused) SimulationState.Pause(); if (_frameIndex > 0) _frameIndex--; return InvokeAsync(StateHasChanged); }
+    private Task StepForwardAsync() { if (_frameIndex >= 0 && _frameIndex < _frames.Count - 1) { _frameIndex++; return InvokeAsync(StateHasChanged); } if (SimulationState.IsRunning) SimulationState.Step(); return Task.CompletedTask; }
+    private Task ResetPlaybackAsync() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; return InvokeAsync(StateHasChanged); }
+
+    private void ToggleRunPopups(ChangeEventArgs args)
+    {
+        _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed;
+        LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString());
+    }
+
+    private void OpenLastRun() => _lastRunPopupOpen = _result is not null;
+    private void CloseLastRun() => _lastRunPopupOpen = false;
+
+    private void StartTask(int taskId)
+    {
+        if (IsBusy) return;
+        var task = PracticeTasks.First(item => item.Id == taskId);
+        _activeTaskId = taskId;
+        LoadPreset(task.Preset);
+        _activeTaskId = taskId;
+        _variant = task.Variant;
+        Dijkstra.Configure(_variant);
+        var index = FindLabel(task.StartLabel);
+        if (index >= 0) _startIndex = index;
+        _activeTaskId = taskId;
+    }
+
+    private void EvaluatePractice(DijkstraResult result)
+    {
+        foreach (var task in PracticeTasks)
+        {
+            if (task.Id == 8) continue;
+            if (_completedTaskIds.Contains(task.Id) && GetTaskEvidence(task.Id) is not null && _activeTaskId != task.Id) continue;
+            var completed = task.Id switch
+            {
+                1 => result.DistanceUpdates > Math.Max(0, result.ReachableCount - 1),
+                2 => HasCheaperDetourThanDirect(result),
+                3 => result.Graph.VertexCount >= 2 && result.ReachableCount < result.Graph.VertexCount,
+                4 => result.Graph.Directed && result.ReachableCount < result.Graph.VertexCount,
+                5 => ContainsZeroWeightEdge(result.Graph) && result.ReachableCount > 1,
+                6 => result.Variant == DijkstraVariant.MinHeap && result.StalePops > 0,
+                7 => result.Graph.VertexCount == 1 && result.ReachableCount == 1 && SameDistance(result.Distances[result.StartIndex], 0d) && result.SettledOrderIndices.Length == 1,
+                _ => false
+            };
+            if (completed) CompleteTask(task, result);
+        }
+    }
+
+    private void EvaluateNegativeWeightTask(string validationError)
+    {
+        var task = PracticeTasks.First(item => item.Id == 8);
+        if (!ContainsNegativeWeightEdge(_graph)) return;
+        if (_completedTaskIds.Contains(task.Id) && GetTaskEvidence(task.Id) is not null && _activeTaskId != task.Id) return;
+        var evidence = new PracticeCompletionEvidence(task.Id, task.Title, "Dijkstra rejected an invalid negative-weight graph", validationError, "No dist[], parent[] or priority-frontier run was started; the graph remained unchanged.", "Rejecting this case is part of the algorithm: Dijkstra's settled-minimum proof requires every edge weight to be non-negative.", [new("Negative edges", CountNegativeEdges(_graph).ToString()), new("Run started", "No"), new("Graph", _graph.Directed ? "Directed" : "Undirected")], $"{_graph.VertexCount} vertices · {_graph.EdgeCount} edges · validation stopped before traversal");
+        _completedTaskIds.Add(task.Id);
+        PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
+        if (_activeTaskId == task.Id) _activeTaskId = null;
+    }
+
+    private void CompleteTask(PracticeTaskDefinition task, DijkstraResult result)
+    {
+        var evidence = new PracticeCompletionEvidence(task.Id, task.Title, "Dijkstra completed the required shortest-path behavior", $"Starting at {Label(result.StartIndex)}, the run settled {FormatOrder(result.SettledOrderIndices)} and produced distances {FormatDistances(result.Distances)}. The tracker matched the behavior rather than one hardcoded graph.", result.Variant == DijkstraVariant.MinHeap ? "The advanced run used dist[], parent[], settled[] and the project-owned binary min-heap frontier. Better distances pushed new entries and stale priorities were discarded when popped." : "The basic run used dist[], parent[] and settled[] while choosing each next minimum with an explicit linear scan.", "This case demonstrates Dijkstra's non-negative relaxation/settlement invariant while still allowing extra graph content when it does not invalidate the concept.", [new("Settled", $"{result.ReachableCount}/{result.Graph.VertexCount}"), new("Relaxations", result.RelaxationAttempts.ToString()), new("Updates", result.DistanceUpdates.ToString()), new(result.Variant == DijkstraVariant.MinHeap ? "Stale pops" : "Min comparisons", result.Variant == DijkstraVariant.MinHeap ? result.StalePops.ToString() : result.SelectionComparisons.ToString())], $"{(result.Graph.Directed ? "directed" : "undirected")} · {result.Variant} · start {Label(result.StartIndex)}");
+        _completedTaskIds.Add(task.Id);
+        PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
+        if (_activeTaskId == task.Id) _activeTaskId = null;
+    }
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
+    private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
+    private void CloseTaskEvidence() => _practiceEvidencePopup = null;
+
+    private int ExpectedSecondSettled()
+    {
+        if (_graph.VertexCount == 0 || _startIndex < 0 || _startIndex >= _graph.VertexCount || !DijkstraSimulation.TryValidateGraph(_graph, out _)) return -1;
+        var best = -1;
+        var bestDistance = double.PositiveInfinity;
+        var neighbors = _graph.Vertices[_startIndex].Neighbors;
+        for (var index = 0; index < neighbors.Length; index++)
+        {
+            var neighbor = neighbors[index];
+            var candidate = NeighborIndex(_graph, neighbor);
+            if (candidate < 0 || candidate == _startIndex) continue;
+            var distance = neighbor.Weight;
+            if (distance < bestDistance - 1e-9 || (SameDistance(distance, bestDistance) && (best < 0 || candidate < best)))
+            {
+                best = candidate;
+                bestDistance = distance;
+            }
+        }
+        return best;
+    }
+
+    private static bool HasCheaperDetourThanDirect(DijkstraResult result)
+    {
+        var start = result.StartIndex;
+        var neighbors = result.Graph.Vertices[start].Neighbors;
+        for (var slot = 0; slot < neighbors.Length; slot++)
+        {
+            var neighbor = neighbors[slot];
+            var target = NeighborIndex(result.Graph, neighbor);
+            if (target < 0 || target == start || !double.IsFinite(result.Distances[target])) continue;
+            if (result.Distances[target] + 1e-9 < neighbor.Weight && result.ParentIndices[target] != start) return true;
+        }
+        return false;
+    }
+
+    private static bool ContainsZeroWeightEdge(GraphSnapshot graph) { for (var i = 0; i < graph.Edges.Length; i++) if (SameDistance(graph.Edges[i].Weight, 0d)) return true; return false; }
+    private static bool ContainsNegativeWeightEdge(GraphSnapshot graph) { for (var i = 0; i < graph.Edges.Length; i++) if (graph.Edges[i].Weight < 0d) return true; return false; }
+    private static int CountNegativeEdges(GraphSnapshot graph) { var count = 0; for (var i = 0; i < graph.Edges.Length; i++) if (graph.Edges[i].Weight < 0d) count++; return count; }
+    private int FindLabel(string label) { for (var i = 0; i < _graph.VertexCount; i++) if (string.Equals(_graph.Vertices[i].Label, label, StringComparison.OrdinalIgnoreCase)) return i; return -1; }
+    private string Label(int index) => index >= 0 && index < _graph.VertexCount ? _graph.Vertices[index].Label : "?";
+    private string FormatOrder(int[] order) { if (order.Length == 0) return "empty"; var labels = new string[order.Length]; for (var i = 0; i < order.Length; i++) labels[i] = Label(order[i]); return string.Join(" → ", labels); }
+    private static string FormatDistances(double[] distances) { var values = new string[distances.Length]; for (var i = 0; i < distances.Length; i++) values[i] = double.IsPositiveInfinity(distances[i]) ? "∞" : distances[i].ToString("0.###"); return "[" + string.Join(", ", values) + "]"; }
+    private static bool SameDistance(double left, double right) => Math.Abs(left - right) <= 1e-9;
+    private static int NeighborIndex(GraphSnapshot graph, GraphNeighborSnapshot neighbor) { if (neighbor.VertexIndex >= 0 && neighbor.VertexIndex < graph.VertexCount && graph.Vertices[neighbor.VertexIndex].Id == neighbor.VertexId) return neighbor.VertexIndex; for (var index = 0; index < graph.VertexCount; index++) if (graph.Vertices[index].Id == neighbor.VertexId) return index; return -1; }
+
+    public void Dispose() => SimulationState.Changed -= HandleSimulationChanged;
+    private sealed record RunFrame(string StepText, DijkstraSnapshot Snapshot);
+    private sealed record PracticeTaskDefinition(int Id, string Title, string Goal, string Suggested, DijkstraPreset Preset, string StartLabel, DijkstraVariant Variant, string HelpHref);
+    private enum StateView { Visual, Memory }
+}
