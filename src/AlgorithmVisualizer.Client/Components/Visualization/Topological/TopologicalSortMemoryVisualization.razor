@@ -1,0 +1,129 @@
+@using AlgorithmVisualizer.Core.Algorithms.GraphOrdering.Topological
+
+<section class="topological-memory" aria-label="Topological Sort memory state">
+    <div class="memory-intro">
+        <span>MEMORY STATE</span>
+        <strong>@MemoryHeadline</strong>
+        <p>@MemoryExplanation</p>
+    </div>
+
+    <div class="frontier-card">
+        <div class="card-heading"><span>@FrontierTitle.ToUpperInvariant()</span><strong>@FrontierRule</strong></div>
+        <div class="frontier-slots">
+            @if (Snapshot.FrontierIndices.Length == 0)
+            {
+                <span class="empty-slot">empty</span>
+            }
+            else
+            {
+                @for (var index = 0; index < Snapshot.FrontierIndices.Length; index++)
+                {
+                    <span class="frontier-slot"><small>@index</small><strong>@Label(Snapshot.FrontierIndices[index])</strong></span>
+                }
+            }
+        </div>
+    </div>
+
+    @if (Snapshot.Variant == TopologicalSortVariant.DfsPostorder)
+    {
+        <div class="frontier-card">
+            <div class="card-heading"><span>POSTORDER BUFFER</span><strong>Reverse only after DFS finishes without a cycle</strong></div>
+            <div class="frontier-slots">
+                @if (Snapshot.PostorderIndices.Length == 0)
+                {
+                    <span class="empty-slot">empty</span>
+                }
+                else
+                {
+                    @for (var index = 0; index < Snapshot.PostorderIndices.Length; index++)
+                    {
+                        <span class="frontier-slot"><small>@index</small><strong>@Label(Snapshot.PostorderIndices[index])</strong></span>
+                    }
+                }
+            </div>
+        </div>
+    }
+
+    <div class="table-scroll">
+        <table>
+            <thead>
+            @if (Snapshot.Variant == TopologicalSortVariant.KahnQueue)
+            {
+                <tr><th>Index</th><th>Vertex</th><th>indegree[]</th><th>Ordered</th><th>State</th></tr>
+            }
+            else
+            {
+                <tr><th>Index</th><th>Vertex</th><th>color[]</th><th>Finished</th><th>State</th></tr>
+            }
+            </thead>
+            <tbody>
+            @foreach (var vertex in Snapshot.Vertices)
+            {
+                <tr class="@RowClass(vertex.State)">
+                    <td>@vertex.Index</td>
+                    <td><strong>@vertex.Label</strong></td>
+                    @if (Snapshot.Variant == TopologicalSortVariant.KahnQueue)
+                    {
+                        <td>@vertex.InDegree</td>
+                        <td>@(vertex.Ordered ? "true" : "false")</td>
+                    }
+                    else
+                    {
+                        <td>@ColorLabel(vertex.VisitColor)</td>
+                        <td>@(vertex.VisitColor == 2 ? "true" : "false")</td>
+                    }
+                    <td>@StateLabel(vertex.State)</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="memory-note">
+        <strong>The graph itself is read-only.</strong>
+        <span>@MemoryNote</span>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public TopologicalSortSnapshot Snapshot { get; set; } = new(
+        new(true, false, 0, 0, [], [], []), [], [], [], [], -1, -1, null,
+        0, 0, 0, 0, 0, false, TopologicalSortPhase.Ready, TopologicalSortVariant.KahnQueue);
+
+    private string MemoryHeadline => Snapshot.Variant == TopologicalSortVariant.KahnQueue
+        ? "indegree[] + head-index FIFO ready queue + output[]"
+        : "color[] + recursion path + postorder[] + output[]";
+    private string MemoryExplanation => Snapshot.Variant == TopologicalSortVariant.KahnQueue
+        ? "Kahn never physically removes graph vertices. It keeps a mutable indegree counter for each vertex, a manual FIFO containing currently dependency-free vertices, and an output array."
+        : "DFS never mutates graph edges. It stores white/gray/black color state, the visible recursion path, a manual finish-order buffer, then manually reverses that buffer only when no cycle is found.";
+    private string FrontierTitle => Snapshot.Variant == TopologicalSortVariant.KahnQueue ? "Ready queue" : "Recursion path";
+    private string FrontierRule => Snapshot.Variant == TopologicalSortVariant.KahnQueue ? "FIFO · only indegree 0 may enter" : "LIFO behavior provided by recursive calls";
+    private string MemoryNote => Snapshot.Variant == TopologicalSortVariant.KahnQueue
+        ? "Decrementing indegree[] simulates removing the effect of an emitted prerequisite; the source Graph remains unchanged and can be reused after the run."
+        : "Gray means a vertex is still on the active path. Seeing an edge to gray is enough to reject the graph as cyclic before any topological output is accepted.";
+    private string Label(int index) => index >= 0 && index < Snapshot.Graph.Vertices.Length ? Snapshot.Graph.Vertices[index].Label : "?";
+    private static string ColorLabel(int color) => color switch { 1 => "gray", 2 => "black", _ => "white" };
+    private static string StateLabel(TopologicalVertexState state) => state switch
+    {
+        TopologicalVertexState.Ready => "ready",
+        TopologicalVertexState.Current => "current",
+        TopologicalVertexState.InspectingNeighbor => "checking edge",
+        TopologicalVertexState.Visiting => "on recursion path",
+        TopologicalVertexState.Finished => "finished",
+        TopologicalVertexState.Ordered => "ordered",
+        TopologicalVertexState.Cycle => "cycle target",
+        _ => "unprocessed"
+    };
+    private static string RowClass(TopologicalVertexState state) => state switch
+    {
+        TopologicalVertexState.Ready => "ready",
+        TopologicalVertexState.Current => "current",
+        TopologicalVertexState.InspectingNeighbor => "checking",
+        TopologicalVertexState.Visiting => "ready",
+        TopologicalVertexState.Finished => "ordered",
+        TopologicalVertexState.Ordered => "ordered",
+        TopologicalVertexState.Cycle => "cycle",
+        _ => string.Empty
+    };
+}

@@ -73,6 +73,7 @@
             <div class="concept-jump-group">
                 <span>GRAPH ALGORITHMS</span>
                 <a href="#dijkstra">Dijkstra</a>
+                <a href="#topological-sort">Topological Sort</a>
             </div>
         </nav>
 
@@ -876,14 +877,30 @@
         <div class="concept-lesson-links"><a href="/graph-algorithms/dijkstra">Open the Dijkstra lab →</a><a href="/search/bfs">Compare with BFS →</a><a href="/structures/binary-heap">Review Binary Heap →</a></div>
     </section>
 
+    <section id="topological-sort" class='@SectionClass("topological-sort")'>
+        <div class="section-heading">
+            <span>G4</span>
+            <div><h2>Topological Sort: put every prerequisite before its dependent</h2><p>A topological order exists exactly for directed acyclic graphs (DAGs). It is an ordering constraint, not a shortest-path or numeric sorting problem.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class='@CardClass("topological-sort", "concept-card")'><span class="term">ORDER</span><h3>Every directed edge must point forward</h3><p>If the graph contains u → v, then u must appear earlier than v in the output. Several different outputs may all be correct when multiple vertices are simultaneously dependency-free.</p><div class="example"><strong>Correctness check:</strong> for every edge, position[u] &lt; position[v].</div></article>
+            <article class='@CardClass("topological-dag", "concept-card")'><span class="term queue">DAG</span><h3>Cycles make dependency order impossible</h3><p>A directed cycle says A must come before B, B before C, and C before A. No linear order can satisfy all of those conditions at once.</p><div class="example"><strong>Precondition:</strong> the graph must be directed. Edge weights are irrelevant and may be ignored.</div></article>
+            <article class='@CardClass("topological-kahn", "concept-card")'><span class="term">KAHN</span><h3>indegree[] reveals what is ready</h3><p>Compute the number of incoming prerequisites for every vertex. Enqueue all indegree-0 vertices, emit one, and decrement the indegree of each outgoing neighbor.</p><div class="example"><strong>Cycle signal:</strong> if the ready Queue becomes empty before V vertices are emitted, the remaining subgraph contains a cycle.</div></article>
+            <article class='@CardClass("topological-dfs", "concept-card")'><span class="term">DFS</span><h3>Reverse finishing time</h3><p>DFS marks white vertices gray while they are on the active recursion path and black after every outgoing neighbor finishes. Append black vertices to postorder, then reverse that buffer.</p><div class="example"><strong>Cycle signal:</strong> an edge to a gray vertex is a back edge and proves a directed cycle.</div></article>
+            <article class='@CardClass("topological-cycle", "concept-card")'><span class="term">CYCLE</span><h3>Cycle detection is part of the result</h3><p>The lab does not return a misleading partial order. Kahn exposes the point where no ready vertex remains; DFS exposes the gray-to-gray back edge.</p><div class="example"><strong>Self-loop:</strong> v → v is already a directed cycle, so no topological order exists.</div></article>
+            <article class='@CardClass("topological-complexity", "concept-card")'><span class="term">O(V + E)</span><h3>Both variants inspect the graph linearly</h3><p>Kahn computes/decrements indegrees and processes each adjacency entry once. DFS colors each vertex and inspects each outgoing adjacency entry once.</p><div class="example"><strong>Extra memory:</strong> O(V) for indegree/Queue/output or color/recursion/postorder.</div></article>
+        </div>
+        <div class="concept-lesson-links"><a href="/graph-algorithms/topological">Open the Topological Sort lab →</a><a href="/search/dfs">Review DFS →</a><a href="/structures/queue-stack">Review Queue →</a></div>
+    </section>
+
     <section class="concept-section implementation-note">
         <div class="section-heading">
             <span>✓</span>
-            <div><h2>Implemented from scratch</h2><p>The learning structures and algorithms do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, Matrix, Graph, sorting, Linear Search, Binary Search, BFS, DFS, Dijkstra, or balancing behavior to ready-made framework collections/search helpers.</p></div>
+            <div><h2>Implemented from scratch</h2><p>The learning structures and algorithms do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, Matrix, Graph, sorting, Linear Search, Binary Search, BFS, DFS, Dijkstra, Topological Sort, or balancing behavior to ready-made framework collections/search helpers.</p></div>
         </div>
         <div class="plain-note">
             <strong>What our code does itself</strong>
-            <p>Linear structures keep and grow their own raw array and move references with manual loops. BST, AVL, and Red-Black Tree keep explicit node links and perform their own comparisons, transplants, recoloring, and rotations. BST Balance uses our own Day-Stout-Warren vine/compression logic over those same node references. Heap uses its own growable raw array and manual index swaps for bubble-up/bubble-down instead of PriorityQueue or a library heap. Matrix uses its own row-major <code>double[]</code>, manual cell/index loops, row operations, multiplication and elimination instead of a numerical or linear-algebra library. Graph keeps canonical vertex/edge objects, manual adjacency lists over our own dynamic-array storage, and reuses ManualMatrix for the synchronized adjacency table instead of a graph package or dictionary-backed graph. Linear Search uses its own explicit index loop and does not call LINQ First/Contains or a framework search helper. Binary Search uses its own iterative left/right/mid loop and does not call Array.BinarySearch or another framework binary-search helper. BFS uses the existing Graph adjacency snapshot plus the project's manual dynamic-array storage as a FIFO Queue; DFS uses recursive calls or the same manual storage as an explicit LIFO Stack. Neither delegates traversal to a graph library or framework Queue/Stack collection. Dijkstra reuses that same Graph snapshot, performs its own relaxation/minimum selection, and in Advanced mode uses a project-owned binary min-heap instead of PriorityQueue<TElement,TPriority>. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the taught data-structure algorithms for us.</p>
+            <p>Linear structures keep and grow their own raw array and move references with manual loops. BST, AVL, and Red-Black Tree keep explicit node links and perform their own comparisons, transplants, recoloring, and rotations. BST Balance uses our own Day-Stout-Warren vine/compression logic over those same node references. Heap uses its own growable raw array and manual index swaps for bubble-up/bubble-down instead of PriorityQueue or a library heap. Matrix uses its own row-major <code>double[]</code>, manual cell/index loops, row operations, multiplication and elimination instead of a numerical or linear-algebra library. Graph keeps canonical vertex/edge objects, manual adjacency lists over our own dynamic-array storage, and reuses ManualMatrix for the synchronized adjacency table instead of a graph package or dictionary-backed graph. Linear Search uses its own explicit index loop and does not call LINQ First/Contains or a framework search helper. Binary Search uses its own iterative left/right/mid loop and does not call Array.BinarySearch or another framework binary-search helper. BFS uses the existing Graph adjacency snapshot plus the project's manual dynamic-array storage as a FIFO Queue; DFS uses recursive calls or the same manual storage as an explicit LIFO Stack. Neither delegates traversal to a graph library or framework Queue/Stack collection. Dijkstra reuses that same Graph snapshot, performs its own relaxation/minimum selection, and in Advanced mode uses a project-owned binary min-heap instead of <code>PriorityQueue&lt;TElement, TPriority&gt;</code>. Topological Sort also reuses the same Graph snapshot: Kahn mode maintains indegree[] and a head-index FIFO over the project manual array, while DFS mode uses white/gray/black recursion plus a manual postorder buffer; neither delegates ordering or cycle detection to a graph library. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the taught data-structure algorithms for us.</p>
         </div>
     </section>
 
@@ -916,6 +933,7 @@
         "bfs-complexity" => "bfs",
         "dfs-complexity" or "dfs-stack" => "dfs",
         "dijkstra-relaxation" or "dijkstra-priority" or "dijkstra-negative" or "dijkstra-complexity" => "dijkstra",
+        "topological-dag" or "topological-kahn" or "topological-dfs" or "topological-cycle" or "topological-complexity" => "topological-sort",
         _ => NormalizedTopic
     };
 
@@ -961,6 +979,12 @@
         "dijkstra-priority" => "Dijkstra priority frontier",
         "dijkstra-negative" => "Why Dijkstra rejects negative weights",
         "dijkstra-complexity" => "Dijkstra complexity",
+        "topological-sort" => "Topological Sort",
+        "topological-dag" => "Topological Sort and DAGs",
+        "topological-kahn" => "Kahn's indegree Queue",
+        "topological-dfs" => "DFS reverse postorder",
+        "topological-cycle" => "Topological Sort cycle detection",
+        "topological-complexity" => "Topological Sort complexity",
         _ => "Concepts & Memory"
     };
 
@@ -987,6 +1011,7 @@
         "bfs" or "bfs-complexity" => "/search/bfs",
         "dfs" or "dfs-complexity" or "dfs-stack" => "/search/dfs",
         "dijkstra" or "dijkstra-relaxation" or "dijkstra-priority" or "dijkstra-negative" or "dijkstra-complexity" => "/graph-algorithms/dijkstra",
+        "topological-sort" or "topological-dag" or "topological-kahn" or "topological-dfs" or "topological-cycle" or "topological-complexity" => "/graph-algorithms/topological",
         _ => null
     };
 
@@ -1027,7 +1052,8 @@
         "linear-search" or "linear-search-complexity" or "linear-vs-binary-search" or
         "binary-search" or "binary-search-complexity" or "binary-search-duplicates" or
         "bfs" or "bfs-complexity" or "dfs" or "dfs-complexity" or "dfs-stack" or
-        "dijkstra" or "dijkstra-relaxation" or "dijkstra-priority" or "dijkstra-negative" or "dijkstra-complexity" => true,
+        "dijkstra" or "dijkstra-relaxation" or "dijkstra-priority" or "dijkstra-negative" or "dijkstra-complexity" or
+        "topological-sort" or "topological-dag" or "topological-kahn" or "topological-dfs" or "topological-cycle" or "topological-complexity" => true,
         _ => false
     };
 }

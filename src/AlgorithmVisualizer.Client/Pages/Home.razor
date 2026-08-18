@@ -14,7 +14,7 @@
             <div class="hero-actions">
                 <a class="primary-action" href="/structures/queue-stack">Start lesson 01 <span>→</span></a>
                 <ConceptLink class="secondary-action" Href="/learn/concepts/visual-vs-memory">Concepts &amp; Memory</ConceptLink>
-                <a class="secondary-action" href="#learning-path">See all 19 modules</a>
+                <a class="secondary-action" href="#learning-path">See all 20 modules</a>
             </div>
             <div class="hero-note">
                 <span class="note-icon">i</span>
@@ -53,7 +53,7 @@
     </section>
 
     <section class="quick-stats" aria-label="Implemented learning modules">
-        <div><strong>19</strong><span>interactive modules</span></div>
+        <div><strong>20</strong><span>interactive modules</span></div>
         <div><strong>8</strong><span>data-structure labs</span></div>
         <div><strong>10</strong><span>algorithm labs</span></div>
         <div><strong>Auto</strong><span>checked guided practice</span></div>
@@ -245,10 +245,10 @@
     <section class="learning-section graph-algorithms-home-section">
         <div class="section-heading">
             <div>
-                <span class="section-kicker">GRAPH ALGORITHMS · 01</span>
-                <h2>Move from reachability to weighted path decisions.</h2>
+                <span class="section-kicker">GRAPH ALGORITHMS · 01–02</span>
+                <h2>Move from reachability to paths and dependency order.</h2>
             </div>
-            <p>Dijkstra reuses the same Graph foundation but adds non-negative edge costs, relaxation, parent chains and a minimum-priority frontier.</p>
+            <p>These modules reuse the same Graph foundation: Dijkstra adds weighted shortest-path relaxation, while Topological Sort turns directed prerequisites into a legal DAG order.</p>
         </div>
 
         <div class="path-grid module-grid">
@@ -257,6 +257,12 @@
                 <div class="path-icon graph-icon"><i></i><i></i><i></i><i></i></div>
                 <h3>Dijkstra</h3><p>Relax non-negative weighted edges, settle the smallest tentative distance, and compare linear minimum selection with a manual binary min-heap frontier.</p>
                 <div class="concept-row"><span>Relaxation</span><span>Shortest path</span><span>Min-heap</span></div><span class="card-link">Open lesson <b>→</b></span>
+            </a>
+            <a class="path-card available module-card" href="/graph-algorithms/topological">
+                <div class="card-topline"><span class="path-index">02 · ADVANCED</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="path-icon graph-icon"><i></i><i></i><i></i><i></i></div>
+                <h3>Topological Sort</h3><p>Order directed dependencies with Kahn's indegree Queue or DFS reverse postorder, and detect cycles that make scheduling impossible.</p>
+                <div class="concept-row"><span>DAG</span><span>Indegree</span><span>O(V + E)</span></div><span class="card-link">Open lesson <b>→</b></span>
             </a>
         </div>
     </section>

@@ -173,4 +173,11 @@ Core namespace: `AlgorithmVisualizer.Core.Algorithms.GraphShortestPath.Dijkstra`
 
 Dijkstra consumes the existing `GraphSnapshot`, rejects negative weights, permits zero weights, and records `dist[]`, `parent[]`, `settled[]`, settlement order, edge checks and relaxation updates. Basic mode selects the next minimum with an explicit linear scan (`O(V² + E)`). Advanced mode uses a project-owned binary min-heap with lazy priority entries (`O((V + E) log V)`) and never delegates to `PriorityQueue<TElement,TPriority>`.
 
-Linear Search, Binary Search, BFS, DFS, and Dijkstra are live.
+Linear Search, Binary Search, BFS, DFS, Dijkstra, and Topological Sort are live.
+
+
+### Topological Sort
+
+Core namespace: `AlgorithmVisualizer.Core.Algorithms.GraphOrdering.Topological`
+
+Topological Sort consumes the existing directed `GraphSnapshot`. Kahn mode uses explicit `indegree[]` plus a head-index FIFO over `ManualDynamicArray<int>`. DFS mode uses recursive white/gray/black visitation plus a manual postorder buffer and manual reverse. Both are `O(V + E)` time / `O(V)` extra space, ignore edge weights, reject undirected input, and report directed cycles rather than returning a misleading ordering.

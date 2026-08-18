@@ -14,6 +14,7 @@ algorithm-structure-visualizer/
 │  │  ├─ Algorithms/Search/
 │  │  ├─ Algorithms/GraphTraversal/
 │  │  ├─ Algorithms/GraphShortestPath/Dijkstra/
+│  │  ├─ Algorithms/GraphOrdering/Topological/
 │  │  └─ Simulation/
 │  ├─ AlgorithmVisualizer.Client/
 │  │  ├─ Components/
@@ -187,7 +188,7 @@ The dedicated Binary Heap specialization adds:
 
 ### Graph
 
-The Graph structure module adds canonical `GraphVertex`/`GraphEdge` objects, manually stored adjacency lists, and a synchronized adjacency matrix backed by the existing `ManualMatrix`. Graph Core has no fixed eight-vertex cap; `ManualMatrix` is reusable storage whose dimensions follow the graph, while MatrixPage keeps its separate 8×8 teaching/input limit. The Client renders topology separately from representation memory, scrolls large matrix views internally, and uses ring-then-grid automatic topology placement before optional manual dragging. BFS and DFS are now live algorithm modules that consume this exact Graph snapshot instead of introducing a second graph representation. Dijkstra now follows this reuse pattern: it consumes the same Graph snapshot and adds renderer-neutral shortest-path state. Topological sort and MST should continue the same reuse pattern.
+The Graph structure module adds canonical `GraphVertex`/`GraphEdge` objects, manually stored adjacency lists, and a synchronized adjacency matrix backed by the existing `ManualMatrix`. Graph Core has no fixed eight-vertex cap; `ManualMatrix` is reusable storage whose dimensions follow the graph, while MatrixPage keeps its separate 8×8 teaching/input limit. The Client renders topology separately from representation memory, scrolls large matrix views internally, and uses ring-then-grid automatic topology placement before optional manual dragging. BFS and DFS are now live algorithm modules that consume this exact Graph snapshot instead of introducing a second graph representation. Dijkstra now follows this reuse pattern: it consumes the same Graph snapshot and adds renderer-neutral shortest-path state. Topological Sort now follows the same reuse pattern; MST should continue it.
 
 ### Breadth-First Search and Depth-First Search
 
@@ -199,7 +200,7 @@ Dijkstra reuses the immutable Graph snapshot and renderer-neutral simulation run
 
 ## Planned extension path
 
-Future graph/path modules should reuse the same Core/runtime/Client separation rather than duplicating playback infrastructure. Dijkstra is live: Basic mode uses manual linear minimum selection and Advanced mode uses a Dijkstra-specific binary min-heap built on the existing `ManualHeapArray` storage priority frontier with lazy stale entries. Topological sorting and MST remain future modules and should reuse the established Graph plus Stack/Queue/Heap foundations when they are genuine algorithmic dependencies.
+Future graph/path modules should reuse the same Core/runtime/Client separation rather than duplicating playback infrastructure. Dijkstra is live: Basic mode uses manual linear minimum selection and Advanced mode uses a Dijkstra-specific binary min-heap built on the existing `ManualHeapArray` storage priority frontier with lazy stale entries. Topological Sort is live and reuses the established Graph plus the manual Queue/recursive DFS foundations. MST remains future and should reuse Graph/Heap/Union-Find foundations where they are genuine algorithmic dependencies.
 
 
 ## Matrix module
@@ -215,6 +216,10 @@ The Matrix lab is a Core/runtime/Client implementation inserted before Graph bec
 
 The Matrix page established a readability floor that Graph now tightens: normal explanatory/help copy is approximately 0.95rem or larger, playback text is near 1rem, and only truly secondary uppercase metadata may sit near 0.82rem.
 
+
+### Topological Sort
+
+Topological Sort consumes the immutable directed `GraphSnapshot` and adds only renderer-neutral ordering state. Kahn mode owns `indegree[]`, a head-index FIFO backed by the existing manual dynamic-array storage, and output order. DFS mode owns white/gray/black color state, recursion path, manual postorder and final reversed output. Both variants inspect vertices/adjacency in `O(V + E)`, keep `O(V)` extra state, ignore weights, reject undirected input before a run, and report cycles instead of accepting a partial ordering. The Client layer owns presets, prediction, playback frames, Visual/Memory presentation and SQLite-backed practice evidence.
 
 ### Graph visual workspace
 

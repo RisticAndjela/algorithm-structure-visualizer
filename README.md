@@ -11,7 +11,7 @@ The project is built with **Blazor WebAssembly and C#**. Its goal is not only to
 - what the time complexity means for the current run;
 - how the visual representation differs from the way the data is stored in memory.
 
-The application now has nineteen fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **Binary Heap (Min/Max)**, **Heap (generalized d-ary)**, **AVL Tree**, **Matrix**, **Graph**, **Red-Black Tree**, **Bubble Sort**, **Selection Sort**, **Insertion Sort**, **Merge Sort**, **Quick Sort**, **Heap Sort**, **Linear Search**, **Binary Search**, **Breadth-First Search (BFS)**, **Depth-First Search (DFS)**, and **Dijkstra**. The Home page, sidebar, Concepts & Memory navigation, and Next Lesson flow expose these modules one-to-one in the same curriculum order instead of grouping several finished lessons behind one card. Every live lab deep-links to the exact Concepts & Memory topic through dedicated Blazor routes such as `/learn/concepts/linear-search`; the shared C# `ConceptLink` component performs normal Blazor navigation without authored JavaScript or cross-page fragment timing.
+The application now has twenty fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **Binary Heap (Min/Max)**, **Heap (generalized d-ary)**, **AVL Tree**, **Matrix**, **Graph**, **Red-Black Tree**, **Bubble Sort**, **Selection Sort**, **Insertion Sort**, **Merge Sort**, **Quick Sort**, **Heap Sort**, **Linear Search**, **Binary Search**, **Breadth-First Search (BFS)**, **Depth-First Search (DFS)**, **Dijkstra**, and **Topological Sort**. The Home page, sidebar, Concepts & Memory navigation, and Next Lesson flow expose these modules one-to-one in the same curriculum order instead of grouping several finished lessons behind one card. Every live lab deep-links to the exact Concepts & Memory topic through dedicated Blazor routes such as `/learn/concepts/linear-search`; the shared C# `ConceptLink` component performs normal Blazor navigation without authored JavaScript or cross-page fragment timing.
 
 ---
 
@@ -39,6 +39,7 @@ The application now has nineteen fully implemented learning modules: **Queue & S
 - Breadth-First Search (BFS)
 - Depth-First Search (DFS)
 - Dijkstra
+- Topological Sort
 - shared simulation runtime;
 - play, pause and adjustable simulation speed;
 - manual step forward;
@@ -55,7 +56,7 @@ The application now has nineteen fully implemented learning modules: **Queue & S
 - optional result explanation popups;
 - Concepts & Memory learning page;
 - shared learner-facing module chrome in `wwwroot/css/learning-modules.css`, using the mature Queue & Stack / BST / Matrix / Graph visual language for sorting Learn First panels, module headers, tips, reference links, and lesson progression;
-- difficulty-ordered curriculum navigation with reusable `NextLessonCard` links: Queue & Stack → BST → Binary Heap → d-ary Heap → AVL → Matrix → Graph → Red-Black Tree, then Bubble → Selection → Insertion → Merge → Quick → Heap Sort, then Linear Search → Binary Search → BFS → DFS, then Dijkstra;
+- difficulty-ordered curriculum navigation with reusable `NextLessonCard` links: Queue & Stack → BST → Binary Heap → d-ary Heap → AVL → Matrix → Graph → Red-Black Tree, then Bubble → Selection → Insertion → Merge → Quick → Heap Sort, then Linear Search → Binary Search → BFS → DFS, then Dijkstra → Topological Sort;
 - exact route-based links from every live lab to the relevant Concepts & Memory topic, plus reverse links from the concept sections back to the matching lesson;
 - BST insert, search, delete, explicit DSW balance, and reset;
 - BST leaf / one-child / two-child deletion simulation;
@@ -210,7 +211,7 @@ All currently planned base data-structure modules in the specification are now r
 
 All six sorting lessons in the current curriculum are live: Bubble, Selection, Insertion, Merge, Quick, and Heap Sort.
 
-Linear Search, Binary Search, BFS, DFS, and Dijkstra are live. BFS/DFS reuse the existing Graph representation and manual Queue/Stack foundations; Dijkstra reuses the same Graph and adds manual linear-minimum and binary-min-heap priority selection over non-negative weighted edges.
+Linear Search, Binary Search, BFS, DFS, Dijkstra, and Topological Sort are live. BFS/DFS reuse the existing Graph representation and manual Queue/Stack foundations; Dijkstra reuses the same Graph and adds manual linear-minimum and binary-min-heap priority selection over non-negative weighted edges; Topological Sort reuses the same directed Graph with Kahn indegree/FIFO and DFS reverse-postorder variants.
 
 ---
 
@@ -1408,7 +1409,7 @@ The structure foundation includes our custom Queue, Stack, BST, AVL, Red-Black, 
 
 **Matrix: implemented as the pre-Graph row-major module with direct cell editing, bulk custom-value input with automatic dimension detection, arithmetic, multiplication, transpose, powers, determinant, minors/cofactors, elementary row operations, REF/RREF/rank, inverse, equation solving, graph-adjacency presets, Visual/Memory views, a row-list-first memory explanation with expandable real `double[]` backing storage, continuously auto-tracked guided practice with optional Start/Restart setup and active progress, and automatic three-view Last Run explanations.**
 
-The project now has reusable manual linear structures, three reusable manual tree foundations, two reusable heap views of the same family, a reusable Matrix foundation, a live reusable Graph structure, complete BFS/DFS traversal labs, a complete Dijkstra weighted-shortest-path lab, and six complete sorting labs: Bubble Sort, Selection Sort, Insertion Sort, Merge Sort, Quick Sort, and Heap Sort.
+The project now has reusable manual linear structures, three reusable manual tree foundations, two reusable heap views of the same family, a reusable Matrix foundation, a live reusable Graph structure, complete BFS/DFS traversal labs, a complete Dijkstra weighted-shortest-path lab, a complete Topological Sort dependency-order lab, and six complete sorting labs: Bubble Sort, Selection Sort, Insertion Sort, Merge Sort, Quick Sort, and Heap Sort.
 
 ### Matrix memory visualization
 
@@ -1417,7 +1418,7 @@ The Matrix Memory State now presents the conceptual structure as a compact list 
 
 ## Graph module
 
-Graph is now a live structure lab before the traversal/path algorithms. Graph Learn First now uses the same launchpad visual hierarchy as Queue & Stack / BST, with the four concepts ordered as vertex+edge, direction, weight, and adjacency-list-vs-matrix representation. It implements directed/undirected and weighted/unweighted graphs with explicit vertex/edge objects, manual adjacency-list storage and the existing `ManualMatrix` for the synchronized adjacency matrix. The lab supports add/search/rename/remove vertex, add/search/update-weight/remove edge, direct-neighbor inspection, self-loops, zero/negative weights at the generic structure level, Visual/Memory state, playback and guided practice. BFS and DFS are now separate live algorithm modules that reuse this graph rather than creating another graph representation. Dijkstra is now live and reuses this exact Graph snapshot. Topological sort and MST remain future modules and should follow the same reuse rule. Graph Core no longer inherits the Matrix page's 8×8 teaching cap: `ManualMatrix` is reusable/growable in Core, while MatrixPage alone keeps the 8×8 input limit. Larger Graph adjacency matrices scroll inside Memory State.
+Graph is now a live structure lab before the traversal/path algorithms. Graph Learn First now uses the same launchpad visual hierarchy as Queue & Stack / BST, with the four concepts ordered as vertex+edge, direction, weight, and adjacency-list-vs-matrix representation. It implements directed/undirected and weighted/unweighted graphs with explicit vertex/edge objects, manual adjacency-list storage and the existing `ManualMatrix` for the synchronized adjacency matrix. The lab supports add/search/rename/remove vertex, add/search/update-weight/remove edge, direct-neighbor inspection, self-loops, zero/negative weights at the generic structure level, Visual/Memory state, playback and guided practice. BFS and DFS are now separate live algorithm modules that reuse this graph rather than creating another graph representation. Dijkstra and Topological Sort are now live and reuse this exact Graph snapshot. MST remains a future module and should follow the same reuse rule. Graph Core no longer inherits the Matrix page's 8×8 teaching cap: `ManualMatrix` is reusable/growable in Core, while MatrixPage alone keeps the 8×8 input limit. Larger Graph adjacency matrices scroll inside Memory State.
 
 Graph Visual State supports direct vertex dragging without changing graph topology. Vertex positions are UI-only overrides keyed by stable vertex ID; edges, arrows, weights and self-loops are recalculated from the moved coordinates. The workspace is content-bounded but effectively unbounded: there is no fixed drag clamp, the SVG stage expands left/right/up/down only when current graph content reaches those bounds, and the surrounding viewport gains scroll range only for that occupied extent. Expanding on the left/top compensates scroll position so existing content does not jump. `Reset layout` removes manual positions and returns to the automatic layout. The drag implementation uses stable SVG group transforms with invariant numeric formatting so clicking/dragging cannot invalidate `foreignObject` coordinates.
 
@@ -1440,6 +1441,10 @@ Every completed Graph action now has a learner-facing explanation layer. The Las
 
 - Concepts links from modules/tasks use dedicated routes such as `/learn/concepts/bst` or `/learn/concepts/heap-sort`; do not use `/learn/concepts#...` for cross-page navigation because Blazor WASM renders the target after the browser fragment-scroll moment. In-page jump links inside the already-rendered Concepts page may still use `#...`.
 
+
+## Topological Sort dependency ordering
+
+Topological Sort is the second live advanced graph-algorithm lab and reuses the existing `GraphSnapshot`. The input must be directed; weighted directed graphs are accepted but weights are ignored because only dependency direction matters. **Basic · Kahn Queue** computes `indegree[]`, enqueues every zero-in-degree vertex in a head-index FIFO backed by the project `ManualDynamicArray<int>`, emits one ready vertex and decrements outgoing neighbors. **Advanced · DFS Postorder** uses recursive white/gray/black visitation, treats any gray-to-gray edge as a cycle, stores finish order in a manual postorder buffer and reverses that buffer only after a cycle-free traversal. Both variants are `O(V + E)` time and `O(V)` extra state, never mutate the source Graph, and reject cyclic input as having no valid ordering. The Client adds Visual/Memory state, DAG prediction, Last Run explanation, behavior-based auto-practice and SQLite-backed evidence snapshots.
 
 ## Linear Search
 

@@ -1,0 +1,524 @@
+@using AlgorithmVisualizer.Core.Algorithms.GraphOrdering.Topological
+@using AlgorithmVisualizer.Core.DataStructures.Graph
+@using AlgorithmVisualizer.Client.Components.Visualization.Topological
+@implements IDisposable
+@inject SimulationState SimulationState
+@inject TopologicalSortSimulation Topological
+@inject GraphSimulation Graph
+@inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
+
+<div class="topological-page learning-module-page learning-module-shell">
+    <section class="learn-launchpad" aria-labelledby="topological-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="topological-learn-title">Topological Sort orders dependencies, not numeric values.</h2>
+            <p>For every directed edge <strong>u → v</strong>, u must appear before v. That is possible only when the graph is a DAG: a directed acyclic graph.</p>
+            <ConceptLink class="learn-launchpad-link" Href="/learn/concepts/topological-sort">Open Topological Sort concepts &amp; memory →</ConceptLink>
+        </div>
+        <div class="learn-grid">
+            <article class="learn-card purple"><span>DAG ONLY</span><strong>Direction expresses dependency</strong><small>An undirected edge does not say which endpoint must come first.</small></article>
+            <article class="learn-card blue"><span>KAHN</span><strong>Take indegree 0 first</strong><small>A vertex with no remaining prerequisites may safely enter the output.</small></article>
+            <article class="learn-card mint"><span>DFS</span><strong>Reverse finish order</strong><small>Finish dependents first, then reverse postorder after all recursion completes.</small></article>
+            <article class="learn-card gold"><span>CYCLE</span><strong>No valid order exists</strong><small>A circular dependency makes “comes before” impossible to satisfy for every edge.</small></article>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow"><span>DEPENDENCY ORDER</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <h1>Topological Sort</h1>
+            <p>Reuse the same Graph representation and compare Kahn's indegree Queue with DFS reverse postorder. Both are real O(V + E) C# implementations and both reject cycles.</p>
+        </div>
+        <div class="complexity-summary" aria-label="Topological Sort complexity">
+            <div><span>Time</span><strong>O(V + E)</strong><small>vertices + outgoing adjacency entries</small></div>
+            <div><span>Extra space</span><strong>O(V)</strong><small>indegree/queue or color/recursion/output</small></div>
+            <div><span>Mutation</span><strong>Restart</strong><small>graph changes invalidate dependency state</small></div>
+        </div>
+    </header>
+
+    <section class="smart-tip">
+        <span class="tip-icon">✦</span>
+        <div><strong>A topological order is usually not unique.</strong><p>If several vertices are dependency-free at the same time, different valid algorithms or tie orders may emit them differently. Correctness means every edge still points forward in the final order.</p></div>
+        <ConceptLink Href="/learn/concepts/topological-dag">What makes a DAG? →</ConceptLink>
+    </section>
+
+    <section class="implementation-section">
+        <div class="section-heading-row"><div><span class="section-kicker">IMPLEMENTATION CHOICE</span><h2>Same dependency rule, two ways to expose it.</h2></div></div>
+        <div class="variant-grid">
+            <button type="button" class="variant-card @(_variant == TopologicalSortVariant.KahnQueue ? "active" : string.Empty)" @onclick="() => SetVariant(TopologicalSortVariant.KahnQueue)" disabled="@IsBusy">
+                <span>BASIC · KAHN QUEUE</span><strong>indegree[] + manual FIFO</strong><p>Enqueue every indegree-0 vertex, emit the oldest ready vertex, then decrement outgoing neighbors.</p><small>Cycle clue: queue empties before V vertices are emitted.</small>
+            </button>
+            <button type="button" class="variant-card @(_variant == TopologicalSortVariant.DfsPostorder ? "active" : string.Empty)" @onclick="() => SetVariant(TopologicalSortVariant.DfsPostorder)" disabled="@IsBusy">
+                <span>ADVANCED · DFS POSTORDER</span><strong>white / gray / black recursion</strong><p>Finish each dependency subtree, append to postorder, then reverse the finish sequence.</p><small>Cycle clue: an edge reaches a gray vertex on the active path.</small>
+            </button>
+        </div>
+    </section>
+
+    <section class="builder-section">
+        <div class="section-heading-row">
+            <div class="heading-with-step"><span class="step-number">1</span><div><span class="section-kicker">CHOOSE THE GRAPH</span><h2>Use a DAG preset or reuse your Graph lab state.</h2><p>The graph must be directed. Weights are allowed but ignored because dependency order depends only on edge direction.</p></div></div>
+            <a class="concept-link" href="/structures/graph">Open Graph builder →</a>
+        </div>
+
+        <div class="graph-source-grid">
+            <div class="preset-panel">
+                <span class="control-label">PRESETS</span>
+                <div class="preset-row">
+                    <button type="button" @onclick="() => LoadPreset(TopologicalSortPreset.Prerequisites)" disabled="@IsBusy">Prerequisites</button>
+                    <button type="button" @onclick="() => LoadPreset(TopologicalSortPreset.MultipleSources)" disabled="@IsBusy">Multiple sources</button>
+                    <button type="button" @onclick="() => LoadPreset(TopologicalSortPreset.Diamond)" disabled="@IsBusy">Diamond</button>
+                    <button type="button" @onclick="() => LoadPreset(TopologicalSortPreset.DisconnectedDag)" disabled="@IsBusy">Disconnected DAG</button>
+                    <button type="button" @onclick="() => LoadPreset(TopologicalSortPreset.WeightedDag)" disabled="@IsBusy">Weighted DAG</button>
+                    <button type="button" @onclick="() => LoadPreset(TopologicalSortPreset.Cycle)" disabled="@IsBusy">Cycle</button>
+                    <button type="button" @onclick="() => LoadPreset(TopologicalSortPreset.Undirected)" disabled="@IsBusy">Undirected</button>
+                    <button type="button" @onclick="() => LoadPreset(TopologicalSortPreset.Single)" disabled="@IsBusy">Single</button>
+                </div>
+            </div>
+            <div class="graph-lab-panel">
+                <span class="control-label">YOUR GRAPH LAB STATE</span>
+                <strong>@GraphLabSummary</strong>
+                <button type="button" class="secondary-action" @onclick="UseGraphLabSnapshot" disabled="@(IsBusy || Graph.CreateSnapshot().VertexCount == 0)">Use current Graph lab snapshot</button>
+            </div>
+        </div>
+
+        <div class="start-row">
+            <div class="graph-mode"><span>@(_graph.Directed ? "Directed" : "Undirected · invalid")</span><span>@(_graph.Weighted ? "Weighted · weights ignored" : "Unweighted")</span><span>@_graph.VertexCount vertices</span><span>@_graph.EdgeCount edges</span></div>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(_inputMessage))
+        {
+            <div class="@InputMessageClass">@_inputMessage</div>
+        }
+    </section>
+
+    <section class="predict-section">
+        <div class="heading-with-step"><span class="step-number">2</span><div><span class="section-kicker">PREDICT</span><h2>Does this graph have a valid topological ordering?</h2><p>Commit before running. A directed cycle means “No”; multiple valid orders still count as “Yes”.</p></div></div>
+        <div class="prediction-row">
+            <select value="@_prediction" @onchange="PredictionChanged" disabled="@IsBusy">
+                <option value="-1">Choose prediction…</option>
+                <option value="1">Yes · it is a DAG</option>
+                <option value="0">No · a cycle/invalid direction prevents it</option>
+            </select>
+            @if (_predictionAnswered)
+            {
+                <span class="prediction-feedback @(_predictionVerified ? (_predictionCorrect ? "correct" : "wrong") : string.Empty)">@PredictionFeedback</span>
+            }
+        </div>
+    </section>
+
+    <section class="lab-section">
+        <div class="lab-heading">
+            <div class="heading-with-step"><span class="step-number">3</span><div><span class="section-kicker">WATCH THE REAL C# RUN</span><h2>Watch dependencies become ready — or watch the cycle prove that none can.</h2></div></div>
+            <div class="lab-actions">
+                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Auto-open explanation</span></label>
+                <button class="sort-button" type="button" @onclick="RunAsync" disabled="@IsBusy"><span>▶</span> Run Topological Sort</button>
+                @if (_result is not null)
+                {
+                    <button type="button" @onclick="OpenLastRun">Last run explanation</button>
+                }
+            </div>
+        </div>
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+
+        <div class="state-tabs" role="tablist"><button type="button" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual State</button><button type="button" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory State</button></div>
+        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/topological-sort">Algorithm rule →</ConceptLink><ConceptLink Href="/learn/concepts/topological-kahn">Kahn Queue →</ConceptLink><ConceptLink Href="/learn/concepts/topological-dfs">DFS postorder →</ConceptLink><ConceptLink Href="/learn/concepts/topological-cycle">Cycle detection →</ConceptLink></div>
+
+        <div class="state-surface">
+            @if (_view == StateView.Visual)
+            {
+                <TopologicalSortVisualization Snapshot="@DisplayedSnapshot" />
+            }
+            else
+            {
+                <TopologicalSortMemoryVisualization Snapshot="@DisplayedSnapshot" />
+            }
+        </div>
+    </section>
+
+    <section class="fit-section">
+        <div class="section-heading-row"><div><span class="section-kicker">WHEN IT FITS</span><h2>Use Topological Sort when directed edges mean “must happen before”.</h2></div></div>
+        <div class="fit-grid">
+            <article class="fit-card"><span>GOOD FIT</span><strong>Build and course prerequisites</strong><p>Dependencies such as compile-before-package or prerequisite-before-course map naturally to directed edges.</p></article>
+            <article class="fit-card"><span>GOOD FIT</span><strong>Scheduling a DAG</strong><p>Any valid output respects prerequisites; several correct orders may exist at the same time.</p></article>
+            <article class="fit-card"><span>NOT A SHORTEST PATH</span><strong>Weights do not choose the order</strong><p>Use Dijkstra when costs matter. Topological Sort ignores edge weights and reads direction only.</p></article>
+            <article class="fit-card"><span>INVALID</span><strong>Directed cycle</strong><p>A circular dependency has no legal first-to-last ordering. Detecting that impossibility is part of the algorithm.</p></article>
+        </div>
+    </section>
+
+    <section class="practice-section">
+        <div class="practice-heading"><div><span class="section-kicker">GUIDED PRACTICE</span><h2>Tasks auto-complete from any matching dependency graph.</h2><p>Start task only loads a convenient example. Extra vertices and edges are allowed whenever the requested topological behavior still occurs.</p></div><strong>@_completedTaskIds.Count / @PracticeTasks.Length complete</strong></div>
+        <div class="practice-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                <PracticeTaskCard TaskId="@task.Id" Title="@task.Title" Description="@task.Goal" InputText="@task.Suggested" HelpHref="@task.HelpHref" Completed="@_completedTaskIds.Contains(task.Id)" Active="@(_activeTaskId == task.Id)" Busy="@IsBusy" HasEvidence="@(GetTaskEvidence(task.Id) is not null)" Start="@(() => StartTask(task.Id))" OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
+            }
+        </div>
+    </section>
+
+    <NextLessonCard Eyebrow="NEXT GRAPH ALGORITHM" Level="Advanced" Title="Minimum Spanning Tree · coming next" Description="Next, compare Prim and Kruskal. Until that lab is implemented, review the weighted undirected Graph foundation it will reuse." Href="/structures/graph" LinkLabel="Review Graph foundation" />
+</div>
+
+@if (_lastRunPopupOpen && _result is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRun">
+        <section class="run-popup" role="dialog" aria-modal="true" @onclick:stopPropagation="true">
+            <header><div><span class="section-kicker">LAST RUN</span><h2>@LastRunHeadline</h2></div><button type="button" class="popup-close" @onclick="CloseLastRun">×</button></header>
+            <div class="popup-body">
+                <p>@LastRunExplanation</p>
+                <div class="popup-metrics">
+                    @foreach (var metric in LastRunMetrics)
+                    {
+                        <div><span>@metric.Label</span><strong>@metric.Value</strong></div>
+                    }
+                </div>
+                <p class="popup-memory">@LastRunMemory</p>
+            </div>
+        </section>
+    </div>
+}
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
+
+@code {
+    private const string ModuleKey = "topological-sort";
+    private const string LegacyKey = "algorithm-visualizer.topological-sort.completed-tasks.v1";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.topological-sort.result-popups.v1";
+
+    private readonly List<RunFrame> _frames = [];
+    private readonly HashSet<int> _completedTaskIds = [];
+    private PracticeModuleProgress _practiceProgress = new();
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
+    private GraphSnapshot _graph = TopologicalSortPresets.Create(TopologicalSortPreset.Prerequisites);
+    private TopologicalSortVariant _variant = TopologicalSortVariant.KahnQueue;
+    private int _prediction = -1;
+    private bool _predictionAnswered;
+    private bool _predictionVerified;
+    private bool _predictionCorrect;
+    private string? _inputMessage;
+    private string? _lastValidationError;
+    private TopologicalSortResult? _result;
+    private string? _lastCapturedStep;
+    private int _frameIndex = -1;
+    private bool _lastRunPopupOpen;
+    private bool _storageLoaded;
+    private bool _showRunPopups = true;
+    private int? _activeTaskId;
+    private StateView _view = StateView.Visual;
+
+    private string InputMessageClass => _lastValidationError is null ? "input-message" : "input-message warning";
+    private bool IsBusy => SimulationState.IsRunning;
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_frames.Count > 0 && _frameIndex < _frames.Count - 1) || SimulationState.IsRunning;
+    private int TimelineCount => _frames.Count;
+    private int TimelinePosition => _frameIndex >= 0 ? _frameIndex + 1 : 0;
+    private string DisplayedStepText => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].StepText : SimulationState.CurrentStepText;
+    private TopologicalSortSnapshot DisplayedSnapshot => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].Snapshot : Topological.CreateSnapshot();
+    private string GraphLabSummary { get { var s = Graph.CreateSnapshot(); return s.VertexCount == 0 ? "Graph lab is empty." : $"{s.VertexCount} vertices · {s.EdgeCount} edges · {(s.Directed ? "directed" : "undirected")} · {(s.Weighted ? "weighted" : "unweighted")}"; } }
+    private string PredictionFeedback => !_predictionVerified ? "Prediction saved — run the algorithm to verify it." : _predictionCorrect ? "Correct — your DAG/cycle prediction matched the real run." : _result is not null && _result.IsDag ? "This graph is a DAG, so at least one valid topological order exists." : "No valid topological order exists for this case.";
+    private string LastRunHeadline => _result is null ? "Topological Sort" : _result.IsDag ? $"Valid order: {FormatOrder(_result.OrderIndices)}" : "No topological order exists";
+    private string LastRunExplanation => _result is null ? string.Empty : _result.IsDag ? $"{VariantLabel(_result.Variant)} processed every vertex and produced {FormatOrder(_result.OrderIndices)}. Every directed edge points from an earlier output position to a later one." : _result.Variant == TopologicalSortVariant.KahnQueue ? $"Kahn's ready queue became empty after only {_result.ProcessedCount} of {_result.Graph.VertexCount} vertices were emitted. The remaining dependencies contain a directed cycle." : "DFS encountered an edge to a gray vertex already on the active recursion path. That back edge proves a directed cycle, so reverse postorder is rejected.";
+    private string LastRunMemory => _result is null ? string.Empty : _result.Variant == TopologicalSortVariant.KahnQueue ? "The Graph stayed read-only. The run stored O(V) indegree counters, a head-index FIFO over ManualDynamicArray<int>, and the output order. Decrementing indegree[] modeled prerequisite removal without deleting graph edges." : "The Graph stayed read-only. DFS stored O(V) color state plus recursion depth and a ManualDynamicArray<int> postorder buffer. Only an acyclic run reverses postorder into final output.";
+    private IReadOnlyList<PracticeEvidenceMetric> LastRunMetrics => _result is null ? [] : [new("Result", _result.IsDag ? "DAG" : "Cycle"), new("Processed", $"{_result.ProcessedCount}/{_result.Graph.VertexCount}"), new("Edge checks", _result.EdgeChecks.ToString()), new(_result.Variant == TopologicalSortVariant.KahnQueue ? "Queue enqueues" : "Backtracks", (_result.Variant == TopologicalSortVariant.KahnQueue ? _result.QueueEnqueues : _result.BacktrackCount).ToString())];
+
+    private static readonly PracticeTaskDefinition[] PracticeTasks =
+    [
+        new(1, "Produce a valid dependency order", "Run any directed acyclic graph with at least two dependency edges and produce an order that places every edge source before its target.", "Prerequisites preset", TopologicalSortPreset.Prerequisites, TopologicalSortVariant.KahnQueue, "/learn/concepts/topological-sort"),
+        new(2, "Handle multiple starting choices", "Use any DAG with at least two zero-in-degree vertices. Extra sources and dependencies are allowed.", "Multiple sources preset", TopologicalSortPreset.MultipleSources, TopologicalSortVariant.KahnQueue, "/learn/concepts/topological-kahn"),
+        new(3, "Wait for converging prerequisites", "Use any DAG where one vertex has two or more incoming prerequisites before it becomes legal to emit.", "Diamond preset", TopologicalSortPreset.Diamond, TopologicalSortVariant.KahnQueue, "/learn/concepts/topological-kahn"),
+        new(4, "Order a disconnected DAG", "Use any directed acyclic graph with more than one weakly connected component and still include every vertex in the output.", "Disconnected DAG preset", TopologicalSortPreset.DisconnectedDag, TopologicalSortVariant.KahnQueue, "/learn/concepts/topological-dag"),
+        new(5, "Ignore irrelevant edge weights", "Topologically order any weighted DAG. Direction must control the result; the numeric weights must not.", "Weighted DAG preset", TopologicalSortPreset.WeightedDag, TopologicalSortVariant.KahnQueue, "/learn/concepts/topological-sort"),
+        new(6, "Use the real Kahn FIFO", "Complete any non-empty DAG in Kahn mode so every vertex enters the manual ready queue exactly when its remaining indegree reaches zero.", "Prerequisites · Kahn", TopologicalSortPreset.Prerequisites, TopologicalSortVariant.KahnQueue, "/learn/concepts/topological-kahn"),
+        new(7, "Use DFS reverse postorder", "Complete any non-empty DAG in DFS mode and finish/backtrack every vertex before reversing postorder.", "Diamond · DFS", TopologicalSortPreset.Diamond, TopologicalSortVariant.DfsPostorder, "/learn/concepts/topological-dfs"),
+        new(8, "Detect a directed cycle", "Run any directed graph containing a cycle and let the algorithm reject the ordering instead of returning a misleading partial answer.", "Cycle preset", TopologicalSortPreset.Cycle, TopologicalSortVariant.KahnQueue, "/learn/concepts/topological-cycle"),
+        new(9, "Protect the directed-graph precondition", "Attempt the algorithm on any undirected graph and let the lab reject it before a run starts.", "Undirected preset", TopologicalSortPreset.Undirected, TopologicalSortVariant.KahnQueue, "/learn/concepts/topological-dag"),
+        new(10, "Test the one-vertex boundary", "Use exactly one directed vertex with no cycle. The complete topological order must contain that one vertex.", "Single preset", TopologicalSortPreset.Single, TopologicalSortVariant.KahnQueue, "/learn/concepts/topological-sort")
+    ];
+
+    protected override void OnInitialized()
+    {
+        SimulationState.Changed += HandleSimulationChanged;
+        LoadPreset(TopologicalSortPreset.Prerequisites);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _storageLoaded) return;
+        _storageLoaded = true;
+        _practiceProgress = PracticeProgress.Load(ModuleKey, LegacyKey, PracticeTasks.Select(task => task.Id));
+        _completedTaskIds.Clear();
+        foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id);
+        var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
+        if (bool.TryParse(popupSetting, out var show)) _showRunPopups = show;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void LoadPreset(TopologicalSortPreset preset)
+    {
+        if (IsBusy) return;
+        ClearReview();
+        _graph = TopologicalSortPresets.Create(preset);
+        _prediction = -1;
+        _predictionAnswered = false;
+        _predictionVerified = false;
+        _lastValidationError = null;
+        _inputMessage = $"Loaded {preset} preset.";
+        Topological.LoadGraph(_graph);
+        Topological.Configure(_variant);
+    }
+
+    private void UseGraphLabSnapshot()
+    {
+        if (IsBusy) return;
+        var snapshot = Graph.CreateSnapshot();
+        if (snapshot.VertexCount == 0) { _inputMessage = "Build at least one vertex in Graph lab first."; return; }
+        ClearReview();
+        _graph = snapshot;
+        _prediction = -1;
+        _predictionAnswered = false;
+        _predictionVerified = false;
+        _lastValidationError = null;
+        _inputMessage = snapshot.Directed ? snapshot.Weighted ? "Using the current directed weighted Graph lab snapshot. Weights will be ignored." : "Using the current directed Graph lab snapshot." : "Using the current undirected Graph lab snapshot. Topological Sort will reject it because dependencies need direction.";
+        Topological.LoadGraph(_graph);
+        Topological.Configure(_variant);
+    }
+
+    private void SetVariant(TopologicalSortVariant variant)
+    {
+        if (IsBusy) return;
+        _variant = variant;
+        ClearReview();
+        Topological.LoadGraph(_graph);
+        Topological.Configure(variant);
+        _predictionVerified = false;
+    }
+
+    private void PredictionChanged(ChangeEventArgs args)
+    {
+        if (!int.TryParse(args.Value?.ToString(), out _prediction)) _prediction = -1;
+        _predictionAnswered = _prediction is 0 or 1;
+        _predictionVerified = false;
+    }
+
+    private async Task RunAsync()
+    {
+        if (IsBusy) return;
+        _lastValidationError = null;
+        if (!TopologicalSortSimulation.TryValidateGraph(_graph, out var validationError))
+        {
+            _lastValidationError = validationError;
+            _inputMessage = validationError;
+            _predictionVerified = _predictionAnswered;
+            _predictionCorrect = _prediction == 0;
+            EvaluateUndirectedTask(validationError ?? "Topological Sort requires a directed graph.");
+            return;
+        }
+
+        PrepareRun();
+        var token = SimulationState.Start($"Start {VariantLabel(_variant)} Topological Sort.");
+        try
+        {
+            _result = await Topological.SortAsync(_graph, _variant, token);
+            if (IsCurrent(token))
+            {
+                SimulationState.Complete(_result.IsDag ? "Topological Sort complete." : "Cycle detected — no topological order exists.");
+                if (_predictionAnswered)
+                {
+                    _predictionVerified = true;
+                    _predictionCorrect = (_prediction == 1) == _result.IsDag;
+                }
+                EvaluatePractice(_result);
+                if (_showRunPopups) _lastRunPopupOpen = true;
+            }
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            if (IsCurrent(token)) SimulationState.Complete("Topological Sort stopped.");
+            _inputMessage = exception.Message;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void PrepareRun()
+    {
+        SimulationState.Reset();
+        _frames.Clear();
+        _frameIndex = -1;
+        _lastCapturedStep = null;
+        _result = null;
+        _lastRunPopupOpen = false;
+        _inputMessage = null;
+        Topological.LoadGraph(_graph);
+        Topological.Configure(_variant);
+    }
+
+    private void HandleSimulationChanged()
+    {
+        if (SimulationState.IsRunning) Capture();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void Capture()
+    {
+        var text = SimulationState.CurrentStepText;
+        if (string.IsNullOrWhiteSpace(text) || string.Equals(text, _lastCapturedStep, StringComparison.Ordinal)) return;
+        _lastCapturedStep = text;
+        _frames.Add(new RunFrame(text, Topological.CreateSnapshot()));
+        _frameIndex = _frames.Count - 1;
+    }
+
+    private bool IsCurrent(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;
+    private void ClearReview() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; _result = null; _lastRunPopupOpen = false; }
+    private Task PlayTimelineAsync() { if (_frames.Count > 0) _frameIndex = _frames.Count - 1; SimulationState.Resume(); return InvokeAsync(StateHasChanged); }
+    private Task PauseTimelineAsync() { SimulationState.Pause(); return Task.CompletedTask; }
+    private Task StepBackAsync() { if (SimulationState.IsRunning && !SimulationState.IsPaused) SimulationState.Pause(); if (_frameIndex > 0) _frameIndex--; return InvokeAsync(StateHasChanged); }
+    private Task StepForwardAsync() { if (_frameIndex >= 0 && _frameIndex < _frames.Count - 1) { _frameIndex++; return InvokeAsync(StateHasChanged); } if (SimulationState.IsRunning) SimulationState.Step(); return Task.CompletedTask; }
+    private Task ResetPlaybackAsync() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; return InvokeAsync(StateHasChanged); }
+
+    private void ToggleRunPopups(ChangeEventArgs args)
+    {
+        _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed;
+        LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString());
+    }
+
+    private void OpenLastRun() => _lastRunPopupOpen = _result is not null;
+    private void CloseLastRun() => _lastRunPopupOpen = false;
+
+    private void StartTask(int taskId)
+    {
+        if (IsBusy) return;
+        var task = PracticeTasks.First(item => item.Id == taskId);
+        _activeTaskId = taskId;
+        LoadPreset(task.Preset);
+        _activeTaskId = taskId;
+        _variant = task.Variant;
+        Topological.Configure(_variant);
+    }
+
+    private void EvaluatePractice(TopologicalSortResult result)
+    {
+        foreach (var task in PracticeTasks)
+        {
+            if (task.Id == 9) continue;
+            if (_completedTaskIds.Contains(task.Id) && GetTaskEvidence(task.Id) is not null && _activeTaskId != task.Id) continue;
+            var completed = task.Id switch
+            {
+                1 => result.IsDag && result.Graph.EdgeCount >= 2 && IsValidOrder(result),
+                2 => result.IsDag && CountZeroInDegree(result.Graph) >= 2,
+                3 => result.IsDag && HasConvergingPrerequisites(result.Graph),
+                4 => result.IsDag && CountWeakComponents(result.Graph) >= 2 && result.OrderIndices.Length == result.Graph.VertexCount,
+                5 => result.IsDag && result.Graph.Weighted && result.Graph.EdgeCount > 0,
+                6 => result.IsDag && result.Variant == TopologicalSortVariant.KahnQueue && result.Graph.VertexCount > 0 && result.QueueEnqueues == result.Graph.VertexCount,
+                7 => result.IsDag && result.Variant == TopologicalSortVariant.DfsPostorder && result.Graph.VertexCount > 0 && result.BacktrackCount == result.Graph.VertexCount,
+                8 => result.CycleDetected,
+                10 => result.IsDag && result.Graph.VertexCount == 1 && result.OrderIndices.Length == 1,
+                _ => false
+            };
+            if (completed) CompleteTask(task, result);
+        }
+    }
+
+    private void EvaluateUndirectedTask(string validationError)
+    {
+        var task = PracticeTasks.First(item => item.Id == 9);
+        if (_graph.Directed) return;
+        if (_completedTaskIds.Contains(task.Id) && GetTaskEvidence(task.Id) is not null && _activeTaskId != task.Id) return;
+        var evidence = new PracticeCompletionEvidence(task.Id, task.Title, "Topological Sort rejected an undirected graph", validationError, "No indegree queue, DFS color traversal or output order was started. The Graph snapshot stayed unchanged.", "A topological dependency says one endpoint must precede the other. An undirected edge does not define that prerequisite direction, so rejecting the input is part of the algorithm contract.", [new("Directed", "No"), new("Run started", "No"), new("Vertices", _graph.VertexCount.ToString()), new("Edges", _graph.EdgeCount.ToString())], $"undirected · {_graph.VertexCount} vertices · {_graph.EdgeCount} edges");
+        _completedTaskIds.Add(task.Id);
+        PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
+        if (_activeTaskId == task.Id) _activeTaskId = null;
+    }
+
+    private void CompleteTask(PracticeTaskDefinition task, TopologicalSortResult result)
+    {
+        var evidence = new PracticeCompletionEvidence(task.Id, task.Title, result.IsDag ? "Topological Sort completed the required DAG behavior" : "Topological Sort detected the required cycle", result.IsDag ? $"{VariantLabel(result.Variant)} produced {FormatOrder(result.OrderIndices)}. The tracker verified the behavior on the graph you actually ran rather than one hardcoded label set." : $"{VariantLabel(result.Variant)} detected a directed cycle and correctly refused to accept a topological ordering.", result.Variant == TopologicalSortVariant.KahnQueue ? "Kahn mode kept indegree[] plus a head-index FIFO over the project ManualDynamicArray. The source graph itself was never mutated." : "DFS mode kept white/gray/black color state, recursion depth and a manual postorder buffer. The source graph itself was never mutated.", result.IsDag ? "A correct topological order is defined by the dependency invariant — every directed edge must point forward — not by one exact sequence of labels." : "Cycle detection is a correctness result: circular prerequisites make a topological ordering impossible.", [new("Result", result.IsDag ? "DAG" : "Cycle"), new("Processed", $"{result.ProcessedCount}/{result.Graph.VertexCount}"), new("Edge checks", result.EdgeChecks.ToString()), new(result.Variant == TopologicalSortVariant.KahnQueue ? "Queue enqueues" : "Backtracks", (result.Variant == TopologicalSortVariant.KahnQueue ? result.QueueEnqueues : result.BacktrackCount).ToString())], $"{VariantLabel(result.Variant)} · {(result.Graph.Weighted ? "weighted (ignored)" : "unweighted")} · {result.Graph.VertexCount} vertices · {result.Graph.EdgeCount} edges");
+        _completedTaskIds.Add(task.Id);
+        PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
+        if (_activeTaskId == task.Id) _activeTaskId = null;
+    }
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
+    private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
+    private void CloseTaskEvidence() => _practiceEvidencePopup = null;
+
+    private static bool IsValidOrder(TopologicalSortResult result)
+    {
+        if (!result.IsDag || result.OrderIndices.Length != result.Graph.VertexCount) return false;
+        var position = new int[result.Graph.VertexCount];
+        for (var index = 0; index < result.OrderIndices.Length; index++) position[result.OrderIndices[index]] = index;
+        for (var edgeIndex = 0; edgeIndex < result.Graph.Edges.Length; edgeIndex++)
+        {
+            var edge = result.Graph.Edges[edgeIndex];
+            if (position[edge.FromIndex] >= position[edge.ToIndex]) return false;
+        }
+        return true;
+    }
+
+    private static int CountZeroInDegree(GraphSnapshot graph)
+    {
+        var counts = new int[graph.VertexCount];
+        for (var edgeIndex = 0; edgeIndex < graph.Edges.Length; edgeIndex++) counts[graph.Edges[edgeIndex].ToIndex]++;
+        var zero = 0;
+        for (var index = 0; index < counts.Length; index++) if (counts[index] == 0) zero++;
+        return zero;
+    }
+
+    private static bool HasConvergingPrerequisites(GraphSnapshot graph)
+    {
+        var counts = new int[graph.VertexCount];
+        for (var edgeIndex = 0; edgeIndex < graph.Edges.Length; edgeIndex++)
+        {
+            counts[graph.Edges[edgeIndex].ToIndex]++;
+            if (counts[graph.Edges[edgeIndex].ToIndex] >= 2) return true;
+        }
+        return false;
+    }
+
+    private static int CountWeakComponents(GraphSnapshot graph)
+    {
+        if (graph.VertexCount == 0) return 0;
+        var visited = new bool[graph.VertexCount];
+        var queue = new int[graph.VertexCount];
+        var components = 0;
+        for (var start = 0; start < graph.VertexCount; start++)
+        {
+            if (visited[start]) continue;
+            components++;
+            var head = 0;
+            var tail = 0;
+            queue[tail++] = start;
+            visited[start] = true;
+            while (head < tail)
+            {
+                var current = queue[head++];
+                for (var edgeIndex = 0; edgeIndex < graph.Edges.Length; edgeIndex++)
+                {
+                    var edge = graph.Edges[edgeIndex];
+                    var next = edge.FromIndex == current ? edge.ToIndex : edge.ToIndex == current ? edge.FromIndex : -1;
+                    if (next < 0 || visited[next]) continue;
+                    visited[next] = true;
+                    queue[tail++] = next;
+                }
+            }
+        }
+        return components;
+    }
+
+    private string FormatOrder(int[] order)
+    {
+        if (order.Length == 0) return "empty";
+        var labels = new string[order.Length];
+        for (var index = 0; index < order.Length; index++) labels[index] = order[index] >= 0 && order[index] < _graph.VertexCount ? _graph.Vertices[order[index]].Label : "?";
+        return string.Join(" → ", labels);
+    }
+
+    private static string VariantLabel(TopologicalSortVariant variant) => variant == TopologicalSortVariant.KahnQueue ? "Kahn Queue" : "DFS postorder";
+
+    public void Dispose() => SimulationState.Changed -= HandleSimulationChanged;
+    private sealed record RunFrame(string StepText, TopologicalSortSnapshot Snapshot);
+    private sealed record PracticeTaskDefinition(int Id, string Title, string Goal, string Suggested, TopologicalSortPreset Preset, TopologicalSortVariant Variant, string HelpHref);
+    private enum StateView { Visual, Memory }
+}
