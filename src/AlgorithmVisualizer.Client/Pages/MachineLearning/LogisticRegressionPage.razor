@@ -1,19 +1,610 @@
 @page "/ml-foundations/logistic-regression"
+@using System.Globalization
+@using AlgorithmVisualizer.Core.MachineLearning.Supervised.LogisticRegression
+@implements IDisposable
+@inject SimulationState SimulationState
+@inject LogisticRegressionSimulation LogisticRegressionLab
+@inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
 
 <PageTitle>Logistic Regression — Machine Learning — Algorithm Visualizer</PageTitle>
 
-<LearningPlaceholder
-    Eyebrow="MACHINE LEARNING · PHASE 1 STEP 4"
-    Title="Logistic Regression"
-    Description="The next model will keep a weighted linear score, map it through a sigmoid, and learn a binary decision boundary from classification examples."
-    Complexity="Θ(k · n)"
-    ComplexityNote="planned: k updates across n examples in the first binary-classification lab"
-    Concepts="linear score · sigmoid · probability · binary classification · cross-entropy"
-    LearnTitle="Turn a linear score into a probability."
-    LearnSummary="Linear Regression predicts an unrestricted number. Logistic Regression keeps the weighted sum, then uses a sigmoid so the output stays between 0 and 1."
-    LearnCards="SCORE|Build a weighted sum|Start with the same w·x + b pattern.;;SIGMOID|Map score to 0–1|Large positive scores move toward 1; large negative scores move toward 0.;;CLASSIFY|Choose a threshold|A probability can become a binary decision.;;TRAIN|Reduce classification loss|Gradient-based updates will improve the boundary."
-    ConceptHref="/learn/concepts/logistic-regression"
-    TipTitle="Regression is in the name, but the task is classification."
-    TipText="The model outputs a probability and is normally used to separate two classes."
-    FocusText="Keep score, sigmoid probability, threshold decision, and loss as separate visible steps."
-    PromptText="What changes when the score crosses zero?" />
+<div class="logistic-page learning-module-page learning-module-shell">
+    <section class="learn-launchpad" aria-labelledby="logistic-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="logistic-learn-title">Logistic Regression turns a score into a probability, then a probability into a class.</h2>
+            <p>Start with the familiar score <strong>z = w·x + b</strong>. Sigmoid squeezes that score between 0 and 1. The visible 0.5 threshold turns the probability into class 0 or class 1.</p>
+            <ConceptLink class="learn-launchpad-link" Href="/learn/concepts/logistic-regression">Open Logistic Regression concepts &amp; memory →</ConceptLink>
+        </div>
+        <div class="learn-grid">
+            <article class="learn-card purple"><span>1 · SCORE</span><strong>Build z = w·x + b.</strong><small>The sign and size of z say which side of the current boundary an example sits on.</small></article>
+            <article class="learn-card blue"><span>2 · PROBABILITY</span><strong>Sigmoid maps z into 0–1.</strong><small>Large negative scores approach 0; large positive scores approach 1.</small></article>
+            <article class="learn-card mint"><span>3 · CLASS</span><strong>Use 0.5 as the visible threshold.</strong><small>p &lt; 0.5 becomes class 0. p ≥ 0.5 becomes class 1.</small></article>
+            <article class="learn-card gold"><span>4 · TRAIN</span><strong>Cross-entropy tells us how wrong the probabilities are.</strong><small>Gradient Descent changes weight and bias so useful probabilities become more confident.</small></article>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow"><span>MACHINE LEARNING · PHASE 1 STEP 4</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <h1>Logistic Regression</h1>
+            <p>Train a binary classifier and watch the score, sigmoid curve, probability, threshold, and decision boundary stay connected.</p>
+        </div>
+        <div class="complexity-summary" aria-label="Logistic Regression training complexity">
+            <div><span>Training work</span><strong>Θ(k·n)</strong><small>k updates across n examples</small></div>
+            <div><span>Working memory</span><strong>O(n)</strong><small>scores + probabilities + errors</small></div>
+            <div><span>Edit during run</span><strong>Restart</strong><small>training uses one fixed dataset</small></div>
+        </div>
+    </header>
+
+    <section class="smart-tip" aria-label="Logistic Regression learning tip">
+        <span class="tip-icon">✦</span>
+        <div><strong>Do not jump straight from x to class.</strong><p>Keep the four ideas separate: score → probability → threshold → class. That separation is the whole lesson.</p></div>
+        <ConceptLink Href="/learn/concepts/logistic-regression">Why sigmoid? →</ConceptLink>
+    </section>
+
+    <section class="builder-section" aria-labelledby="logistic-build-title">
+        <div class="section-heading-row">
+            <div class="heading-with-step"><span class="step-number">1</span><div><span class="section-kicker">BUILD THE CLASSIFICATION EXAMPLE</span><h2 id="logistic-build-title">Pick two classes and choose where the boundary starts.</h2><p>Use a preset first. The default surface exposes only weight, bias, and learning rate; raw data and stopping rules stay optional.</p></div></div>
+            <ConceptLink Href="/learn/concepts/logistic-regression">What is the decision boundary? →</ConceptLink>
+        </div>
+
+        <div class="preset-row" aria-label="Logistic Regression dataset examples">
+            <span>TRY AN EXAMPLE</span>
+            <button type="button" class="@PresetClass(Preset.CenterSplit)" @onclick="() => LoadPreset(Preset.CenterSplit)" disabled="@IsBusy">Center split</button>
+            <button type="button" class="@PresetClass(Preset.Reversed)" @onclick="() => LoadPreset(Preset.Reversed)" disabled="@IsBusy">Reverse classes</button>
+            <button type="button" class="@PresetClass(Preset.BoundaryRight)" @onclick="() => LoadPreset(Preset.BoundaryRight)" disabled="@IsBusy">Boundary right</button>
+            <button type="button" class="@PresetClass(Preset.BoundaryLeft)" @onclick="() => LoadPreset(Preset.BoundaryLeft)" disabled="@IsBusy">Boundary left</button>
+            <button type="button" class="@PresetClass(Preset.Noisy)" @onclick="() => LoadPreset(Preset.Noisy)" disabled="@IsBusy">One confusing point</button>
+        </div>
+
+        <div class="classification-builder">
+            <div class="training-preview" aria-label="Current binary training data">
+                <div class="preview-heading">
+                    <div><span>TRAINING DATA</span><strong>@_x.Length examples · two classes</strong></div>
+                    <div class="class-key"><span><i class="zero"></i>0</span><span><i class="one"></i>1</span></div>
+                </div>
+                <div class="training-points">
+                    @for (var index = 0; index < _x.Length; index++)
+                    {
+                        var className = _labels[index] == 1d ? "class-one" : "class-zero";
+                        <span class="training-chip @className"><small>x = @Format(_x[index])</small><strong>class @Format(_labels[index])</strong></span>
+                    }
+                </div>
+                <p class="preview-note">The order is only for storage. Training scans every example in the batch.</p>
+            </div>
+
+            <div class="model-start-card">
+                <div class="model-start-copy"><span>STARTING MODEL</span><strong>Begin with one boundary, then let training move it.</strong></div>
+                <div class="model-input-grid">
+                    <label><span>WEIGHT · w</span><input value="@_weightText" @oninput="WeightChanged" disabled="@IsBusy" inputmode="decimal" /></label>
+                    <label><span>BIAS · b</span><input value="@_biasText" @oninput="BiasChanged" disabled="@IsBusy" inputmode="decimal" /></label>
+                    <label><span>LEARNING RATE</span><input value="@_learningRateText" @oninput="LearningRateChanged" disabled="@IsBusy" inputmode="decimal" /></label>
+                </div>
+                <div class="builder-actions">
+                    <button class="secondary-action" type="button" @onclick="ToggleAdvancedSettings" disabled="@IsBusy">@(_showAdvancedSettings ? "Hide extra settings" : "Edit data / stopping")</button>
+                    <button class="primary-action" type="button" @onclick="ApplyInputs" disabled="@IsBusy">Use this setup</button>
+                </div>
+            </div>
+        </div>
+
+        @if (_showAdvancedSettings)
+        {
+            <div class="advanced-settings-panel">
+                <label class="dataset-editor"><span>CUSTOM EXAMPLES · x,label; x,label; ...</span><textarea value="@_datasetText" @oninput="DatasetChanged" disabled="@IsBusy" rows="3"></textarea><small>Use 2–10 examples. Labels must be exactly 0 or 1, and both classes must be present.</small></label>
+                <div class="advanced-grid">
+                    <label><span>MAX UPDATES</span><input value="@_iterationsText" @oninput="IterationsChanged" disabled="@IsBusy" inputmode="numeric" /></label>
+                    <label><span>STOP WHEN GRADIENT ≤</span><input value="@_toleranceText" @oninput="ToleranceChanged" disabled="@IsBusy" inputmode="decimal" /></label>
+                </div>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_inputError))
+        {
+            <div class="input-error" role="alert"><strong>Check the classification setup.</strong><span>@_inputError</span></div>
+        }
+    </section>
+
+    <section class="predict-section" aria-labelledby="logistic-predict-title">
+        <div class="prediction-copy">
+            <span class="step-number">2</span>
+            <div><span class="section-kicker">PREDICT FIRST</span><h2 id="logistic-predict-title">Which way should the weight move on the first update?</h2><p>A positive weight makes probability rise as x rises; a negative weight makes it fall.</p></div>
+        </div>
+        <div class="prediction-card">
+            <div class="prediction-actions">
+                <button type="button" class="@PredictionClass(WeightPrediction.Increase)" @onclick="() => SetPrediction(WeightPrediction.Increase)" disabled="@IsBusy">Weight increases</button>
+                <button type="button" class="@PredictionClass(WeightPrediction.Decrease)" @onclick="() => SetPrediction(WeightPrediction.Decrease)" disabled="@IsBusy">Weight decreases</button>
+                <button type="button" class="@PredictionClass(WeightPrediction.Same)" @onclick="() => SetPrediction(WeightPrediction.Same)" disabled="@IsBusy">Almost unchanged</button>
+            </div>
+            @if (_predictionAnswered)
+            {
+                <p class="prediction-feedback @(_predictionCorrect ? "correct" : "incorrect")">@PredictionFeedback</p>
+            }
+        </div>
+    </section>
+
+    <section class="lab-section" aria-labelledby="logistic-lab-title">
+        <div class="lab-heading">
+            <div class="heading-with-step"><span class="step-number">3</span><div><span class="section-kicker">WATCH THE CLASSIFIER TRAIN</span><h2 id="logistic-lab-title">Score → sigmoid → loss → gradient → boundary update.</h2></div></div>
+            <div class="lab-actions">
+                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Open explanation after run</span></label>
+                @if (_lastResult is not null)
+                {
+                    <button class="secondary-action" type="button" @onclick="OpenLastRunPopup">Last explanation</button>
+                }
+                <button class="sort-button" type="button" @onclick="RunAsync" disabled="@IsBusy"><span>▶</span> Train classifier</button>
+            </div>
+        </div>
+
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist" aria-label="Logistic Regression state view">
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual state</button>
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory state</button>
+            </div>
+            <p>@ViewExplanation</p>
+        </div>
+
+        <div class="lesson-reference-links" aria-label="Logistic Regression concept links">
+            <ConceptLink Href="/learn/concepts/logistic-regression">Logistic Regression concepts →</ConceptLink>
+            <ConceptLink Href="/ml-foundations/linear-regression">Linear Regression refresher →</ConceptLink>
+            <ConceptLink Href="/ml-foundations/gradient-descent">Gradient Descent refresher →</ConceptLink>
+            <ConceptLink Href="/structures/vector">Vector storage refresher →</ConceptLink>
+        </div>
+
+        <div class="state-surface">
+            @if (_view == StateView.Visual)
+            {
+                <LogisticRegressionPlot Snapshot="@DisplayedSnapshot" />
+            }
+            else
+            {
+                <section class="logistic-memory" aria-label="Logistic Regression memory state">
+                    <div class="memory-intro"><span>MEMORY STATE</span><strong>Five aligned numeric vectors + discrete predicted classes</strong><p>At index i, x[i], label[i], score[i], probability[i], and error[i] all describe the same training example.</p></div>
+                    <div class="parameter-strip">
+                        <span><small>WEIGHT · w</small><strong>@Format(DisplayedSnapshot.Weight)</strong></span>
+                        <span><small>BIAS · b</small><strong>@Format(DisplayedSnapshot.Bias)</strong></span>
+                        <span><small>dw</small><strong>@Format(DisplayedSnapshot.WeightGradient)</strong></span>
+                        <span><small>db</small><strong>@Format(DisplayedSnapshot.BiasGradient)</strong></span>
+                        <span><small>LOSS</small><strong>@Format(DisplayedSnapshot.Loss)</strong></span>
+                        <span><small>ACCURACY</small><strong>@FormatPercent(DisplayedSnapshot.Accuracy)</strong></span>
+                    </div>
+                    <div class="table-scroll"><table><thead><tr><th>i</th><th>x[]</th><th>label[]</th><th>score z[]</th><th>probability p[]</th><th>p − y[]</th><th>class[]</th></tr></thead><tbody>
+                    @for (var index = 0; index < DisplayedSnapshot.Count; index++)
+                    {
+                        <tr><td>@index</td><td>@Format(DisplayedSnapshot.X[index])</td><td>@Format(DisplayedSnapshot.Labels[index])</td><td>@Format(DisplayedSnapshot.Scores[index])</td><td>@Format(DisplayedSnapshot.Probabilities[index])</td><td>@Format(DisplayedSnapshot.PredictionErrors[index])</td><td>@DisplayedSnapshot.PredictedClasses[index]</td></tr>
+                    }
+                    </tbody></table></div>
+                    <div class="memory-note"><strong>The training arrays are project-owned storage.</strong><span>X, labels, scores, probabilities, and probability errors are ManualVector instances. The 0/1 prediction array is discrete teaching state; no ML library performs classification.</span></div>
+                </section>
+            }
+        </div>
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync"
+                           OnPause="PauseTimelineAsync"
+                           OnStepBack="StepBackAsync"
+                           OnStepForward="StepForwardAsync"
+                           OnReset="ResetPlaybackAsync"
+                           CanStepBack="@CanStepBack"
+                           CanStepForwardOverride="@CanStepForward"
+                           StepTextOverride="@DisplayedStepText"
+                           TimelinePosition="@TimelinePosition"
+                           TimelineCount="@TimelineCount" />
+
+        <div class="run-dashboard logistic-dashboard" aria-label="Logistic Regression live metrics">
+            <article><span>Update</span><strong>@DisplayedSnapshot.Iteration</strong><small>One full-batch weight + bias update.</small></article>
+            <article><span>Weight</span><strong>@Format(DisplayedSnapshot.Weight)</strong><small>Controls which direction probability rises.</small></article>
+            <article><span>Boundary</span><strong>@BoundaryText(DisplayedSnapshot.Weight, DisplayedSnapshot.Bias)</strong><small>Score z = 0, therefore p = 0.5.</small></article>
+            <article><span>Cross-entropy</span><strong>@Format(DisplayedSnapshot.Loss)</strong><small>Probability error used for training.</small></article>
+            <article><span>Accuracy</span><strong>@FormatPercent(DisplayedSnapshot.Accuracy)</strong><small>Examples currently on the correct side.</small></article>
+        </div>
+    </section>
+
+    <section class="fit-section" aria-labelledby="logistic-fit-title">
+        <div class="section-heading-row"><div><span class="section-kicker">WHEN IT FITS</span><h2 id="logistic-fit-title">Use Logistic Regression when two classes can be separated by a simple linear boundary and probabilities are useful.</h2></div></div>
+        <div class="fit-grid">
+            <article class="fit-card"><span>GOOD FIT</span><strong>Binary classification</strong><p>Predict class 0 vs class 1 while keeping a probability instead of only a hard label.</p></article>
+            <article class="fit-card"><span>GOOD FIT</span><strong>Readable influence</strong><p>The sign of weight tells you whether larger x pushes probability toward class 1 or class 0.</p></article>
+            <article class="fit-card"><span>AVOID FOR</span><strong>Strongly nonlinear boundaries</strong><p>A single weighted score cannot bend around complicated class shapes.</p></article>
+            <article class="fit-card"><span>NEXT CONNECTION</span><strong>KNN</strong><p>Instead of learning one boundary, KNN classifies from nearby stored examples.</p></article>
+        </div>
+    </section>
+
+    <section class="practice-section" aria-labelledby="logistic-practice-title">
+        <div class="practice-heading"><div><span class="section-kicker">GUIDED PRACTICE</span><h2 id="logistic-practice-title">Move the boundary, reverse the class direction, and handle one confusing example.</h2><p>Tasks load a useful setup; completion is checked from the real classifier result.</p></div><strong>@_completedTaskIds.Count / @PracticeTasks.Length complete</strong></div>
+        <div class="practice-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                <PracticeTaskCard TaskId="@task.Id" Title="@task.Title" Description="@task.Goal" InputText="@task.Suggested" HelpHref="/learn/concepts/logistic-regression" Completed="@_completedTaskIds.Contains(task.Id)" Active="@(_activeTaskId == task.Id)" Busy="@IsBusy" HasEvidence="@(GetTaskEvidence(task.Id) is not null)" Start="@(() => StartTask(task.Id))" OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
+            }
+        </div>
+    </section>
+
+    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="05 · Planned" Title="K-Nearest Neighbors" Description="Stop learning one global boundary. Compare a new point with stored examples and let the nearest neighbors vote." Href="/ml-foundations/knn" LinkLabel="Preview KNN" />
+</div>
+
+@if (_lastRunPopupOpen && _lastResult is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRunPopup">
+        <section class="run-popup" role="dialog" aria-modal="true" @onclick:stopPropagation="true">
+            <header><div><span class="section-kicker">LAST RUN</span><h2>@LastRunHeadline</h2></div><button type="button" class="popup-close" @onclick="CloseLastRunPopup" aria-label="Close result explanation">×</button></header>
+            <div class="popup-body">
+                <p>@RunActionExplanation(_lastResult)</p>
+                <div class="popup-metrics logistic-popup-metrics">
+                    <div><span>LOSS</span><strong>@Format(_lastResult.InitialLoss) → @Format(_lastResult.FinalLoss)</strong></div>
+                    <div><span>ACCURACY</span><strong>@FormatPercent(_lastResult.FinalAccuracy)</strong></div>
+                    <div><span>BOUNDARY</span><strong>@BoundaryText(_lastResult.FinalWeight, _lastResult.FinalBias)</strong></div>
+                    <div><span>UPDATES</span><strong>@_lastResult.IterationsCompleted</strong></div>
+                </div>
+                <p class="popup-memory">@RunMlExplanation(_lastResult)</p>
+            </div>
+        </section>
+    </div>
+}
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
+
+@code {
+    private const string ModuleKey = "logistic-regression";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.logistic-regression.show-run-popup.v1";
+    private readonly List<RunFrame> _frames = [];
+    private readonly List<LogisticRegressionRunResult> _practiceResults = [];
+    private PracticeModuleProgress _practiceProgress = new();
+    private HashSet<int> _completedTaskIds = [];
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
+    private LogisticRegressionRunResult? _lastResult;
+    private string? _lastCapturedStep;
+    private double[] _x = [-3d, -2d, -1d, 1d, 2d, 3d];
+    private double[] _labels = [0d, 0d, 0d, 1d, 1d, 1d];
+    private string _datasetText = "-3,0; -2,0; -1,0; 1,1; 2,1; 3,1";
+    private string _weightText = "0";
+    private string _biasText = "0";
+    private string _learningRateText = "0.6";
+    private string _iterationsText = "12";
+    private string _toleranceText = "0.03";
+    private string? _inputError;
+    private Preset? _preset = Preset.CenterSplit;
+    private bool _showRunPopups = true;
+    private bool _showAdvancedSettings;
+    private bool _lastRunPopupOpen;
+    private bool _predictionAnswered;
+    private bool _predictionCorrect;
+    private WeightPrediction? _prediction;
+    private int _frameIndex = -1;
+    private int? _activeTaskId;
+    private StateView _view = StateView.Visual;
+
+    private static readonly PracticeTaskDefinition[] PracticeTasks =
+    [
+        new(1, "Separate the center split", "Train a positive weight, reduce cross-entropy, and classify every clean example correctly.", "Try Center split", Preset.CenterSplit),
+        new(2, "Reverse the class direction", "Train a negative weight when class 1 is on the left instead of the right.", "Try Reverse classes", Preset.Reversed),
+        new(3, "Move the boundary right", "Train a decision boundary on the positive side of x = 0.", "Try Boundary right", Preset.BoundaryRight),
+        new(4, "Move the boundary left", "Train a decision boundary on the negative side of x = 0.", "Try Boundary left", Preset.BoundaryLeft),
+        new(5, "Handle a confusing point", "Reduce cross-entropy even when one point disagrees with the clean left/right pattern.", "Try One confusing point", Preset.Noisy)
+    ];
+
+    private LogisticRegressionSnapshot Current => LogisticRegressionLab.CreateSnapshot();
+    private LogisticRegressionSnapshot DisplayedSnapshot => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].Snapshot : Current;
+    private string DisplayedStepText => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].StepText : SimulationState.CurrentStepText;
+    private int TimelineCount => _frames.Count;
+    private int TimelinePosition => _frameIndex < 0 ? 0 : _frameIndex + 1;
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_frameIndex >= 0 && _frameIndex < _frames.Count - 1) || SimulationState.IsRunning;
+    private bool IsBusy => SimulationState.IsRunning;
+    private string ViewExplanation => _view == StateView.Visual
+        ? "See labels at 0/1, current probabilities on the sigmoid, the 0.5 threshold, and the exact x where the decision changes."
+        : "See the aligned ManualVector storage behind score, probability, probability error, and the final discrete class.";
+    private string PredictionFeedback => _predictionCorrect
+        ? "Correct — the first real update moved weight in the direction you predicted."
+        : $"Not quite. The first update made the weight {ActualFirstWeightDirection}.";
+    private string ActualFirstWeightDirection => FirstWeightDirection(_lastResult);
+    private string LastRunHeadline => _lastResult is null
+        ? "Logistic Regression run"
+        : _lastResult.Diverged
+            ? "The learning rate made training unstable."
+            : _lastResult.FinalAccuracy >= 0.999d
+                ? "The current boundary separates every training example."
+                : "The classifier improved its probability fit.";
+
+    protected override void OnInitialized()
+    {
+        SimulationState.Changed += HandleSimulationChanged;
+        try { _showRunPopups = !bool.TryParse(LearningStore.GetItem(PopupSettingStorageKey), out var saved) || saved; } catch { _showRunPopups = true; }
+        _practiceProgress = PracticeProgress.Load(ModuleKey, null, PracticeTasks.Select(task => task.Id));
+        _completedTaskIds = _practiceProgress.CompletedTaskIds;
+        ApplyInputs();
+    }
+
+    private void WeightChanged(ChangeEventArgs args) { _weightText = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
+    private void BiasChanged(ChangeEventArgs args) { _biasText = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
+    private void LearningRateChanged(ChangeEventArgs args) { _learningRateText = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
+    private void IterationsChanged(ChangeEventArgs args) { _iterationsText = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
+    private void ToleranceChanged(ChangeEventArgs args) { _toleranceText = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
+    private void DatasetChanged(ChangeEventArgs args) { _datasetText = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
+    private void ToggleAdvancedSettings() { if (!IsBusy) _showAdvancedSettings = !_showAdvancedSettings; }
+    private void SetPrediction(WeightPrediction prediction) { if (IsBusy) return; _prediction = prediction; _predictionAnswered = false; _predictionCorrect = false; }
+
+    private void ApplyInputs()
+    {
+        if (!TryParseDouble(_weightText, out var weight) || !TryParseDouble(_biasText, out var bias)) { _inputError = "Weight and bias must be finite real numbers."; return; }
+        if (!TryParseDouble(_learningRateText, out var learningRate) || learningRate <= 0d) { _inputError = "Learning rate must be greater than 0."; return; }
+        if (!int.TryParse(_iterationsText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var iterations) || iterations is < 1 or > 80) { _inputError = "Use between 1 and 80 updates in this visual lesson."; return; }
+        if (!TryParseDouble(_toleranceText, out var tolerance) || tolerance <= 0d) { _inputError = "Gradient tolerance must be greater than 0."; return; }
+        if (!TryParseDataset(_datasetText, out var x, out var labels, out var datasetError)) { _inputError = datasetError; return; }
+        if (!double.IsFinite(weight) || !double.IsFinite(bias) || !double.IsFinite(learningRate) || !double.IsFinite(tolerance)) { _inputError = "NaN and infinity are not accepted."; return; }
+
+        _x = x;
+        _labels = labels;
+        _inputError = null;
+        try
+        {
+            LogisticRegressionLab.Configure(new LogisticRegressionConfiguration(_x, _labels, weight, bias, learningRate, iterations, tolerance));
+        }
+        catch (ArgumentException ex)
+        {
+            _inputError = ex.Message;
+            return;
+        }
+        ClearReview();
+        StateHasChanged();
+    }
+
+    private async Task RunAsync()
+    {
+        ApplyInputs();
+        if (!string.IsNullOrWhiteSpace(_inputError)) return;
+        _frames.Clear();
+        _frameIndex = -1;
+        _lastCapturedStep = null;
+        _lastRunPopupOpen = false;
+        var token = SimulationState.Start("Starting Logistic Regression training.");
+        Capture();
+        try
+        {
+            var result = await LogisticRegressionLab.ExecuteAsync(token);
+            if (!IsCurrent(token)) return;
+            _lastResult = result;
+            SimulationState.Complete(result.Summary);
+            Capture();
+            EvaluatePrediction(result);
+            RecordPracticeResult(result);
+            if (_showRunPopups) OpenLastRunPopup();
+        }
+        catch (OperationCanceledException) { }
+        finally { await InvokeAsync(StateHasChanged); }
+    }
+
+    private void Capture()
+    {
+        var step = SimulationState.CurrentStepText;
+        if (step == _lastCapturedStep) return;
+        var followTail = _frameIndex < 0 || _frameIndex == _frames.Count - 1;
+        _frames.Add(new RunFrame(step, LogisticRegressionLab.CreateSnapshot()));
+        _lastCapturedStep = step;
+        if (followTail) _frameIndex = _frames.Count - 1;
+    }
+
+    private void HandleSimulationChanged() { if (SimulationState.IsRunning) Capture(); _ = InvokeAsync(StateHasChanged); }
+    private bool IsCurrent(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;
+    private void ClearReview() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; _lastRunPopupOpen = false; _lastResult = null; _predictionAnswered = false; }
+    private Task PlayTimelineAsync() { if (_frames.Count > 0) _frameIndex = _frames.Count - 1; SimulationState.Resume(); return InvokeAsync(StateHasChanged); }
+    private Task PauseTimelineAsync() { SimulationState.Pause(); return Task.CompletedTask; }
+    private Task StepBackAsync() { if (SimulationState.IsRunning && !SimulationState.IsPaused) SimulationState.Pause(); if (_frameIndex > 0) _frameIndex--; return InvokeAsync(StateHasChanged); }
+    private Task StepForwardAsync() { if (_frameIndex >= 0 && _frameIndex < _frames.Count - 1) { _frameIndex++; return InvokeAsync(StateHasChanged); } if (SimulationState.IsRunning) SimulationState.Step(); return Task.CompletedTask; }
+    private Task ResetPlaybackAsync() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; return InvokeAsync(StateHasChanged); }
+
+    private void EvaluatePrediction(LogisticRegressionRunResult result)
+    {
+        _predictionAnswered = _prediction.HasValue;
+        if (!_predictionAnswered) return;
+        _predictionCorrect = FirstWeightPrediction(result) == _prediction.Value;
+    }
+
+    private static WeightPrediction FirstWeightPrediction(LogisticRegressionRunResult result)
+    {
+        if (result.History.Length < 2) return WeightPrediction.Same;
+        var delta = result.History[1].Weight - result.History[0].Weight;
+        if (Math.Abs(delta) <= 1e-9) return WeightPrediction.Same;
+        return delta > 0d ? WeightPrediction.Increase : WeightPrediction.Decrease;
+    }
+
+    private static string FirstWeightDirection(LogisticRegressionRunResult? result) => result is null
+        ? "unavailable"
+        : FirstWeightPrediction(result) switch
+        {
+            WeightPrediction.Increase => "increase",
+            WeightPrediction.Decrease => "decrease",
+            _ => "stay almost unchanged"
+        };
+
+    private void LoadPreset(Preset preset, bool keepActiveTask = false)
+    {
+        if (IsBusy) return;
+        _preset = preset;
+        switch (preset)
+        {
+            case Preset.Reversed:
+                SetDataset([-3d, -2d, -1d, 1d, 2d, 3d], [1d, 1d, 1d, 0d, 0d, 0d], 0d, 0d, 0.6d, 12, 0.03d);
+                break;
+            case Preset.BoundaryRight:
+                SetDataset([-2d, -1d, 0d, 1d, 2d, 3d], [0d, 0d, 0d, 1d, 1d, 1d], 0d, 0d, 0.5d, 15, 0.03d);
+                break;
+            case Preset.BoundaryLeft:
+                SetDataset([-3d, -2d, -1d, 0d, 1d, 2d], [0d, 0d, 1d, 1d, 1d, 1d], 0d, 0d, 0.5d, 15, 0.03d);
+                break;
+            case Preset.Noisy:
+                SetDataset([-3d, -2d, -1d, 0d, 1d, 2d, 3d], [0d, 0d, 0d, 1d, 0d, 1d, 1d], 0d, 0d, 0.4d, 18, 0.03d);
+                break;
+            default:
+                SetDataset([-3d, -2d, -1d, 1d, 2d, 3d], [0d, 0d, 0d, 1d, 1d, 1d], 0d, 0d, 0.6d, 12, 0.03d);
+                break;
+        }
+        _prediction = null;
+        _predictionAnswered = false;
+        ApplyInputs();
+        if (!keepActiveTask) _activeTaskId = null;
+    }
+
+    private void SetDataset(double[] x, double[] labels, double weight, double bias, double learningRate, int iterations, double tolerance)
+    {
+        _x = x;
+        _labels = labels;
+        _datasetText = FormatDataset(x, labels);
+        _weightText = Format(weight);
+        _biasText = Format(bias);
+        _learningRateText = Format(learningRate);
+        _iterationsText = iterations.ToString(CultureInfo.InvariantCulture);
+        _toleranceText = Format(tolerance);
+    }
+
+    private string PresetClass(Preset preset) => _preset == preset ? "active" : string.Empty;
+    private void ClearPresetSelection() => _preset = null;
+    private string PredictionClass(WeightPrediction prediction) => _prediction == prediction ? "active" : string.Empty;
+
+    private void StartTask(int taskId)
+    {
+        if (IsBusy) return;
+        var task = PracticeTasks.First(item => item.Id == taskId);
+        _activeTaskId = taskId;
+        LoadPreset(task.Preset, keepActiveTask: true);
+    }
+
+    private void RecordPracticeResult(LogisticRegressionRunResult result)
+    {
+        _practiceResults.Add(result);
+        if (_practiceResults.Count > 30) _practiceResults.RemoveAt(0);
+        foreach (var task in PracticeTasks)
+        {
+            if (_completedTaskIds.Contains(task.Id) && GetTaskEvidence(task.Id) is not null && _activeTaskId != task.Id) continue;
+            var boundary = DecisionBoundary(result.FinalWeight, result.FinalBias);
+            var complete = task.Id switch
+            {
+                1 => !result.Diverged && result.FinalWeight > 0d && result.FinalLoss < result.InitialLoss && result.FinalAccuracy >= 0.999d,
+                2 => !result.Diverged && result.FinalWeight < 0d && result.FinalLoss < result.InitialLoss && result.FinalAccuracy >= 0.999d,
+                3 => !result.Diverged && result.FinalLoss < result.InitialLoss && boundary is > 0.05d and < 1d,
+                4 => !result.Diverged && result.FinalLoss < result.InitialLoss && boundary is < -0.4d and > -1.6d,
+                5 => !result.Diverged && IsNoisyDataset(result.X, result.Labels) && result.FinalLoss < result.InitialLoss && result.FinalAccuracy >= 0.70d,
+                _ => false
+            };
+            if (complete) CompletePracticeTask(task, result);
+        }
+    }
+
+    private void CompletePracticeTask(PracticeTaskDefinition task, LogisticRegressionRunResult result)
+    {
+        var evidence = new PracticeCompletionEvidence(
+            task.Id,
+            task.Title,
+            result.Summary,
+            RunActionExplanation(result),
+            "X, labels, scores, probabilities, and probability errors use project-owned ManualVector storage. Predicted classes are a discrete int[] view of the visible 0.5 threshold.",
+            RunMlExplanation(result),
+            [
+                new("Initial loss", Format(result.InitialLoss)),
+                new("Final loss", Format(result.FinalLoss)),
+                new("Accuracy", FormatPercent(result.FinalAccuracy)),
+                new("Weight", Format(result.FinalWeight)),
+                new("Boundary", BoundaryText(result.FinalWeight, result.FinalBias))
+            ],
+            $"examples={FormatDataset(result.X, result.Labels)} · final model: p=sigmoid({Format(result.FinalWeight)}x {FormatSignedBias(result.FinalBias)})");
+        _completedTaskIds.Add(task.Id);
+        PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
+        if (_activeTaskId == task.Id) _activeTaskId = null;
+    }
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
+    private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
+    private void CloseTaskEvidence() => _practiceEvidencePopup = null;
+    private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed; try { LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); } catch { } }
+    private void OpenLastRunPopup() { if (_lastResult is null) return; _lastRunPopupOpen = true; }
+    private void CloseLastRunPopup() => _lastRunPopupOpen = false;
+
+    private static string RunActionExplanation(LogisticRegressionRunResult result) =>
+        $"Cross-entropy changed from {Format(result.InitialLoss)} to {Format(result.FinalLoss)}. Accuracy changed from {FormatPercent(result.InitialAccuracy)} to {FormatPercent(result.FinalAccuracy)}. The final 0.5 boundary is {BoundaryText(result.FinalWeight, result.FinalBias)}.";
+
+    private static string RunMlExplanation(LogisticRegressionRunResult result) => result.Diverged
+        ? "The sigmoid and classifier rules are still valid, but the parameter updates became numerically unstable."
+        : result.FinalAccuracy >= 0.999d
+            ? "Every training example is on the correct side of the current boundary. The probabilities can still become more or less confident even when accuracy is already 100%."
+            : "Cross-entropy trains probabilities, not accuracy directly. A noisy or overlapping dataset can improve its probability fit without reaching perfect classification.";
+
+    private static bool TryParseDataset(string text, out double[] x, out double[] labels, out string error)
+    {
+        var groups = text.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (groups.Length is < 2 or > 10)
+        {
+            x = [];
+            labels = [];
+            error = "Use between 2 and 10 examples, separated with semicolons.";
+            return false;
+        }
+
+        x = new double[groups.Length];
+        labels = new double[groups.Length];
+        var sawZero = false;
+        var sawOne = false;
+        for (var index = 0; index < groups.Length; index++)
+        {
+            var pair = groups[index].Split(',', StringSplitOptions.TrimEntries);
+            if (pair.Length != 2 || !TryParseDouble(pair[0], out x[index]) || !TryParseDouble(pair[1], out labels[index]) || !double.IsFinite(x[index]))
+            {
+                x = [];
+                labels = [];
+                error = $"Example {index + 1} must use x,label with finite x and label 0 or 1.";
+                return false;
+            }
+            if (labels[index] == 0d) sawZero = true;
+            else if (labels[index] == 1d) sawOne = true;
+            else
+            {
+                x = [];
+                labels = [];
+                error = $"Example {index + 1} has label {Format(labels[index])}. Logistic Regression labels must be exactly 0 or 1.";
+                return false;
+            }
+        }
+
+        if (!sawZero || !sawOne)
+        {
+            x = [];
+            labels = [];
+            error = "Include at least one class 0 example and one class 1 example.";
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    private static bool IsNoisyDataset(IReadOnlyList<double> x, IReadOnlyList<double> labels) =>
+        x.Count == 7 && labels.Count == 7 && Math.Abs(x[4] - 1d) < 1e-9 && labels[3] == 1d && labels[4] == 0d;
+
+    private static double? DecisionBoundary(double weight, double bias) => Math.Abs(weight) <= 1e-10 ? null : -bias / weight;
+    private static string BoundaryText(double weight, double bias)
+    {
+        var boundary = DecisionBoundary(weight, bias);
+        return boundary is double value && double.IsFinite(value) ? $"x = {Format(value)}" : "not defined";
+    }
+
+    private static bool TryParseDouble(string? text, out double value) =>
+        double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value) ||
+        double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out value);
+
+    private static string Format(double value) => Math.Abs(value) < 1e-12 ? "0" : value.ToString("0.####", CultureInfo.InvariantCulture);
+    private static string FormatPercent(double value) => (value * 100d).ToString("0.#", CultureInfo.InvariantCulture) + "%";
+    private static string FormatSignedBias(double value) => value < 0d ? $"− {Format(Math.Abs(value))}" : $"+ {Format(value)}";
+    private static string FormatDataset(IReadOnlyList<double> x, IReadOnlyList<double> labels)
+    {
+        var parts = new string[x.Count];
+        for (var index = 0; index < x.Count; index++) parts[index] = $"{Format(x[index])},{Format(labels[index])}";
+        return string.Join("; ", parts);
+    }
+
+    public void Dispose() => SimulationState.Changed -= HandleSimulationChanged;
+
+    private sealed record RunFrame(string StepText, LogisticRegressionSnapshot Snapshot);
+    private sealed record PracticeTaskDefinition(int Id, string Title, string Goal, string Suggested, Preset Preset);
+    private enum WeightPrediction { Increase, Decrease, Same }
+    private enum StateView { Visual, Memory }
+    private enum Preset { CenterSplit, Reversed, BoundaryRight, BoundaryLeft, Noisy }
+}

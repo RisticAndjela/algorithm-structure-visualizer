@@ -1,0 +1,19 @@
+@page "/ml-foundations/knn"
+
+<PageTitle>K-Nearest Neighbors — Machine Learning — Algorithm Visualizer</PageTitle>
+
+<LearningPlaceholder
+    Eyebrow="MACHINE LEARNING · PHASE 1 STEP 5"
+    Title="K-Nearest Neighbors"
+    Description="The next model will stop fitting one global boundary. It will measure distance from a new point to stored examples and let the nearest neighbors vote."
+    Complexity="Θ(n·d)"
+    ComplexityNote="planned brute-force search across n stored examples with d features"
+    Concepts="distance · k neighbors · majority vote · classification · feature scale"
+    LearnTitle="Classify from nearby examples instead of a learned line."
+    LearnSummary="KNN stores the training examples. For a new point, it measures distance, keeps the k closest examples, and uses their labels to make a prediction."
+    LearnCards="DISTANCE|Measure how close examples are|The Vector lesson already gives us reusable distance operations.;;NEIGHBORS|Keep the k closest|Small k reacts locally; larger k smooths the decision.;;VOTE|Use nearby labels|For classification, the nearest labels vote.;;COST|Prediction does the work|Basic KNN has almost no training cost but scans stored examples at prediction time."
+    ConceptHref="/learn/concepts/knn"
+    TipTitle="KNN moves work from training to prediction."
+    TipText="Logistic Regression learns weight and bias first. Basic KNN keeps the examples and searches them when a new prediction is requested."
+    FocusText="Reuse ManualVector distance math, then expose the exact neighbor-selection order before adding KD-Tree acceleration."
+    PromptText="What changes when k grows from 1 to 5?" />

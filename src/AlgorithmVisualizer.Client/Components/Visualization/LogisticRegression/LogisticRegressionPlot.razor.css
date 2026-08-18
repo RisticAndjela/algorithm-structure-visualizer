@@ -1,0 +1,64 @@
+.logistic-visual { display: grid; gap: .8rem; }
+.model-strip { display: grid; grid-template-columns: 1.55fr repeat(3, minmax(0, .62fr)); overflow: hidden; border: 1px solid var(--color-border); border-radius: .9rem; background: var(--color-surface-subtle); }
+.model-strip > div { min-width: 0; display: grid; align-content: center; gap: .14rem; padding: .72rem .8rem; }
+.model-strip > div + div { border-left: 1px solid var(--color-border); }
+.model-strip span { color: var(--color-text-muted); font-size: .66rem; font-weight: 900; letter-spacing: .07em; }
+.model-strip strong { overflow: hidden; text-overflow: ellipsis; font-size: .94rem; white-space: nowrap; }
+.formula-cell strong { color: var(--color-primary-strong); }
+
+.plot-shell { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(15rem, .65fr); gap: .8rem; align-items: stretch; }
+svg { width: 100%; min-height: 26rem; border: 1px solid var(--color-border); border-radius: 1rem; background: #fff; }
+.plot-bg { fill: var(--color-surface-subtle); stroke: var(--color-border); }
+.grid-line { stroke: #e9eaf0; stroke-width: 1; }
+.axis-label { fill: var(--color-text-muted); font-size: 12px; font-weight: 700; }
+.axis-title { fill: var(--color-text-soft); font-size: 13px; font-weight: 800; }
+.threshold-line { stroke: var(--color-warning); stroke-width: 1.8; stroke-dasharray: 7 7; opacity: .78; }
+.threshold-label { fill: var(--color-warning); font-size: 12px; font-weight: 800; }
+.boundary-line { stroke: var(--color-danger); stroke-width: 2.2; stroke-dasharray: 5 5; }
+.boundary-badge-bg { fill: var(--color-danger-soft); stroke: #efc5cc; }
+.boundary-badge { fill: var(--color-danger); font-size: 11px; font-weight: 900; }
+.sigmoid-curve { fill: none; stroke: var(--color-primary); stroke-width: 4.5; stroke-linecap: round; stroke-linejoin: round; }
+.probability-gap { stroke: #c9cbd4; stroke-width: 1.6; stroke-dasharray: 3 5; }
+.label-point { stroke-width: 3; }
+.label-point.class-zero { fill: #fff; stroke: var(--color-danger); }
+.label-point.class-one { fill: #fff; stroke: var(--color-secondary); }
+.probability-point { fill: var(--color-primary); stroke: #fff; stroke-width: 2.2; }
+.probability-point.focus { stroke: var(--color-warning); stroke-width: 3.2; }
+
+.decision-story { min-width: 0; display: grid; align-content: center; gap: .85rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: 1rem; background: linear-gradient(160deg, var(--color-surface-accent), #fff 64%); }
+.story-eyebrow { color: var(--color-primary-strong); font-size: .66rem; font-weight: 900; letter-spacing: .08em; }
+.story-flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr; align-items: center; gap: .35rem; }
+.story-flow > span { min-width: 0; display: grid; gap: .12rem; padding: .58rem .48rem; border: 1px solid var(--color-border); border-radius: .68rem; background: rgba(255,255,255,.92); text-align: center; }
+.story-flow small { color: var(--color-text-muted); font-size: .58rem; font-weight: 900; letter-spacing: .06em; }
+.story-flow strong { font-size: .85rem; }
+.story-flow > b { color: var(--color-text-muted); font-size: .8rem; }
+.story-flow .final-class { border-color: #cfc7ff; background: #f7f5ff; }
+.decision-story p { margin: 0; color: var(--color-text-soft); font-size: .86rem; line-height: 1.55; }
+
+.plot-legend { display: flex; flex-wrap: wrap; gap: .85rem; color: var(--color-text-soft); font-size: .8rem; font-weight: 720; }
+.plot-legend span { display: inline-flex; align-items: center; gap: .35rem; }
+.plot-legend i { display: inline-block; flex: 0 0 auto; }
+.class-zero-dot, .class-one-dot, .probability-dot { width: .72rem; height: .72rem; border-radius: 50%; }
+.class-zero-dot { border: 2px solid var(--color-danger); background: #fff; }
+.class-one-dot { border: 2px solid var(--color-secondary); background: #fff; }
+.probability-dot { background: var(--color-primary); }
+.curve-line, .boundary-dash { width: 1rem; height: 0; border-radius: 0; }
+.curve-line { border-top: 3px solid var(--color-primary); }
+.boundary-dash { border-top: 2px dashed var(--color-danger); }
+
+@media (max-width: 980px) {
+    .plot-shell { grid-template-columns: 1fr; }
+    .decision-story { align-content: start; }
+}
+
+@media (max-width: 760px) {
+    .model-strip { grid-template-columns: 1fr 1fr; }
+    .model-strip > div + div { border-left: 0; }
+    .model-strip > div:nth-child(even) { border-left: 1px solid var(--color-border); }
+    .model-strip > div:nth-child(n+3) { border-top: 1px solid var(--color-border); }
+    .formula-cell { grid-column: 1 / -1; }
+    .model-strip > div:nth-child(2) { border-left: 0; border-top: 1px solid var(--color-border); }
+    svg { min-height: 20rem; }
+    .story-flow { grid-template-columns: 1fr; }
+    .story-flow > b { transform: rotate(90deg); justify-self: center; }
+}

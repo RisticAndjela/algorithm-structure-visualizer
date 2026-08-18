@@ -61,7 +61,7 @@ The application now has twenty-four fully implemented learning modules: **Queue 
 - Concepts & Memory learning page;
 - shared learner-facing module chrome in `wwwroot/css/learning-modules.css`, using the mature Queue & Stack / BST / Matrix / Graph visual language for sorting Learn First panels, module headers, tips, reference links, and lesson progression;
 - one application-wide curriculum hierarchy: Learn → Data Structures → Sorting → Search & Traversal → Machine Learning; advanced live lessons use a red difficulty dot, while planned lessons keep the neutral planned marker; Graph algorithms are classified inside those algorithm tracks rather than forming a separate navigation section: Topological Sort is Sorting; Dijkstra and MST are Search & Traversal;
-- difficulty-ordered curriculum navigation with reusable `NextLessonCard` links: Queue & Stack → BST → Binary Heap → d-ary Heap → AVL → Vector → Matrix → Graph → Red-Black Tree, then Bubble → Selection → Insertion → Merge → Quick → Heap Sort → Topological Sort (Advanced), then Linear Search → Binary Search → BFS → DFS → Dijkstra (Advanced) → Minimum Spanning Tree (Advanced), then Machine Learning starts with Gradient Descent → Linear Regression → Logistic Regression (planned);
+- difficulty-ordered curriculum navigation with reusable `NextLessonCard` links: Queue & Stack → BST → Binary Heap → d-ary Heap → AVL → Vector → Matrix → Graph → Red-Black Tree, then Bubble → Selection → Insertion → Merge → Quick → Heap Sort → Topological Sort (Advanced), then Linear Search → Binary Search → BFS → DFS → Dijkstra (Advanced) → Minimum Spanning Tree (Advanced), then Machine Learning starts with Gradient Descent → Linear Regression → Logistic Regression → KNN (planned);
 - exact route-based links from every live lab to the relevant Concepts & Memory topic, plus reverse links from the concept sections back to the matching lesson;
 - BST insert, search, delete, explicit DSW balance, and reset;
 - BST leaf / one-child / two-child deletion simulation;
@@ -1539,4 +1539,14 @@ Linear Regression is the second live Machine Learning lesson and Phase 1 roadmap
 
 The Client uses the same shared lesson hierarchy and shared button grammar as Search/Sort modules. Beginners start from dataset presets and only three visible model controls: starting weight, starting bias, and learning rate. Custom `x,y` points plus stopping controls are progressively disclosed. Prediction asks whether the first update should increase, decrease, or barely change the weight. Visual State draws training points, current predictions, residual distances, and the current line. Memory State shows aligned X/Y/prediction/residual vector slots and scalar model parameters. Playback can rewind every meaningful batch-training state, Last Run explains the fit, and five practice tasks cover upward/downward trends, an already-fitted line, noisy data, and unstable learning-rate behavior.
 
-Logistic Regression is the next planned lesson and remains a `LearningPlaceholder`; no fake classifier controls are exposed.
+## Machine Learning — Logistic Regression
+
+Route: `/ml-foundations/logistic-regression`
+
+Core namespace: `AlgorithmVisualizer.Core.MachineLearning.Supervised.LogisticRegression`
+
+Logistic Regression is the third live Machine Learning lesson and Phase 1 roadmap step 4. The first classifier stays deliberately univariate so the entire chain remains visible: `z = w*x + b` → stable sigmoid → probability → visible `0.5` threshold → class. Full-batch binary cross-entropy training uses explicit `dw = mean((p-y)*x)` and `db = mean(p-y)` loops, then the same Gradient Descent update pattern used by the previous lessons. X, labels, scores, probabilities, and probability errors reuse project-owned `ManualVector`; predicted classes are a discrete `int[]`. No ML/statistics/optimizer library performs the taught classifier behavior.
+
+The Client follows the shared learner-first shell but uses a cleaner classification-specific visualization: true 0/1 labels, probability points on the sigmoid curve, the horizontal `0.5` threshold, the exact vertical decision boundary, and one compact `x → z → p → class` explanation for the example nearest the boundary. The beginner surface exposes only presets, starting weight, starting bias, and learning rate; custom examples and stopping rules are progressively disclosed. Five behavior-based practice tasks verify positive/negative class direction, left/right boundary movement, and loss reduction on a noisy example. Completion evidence persists through the existing SQLite-backed practice store.
+
+K-Nearest Neighbors is the next planned Phase 1 lesson and remains a `LearningPlaceholder`; no fake KNN controls are exposed.

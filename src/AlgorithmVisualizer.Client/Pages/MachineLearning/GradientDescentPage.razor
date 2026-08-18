@@ -263,7 +263,6 @@
     private int _frameIndex = -1;
     private int? _activeTaskId;
     private StateView _view = StateView.Visual;
-    private PopupTab _popupTab = PopupTab.Action;
 
     private static readonly ObjectiveOption[] ObjectiveOptions =
     [
@@ -483,7 +482,7 @@
     private string GetActiveTaskProgressText(int taskId) => _practiceResults.Count == 0 ? "Suggested settings are loaded. Completion is checked from the actual optimization behavior, not the preset button." : $"Last run: loss {Format(_practiceResults[^1].InitialLoss)} → {Format(_practiceResults[^1].FinalLoss)} · {_practiceResults[^1].StopReason}.";
 
     private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed; try { LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); } catch { } }
-    private void OpenLastRunPopup() { if (_lastResult is null) return; _popupTab = PopupTab.Action; _lastRunPopupOpen = true; }
+    private void OpenLastRunPopup() { if (_lastResult is null) return; _lastRunPopupOpen = true; }
     private void CloseLastRunPopup() => _lastRunPopupOpen = false;
 
     private static string RunActionExplanation(GradientDescentRunResult result) => $"The run started with loss {Format(result.InitialLoss)} and finished at {Format(result.FinalLoss)} after {result.IterationsCompleted} step(s). Each step measured the slope, scaled it by the chosen step size, and moved in the opposite direction.";
@@ -504,6 +503,5 @@
     private enum ObjectivePreset { Balanced, NarrowValley, Shifted }
     private enum LossPrediction { Down, Up, Same }
     private enum StateView { Visual, Memory }
-    private enum PopupTab { Action, Memory, Why }
     private enum Preset { Balanced, Slow, Overshoot, AtMinimum, Narrow, Decay, Shifted }
 }

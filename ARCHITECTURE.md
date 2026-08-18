@@ -238,7 +238,7 @@ This preserves the architectural rule: Core teaches algorithms, Client visualize
 
 `DataStructures/Vector/ManualVector` is a reusable numerical data structure stored in a contiguous project-owned `double[]`. The learner-facing route is `/structures/vector` and its live Client page lives under `Pages/DataStructures/VectorPage.razor`; Machine Learning consumes it as a dependency rather than presenting Vector as a separate ML lesson. `VectorSimulation` owns renderer-neutral state for aligned component reads, result writes and scalar reductions. The Client owns text parsing, operation selection, Visual/Memory presentation, prediction, playback review, practice state and SQLite evidence.
 
-The Vector module must remain dependency-light: no numerical package, `System.Numerics.Vector<T>`, or framework search/aggregation helper may replace the explicit loops being taught. Gradient Descent reuses this Core for L2 norm, scalar multiplication and subtraction. Linear Regression reuses `ManualVector` for aligned training X/Y, prediction and residual storage. Later Logistic Regression, KNN, K-Means and PCA modules should follow the same composition rule.
+The Vector module must remain dependency-light: no numerical package, `System.Numerics.Vector<T>`, or framework search/aggregation helper may replace the explicit loops being taught. Gradient Descent reuses this Core for L2 norm, scalar multiplication and subtraction. Linear Regression reuses `ManualVector` for aligned training X/Y, prediction and residual storage. Logistic Regression also reuses `ManualVector` for aligned X/label/score/probability/error storage. Later KNN, K-Means and PCA modules should follow the same composition rule.
 
 
 ## Gradient Descent / Machine Learning optimization boundary
@@ -251,7 +251,13 @@ The live Client route `/ml-foundations/gradient-descent` owns input parsing, Bas
 
 `MachineLearning/Supervised/LinearRegression/LinearRegressionSimulation` owns the first supervised model. It uses project-owned `ManualVector` instances for training X/Y values, current predictions and residuals, while weight and bias remain scalar parameters. Prediction, MSE, analytical `dw`/`db`, and full-batch parameter updates are explicit Core loops. The implementation follows the Gradient Descent update rule conceptually without delegating training to a framework optimizer or moving model math into the Client.
 
-The live Client route `/ml-foundations/linear-regression` owns dataset presets/custom parsing, beginner-visible weight/bias/learning-rate controls, progressive disclosure of stopping controls, first-update prediction, SVG line/residual rendering, Visual/Memory presentation, playback review, popup explanations, and persisted practice evidence. Logistic Regression at `/ml-foundations/logistic-regression` is the next planned `LearningPlaceholder`.
+The live Client route `/ml-foundations/linear-regression` owns dataset presets/custom parsing, beginner-visible weight/bias/learning-rate controls, progressive disclosure of stopping controls, first-update prediction, SVG line/residual rendering, Visual/Memory presentation, playback review, popup explanations, and persisted practice evidence.
+
+## Logistic Regression / first binary-classifier boundary
+
+`MachineLearning/Supervised/LogisticRegression/LogisticRegressionSimulation` owns the first binary classifier. It uses project-owned `ManualVector` instances for X, labels, linear scores, sigmoid probabilities, and `p-y` probability errors. It explicitly evaluates numerically stable sigmoid and binary cross-entropy, applies the visible `0.5` class threshold, computes analytical `dw`/`db`, and performs full-batch Gradient Descent updates. Predicted 0/1 classes use a plain `int[]` because they are discrete output state rather than numerical vector arithmetic.
+
+The live Client route `/ml-foundations/logistic-regression` owns beginner presets/custom parsing, weight/bias/learning-rate controls, progressive disclosure of stopping controls, first-update prediction, SVG sigmoid/probability/boundary rendering, Visual/Memory presentation, playback review, popup explanations, and persisted behavior-based practice evidence. KNN at `/ml-foundations/knn` is the next planned `LearningPlaceholder`.
 
 
 ## Curriculum classification boundary

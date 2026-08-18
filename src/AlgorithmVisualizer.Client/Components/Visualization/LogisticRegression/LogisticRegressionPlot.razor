@@ -1,0 +1,173 @@
+@using System.Globalization
+@using System.Text
+@using AlgorithmVisualizer.Core.MachineLearning.Supervised.LogisticRegression
+
+<section class="logistic-visual" aria-label="Logistic Regression visual state">
+    <div class="model-strip">
+        <div class="formula-cell"><span>MODEL</span><strong>p = sigmoid(@Format(Snapshot.Weight)·x @FormatSignedBias(Snapshot.Bias))</strong></div>
+        <div><span>CROSS-ENTROPY</span><strong>@Format(Snapshot.Loss)</strong></div>
+        <div><span>ACCURACY</span><strong>@FormatPercent(Snapshot.Accuracy)</strong></div>
+        <div><span>BOUNDARY</span><strong>@BoundaryText</strong></div>
+    </div>
+
+    <div class="plot-shell">
+        <svg viewBox="0 0 820 430" role="img" aria-label="Class labels, sigmoid probabilities, and the current decision boundary">
+            <rect x="62" y="30" width="710" height="320" rx="18" class="plot-bg" />
+
+            @for (var tick = 0; tick <= 4; tick++)
+            {
+                var y = 30d + (tick * 80d);
+                var probability = 1d - (tick * 0.25d);
+                <g class="y-axis-tick">
+                    <line x1="62" y1="@F(y)" x2="772" y2="@F(y)" class="grid-line" />
+                    <text x="48" y="@F(y + 5d)" class="axis-label" text-anchor="end">@Format(probability)</text>
+                </g>
+            }
+
+            @for (var tick = 0; tick <= 5; tick++)
+            {
+                var x = 62d + (tick * 142d);
+                <line x1="@F(x)" y1="30" x2="@F(x)" y2="350" class="grid-line" />
+            }
+
+            <line x1="62" y1="190" x2="772" y2="190" class="threshold-line" />
+            <text x="758" y="181" class="threshold-label" text-anchor="end">0.5 threshold</text>
+
+            @if (BoundaryX is double boundary && boundary >= XMin && boundary <= XMax)
+            {
+                var bx = MapX(boundary);
+                <g class="decision-boundary">
+                    <line x1="@F(bx)" y1="30" x2="@F(bx)" y2="350" class="boundary-line" />
+                    <rect x="@F(bx - 37d)" y="42" width="74" height="25" rx="12.5" class="boundary-badge-bg" />
+                    <text x="@F(bx)" y="59" class="boundary-badge" text-anchor="middle">x = @Format(boundary)</text>
+                </g>
+            }
+
+            <path d="@SigmoidPath" class="sigmoid-curve" />
+
+            @for (var index = 0; index < Snapshot.Count; index++)
+            {
+                var cx = MapX(Snapshot.X[index]);
+                var probabilityY = MapProbability(Snapshot.Probabilities[index]);
+                var labelY = MapProbability(Snapshot.Labels[index]);
+                var isClassOne = Snapshot.Labels[index] >= 0.5d;
+                var isFocus = index == FocusIndex;
+
+                <line x1="@F(cx)" y1="@F(labelY)" x2="@F(cx)" y2="@F(probabilityY)" class="probability-gap" />
+                <circle cx="@F(cx)" cy="@F(labelY)" r="8" class="@(isClassOne ? "label-point class-one" : "label-point class-zero")" />
+                <circle cx="@F(cx)" cy="@F(probabilityY)" r="@(isFocus ? 8 : 6)" class="@(isFocus ? "probability-point focus" : "probability-point")" />
+            }
+
+            <text x="417" y="390" class="axis-title" text-anchor="middle">feature x</text>
+            <text x="20" y="190" class="axis-title vertical" text-anchor="middle" transform="rotate(-90 20 190)">probability</text>
+        </svg>
+
+        <div class="decision-story" aria-label="Closest-to-boundary example">
+            <div class="story-eyebrow">CLOSEST TO THE DECISION</div>
+            <div class="story-flow">
+                <span><small>INPUT</small><strong>x = @Format(FocusX)</strong></span>
+                <b>→</b>
+                <span><small>SCORE · z</small><strong>@Format(FocusScore)</strong></span>
+                <b>→</b>
+                <span><small>SIGMOID · p</small><strong>@Format(FocusProbability)</strong></span>
+                <b>→</b>
+                <span class="final-class"><small>CLASS</small><strong>@FocusPredictedClass</strong></span>
+            </div>
+            <p>@FocusExplanation</p>
+        </div>
+    </div>
+
+    <div class="plot-legend">
+        <span><i class="class-zero-dot"></i>True class 0</span>
+        <span><i class="class-one-dot"></i>True class 1</span>
+        <span><i class="probability-dot"></i>Current probability</span>
+        <span><i class="curve-line"></i>Sigmoid model</span>
+        <span><i class="boundary-dash"></i>Decision boundary</span>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public LogisticRegressionSnapshot Snapshot { get; set; } = default!;
+
+    private double XMin => Min(Snapshot.X) - XPadding;
+    private double XMax => Max(Snapshot.X) + XPadding;
+    private double XPadding => Math.Max(0.8d, (Max(Snapshot.X) - Min(Snapshot.X)) * 0.12d);
+    private double? BoundaryX => Math.Abs(Snapshot.Weight) <= 1e-10 ? null : -Snapshot.Bias / Snapshot.Weight;
+    private string BoundaryText => BoundaryX is double boundary && double.IsFinite(boundary) ? $"x = {Format(boundary)}" : "not defined";
+    private int FocusIndex => FindClosestToThreshold();
+    private double FocusX => Snapshot.X[FocusIndex];
+    private double FocusScore => Snapshot.Scores[FocusIndex];
+    private double FocusProbability => Snapshot.Probabilities[FocusIndex];
+    private int FocusPredictedClass => Snapshot.PredictedClasses[FocusIndex];
+    private string FocusExplanation => FocusProbability >= 0.5d
+        ? $"p = {Format(FocusProbability)} is at or above 0.5, so this example is classified as 1."
+        : $"p = {Format(FocusProbability)} is below 0.5, so this example is classified as 0.";
+
+    private string SigmoidPath
+    {
+        get
+        {
+            const int samples = 90;
+            var builder = new StringBuilder();
+            for (var index = 0; index <= samples; index++)
+            {
+                var ratio = (double)index / samples;
+                var x = XMin + ((XMax - XMin) * ratio);
+                var probability = Sigmoid((Snapshot.Weight * x) + Snapshot.Bias);
+                var px = MapX(x);
+                var py = MapProbability(probability);
+                builder.Append(index == 0 ? "M " : " L ");
+                builder.Append(F(px));
+                builder.Append(' ');
+                builder.Append(F(py));
+            }
+            return builder.ToString();
+        }
+    }
+
+
+    private int FindClosestToThreshold()
+    {
+        var bestIndex = 0;
+        var bestDistance = Math.Abs(Snapshot.Probabilities[0] - 0.5d);
+        for (var index = 1; index < Snapshot.Count; index++)
+        {
+            var distance = Math.Abs(Snapshot.Probabilities[index] - 0.5d);
+            if (distance < bestDistance)
+            {
+                bestDistance = distance;
+                bestIndex = index;
+            }
+        }
+        return bestIndex;
+    }
+
+    private double MapX(double x) => 62d + (((x - XMin) / Math.Max(1e-9, XMax - XMin)) * 710d);
+    private static double MapProbability(double probability) => 350d - (Math.Clamp(probability, 0d, 1d) * 320d);
+
+    private static double Sigmoid(double score)
+    {
+        if (score >= 0d) return 1d / (1d + Math.Exp(-score));
+        var exp = Math.Exp(score);
+        return exp / (1d + exp);
+    }
+
+    private static double Min(IReadOnlyList<double> values)
+    {
+        var min = values[0];
+        for (var index = 1; index < values.Count; index++) if (values[index] < min) min = values[index];
+        return min;
+    }
+
+    private static double Max(IReadOnlyList<double> values)
+    {
+        var max = values[0];
+        for (var index = 1; index < values.Count; index++) if (values[index] > max) max = values[index];
+        return max;
+    }
+
+    private static string Format(double value) => Math.Abs(value) < 1e-12 ? "0" : value.ToString("0.###", CultureInfo.InvariantCulture);
+    private static string FormatPercent(double value) => (value * 100d).ToString("0.#", CultureInfo.InvariantCulture) + "%";
+    private static string FormatSignedBias(double value) => value < 0d ? $"− {Format(Math.Abs(value))}" : $"+ {Format(value)}";
+    private static string F(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
+}
