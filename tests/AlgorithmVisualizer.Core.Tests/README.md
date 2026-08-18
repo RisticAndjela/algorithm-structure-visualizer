@@ -169,3 +169,7 @@ The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctnes
 ## Linear Regression coverage
 
 `MachineLearning/Supervised/LinearRegressionSimulationTests.cs` verifies fitting a simple positive-slope line, zero-update convergence for an already-fitted line, learning a negative trend, the oversized-learning-rate divergence guard, and configuration rejection when X/Y point counts differ.
+
+### KNN coverage
+
+`MachineLearning/Supervised/KnnSimulationTests.cs` checks clear class-0/class-1 neighborhoods, k sensitivity around an outlier, exact-match distance zero, Euclidean-vs-Manhattan nearest-neighbor differences, dimension-independent Core behavior, odd-k validation, and dimension mismatch rejection.

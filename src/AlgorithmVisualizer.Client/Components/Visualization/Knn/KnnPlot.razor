@@ -1,0 +1,160 @@
+@using System.Globalization
+@using AlgorithmVisualizer.Core.MachineLearning.Supervised.Knn
+
+<section class="knn-visual" aria-label="K-Nearest Neighbors visual state">
+    <div class="knn-metric-strip">
+        <div><span>QUERY</span><strong>[@Format(Snapshot.Query[0]), @Format(Snapshot.Query[1])]</strong></div>
+        <div><span>K</span><strong>@Snapshot.K neighbors</strong></div>
+        <div><span>DISTANCE</span><strong>@MetricName</strong></div>
+        <div><span>VOTE</span><strong>@VoteText</strong></div>
+    </div>
+
+    <div class="knn-plot-shell">
+        <div class="axis-note y-note">feature 2 ↑</div>
+        <svg class="coordinate-plot" viewBox="0 0 760 470" role="img" aria-label="Training examples, query point, current comparison, and selected nearest neighbors">
+            <rect x="48" y="28" width="664" height="380" rx="18" class="plot-bg" />
+
+            @for (var tick = 1; tick < 6; tick++)
+            {
+                var x = 48d + (tick * (664d / 6d));
+                var y = 28d + (tick * (380d / 6d));
+                <line x1="@F(x)" y1="28" x2="@F(x)" y2="408" class="grid-line" />
+                <line x1="48" y1="@F(y)" x2="712" y2="@F(y)" class="grid-line" />
+            }
+
+            @for (var rank = Snapshot.K - 1; rank >= 0; rank--)
+            {
+                var index = Snapshot.NeighborIndices[rank];
+                if (index >= 0)
+                {
+                    <line x1="@F(MapX(Snapshot.Query[0]))" y1="@F(MapY(Snapshot.Query[1]))"
+                          x2="@F(MapX(Snapshot.Features[index][0]))" y2="@F(MapY(Snapshot.Features[index][1]))"
+                          class="neighbor-link" />
+                }
+            }
+
+            @if (Snapshot.CurrentIndex >= 0 && Snapshot.CurrentIndex < Snapshot.Count)
+            {
+                <line x1="@F(MapX(Snapshot.Query[0]))" y1="@F(MapY(Snapshot.Query[1]))"
+                      x2="@F(MapX(Snapshot.Features[Snapshot.CurrentIndex][0]))" y2="@F(MapY(Snapshot.Features[Snapshot.CurrentIndex][1]))"
+                      class="current-distance-line" />
+            }
+
+            @for (var index = 0; index < Snapshot.Count; index++)
+            {
+                var point = Snapshot.Features[index];
+                var state = Snapshot.States[index];
+                var stateClass = StateClass(state);
+                var labelClass = Snapshot.Labels[index] == 0 ? "class-zero" : "class-one";
+                var radius = state is KnnExampleState.Neighbor or KnnExampleState.Voted ? 10d : state == KnnExampleState.Comparing ? 11d : 7.5d;
+                <circle cx="@F(MapX(point[0]))" cy="@F(MapY(point[1]))" r="@F(radius)" class="training-point @labelClass @stateClass">
+                    <title>Example @index · [@Format(point[0]), @Format(point[1])] · class @Snapshot.Labels[index] · @DistanceLabel(index)</title>
+                </circle>
+            }
+
+            <polygon points="@QueryDiamond" class="query-point">
+                <title>Query [@Format(Snapshot.Query[0]), @Format(Snapshot.Query[1])]</title>
+            </polygon>
+        </svg>
+        <div class="axis-note x-note">feature 1 →</div>
+    </div>
+
+    <div class="knn-legend" aria-label="KNN plot legend">
+        <span><i class="legend-dot zero"></i>Class 0</span>
+        <span><i class="legend-dot one"></i>Class 1</span>
+        <span><i class="legend-diamond"></i>Query</span>
+        <span><i class="legend-line neighbor"></i>Current top-k neighbor</span>
+        <span><i class="legend-line comparing"></i>Distance being measured</span>
+    </div>
+
+    <div class="neighbor-story" aria-label="Current nearest neighbors">
+        <div class="neighbor-story-copy">
+            <span>CURRENT TOP-@Snapshot.K</span>
+            <strong>@NeighborHeadline</strong>
+            <p>@Snapshot.FocusText</p>
+        </div>
+        <div class="neighbor-rank-list">
+            @for (var rank = 0; rank < Snapshot.K; rank++)
+            {
+                var index = Snapshot.NeighborIndices[rank];
+                if (index >= 0)
+                {
+                    <span class="neighbor-chip"><small>#@(rank + 1) · example @index</small><strong>class @Snapshot.Labels[index]</strong><em>d = @Format(Snapshot.NeighborDistances[rank])</em></span>
+                }
+                else
+                {
+                    <span class="neighbor-chip empty"><small>#@(rank + 1)</small><strong>waiting</strong><em>—</em></span>
+                }
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public KnnSnapshot Snapshot { get; set; } = default!;
+
+    private string MetricName => Snapshot.DistanceMetric == KnnDistanceMetric.Euclidean ? "Euclidean" : "Manhattan";
+    private string VoteText => Snapshot.PredictedClass is int prediction
+        ? $"{Snapshot.VoteClass0} : {Snapshot.VoteClass1} → class {prediction}"
+        : Snapshot.Phase == KnnPhase.Voting
+            ? $"{Snapshot.VoteClass0} : {Snapshot.VoteClass1}"
+            : "not voted yet";
+    private string NeighborHeadline => Snapshot.PredictedClass is int prediction
+        ? $"The neighbors voted for class {prediction}."
+        : Snapshot.CurrentIndex >= 0
+            ? $"Comparing example {Snapshot.CurrentIndex}."
+            : "Nearest slots fill as the scan moves through the dataset.";
+
+    private string QueryDiamond
+    {
+        get
+        {
+            var x = MapX(Snapshot.Query[0]);
+            var y = MapY(Snapshot.Query[1]);
+            const double r = 12d;
+            return $"{F(x)},{F(y - r)} {F(x + r)},{F(y)} {F(x)},{F(y + r)} {F(x - r)},{F(y)}";
+        }
+    }
+
+    private double XMin => MinFeature(0) - XPadding;
+    private double XMax => MaxFeature(0) + XPadding;
+    private double YMin => MinFeature(1) - YPadding;
+    private double YMax => MaxFeature(1) + YPadding;
+    private double XPadding => Math.Max(.8d, (RawMaxFeature(0) - RawMinFeature(0)) * .12d);
+    private double YPadding => Math.Max(.8d, (RawMaxFeature(1) - RawMinFeature(1)) * .12d);
+
+    private double MapX(double value) => 48d + (((value - XMin) / Math.Max(1e-9d, XMax - XMin)) * 664d);
+    private double MapY(double value) => 408d - (((value - YMin) / Math.Max(1e-9d, YMax - YMin)) * 380d);
+
+    private double RawMinFeature(int component)
+    {
+        var min = Snapshot.Query[component];
+        for (var index = 0; index < Snapshot.Count; index++) if (Snapshot.Features[index][component] < min) min = Snapshot.Features[index][component];
+        return min;
+    }
+
+    private double RawMaxFeature(int component)
+    {
+        var max = Snapshot.Query[component];
+        for (var index = 0; index < Snapshot.Count; index++) if (Snapshot.Features[index][component] > max) max = Snapshot.Features[index][component];
+        return max;
+    }
+
+    private double MinFeature(int component) => RawMinFeature(component);
+    private double MaxFeature(int component) => RawMaxFeature(component);
+
+    private string DistanceLabel(int index) => double.IsFinite(Snapshot.Distances[index]) ? $"distance {Format(Snapshot.Distances[index])}" : "not measured yet";
+    private static string StateClass(KnnExampleState state) => state switch
+    {
+        KnnExampleState.Comparing => "comparing",
+        KnnExampleState.Neighbor => "neighbor",
+        KnnExampleState.Voted => "voted",
+        KnnExampleState.Scanned => "scanned",
+        _ => "stored"
+    };
+
+    private static string Format(double value) => double.IsFinite(value)
+        ? (Math.Abs(value) < 1e-12d ? "0" : value.ToString("0.###", CultureInfo.InvariantCulture))
+        : "—";
+    private static string F(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
+}

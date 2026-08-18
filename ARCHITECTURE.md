@@ -238,7 +238,7 @@ This preserves the architectural rule: Core teaches algorithms, Client visualize
 
 `DataStructures/Vector/ManualVector` is a reusable numerical data structure stored in a contiguous project-owned `double[]`. The learner-facing route is `/structures/vector` and its live Client page lives under `Pages/DataStructures/VectorPage.razor`; Machine Learning consumes it as a dependency rather than presenting Vector as a separate ML lesson. `VectorSimulation` owns renderer-neutral state for aligned component reads, result writes and scalar reductions. The Client owns text parsing, operation selection, Visual/Memory presentation, prediction, playback review, practice state and SQLite evidence.
 
-The Vector module must remain dependency-light: no numerical package, `System.Numerics.Vector<T>`, or framework search/aggregation helper may replace the explicit loops being taught. Gradient Descent reuses this Core for L2 norm, scalar multiplication and subtraction. Linear Regression reuses `ManualVector` for aligned training X/Y, prediction and residual storage. Logistic Regression also reuses `ManualVector` for aligned X/label/score/probability/error storage. Later KNN, K-Means and PCA modules should follow the same composition rule.
+The Vector module must remain dependency-light: no numerical package, `System.Numerics.Vector<T>`, or framework search/aggregation helper may replace the explicit loops being taught. Gradient Descent reuses this Core for L2 norm, scalar multiplication and subtraction. Linear Regression reuses `ManualVector` for aligned training X/Y, prediction and residual storage. Logistic Regression also reuses `ManualVector` for aligned X/label/score/probability/error storage. KNN now follows the same composition rule by storing each feature point/query as ManualVector and reusing VectorSimulation for distance. Later K-Means and PCA modules should continue it.
 
 
 ## Gradient Descent / Machine Learning optimization boundary
@@ -257,7 +257,13 @@ The live Client route `/ml-foundations/linear-regression` owns dataset presets/c
 
 `MachineLearning/Supervised/LogisticRegression/LogisticRegressionSimulation` owns the first binary classifier. It uses project-owned `ManualVector` instances for X, labels, linear scores, sigmoid probabilities, and `p-y` probability errors. It explicitly evaluates numerically stable sigmoid and binary cross-entropy, applies the visible `0.5` class threshold, computes analytical `dw`/`db`, and performs full-batch Gradient Descent updates. Predicted 0/1 classes use a plain `int[]` because they are discrete output state rather than numerical vector arithmetic.
 
-The live Client route `/ml-foundations/logistic-regression` owns beginner presets/custom parsing, weight/bias/learning-rate controls, progressive disclosure of stopping controls, first-update prediction, SVG sigmoid/probability/boundary rendering, Visual/Memory presentation, playback review, popup explanations, and persisted behavior-based practice evidence. KNN at `/ml-foundations/knn` is the next planned `LearningPlaceholder`.
+The live Client route `/ml-foundations/logistic-regression` owns beginner presets/custom parsing, weight/bias/learning-rate controls, progressive disclosure of stopping controls, first-update prediction, SVG sigmoid/probability/boundary rendering, Visual/Memory presentation, playback review, popup explanations, and persisted behavior-based practice evidence.
+
+## KNN / local-neighbor classification boundary
+
+`MachineLearning/Supervised/Knn/KnnSimulation` owns the Phase 1 step 5 classifier. Training examples and the query are `ManualVector` values; Euclidean/Manhattan distance is delegated to the existing `VectorSimulation` through an immediate internal runtime, while KNN itself owns the explicit full scan, deterministic ordered top-k insertion, and majority vote. The Core accepts shared feature dimensions beyond 2D; the Client intentionally renders only two dimensions so spatial neighborhoods remain visually legible.
+
+The live route `/ml-foundations/knn` owns presets/custom parsing, query + odd-k controls, optional metric selection, class prediction, 2D neighbor visualization, Visual/Memory playback review, popup explanations, and persisted behavior-based practice evidence. KD-Tree at `/ml-foundations/kd-tree` is the next planned `LearningPlaceholder`; it must accelerate neighbor search without changing the KNN vote semantics.
 
 
 ## Curriculum classification boundary

@@ -1,0 +1,19 @@
+@page "/ml-foundations/kd-tree"
+
+<PageTitle>KD-Tree — Machine Learning — Algorithm Visualizer</PageTitle>
+
+<LearningPlaceholder
+    Eyebrow="MACHINE LEARNING · PHASE 1 STEP 6"
+    Title="KD-Tree"
+    Description="The next lesson will organize points by alternating coordinate splits so nearest-neighbor queries can skip spatial regions that cannot contain a better candidate."
+    Complexity="O(log n) avg. query"
+    ComplexityNote="planned balanced spatial search; worst case can still degrade to O(n)"
+    Concepts="axis split · median · bounding region · nearest-neighbor pruning · backtracking"
+    LearnTitle="KNN checked every point. KD-Tree will teach when an entire region can be ignored."
+    LearnSummary="Build a binary spatial partition, descend toward the query, then backtrack only when the opposite region might still contain a closer point."
+    LearnCards="SPLIT|Choose one coordinate axis|Alternating axes divide space into smaller regions.;;MEDIAN|Place a point at the split|A balanced build keeps the tree from becoming unnecessarily tall.;;DESCEND|Follow the query side first|Search the region that is most likely to contain the nearest point.;;PRUNE|Skip impossible regions|If the split plane is farther than the current best distance, the other side cannot win."
+    ConceptHref="/learn/concepts/kd-tree"
+    TipTitle="KD-Tree changes search organization, not the KNN vote."
+    TipText="KNN still decides from nearby labels. KD-Tree is an acceleration structure for finding those nearby points."
+    FocusText="Reuse the project-owned BST/tree ideas and Vector distance math, but implement spatial splitting and pruning explicitly."
+    PromptText="When is it safe to skip the opposite side of a split?" />

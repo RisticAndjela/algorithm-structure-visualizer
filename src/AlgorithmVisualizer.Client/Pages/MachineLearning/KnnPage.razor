@@ -1,19 +1,619 @@
 @page "/ml-foundations/knn"
+@using System.Globalization
+@using AlgorithmVisualizer.Core.MachineLearning.Supervised.Knn
+@implements IDisposable
+@inject SimulationState SimulationState
+@inject KnnSimulation KnnLab
+@inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
 
 <PageTitle>K-Nearest Neighbors — Machine Learning — Algorithm Visualizer</PageTitle>
 
-<LearningPlaceholder
-    Eyebrow="MACHINE LEARNING · PHASE 1 STEP 5"
-    Title="K-Nearest Neighbors"
-    Description="The next model will stop fitting one global boundary. It will measure distance from a new point to stored examples and let the nearest neighbors vote."
-    Complexity="Θ(n·d)"
-    ComplexityNote="planned brute-force search across n stored examples with d features"
-    Concepts="distance · k neighbors · majority vote · classification · feature scale"
-    LearnTitle="Classify from nearby examples instead of a learned line."
-    LearnSummary="KNN stores the training examples. For a new point, it measures distance, keeps the k closest examples, and uses their labels to make a prediction."
-    LearnCards="DISTANCE|Measure how close examples are|The Vector lesson already gives us reusable distance operations.;;NEIGHBORS|Keep the k closest|Small k reacts locally; larger k smooths the decision.;;VOTE|Use nearby labels|For classification, the nearest labels vote.;;COST|Prediction does the work|Basic KNN has almost no training cost but scans stored examples at prediction time."
-    ConceptHref="/learn/concepts/knn"
-    TipTitle="KNN moves work from training to prediction."
-    TipText="Logistic Regression learns weight and bias first. Basic KNN keeps the examples and searches them when a new prediction is requested."
-    FocusText="Reuse ManualVector distance math, then expose the exact neighbor-selection order before adding KD-Tree acceleration."
-    PromptText="What changes when k grows from 1 to 5?" />
+<div class="knn-page learning-module-page learning-module-shell">
+    <section class="learn-launchpad" aria-labelledby="knn-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="knn-learn-title">KNN asks one simple question: which stored examples are closest to this new point?</h2>
+            <p>There is no fitted line and no learned weight. Prediction happens by measuring distance, keeping the nearest <strong>k</strong> examples, and letting their labels vote.</p>
+            <ConceptLink class="learn-launchpad-link" Href="/learn/concepts/knn">Open KNN concepts &amp; memory →</ConceptLink>
+        </div>
+        <div class="learn-grid">
+            <article class="learn-card purple"><span>1 · STORE</span><strong>Keep the labeled examples.</strong><small>KNN does almost no model training. The examples themselves are the reference.</small></article>
+            <article class="learn-card blue"><span>2 · DISTANCE</span><strong>Measure query → example.</strong><small>Euclidean distance is the default; the Vector lesson already taught that primitive.</small></article>
+            <article class="learn-card mint"><span>3 · NEIGHBORS</span><strong>Keep the closest k.</strong><small>k = 1 reacts to the single nearest example. Larger k smooths local noise.</small></article>
+            <article class="learn-card gold"><span>4 · VOTE</span><strong>Nearest labels decide the class.</strong><small>This lesson uses odd k so a binary class vote cannot tie.</small></article>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow"><span>MACHINE LEARNING · PHASE 1 STEP 5</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <h1>K-Nearest Neighbors</h1>
+            <p>Move a query through a labeled 2D dataset and watch the exact distance scan, top-k neighbor set, and majority vote that produce the prediction.</p>
+        </div>
+        <div class="complexity-summary" aria-label="KNN prediction complexity">
+            <div><span>Distance scan</span><strong>Θ(n·d)</strong><small>n examples, d features</small></div>
+            <div><span>This top-k</span><strong>O(n·k)</strong><small>explicit teaching insertion</small></div>
+            <div><span>Training</span><strong>Store</strong><small>prediction does the work</small></div>
+        </div>
+    </header>
+
+    <section class="smart-tip" aria-label="KNN learning tip">
+        <span class="tip-icon">✦</span>
+        <div><strong>KNN does not learn one global boundary.</strong><p>The same query can change class when k or the distance rule changes because prediction depends on its local neighborhood.</p></div>
+        <ConceptLink Href="/learn/concepts/knn">Why does k matter? →</ConceptLink>
+    </section>
+
+    <section class="builder-section" aria-labelledby="knn-build-title">
+        <div class="section-heading-row">
+            <div class="heading-with-step"><span class="step-number">1</span><div><span class="section-kicker">BUILD THE NEIGHBORHOOD</span><h2 id="knn-build-title">Choose a dataset, then place the query point.</h2><p>Start with a preset. Only query x, query y, and k are needed for the first run.</p></div></div>
+            <ConceptLink Href="/structures/vector">Review Vector distance →</ConceptLink>
+        </div>
+
+        <div class="preset-row" aria-label="KNN examples">
+            <span>TRY AN EXAMPLE</span>
+            <button type="button" class="@PresetClass(Preset.RightCluster)" @onclick="() => LoadPreset(Preset.RightCluster)" disabled="@IsBusy">Near class 1</button>
+            <button type="button" class="@PresetClass(Preset.LeftCluster)" @onclick="() => LoadPreset(Preset.LeftCluster)" disabled="@IsBusy">Near class 0</button>
+            <button type="button" class="@PresetClass(Preset.Outlier)" @onclick="() => LoadPreset(Preset.Outlier)" disabled="@IsBusy">One close outlier</button>
+            <button type="button" class="@PresetClass(Preset.ExactMatch)" @onclick="() => LoadPreset(Preset.ExactMatch)" disabled="@IsBusy">Exact match</button>
+            <button type="button" class="@PresetClass(Preset.MetricSwitch)" @onclick="() => LoadPreset(Preset.MetricSwitch)" disabled="@IsBusy">Distance can matter</button>
+        </div>
+
+        <div class="knn-builder">
+            <div class="dataset-preview-card">
+                <div class="dataset-heading">
+                    <div><span>STORED TRAINING EXAMPLES</span><strong>@_features.Length points · two classes</strong></div>
+                    <div class="class-key"><span><i class="zero"></i>0</span><span><i class="one"></i>1</span></div>
+                </div>
+                <div class="dataset-chip-grid">
+                    @for (var index = 0; index < _features.Length; index++)
+                    {
+                        <span class="dataset-chip @(_labels[index] == 0 ? "class-zero" : "class-one")"><small>example @index</small><strong>[@Format(_features[index][0]), @Format(_features[index][1])]</strong><em>class @_labels[index]</em></span>
+                    }
+                </div>
+            </div>
+
+            <div class="query-card">
+                <div class="query-copy"><span>NEW POINT TO CLASSIFY</span><strong>Where should KNN look for neighbors?</strong></div>
+                <div class="query-input-grid">
+                    <label><span>QUERY X</span><input value="@_queryXText" @oninput="QueryXChanged" disabled="@IsBusy" inputmode="decimal" /></label>
+                    <label><span>QUERY Y</span><input value="@_queryYText" @oninput="QueryYChanged" disabled="@IsBusy" inputmode="decimal" /></label>
+                    <label><span>K · ODD</span><input value="@_kText" @oninput="KChanged" disabled="@IsBusy" inputmode="numeric" /></label>
+                </div>
+                <div class="query-summary"><span>Distance</span><strong>@DistanceMetricName</strong><span>Rule</span><strong>@KRuleText</strong></div>
+                <div class="builder-actions">
+                    <button class="secondary-action" type="button" @onclick="ToggleAdvancedSettings" disabled="@IsBusy">@(_showAdvancedSettings ? "Hide extra settings" : "Edit data / distance")</button>
+                    <button class="primary-action" type="button" @onclick="ApplyInputs" disabled="@IsBusy">Use this setup</button>
+                </div>
+            </div>
+        </div>
+
+        @if (_showAdvancedSettings)
+        {
+            <div class="knn-advanced-panel">
+                <div class="distance-choice">
+                    <span class="control-label">DISTANCE RULE</span>
+                    <div class="prediction-actions metric-actions">
+                        <button type="button" class="@MetricClass(KnnDistanceMetric.Euclidean)" @onclick="() => SetMetric(KnnDistanceMetric.Euclidean)" disabled="@IsBusy">Euclidean</button>
+                        <button type="button" class="@MetricClass(KnnDistanceMetric.Manhattan)" @onclick="() => SetMetric(KnnDistanceMetric.Manhattan)" disabled="@IsBusy">Manhattan</button>
+                    </div>
+                    <small>Changing the metric changes what “near” means. KD-Tree acceleration comes next; it is not hidden inside this KNN lesson.</small>
+                </div>
+                <label class="dataset-editor"><span>CUSTOM DATA · x,y,label; x,y,label; ...</span><textarea value="@_datasetText" @oninput="DatasetChanged" disabled="@IsBusy" rows="4"></textarea><small>Use 2–16 points. Labels must be 0 or 1 and both classes must be present.</small></label>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_inputError))
+        {
+            <div class="input-error" role="alert"><strong>Check the KNN setup.</strong><span>@_inputError</span></div>
+        }
+    </section>
+
+    <section class="predict-section" aria-labelledby="knn-predict-title">
+        <div class="prediction-card">
+            <div class="prediction-copy"><span class="step-number">2</span><div><span class="section-kicker">PREDICT BEFORE PLAYBACK</span><h2 id="knn-predict-title">Which class will the nearest neighbors choose?</h2><p>Commit before the distance scan reveals the answer.</p></div></div>
+            <div class="prediction-actions">
+                <button type="button" class="@PredictionClass(0)" @onclick="() => SetPrediction(0)" disabled="@IsBusy">Class 0</button>
+                <button type="button" class="@PredictionClass(1)" @onclick="() => SetPrediction(1)" disabled="@IsBusy">Class 1</button>
+            </div>
+            @if (_predictionAnswered)
+            {
+                <p class="prediction-feedback @(_predictionCorrect ? "correct" : "incorrect")">@PredictionFeedback</p>
+            }
+        </div>
+    </section>
+
+    <section class="lab-section" aria-labelledby="knn-lab-title">
+        <div class="lab-heading">
+            <div class="heading-with-step"><span class="step-number">3</span><div><span class="section-kicker">WATCH THE NEIGHBORS FORM</span><h2 id="knn-lab-title">Measure distance → maintain top-k → vote.</h2></div></div>
+            <div class="lab-actions">
+                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Open explanation after run</span></label>
+                @if (_lastResult is not null)
+                {
+                    <button class="secondary-action" type="button" @onclick="OpenLastRunPopup">Last explanation</button>
+                }
+                <button class="sort-button" type="button" @onclick="RunAsync" disabled="@IsBusy"><span>▶</span> Classify this point</button>
+            </div>
+        </div>
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync"
+                           OnPause="PauseTimelineAsync"
+                           OnStepBack="StepBackAsync"
+                           OnStepForward="StepForwardAsync"
+                           OnReset="ResetPlaybackAsync"
+                           CanStepBack="@CanStepBack"
+                           CanStepForwardOverride="@CanStepForward"
+                           StepTextOverride="@DisplayedStepText"
+                           TimelinePosition="@TimelinePosition"
+                           TimelineCount="@TimelineCount" />
+
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist" aria-label="KNN state view">
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual state</button>
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory state</button>
+            </div>
+            <p>@ViewExplanation</p>
+        </div>
+
+        <div class="lesson-reference-links" aria-label="KNN concept links">
+            <ConceptLink Href="/learn/concepts/knn">KNN concepts →</ConceptLink>
+            <ConceptLink Href="/structures/vector">Vector distance refresher →</ConceptLink>
+            <ConceptLink Href="/ml-foundations/logistic-regression">Compare with Logistic Regression →</ConceptLink>
+        </div>
+
+        <div class="state-surface">
+            @if (_view == StateView.Visual)
+            {
+                <KnnPlot Snapshot="@DisplayedSnapshot" />
+            }
+            else
+            {
+                <section class="knn-memory" aria-label="KNN memory state">
+                    <div class="memory-intro"><span>MEMORY STATE</span><strong>Stored feature vectors + labels + one query + top-k slots</strong><p>Every training point is a project-owned ManualVector. The scan writes one distance per example, while the top-k arrays keep only the current nearest indexes and distances.</p></div>
+                    <div class="memory-summary-strip">
+                        <span><small>QUERY</small><strong>[@Format(DisplayedSnapshot.Query[0]), @Format(DisplayedSnapshot.Query[1])]</strong></span>
+                        <span><small>K</small><strong>@DisplayedSnapshot.K</strong></span>
+                        <span><small>CLASS 0 VOTES</small><strong>@DisplayedSnapshot.VoteClass0</strong></span>
+                        <span><small>CLASS 1 VOTES</small><strong>@DisplayedSnapshot.VoteClass1</strong></span>
+                        <span><small>PREDICTION</small><strong>@PredictionText(DisplayedSnapshot.PredictedClass)</strong></span>
+                    </div>
+                    <div class="table-scroll"><table><thead><tr><th>Index</th><th>ManualVector</th><th>Label</th><th>Distance</th><th>Neighbor rank</th><th>State</th></tr></thead><tbody>
+                    @for (var index = 0; index < DisplayedSnapshot.Count; index++)
+                    {
+                        <tr><td>@index</td><td>[@Format(DisplayedSnapshot.Features[index][0]), @Format(DisplayedSnapshot.Features[index][1])]</td><td>@DisplayedSnapshot.Labels[index]</td><td>@FormatDistance(DisplayedSnapshot.Distances[index])</td><td>@NeighborRankText(DisplayedSnapshot.NeighborRanks[index])</td><td>@StateText(DisplayedSnapshot.States[index])</td></tr>
+                    }
+                    </tbody></table></div>
+                    <div class="top-k-memory">
+                        <div><span>nearestIndex[k]</span><strong>@FormatNeighborIndexes(DisplayedSnapshot)</strong></div>
+                        <div><span>nearestDistance[k]</span><strong>@FormatNeighborDistances(DisplayedSnapshot)</strong></div>
+                    </div>
+                    <div class="memory-note"><strong>No hidden KNN library or framework sort.</strong><span>VectorSimulation provides the distance primitive. KNN scans examples and inserts candidates into its small ordered top-k arrays with explicit loops.</span></div>
+                </section>
+            }
+        </div>
+
+        <div class="knn-run-dashboard" aria-label="KNN live metrics">
+            <article><span>Scan</span><strong>@ScanText</strong><small>Which stored example is being compared now.</small></article>
+            <article><span>Current distance</span><strong>@FormatDistance(DisplayedSnapshot.CurrentDistance)</strong><small>@DistanceMetricName distance from query.</small></article>
+            <article><span>Neighbors filled</span><strong>@FilledNeighborCount / @DisplayedSnapshot.K</strong><small>The nearest slots stay ordered.</small></article>
+            <article><span>Vote</span><strong>@DisplayedSnapshot.VoteClass0 : @DisplayedSnapshot.VoteClass1</strong><small>Class 0 votes : class 1 votes.</small></article>
+            <article><span>Prediction</span><strong>@PredictionText(DisplayedSnapshot.PredictedClass)</strong><small>No prediction until the nearest labels vote.</small></article>
+        </div>
+    </section>
+
+    <section class="fit-section" aria-labelledby="knn-fit-title">
+        <div class="section-heading-row"><div><span class="section-kicker">WHEN IT FITS</span><h2 id="knn-fit-title">KNN is useful when local similarity is meaningful and prediction-time search is affordable.</h2></div></div>
+        <div class="fit-grid">
+            <article class="fit-card"><span>GOOD FIT</span><strong>Local patterns</strong><p>Nearby examples often share the same label even when one straight global boundary would be too simple.</p></article>
+            <article class="fit-card"><span>GOOD FIT</span><strong>Small or medium datasets</strong><p>There is almost no fitting phase, so experiments are easy while the stored dataset stays manageable.</p></article>
+            <article class="fit-card"><span>AVOID FOR</span><strong>Unscaled or very high-dimensional features</strong><p>Distance becomes misleading when feature scales differ wildly or neighborhoods become less informative.</p></article>
+            <article class="fit-card"><span>NEXT CONNECTION</span><strong>KD-Tree</strong><p>KNN currently checks every stored example. The next structure will organize space so many distant points can be skipped.</p></article>
+        </div>
+    </section>
+
+    <section class="practice-section" aria-labelledby="knn-practice-title">
+        <div class="practice-heading"><div><span class="section-kicker">GUIDED PRACTICE</span><h2 id="knn-practice-title">Test distance, k, exact matches, and local noise.</h2><p>Each task loads a useful start. Completion comes from the real KNN result, not from clicking Start.</p></div><strong>@_completedTaskIds.Count / @PracticeTasks.Length complete</strong></div>
+        <div class="practice-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                <PracticeTaskCard TaskId="@task.Id" Title="@task.Title" Description="@task.Goal" InputText="@task.Suggested" HelpHref="/learn/concepts/knn" Completed="@_completedTaskIds.Contains(task.Id)" Active="@(_activeTaskId == task.Id)" Busy="@IsBusy" HasEvidence="@(GetTaskEvidence(task.Id) is not null)" Start="@(() => StartTask(task.Id))" OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
+            }
+        </div>
+    </section>
+
+    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="06 · Planned" Title="KD-Tree" Description="Organize points by alternating spatial splits so nearest-neighbor search can prune regions that cannot beat the current best." Href="/ml-foundations/kd-tree" LinkLabel="Preview KD-Tree" />
+</div>
+
+@if (_lastRunPopupOpen && _lastResult is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRunPopup">
+        <section class="run-popup" role="dialog" aria-modal="true" @onclick:stopPropagation="true">
+            <header><div><span class="section-kicker">LAST RUN</span><h2>Class @_lastResult.PredictedClass won the neighbor vote.</h2></div><button type="button" class="popup-close" @onclick="CloseLastRunPopup" aria-label="Close result explanation">×</button></header>
+            <div class="popup-body">
+                <p>@RunActionExplanation(_lastResult)</p>
+                <div class="popup-metrics knn-popup-metrics">
+                    <div><span>QUERY</span><strong>[@Format(_lastResult.Query[0]), @Format(_lastResult.Query[1])]</strong></div>
+                    <div><span>NEIGHBORS</span><strong>@FormatNeighborIndexes(_lastResult)</strong></div>
+                    <div><span>VOTE</span><strong>@_lastResult.VoteClass0 : @_lastResult.VoteClass1</strong></div>
+                    <div><span>PREDICTION</span><strong>class @_lastResult.PredictedClass</strong></div>
+                </div>
+                <p class="popup-memory">@RunMlExplanation(_lastResult)</p>
+            </div>
+        </section>
+    </div>
+}
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
+
+@code {
+    private const string ModuleKey = "knn";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.knn.show-run-popup.v1";
+    private readonly List<RunFrame> _frames = [];
+    private PracticeModuleProgress _practiceProgress = new();
+    private HashSet<int> _completedTaskIds = [];
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
+    private KnnRunResult? _lastResult;
+    private string? _lastCapturedStep;
+    private double[][] _features =
+    [
+        [-3d, -2d], [-2d, -3d], [-2d, -1d], [-1d, -2d],
+        [1d, 2d], [2d, 1d], [2d, 3d], [3d, 2d]
+    ];
+    private int[] _labels = [0, 0, 0, 0, 1, 1, 1, 1];
+    private string _datasetText = "-3,-2,0; -2,-3,0; -2,-1,0; -1,-2,0; 1,2,1; 2,1,1; 2,3,1; 3,2,1";
+    private string _queryXText = "1.7";
+    private string _queryYText = "1.6";
+    private string _kText = "3";
+    private string? _inputError;
+    private Preset? _preset = Preset.RightCluster;
+    private KnnDistanceMetric _distanceMetric = KnnDistanceMetric.Euclidean;
+    private bool _showAdvancedSettings;
+    private bool _showRunPopups = true;
+    private bool _lastRunPopupOpen;
+    private int? _prediction;
+    private bool _predictionAnswered;
+    private bool _predictionCorrect;
+    private int _frameIndex = -1;
+    private int? _activeTaskId;
+    private StateView _view = StateView.Visual;
+
+    private static readonly PracticeTaskDefinition[] PracticeTasks =
+    [
+        new(1, "Find the class 1 neighborhood", "Use k = 3 and confirm that all three nearest examples vote for class 1.", "Try Near class 1", Preset.RightCluster, 3, KnnDistanceMetric.Euclidean, 1),
+        new(2, "Find the class 0 neighborhood", "Move to the opposite cluster and confirm that local neighbors vote for class 0.", "Try Near class 0", Preset.LeftCluster, 3, KnnDistanceMetric.Euclidean, 0),
+        new(3, "Smooth one close outlier", "Use k = 5 so one very close class 1 outlier is outvoted by the wider class 0 neighborhood.", "Try One close outlier with k = 5", Preset.Outlier, 5, KnnDistanceMetric.Euclidean, 0),
+        new(4, "Use an exact match", "With k = 1, an identical stored point should be the first neighbor with distance 0.", "Try Exact match", Preset.ExactMatch, 1, KnnDistanceMetric.Euclidean, 1),
+        new(5, "Change what near means", "On the same points, switch to Manhattan distance and make class 0 become the nearest prediction.", "Try Distance can matter with Manhattan", Preset.MetricSwitch, 1, KnnDistanceMetric.Manhattan, 0)
+    ];
+
+    private KnnSnapshot Current => KnnLab.CreateSnapshot();
+    private KnnSnapshot DisplayedSnapshot => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].Snapshot : Current;
+    private string DisplayedStepText => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].StepText : SimulationState.CurrentStepText;
+    private int TimelineCount => _frames.Count;
+    private int TimelinePosition => _frameIndex < 0 ? 0 : _frameIndex + 1;
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_frameIndex >= 0 && _frameIndex < _frames.Count - 1) || SimulationState.IsRunning;
+    private bool IsBusy => SimulationState.IsRunning;
+    private string DistanceMetricName => _distanceMetric == KnnDistanceMetric.Euclidean ? "Euclidean" : "Manhattan";
+    private string KRuleText => int.TryParse(_kText, out var k) && k > 0 ? $"{k} nearest vote" : "choose odd k";
+    private string ViewExplanation => _view == StateView.Visual
+        ? "See the query, every stored class, the distance currently being measured, and only the points that still belong to the top-k neighborhood."
+        : "See the ManualVector storage, one distance slot per example, ordered nearest-index slots, and the vote counters.";
+    private string PredictionFeedback => _lastResult is null
+        ? string.Empty
+        : _predictionCorrect
+            ? $"Correct — the {_lastResult.K} nearest examples voted for class {_lastResult.PredictedClass}."
+            : $"Not quite. The nearest-neighbor vote produced class {_lastResult.PredictedClass}.";
+    private string ScanText => DisplayedSnapshot.CurrentIndex >= 0 ? $"example {DisplayedSnapshot.CurrentIndex}" : DisplayedSnapshot.Phase == KnnPhase.Complete ? "complete" : "ready";
+    private int FilledNeighborCount
+    {
+        get
+        {
+            var count = 0;
+            for (var index = 0; index < DisplayedSnapshot.NeighborIndices.Length; index++) if (DisplayedSnapshot.NeighborIndices[index] >= 0) count++;
+            return count;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        SimulationState.Changed += HandleSimulationChanged;
+        try { _showRunPopups = !bool.TryParse(LearningStore.GetItem(PopupSettingStorageKey), out var saved) || saved; } catch { _showRunPopups = true; }
+        _practiceProgress = PracticeProgress.Load(ModuleKey, null, PracticeTasks.Select(task => task.Id));
+        _completedTaskIds = _practiceProgress.CompletedTaskIds;
+        ApplyInputs();
+    }
+
+    private void QueryXChanged(ChangeEventArgs args) { _queryXText = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
+    private void QueryYChanged(ChangeEventArgs args) { _queryYText = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
+    private void KChanged(ChangeEventArgs args) { _kText = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
+    private void DatasetChanged(ChangeEventArgs args) { _datasetText = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
+    private void ToggleAdvancedSettings() { if (!IsBusy) _showAdvancedSettings = !_showAdvancedSettings; }
+    private void SetMetric(KnnDistanceMetric metric) { if (IsBusy) return; _distanceMetric = metric; ClearPresetSelection(); ClearReview(); ApplyInputs(); }
+    private void SetPrediction(int predictedClass) { if (IsBusy) return; _prediction = predictedClass; _predictionAnswered = false; _predictionCorrect = false; }
+
+    private void ApplyInputs()
+    {
+        if (!TryParseDouble(_queryXText, out var queryX) || !TryParseDouble(_queryYText, out var queryY) || !double.IsFinite(queryX) || !double.IsFinite(queryY)) { _inputError = "Query x and y must be finite real numbers."; return; }
+        if (!int.TryParse(_kText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var k)) { _inputError = "k must be an odd whole number."; return; }
+        if (!TryParseDataset(_datasetText, out var features, out var labels, out var datasetError)) { _inputError = datasetError; return; }
+        if (k < 1 || k > features.Length || k % 2 == 0) { _inputError = $"Use an odd k between 1 and {features.Length}."; return; }
+
+        _features = features;
+        _labels = labels;
+        _inputError = null;
+        try { KnnLab.Configure(new KnnConfiguration(_features, _labels, [queryX, queryY], k, _distanceMetric)); }
+        catch (ArgumentException ex) { _inputError = ex.Message; return; }
+        ClearReview();
+        StateHasChanged();
+    }
+
+    private async Task RunAsync()
+    {
+        ApplyInputs();
+        if (!string.IsNullOrWhiteSpace(_inputError)) return;
+        _frames.Clear();
+        _frameIndex = -1;
+        _lastCapturedStep = null;
+        _lastRunPopupOpen = false;
+        var token = SimulationState.Start("Starting KNN distance scan.");
+        Capture();
+        try
+        {
+            var result = await KnnLab.ExecuteAsync(token);
+            if (!IsCurrent(token)) return;
+            _lastResult = result;
+            SimulationState.Complete(result.Summary);
+            Capture();
+            EvaluatePrediction(result);
+            RecordPracticeResult(result);
+            if (_showRunPopups) OpenLastRunPopup();
+        }
+        catch (OperationCanceledException) { }
+        finally { await InvokeAsync(StateHasChanged); }
+    }
+
+    private void Capture()
+    {
+        var step = SimulationState.CurrentStepText;
+        if (step == _lastCapturedStep) return;
+        var followTail = _frameIndex < 0 || _frameIndex == _frames.Count - 1;
+        _frames.Add(new RunFrame(step, KnnLab.CreateSnapshot()));
+        _lastCapturedStep = step;
+        if (followTail) _frameIndex = _frames.Count - 1;
+    }
+
+    private void HandleSimulationChanged() { if (SimulationState.IsRunning) Capture(); _ = InvokeAsync(StateHasChanged); }
+    private bool IsCurrent(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;
+    private void ClearReview() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; _lastRunPopupOpen = false; _lastResult = null; _predictionAnswered = false; }
+    private Task PlayTimelineAsync() { if (_frames.Count > 0) _frameIndex = _frames.Count - 1; SimulationState.Resume(); return InvokeAsync(StateHasChanged); }
+    private Task PauseTimelineAsync() { SimulationState.Pause(); return Task.CompletedTask; }
+    private Task StepBackAsync() { if (SimulationState.IsRunning && !SimulationState.IsPaused) SimulationState.Pause(); if (_frameIndex > 0) _frameIndex--; return InvokeAsync(StateHasChanged); }
+    private Task StepForwardAsync() { if (_frameIndex >= 0 && _frameIndex < _frames.Count - 1) { _frameIndex++; return InvokeAsync(StateHasChanged); } if (SimulationState.IsRunning) SimulationState.Step(); return Task.CompletedTask; }
+    private Task ResetPlaybackAsync() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; return InvokeAsync(StateHasChanged); }
+
+    private void EvaluatePrediction(KnnRunResult result)
+    {
+        _predictionAnswered = _prediction.HasValue;
+        if (_predictionAnswered) _predictionCorrect = _prediction == result.PredictedClass;
+    }
+
+    private void LoadPreset(Preset preset, bool keepActiveTask = false)
+    {
+        if (IsBusy) return;
+        _preset = preset;
+        switch (preset)
+        {
+            case Preset.LeftCluster:
+                SetDataset(
+                    [[-3d,-2d],[-2d,-3d],[-2d,-1d],[-1d,-2d],[1d,2d],[2d,1d],[2d,3d],[3d,2d]],
+                    [0,0,0,0,1,1,1,1], [-1.8d,-1.5d], 3, KnnDistanceMetric.Euclidean);
+                break;
+            case Preset.Outlier:
+                SetDataset(
+                    [[0.2d,0.1d],[0.7d,0d],[0d,0.8d],[-0.8d,0d],[0d,-0.9d],[3d,3d]],
+                    [1,0,0,0,0,1], [0d,0d], 1, KnnDistanceMetric.Euclidean);
+                break;
+            case Preset.ExactMatch:
+                SetDataset(
+                    [[-2d,-2d],[1d,1d],[2d,2d],[3d,-1d],[-3d,2d]],
+                    [0,1,1,0,0], [1d,1d], 1, KnnDistanceMetric.Euclidean);
+                break;
+            case Preset.MetricSwitch:
+                SetDataset(
+                    [[3d,0d],[-4d,-4d],[2d,2d],[5d,5d]],
+                    [0,0,1,1], [0d,0d], 1, KnnDistanceMetric.Euclidean);
+                break;
+            default:
+                SetDataset(
+                    [[-3d,-2d],[-2d,-3d],[-2d,-1d],[-1d,-2d],[1d,2d],[2d,1d],[2d,3d],[3d,2d]],
+                    [0,0,0,0,1,1,1,1], [1.7d,1.6d], 3, KnnDistanceMetric.Euclidean);
+                break;
+        }
+        _prediction = null;
+        _predictionAnswered = false;
+        ApplyInputs();
+        if (!keepActiveTask) _activeTaskId = null;
+    }
+
+    private void SetDataset(double[][] features, int[] labels, double[] query, int k, KnnDistanceMetric metric)
+    {
+        _features = features;
+        _labels = labels;
+        _datasetText = FormatDataset(features, labels);
+        _queryXText = Format(query[0]);
+        _queryYText = Format(query[1]);
+        _kText = k.ToString(CultureInfo.InvariantCulture);
+        _distanceMetric = metric;
+    }
+
+    private void StartTask(int taskId)
+    {
+        if (IsBusy) return;
+        var task = PracticeTasks.First(item => item.Id == taskId);
+        _activeTaskId = taskId;
+        LoadPreset(task.Preset, keepActiveTask: true);
+        _kText = task.K.ToString(CultureInfo.InvariantCulture);
+        _distanceMetric = task.Metric;
+        ApplyInputs();
+    }
+
+    private void RecordPracticeResult(KnnRunResult result)
+    {
+        if (_activeTaskId is not int taskId) return;
+        var task = PracticeTasks.First(item => item.Id == taskId);
+        if (!TaskSatisfied(task, result)) return;
+        CompletePracticeTask(task, result);
+    }
+
+    private static bool TaskSatisfied(PracticeTaskDefinition task, KnnRunResult result)
+    {
+        if (result.PredictedClass != task.ExpectedClass || result.K != task.K || result.DistanceMetric != task.Metric) return false;
+        return task.Id switch
+        {
+            1 => result.VoteClass1 == 3,
+            2 => result.VoteClass0 == 3,
+            3 => result.VoteClass0 >= 3 && result.NeighborIndices.Length == 5,
+            4 => result.NeighborDistances.Length > 0 && Math.Abs(result.NeighborDistances[0]) <= 1e-12d,
+            5 => result.NeighborIndices.Length > 0 && result.NeighborIndices[0] == 0,
+            _ => false
+        };
+    }
+
+    private void CompletePracticeTask(PracticeTaskDefinition task, KnnRunResult result)
+    {
+        var evidence = new PracticeCompletionEvidence(
+            task.Id,
+            task.Title,
+            result.Summary,
+            RunActionExplanation(result),
+            "Each stored example and the query use project-owned ManualVector storage. Distances are explicit derived values; nearestIndex[k] and nearestDistance[k] are small ordered arrays maintained by KNN itself.",
+            RunMlExplanation(result),
+            [
+                new("k", result.K.ToString(CultureInfo.InvariantCulture)),
+                new("Distance", result.DistanceMetric.ToString()),
+                new("Neighbors", FormatNeighborIndexes(result)),
+                new("Vote", $"{result.VoteClass0} : {result.VoteClass1}"),
+                new("Prediction", $"class {result.PredictedClass}")
+            ],
+            $"query=[{Format(result.Query[0])},{Format(result.Query[1])}] · neighbors={FormatNeighborIndexes(result)} · class={result.PredictedClass}");
+        _completedTaskIds.Add(task.Id);
+        PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
+        _activeTaskId = null;
+    }
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
+    private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
+    private void CloseTaskEvidence() => _practiceEvidencePopup = null;
+    private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed; try { LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); } catch { } }
+    private void OpenLastRunPopup() { if (_lastResult is not null) _lastRunPopupOpen = true; }
+    private void CloseLastRunPopup() => _lastRunPopupOpen = false;
+
+    private string PresetClass(Preset preset) => _preset == preset ? "active" : string.Empty;
+    private void ClearPresetSelection() => _preset = null;
+    private string PredictionClass(int predictedClass) => _prediction == predictedClass ? "active" : string.Empty;
+    private string MetricClass(KnnDistanceMetric metric) => _distanceMetric == metric ? "active" : string.Empty;
+
+    private static string RunActionExplanation(KnnRunResult result) =>
+        $"KNN measured {result.DistanceEvaluations} {result.DistanceMetric.ToString().ToLowerInvariant()} distances, kept examples {FormatNeighborIndexes(result)}, then counted {result.VoteClass0} class-0 votes and {result.VoteClass1} class-1 votes.";
+
+    private static string RunMlExplanation(KnnRunResult result) =>
+        $"No weight or boundary was trained. KNN deferred the work to prediction time: the query was compared with every stored example, and the local majority produced class {result.PredictedClass}.";
+
+    private static bool TryParseDataset(string text, out double[][] features, out int[] labels, out string error)
+    {
+        var groups = text.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (groups.Length is < 2 or > 16)
+        {
+            features = [];
+            labels = [];
+            error = "Use between 2 and 16 examples, separated with semicolons.";
+            return false;
+        }
+
+        features = new double[groups.Length][];
+        labels = new int[groups.Length];
+        var sawZero = false;
+        var sawOne = false;
+        for (var index = 0; index < groups.Length; index++)
+        {
+            var parts = groups[index].Split(',', StringSplitOptions.TrimEntries);
+            if (parts.Length != 3 || !TryParseDouble(parts[0], out var x) || !TryParseDouble(parts[1], out var y) || !int.TryParse(parts[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out var label) || !double.IsFinite(x) || !double.IsFinite(y))
+            {
+                features = [];
+                labels = [];
+                error = $"Example {index + 1} must use x,y,label with finite coordinates and label 0 or 1.";
+                return false;
+            }
+            if (label == 0) sawZero = true;
+            else if (label == 1) sawOne = true;
+            else
+            {
+                features = [];
+                labels = [];
+                error = $"Example {index + 1} has label {label}. KNN labels must be exactly 0 or 1.";
+                return false;
+            }
+            features[index] = [x, y];
+            labels[index] = label;
+        }
+
+        if (!sawZero || !sawOne)
+        {
+            features = [];
+            labels = [];
+            error = "Include at least one class 0 example and one class 1 example.";
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    private static bool TryParseDouble(string? text, out double value) =>
+        double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value) ||
+        double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out value);
+
+    private static string FormatDataset(IReadOnlyList<double[]> features, IReadOnlyList<int> labels)
+    {
+        var parts = new string[features.Count];
+        for (var index = 0; index < features.Count; index++) parts[index] = $"{Format(features[index][0])},{Format(features[index][1])},{labels[index]}";
+        return string.Join("; ", parts);
+    }
+
+    private static string Format(double value) => Math.Abs(value) < 1e-12d ? "0" : value.ToString("0.###", CultureInfo.InvariantCulture);
+    private static string FormatDistance(double value) => double.IsFinite(value) ? Format(value) : "—";
+    private static string PredictionText(int? predictedClass) => predictedClass is int value ? $"class {value}" : "—";
+    private static string NeighborRankText(int rank) => rank > 0 ? $"#{rank}" : "—";
+    private static string StateText(KnnExampleState state) => state switch
+    {
+        KnnExampleState.Comparing => "comparing",
+        KnnExampleState.Neighbor => "current neighbor",
+        KnnExampleState.Voted => "voted",
+        KnnExampleState.Scanned => "scanned",
+        _ => "stored"
+    };
+
+    private static string FormatNeighborIndexes(KnnSnapshot snapshot)
+    {
+        var parts = new string[snapshot.NeighborIndices.Length];
+        for (var index = 0; index < parts.Length; index++) parts[index] = snapshot.NeighborIndices[index] >= 0 ? snapshot.NeighborIndices[index].ToString(CultureInfo.InvariantCulture) : "—";
+        return $"[{string.Join(", ", parts)}]";
+    }
+
+    private static string FormatNeighborDistances(KnnSnapshot snapshot)
+    {
+        var parts = new string[snapshot.NeighborDistances.Length];
+        for (var index = 0; index < parts.Length; index++) parts[index] = double.IsFinite(snapshot.NeighborDistances[index]) ? Format(snapshot.NeighborDistances[index]) : "—";
+        return $"[{string.Join(", ", parts)}]";
+    }
+
+    private static string FormatNeighborIndexes(KnnRunResult result) => $"[{string.Join(", ", result.NeighborIndices)}]";
+
+    public void Dispose() => SimulationState.Changed -= HandleSimulationChanged;
+
+    private sealed record RunFrame(string StepText, KnnSnapshot Snapshot);
+    private sealed record PracticeTaskDefinition(int Id, string Title, string Goal, string Suggested, Preset Preset, int K, KnnDistanceMetric Metric, int ExpectedClass);
+    private enum StateView { Visual, Memory }
+    private enum Preset { RightCluster, LeftCluster, Outlier, ExactMatch, MetricSwitch }
+}

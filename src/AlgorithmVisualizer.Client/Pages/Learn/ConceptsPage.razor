@@ -80,6 +80,7 @@
                 <a href="#linear-regression">Linear Regression</a>
                 <a href="#logistic-regression">Logistic Regression</a>
                 <a href="#knn">K-Nearest Neighbors</a>
+                <a href="#kd-tree">KD-Tree</a>
             </div>
         </nav>
 
@@ -939,7 +940,7 @@
     </section>
     <section id="gradient-descent" class='@SectionClass("gradient-descent")'>
         <div class="section-heading">
-            <span>ML1</span>
+            <span>ML2</span>
             <div><h2>Gradient Descent: slope → step → repeat</h2><p>Start with the simple idea: loss says how bad the current point is, the gradient gives the uphill direction, and Gradient Descent moves the other way. The live lab uses a simple bowl-shaped loss so the movement is easy to see.</p></div>
         </div>
         <div class="concept-grid two">
@@ -957,7 +958,7 @@
 
     <section id="linear-regression" class='@SectionClass("linear-regression")'>
         <div class="section-heading">
-            <span>ML2</span>
+            <span>ML3</span>
             <div><h2>Linear Regression: fit a line to continuous targets</h2><p>The live lesson uses one input feature so the entire model can stay visible: <code>ŷ = w·x + b</code>. Training repeatedly predicts, measures residuals, computes MSE gradients, and updates weight + bias.</p></div>
         </div>
         <div class="concept-grid two">
@@ -972,7 +973,7 @@
     </section>
 
     <section id="logistic-regression" class='@SectionClass("logistic-regression")'>
-        <div class="section-heading"><span>ML3</span><div><h2>Logistic Regression: score → probability → class</h2><p>The live lesson keeps one feature visible end-to-end. It builds <code>z=w·x+b</code>, maps z through sigmoid, compares the probability with the visible 0.5 threshold, and trains weight + bias with binary cross-entropy.</p></div></div>
+        <div class="section-heading"><span>ML4</span><div><h2>Logistic Regression: score → probability → class</h2><p>The live lesson keeps one feature visible end-to-end. It builds <code>z=w·x+b</code>, maps z through sigmoid, compares the probability with the visible 0.5 threshold, and trains weight + bias with binary cross-entropy.</p></div></div>
         <div class="concept-grid two">
             <article class="concept-card"><span class="term">1 · SCORE</span><h3>Start from the same weighted sum as Linear Regression</h3><p><code>z=w·x+b</code> is not yet a probability. Positive and negative scores simply place examples on opposite sides of the current decision boundary.</p><div class="example"><strong>Boundary:</strong> when z = 0, sigmoid(z) = 0.5. In one dimension the boundary is <code>x=-b/w</code> when w ≠ 0.</div></article>
             <article class="concept-card"><span class="term queue">2 · SIGMOID</span><h3>Squeeze any real score into 0–1</h3><p><code>σ(z)=1/(1+e^-z)</code>. Large positive scores approach 1, large negative scores approach 0, and z = 0 maps exactly to 0.5.</p><div class="example"><strong>Important:</strong> sigmoid produces a soft probability-like score before any hard class decision is made.</div></article>
@@ -985,24 +986,33 @@
     </section>
 
     <section id="knn" class='@SectionClass("knn")'>
-        <div class="section-heading"><span>ML4</span><div><h2>KNN: planned neighbor-based classification</h2><p>The next lesson will keep training examples instead of fitting one global boundary. Prediction will measure distance, select the k nearest stored examples, then vote from their labels.</p></div></div>
+        <div class="section-heading"><span>ML5</span><div><h2>KNN: classify from the local neighborhood</h2><p>The live lesson stores labeled examples, measures the query against every point, keeps the nearest k, then predicts from the local majority. No weight, line, or global decision boundary is fitted first.</p></div></div>
         <div class="concept-grid two">
-            <article class="concept-card"><span class="term">DISTANCE</span><h3>Nearby examples should matter more than far-away examples</h3><p>The existing Vector module already provides explicit Euclidean and Manhattan distance loops that KNN can reuse instead of reimplementing numerical primitives.</p></article>
-            <article class="concept-card"><span class="term queue">K NEIGHBORS</span><h3>k controls how local the decision is</h3><p>Small k reacts strongly to individual examples; larger k smooths the vote across a wider neighborhood. The live implementation will expose the exact nearest-neighbor ordering.</p></article>
+            <article class="concept-card"><span class="term">DISTANCE</span><h3>“Near” comes from the chosen feature metric</h3><p>Euclidean distance measures straight-line separation; Manhattan distance sums axis-by-axis movement. KNN delegates both primitives to the project-owned Vector simulation.</p><div class="example"><strong>Important:</strong> feature scale matters. A feature with huge numeric values can dominate distance even when it is not more important.</div></article>
+            <article class="concept-card"><span class="term queue">TOP-K</span><h3>Keep only the closest k examples</h3><p>This teaching implementation scans all n examples, then maintains a small ordered top-k array with explicit insertion loops. Smaller distance ranks earlier.</p><div class="example"><strong>Exact cost here:</strong> Θ(n·d) for distances plus O(n·k) top-k bookkeeping.</div></article>
+            <article class="concept-card"><span class="term">VOTE</span><h3>Classification uses the labels of the selected neighbors</h3><p>For binary classification the lab uses odd k, so class 0 and class 1 cannot tie. k = 1 is very local; larger k can smooth one noisy or mislabeled point.</p><div class="example"><strong>Tradeoff:</strong> too-small k can overreact to noise; too-large k can wash out a genuinely local pattern.</div></article>
+            <article class="concept-card"><span class="term queue">MEMORY</span><h3>KNN stores examples instead of learned parameters</h3><p>Each point and the query are ManualVector values. Labels use int[], distances use double[], and the current neighbor set uses nearestIndex[k] plus nearestDistance[k].</p><div class="example"><strong>Model idea:</strong> training is mostly storage; prediction carries the expensive search work.</div></article>
         </div>
-        <div class="concept-lesson-links"><a href="/ml-foundations/knn">Preview KNN lesson →</a><a href="/structures/vector">Review Vector distances →</a><a href="/ml-foundations/logistic-regression">Review Logistic Regression →</a></div>
+        <div class="concept-lesson-links"><a href="/ml-foundations/knn">Open KNN lab →</a><a href="/structures/vector">Review Vector distances →</a><a href="/ml-foundations/logistic-regression">Compare with Logistic Regression →</a></div>
     </section>
 
-
+    <section id="kd-tree" class='@SectionClass("kd-tree")'>
+        <div class="section-heading"><span>ML6</span><div><h2>KD-Tree: planned spatial acceleration for nearest-neighbor search</h2><p>KNN currently scans every stored point. KD-Tree will organize points with alternating coordinate splits so search can descend toward the query and prune regions that cannot improve the current nearest candidate.</p></div></div>
+        <div class="concept-grid two">
+            <article class="concept-card"><span class="term">SPLIT</span><h3>Partition feature space one axis at a time</h3><p>A KD-Tree stores a point at each node and divides the remaining points by one coordinate axis, usually alternating axes by depth.</p></article>
+            <article class="concept-card"><span class="term queue">PRUNE</span><h3>Skip a region only when geometry proves it cannot win</h3><p>After finding a current best distance, the search only needs the opposite branch when the split plane is close enough that a better point might still exist there.</p></article>
+        </div>
+        <div class="concept-lesson-links"><a href="/ml-foundations/kd-tree">Preview KD-Tree lesson →</a><a href="/ml-foundations/knn">Review KNN →</a><a href="/structures/bst">Review binary-tree structure →</a></div>
+    </section>
 
     <section class="concept-section implementation-note">
         <div class="section-heading">
             <span>✓</span>
-            <div><h2>Implemented from scratch</h2><p>The learning structures and algorithms do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, Matrix, Vector, Graph, sorting, Linear Search, Binary Search, BFS, DFS, Dijkstra, Topological Sort, Minimum Spanning Tree, Linear Regression, Logistic Regression, or balancing behavior to ready-made framework collections/search helpers.</p></div>
+            <div><h2>Implemented from scratch</h2><p>The learning structures and algorithms do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, Matrix, Vector, Graph, sorting, Linear Search, Binary Search, BFS, DFS, Dijkstra, Topological Sort, Minimum Spanning Tree, Linear Regression, Logistic Regression, K-Nearest Neighbors, or balancing behavior to ready-made framework collections/search helpers.</p></div>
         </div>
         <div class="plain-note">
             <strong>What our code does itself</strong>
-            <p>Linear structures keep and grow their own raw array and move references with manual loops. BST, AVL, and Red-Black Tree keep explicit node links and perform their own comparisons, transplants, recoloring, and rotations. BST Balance uses our own Day-Stout-Warren vine/compression logic over those same node references. Heap uses its own growable raw array and manual index swaps for bubble-up/bubble-down instead of PriorityQueue or a library heap. Matrix uses its own row-major <code>double[]</code>, manual cell/index loops, row operations, multiplication and elimination instead of a numerical or linear-algebra library. Vector uses its own contiguous <code>double[]</code> and explicit loops for component operations, dot products, norms, normalization, distances and cosine similarity instead of a numerical-vector library. Gradient Descent computes its convex teaching loss and analytical gradient with explicit loops, then reuses Vector Core for L2 norm, scalar multiplication and subtraction instead of delegating to a numerical optimizer. Linear Regression stores x, y, prediction and residual vectors in ManualVector and performs prediction, MSE, derivative and parameter-update loops explicitly instead of calling an ML/statistics library. Logistic Regression stores x, labels, scores, probabilities and probability errors in ManualVector and explicitly computes stable sigmoid, 0.5 threshold classes, binary cross-entropy, derivatives and full-batch updates. Graph keeps canonical vertex/edge objects, manual adjacency lists over our own dynamic-array storage, and reuses ManualMatrix for the synchronized adjacency table instead of a graph package or dictionary-backed graph. Linear Search uses its own explicit index loop and does not call LINQ First/Contains or a framework search helper. Binary Search uses its own iterative left/right/mid loop and does not call Array.BinarySearch or another framework binary-search helper. BFS uses the existing Graph adjacency snapshot plus the project's manual dynamic-array storage as a FIFO Queue; DFS uses recursive calls or the same manual storage as an explicit LIFO Stack. Neither delegates traversal to a graph library or framework Queue/Stack collection. Dijkstra reuses that same Graph snapshot, performs its own relaxation/minimum selection, and in Advanced mode uses a project-owned binary min-heap instead of <code>PriorityQueue&lt;TElement, TPriority&gt;</code>. Topological Sort also reuses the same Graph snapshot: Kahn mode maintains indegree[] and a head-index FIFO over the project manual array, while DFS mode uses white/gray/black recursion plus a manual postorder buffer; neither delegates ordering or cycle detection to a graph library. MST reuses the same undirected Graph snapshot: Prim uses the existing ManualHeapArray as a min-edge frontier, while Kruskal manually merge-sorts edge indexes and uses a hand-written DSU with path compression and union by rank. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the taught data-structure algorithms for us.</p>
+            <p>Linear structures keep and grow their own raw array and move references with manual loops. BST, AVL, and Red-Black Tree keep explicit node links and perform their own comparisons, transplants, recoloring, and rotations. BST Balance uses our own Day-Stout-Warren vine/compression logic over those same node references. Heap uses its own growable raw array and manual index swaps for bubble-up/bubble-down instead of PriorityQueue or a library heap. Matrix uses its own row-major <code>double[]</code>, manual cell/index loops, row operations, multiplication and elimination instead of a numerical or linear-algebra library. Vector uses its own contiguous <code>double[]</code> and explicit loops for component operations, dot products, norms, normalization, distances and cosine similarity instead of a numerical-vector library. Gradient Descent computes its convex teaching loss and analytical gradient with explicit loops, then reuses Vector Core for L2 norm, scalar multiplication and subtraction instead of delegating to a numerical optimizer. Linear Regression stores x, y, prediction and residual vectors in ManualVector and performs prediction, MSE, derivative and parameter-update loops explicitly instead of calling an ML/statistics library. Logistic Regression stores x, labels, scores, probabilities and probability errors in ManualVector and explicitly computes stable sigmoid, 0.5 threshold classes, binary cross-entropy, derivatives and full-batch updates. KNN stores each feature point and query as ManualVector values, reuses VectorSimulation for Euclidean/Manhattan distance, then explicitly scans, maintains ordered top-k arrays, and counts the binary vote without a KNN library or framework sort. Graph keeps canonical vertex/edge objects, manual adjacency lists over our own dynamic-array storage, and reuses ManualMatrix for the synchronized adjacency table instead of a graph package or dictionary-backed graph. Linear Search uses its own explicit index loop and does not call LINQ First/Contains or a framework search helper. Binary Search uses its own iterative left/right/mid loop and does not call Array.BinarySearch or another framework binary-search helper. BFS uses the existing Graph adjacency snapshot plus the project's manual dynamic-array storage as a FIFO Queue; DFS uses recursive calls or the same manual storage as an explicit LIFO Stack. Neither delegates traversal to a graph library or framework Queue/Stack collection. Dijkstra reuses that same Graph snapshot, performs its own relaxation/minimum selection, and in Advanced mode uses a project-owned binary min-heap instead of <code>PriorityQueue&lt;TElement, TPriority&gt;</code>. Topological Sort also reuses the same Graph snapshot: Kahn mode maintains indegree[] and a head-index FIFO over the project manual array, while DFS mode uses white/gray/black recursion plus a manual postorder buffer; neither delegates ordering or cycle detection to a graph library. MST reuses the same undirected Graph snapshot: Prim uses the existing ManualHeapArray as a min-edge frontier, while Kruskal manually merge-sorts edge indexes and uses a hand-written DSU with path compression and union by rank. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the taught data-structure algorithms for us.</p>
         </div>
     </section>
 
@@ -1079,6 +1089,7 @@
         "linear-regression-gradient" => "Linear Regression gradients",
         "logistic-regression" => "Logistic Regression foundations",
         "knn" => "K-Nearest Neighbors foundations",
+        "kd-tree" => "KD-Tree spatial search foundations",
         "graph" => "Graph: vertices, edges and adjacency",
         "red-black" => "Red-Black Tree invariants",
         "bubble-sort" => "Bubble Sort",
@@ -1134,6 +1145,7 @@
         "linear-regression" or "linear-regression-prediction" or "linear-regression-residual" or "linear-regression-mse" or "linear-regression-gradient" => "/ml-foundations/linear-regression",
         "logistic-regression" => "/ml-foundations/logistic-regression",
         "knn" => "/ml-foundations/knn",
+        "kd-tree" => "/ml-foundations/kd-tree",
         "graph" => "/structures/graph",
         "red-black" => "/structures/red-black",
         "bubble-sort" => "/sorting/bubble",
@@ -1186,7 +1198,7 @@
         "general-heap" or "avl-balance" or "matrix" or "matrix-compatibility" or
         "vector" or "vector-memory" or "vector-dot-product" or "vector-norms" or "vector-similarity" or "vector-ml" or
         "gradient-descent" or "gradient-descent-loss" or "gradient-descent-update" or "gradient-descent-learning-rate" or "gradient-descent-convergence" or
-        "linear-regression" or "linear-regression-prediction" or "linear-regression-residual" or "linear-regression-mse" or "linear-regression-gradient" or "logistic-regression" or "knn" or
+        "linear-regression" or "linear-regression-prediction" or "linear-regression-residual" or "linear-regression-mse" or "linear-regression-gradient" or "logistic-regression" or "knn" or "kd-tree" or
         "graph" or "red-black" or "bubble-sort" or "selection-sort" or
         "insertion-sort" or "merge-sort" or "quick-sort" or "heap-sort" or
         "linear-search" or "linear-search-complexity" or "linear-vs-binary-search" or
