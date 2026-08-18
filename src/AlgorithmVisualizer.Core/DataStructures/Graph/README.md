@@ -25,4 +25,6 @@ Directed/weighted mode can change while vertices exist, but only while there are
 
 ## Important boundary
 
-This module teaches graph **structure and representation**. BFS, DFS, Dijkstra, topological sort, and MST remain separate algorithm modules. They should reuse this graph implementation plus the already-live Queue/Stack/Heap implementations rather than duplicate them.
+This module teaches graph **structure and representation**. BFS and DFS are now live separate algorithm modules that reuse this graph snapshot plus the project's manual Queue/Stack storage foundation. Dijkstra, topological sort, and MST remain future algorithm modules and should reuse this Graph and the already-live Heap implementations rather than duplicate them.
+
+Traversal snapshots include the adjacent vertex index on each `GraphNeighborSnapshot`. BFS/DFS can therefore follow an adjacency entry directly instead of performing a hidden linear vertex lookup for every edge.

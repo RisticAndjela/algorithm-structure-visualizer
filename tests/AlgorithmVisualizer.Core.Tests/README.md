@@ -145,3 +145,7 @@ The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctnes
 - the Binary Search Core still rejects unsorted input when preprocessing is bypassed, preserving the algorithm precondition;
 - the fixed sorted input is never mutated;
 - empty-array zero-comparison behavior.
+
+### Graph traversal coverage
+- BFS: level-order distances, directed outgoing-only reachability, cycle de-duplication.
+- DFS: recursive depth/backtracking, iterative explicit-stack traversal, disconnected components.

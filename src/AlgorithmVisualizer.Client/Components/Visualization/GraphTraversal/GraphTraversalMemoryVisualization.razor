@@ -1,0 +1,80 @@
+@using AlgorithmVisualizer.Core.Algorithms.GraphTraversal
+
+<section class="traversal-memory" aria-label="Graph traversal memory state">
+    <div class="memory-intro">
+        <span>MEMORY STATE</span>
+        <strong>@Snapshot.FrontierLabel + visited[] + parent[]</strong>
+        <p>The graph does not move in memory during traversal. The algorithm adds O(V) state beside it: one visited flag per vertex, parent/@Snapshot.LevelLabel.ToLowerInvariant() metadata, and the current @Snapshot.FrontierLabel.ToLowerInvariant().</p>
+    </div>
+
+    <div class="frontier-card">
+        <div class="card-heading"><span>@Snapshot.FrontierLabel.ToUpperInvariant()</span><strong>@FrontierRule</strong></div>
+        <div class="frontier-slots">
+            @if (Snapshot.FrontierIndices.Length == 0)
+            {
+                <span class="empty-slot">empty</span>
+            }
+            else
+            {
+                @for (var index = 0; index < Snapshot.FrontierIndices.Length; index++)
+                {
+                    var vertexIndex = Snapshot.FrontierIndices[index];
+                    <span class="frontier-slot"><small>@index</small><strong>@Label(vertexIndex)</strong></span>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="table-scroll">
+        <table>
+            <thead><tr><th>Index</th><th>Vertex</th><th>visited[]</th><th>parent[]</th><th>@Snapshot.LevelLabel</th><th>State</th></tr></thead>
+            <tbody>
+            @foreach (var vertex in Snapshot.Vertices)
+            {
+                <tr class="@RowClass(vertex.State)">
+                    <td>@vertex.Index</td>
+                    <td><strong>@vertex.Label</strong></td>
+                    <td>@(vertex.Visited ? "true" : "false")</td>
+                    <td>@ParentLabel(vertex.ParentIndex)</td>
+                    <td>@(vertex.Level >= 0 ? vertex.Level.ToString() : "—")</td>
+                    <td>@StateLabel(vertex.State)</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="memory-note">
+        <strong>Why O(V) extra space?</strong>
+        <span><code>visited[]</code>, <code>parent[]</code>, level/depth metadata and the queue/stack can each grow with the number of vertices. The adjacency representation itself already belongs to the Graph structure and is not newly allocated by the traversal.</span>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public GraphTraversalSnapshot Snapshot { get; set; } = new(
+        new(false, false, 0, 0, [], [], []), [], [], [], -1, -1, null, 0, 0,
+        GraphTraversalPhase.Ready, "Frontier", "Level");
+
+    [Parameter]
+    public string FrontierRule { get; set; } = "Frontier state";
+
+    private string Label(int index) => index >= 0 && index < Snapshot.Graph.Vertices.Length ? Snapshot.Graph.Vertices[index].Label : "?";
+    private string ParentLabel(int index) => index >= 0 ? Label(index) : "—";
+    private static string StateLabel(GraphTraversalVertexState state) => state switch
+    {
+        GraphTraversalVertexState.Frontier => "frontier",
+        GraphTraversalVertexState.Current => "current",
+        GraphTraversalVertexState.InspectingNeighbor => "checking",
+        GraphTraversalVertexState.Visited => "visited",
+        _ => "unvisited"
+    };
+    private static string RowClass(GraphTraversalVertexState state) => state switch
+    {
+        GraphTraversalVertexState.Current => "current",
+        GraphTraversalVertexState.InspectingNeighbor => "checking",
+        GraphTraversalVertexState.Frontier => "frontier",
+        GraphTraversalVertexState.Visited => "visited",
+        _ => string.Empty
+    };
+}

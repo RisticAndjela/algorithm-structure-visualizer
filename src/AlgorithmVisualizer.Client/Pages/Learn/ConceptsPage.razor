@@ -67,6 +67,8 @@
                 <span>SEARCH · EASY → HARD</span>
                 <a href="#linear-search">Linear Search</a>
                 <a href="#binary-search">Binary Search</a>
+                <a href="#bfs">Breadth-First Search</a>
+                <a href="#dfs">Depth-First Search</a>
             </div>
         </nav>
 
@@ -824,14 +826,44 @@
         <div class="concept-lesson-links"><a href="/search/binary">Open the Binary Search lab →</a><a href="/search/linear">Compare with Linear Search →</a><a href="/learn/concepts/big-o">Review Big-O →</a></div>
     </section>
 
+
+
+    <section id="bfs" class='@SectionClass("bfs")'>
+        <div class="section-heading">
+            <span>G1</span>
+            <div><h2>Breadth-First Search: Queue first, then graph levels</h2><p>BFS discovers neighbors, enqueues each vertex once, and always processes the oldest waiting discovery next.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class='@CardClass("bfs", "concept-card")'><span class="term">FIFO</span><h3>The Queue creates level order</h3><p>When a vertex at distance d discovers a new neighbor, that neighbor goes to the rear. Every older queued vertex is processed first, so distance d is exhausted before distance d+1.</p><div class="example"><strong>Memory:</strong> visited[], parent[], distance[] and the manual Queue can each grow to O(V).</div></article>
+            <article class='@CardClass("bfs-complexity", "concept-card")'><span class="term queue">O(V + E)</span><h3>Each reachable vertex is queued once</h3><p>Marking a vertex when it is enqueued prevents duplicates. With adjacency lists, BFS inspects each reachable vertex and its outgoing adjacency entries once.</p><div class="example"><strong>Unweighted shortest path:</strong> first discovery gives the minimum number of edges from the start.</div></article>
+            <article class="concept-card"><span class="term">DIRECTED</span><h3>Only outgoing adjacency is traversable</h3><p>A directed edge A → B lets BFS move from A to B. It does not imply B → A, so a different start can reach a different subset.</p></article>
+            <article class="concept-card"><span class="term">MUTATION</span><h3>Graph changes restart the run</h3><p>Adding/removing vertices or edges changes the adjacency proof behind the current Queue and distance values. The learning run therefore uses one fixed graph snapshot.</p></article>
+        </div>
+        <div class="concept-lesson-links"><a href="/search/bfs">Open the BFS lab →</a><a href="/structures/queue-stack">Review Queue →</a><a href="/search/dfs">Compare with DFS →</a></div>
+    </section>
+
+    <section id="dfs" class='@SectionClass("dfs")'>
+        <div class="section-heading">
+            <span>G2</span>
+            <div><h2>Depth-First Search: follow one branch, then backtrack</h2><p>DFS visits a neighbor immediately and postpones sibling branches until the active path cannot continue.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class='@CardClass("dfs", "concept-card")'><span class="term">RECURSION</span><h3>Recursive DFS uses the language call stack</h3><p>Each recursive call remembers the current vertex and where neighbor scanning should resume. Returning from a finished child is backtracking.</p><div class="example"><strong>Rule:</strong> mark visited before recursing so cycles cannot recurse forever.</div></article>
+            <article class='@CardClass("dfs-stack", "concept-card")'><span class="term queue">ITERATIVE</span><h3>An explicit Stack can replace recursion</h3><p>Push scheduled vertices and pop the newest one next. The lab uses the project's manual storage rather than framework Stack&lt;T&gt;.</p><div class="example"><strong>Neighbor order:</strong> iterative mode pushes neighbors in reverse so the first adjacency entry is still explored first.</div></article>
+            <article class='@CardClass("dfs-complexity", "concept-card")'><span class="term">O(V + E)</span><h3>Visited keeps the traversal finite</h3><p>Every reachable vertex is visited once, while adjacency entries may still be checked even when they point to an already visited vertex.</p><div class="example"><strong>Extra space:</strong> O(V) in the worst case for visited/parent/depth and recursion or explicit Stack.</div></article>
+            <article class="concept-card"><span class="term">NOT SHORTEST</span><h3>DFS finds a path, not necessarily the shortest one</h3><p>The first branch is chosen by adjacency order, not by distance. Use BFS for minimum edge count in unweighted graphs.</p></article>
+        </div>
+        <div class="concept-lesson-links"><a href="/search/dfs">Open the DFS lab →</a><a href="/structures/queue-stack">Review Stack →</a><a href="/search/bfs">Compare with BFS →</a></div>
+    </section>
+
     <section class="concept-section implementation-note">
         <div class="section-heading">
             <span>✓</span>
-            <div><h2>Implemented from scratch</h2><p>The learning structures and algorithms do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, Matrix, Graph, sorting, Linear Search, Binary Search, or balancing behavior to ready-made framework collections/search helpers.</p></div>
+            <div><h2>Implemented from scratch</h2><p>The learning structures and algorithms do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, Matrix, Graph, sorting, Linear Search, Binary Search, BFS, DFS, or balancing behavior to ready-made framework collections/search helpers.</p></div>
         </div>
         <div class="plain-note">
             <strong>What our code does itself</strong>
-            <p>Linear structures keep and grow their own raw array and move references with manual loops. BST, AVL, and Red-Black Tree keep explicit node links and perform their own comparisons, transplants, recoloring, and rotations. BST Balance uses our own Day-Stout-Warren vine/compression logic over those same node references. Heap uses its own growable raw array and manual index swaps for bubble-up/bubble-down instead of PriorityQueue or a library heap. Matrix uses its own row-major <code>double[]</code>, manual cell/index loops, row operations, multiplication and elimination instead of a numerical or linear-algebra library. Graph keeps canonical vertex/edge objects, manual adjacency lists over our own dynamic-array storage, and reuses ManualMatrix for the synchronized adjacency table instead of a graph package or dictionary-backed graph. Linear Search uses its own explicit index loop and does not call LINQ First/Contains or a framework search helper. Binary Search uses its own iterative left/right/mid loop and does not call Array.BinarySearch or another framework binary-search helper. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the taught data-structure algorithms for us.</p>
+            <p>Linear structures keep and grow their own raw array and move references with manual loops. BST, AVL, and Red-Black Tree keep explicit node links and perform their own comparisons, transplants, recoloring, and rotations. BST Balance uses our own Day-Stout-Warren vine/compression logic over those same node references. Heap uses its own growable raw array and manual index swaps for bubble-up/bubble-down instead of PriorityQueue or a library heap. Matrix uses its own row-major <code>double[]</code>, manual cell/index loops, row operations, multiplication and elimination instead of a numerical or linear-algebra library. Graph keeps canonical vertex/edge objects, manual adjacency lists over our own dynamic-array storage, and reuses ManualMatrix for the synchronized adjacency table instead of a graph package or dictionary-backed graph. Linear Search uses its own explicit index loop and does not call LINQ First/Contains or a framework search helper. Binary Search uses its own iterative left/right/mid loop and does not call Array.BinarySearch or another framework binary-search helper. BFS uses the existing Graph adjacency snapshot plus the project's manual dynamic-array storage as a FIFO Queue; DFS uses recursive calls or the same manual storage as an explicit LIFO Stack. Neither delegates traversal to a graph library or framework Queue/Stack collection. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the taught data-structure algorithms for us.</p>
         </div>
     </section>
 
@@ -861,6 +893,8 @@
         "linear-search-complexity" => "linear-search",
         "binary-search-complexity" or "binary-search-duplicates" => "binary-search",
         "linear-vs-binary-search" => "binary-search",
+        "bfs-complexity" => "bfs",
+        "dfs-complexity" or "dfs-stack" => "dfs",
         _ => NormalizedTopic
     };
 
@@ -896,6 +930,11 @@
         "binary-search" => "Binary Search",
         "binary-search-complexity" => "Binary Search complexity",
         "binary-search-duplicates" => "Binary Search duplicates",
+        "bfs" => "Breadth-First Search",
+        "bfs-complexity" => "BFS complexity",
+        "dfs" => "Depth-First Search",
+        "dfs-complexity" => "DFS complexity",
+        "dfs-stack" => "DFS: recursive vs explicit Stack",
         _ => "Concepts & Memory"
     };
 
@@ -919,6 +958,8 @@
         "heap-sort" => "/sorting/heap",
         "linear-search" or "linear-search-complexity" => "/search/linear",
         "binary-search" or "binary-search-complexity" or "binary-search-duplicates" or "linear-vs-binary-search" => "/search/binary",
+        "bfs" or "bfs-complexity" => "/search/bfs",
+        "dfs" or "dfs-complexity" or "dfs-stack" => "/search/dfs",
         _ => null
     };
 
@@ -957,7 +998,8 @@
         "graph" or "red-black" or "bubble-sort" or "selection-sort" or
         "insertion-sort" or "merge-sort" or "quick-sort" or "heap-sort" or
         "linear-search" or "linear-search-complexity" or "linear-vs-binary-search" or
-        "binary-search" or "binary-search-complexity" or "binary-search-duplicates" => true,
+        "binary-search" or "binary-search-complexity" or "binary-search-duplicates" or
+        "bfs" or "bfs-complexity" or "dfs" or "dfs-complexity" or "dfs-stack" => true,
         _ => false
     };
 }

@@ -124,3 +124,45 @@ Complexity taught by the module:
 - algorithmic extra space: `O(1)`.
 
 The UI makes duplicate first-occurrence behavior and zero-write Memory State explicit.
+
+### Binary Search
+
+Route: `/search/binary`
+
+Core namespace: `AlgorithmVisualizer.Core.Algorithms.Search.Binary`
+
+Binary Search operates only on a nondecreasing input snapshot and manually maintains `left`, `right`, and `mid` bounds. Basic mode returns any midpoint match. Advanced first-occurrence mode preserves the same logarithmic search strategy but continues into the left half after equality to locate the first duplicate occurrence. The client can preprocess an unsorted input by silently running any already implemented sorting Core algorithm before the Binary Search run.
+
+Complexity taught by the module:
+
+- best case: `Θ(1)`;
+- average/worst search: `Θ(log n)`;
+- algorithmic extra space: `O(1)`.
+
+### Breadth-First Search (BFS)
+
+Route: `/search/bfs`
+
+Core namespace: `AlgorithmVisualizer.Core.Algorithms.GraphTraversal`
+
+BFS reuses the existing graph snapshot and manually implements its FIFO frontier with `ManualDynamicArray<int>` plus a head cursor rather than framework `Queue<T>`. A vertex is marked visited when it is enqueued, each reachable vertex is discovered at most once, and parent plus unweighted distance are recorded. Directed graphs follow outgoing adjacency only; edge weights are ignored because this is unweighted traversal.
+
+Complexity taught by the module:
+
+- traversal time: `O(V + E)`;
+- traversal state/frontier: `O(V)`.
+
+### Depth-First Search (DFS)
+
+Route: `/search/dfs`
+
+Core namespace: `AlgorithmVisualizer.Core.Algorithms.GraphTraversal`
+
+DFS has two live variants. Recursive mode uses real recursive calls and exposes the call stack plus backtracking. Iterative mode uses `ManualDynamicArray<int>` as an explicit LIFO frontier rather than framework `Stack<T>`. Both variants share visited/parent/depth state, terminate safely on cycles and self-loops, and follow outgoing adjacency in directed graphs.
+
+Complexity taught by the module:
+
+- traversal time: `O(V + E)`;
+- recursion or explicit stack plus visited state: `O(V)`.
+
+Linear Search, Binary Search, BFS, and DFS are live.

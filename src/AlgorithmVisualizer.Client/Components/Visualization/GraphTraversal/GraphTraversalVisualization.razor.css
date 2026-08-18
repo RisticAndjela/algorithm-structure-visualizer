@@ -1,0 +1,15 @@
+.traversal-visual { display:grid; gap:.85rem; }
+.traversal-summary-strip { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border:1px solid var(--color-border); border-radius:.9rem; overflow:hidden; background:#fff; }
+.traversal-summary-strip > div { min-width:0; display:grid; gap:.18rem; padding:.72rem .8rem; }
+.traversal-summary-strip > div + div { border-left:1px solid var(--color-border); }
+.traversal-summary-strip span { color:var(--color-text-muted); font-size:.62rem; font-weight:850; letter-spacing:.08em; }
+.traversal-summary-strip strong { font-size:.9rem; }
+.traversal-summary-strip small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--color-text-muted); font-size:.7rem; }
+.traversal-legend { display:flex; flex-wrap:wrap; gap:.7rem; color:var(--color-text-soft); font-size:.72rem; }
+.traversal-legend span { display:inline-flex; align-items:center; gap:.35rem; }
+.traversal-legend i { width:.72rem; height:.72rem; border-radius:50%; border:1px solid #d7dae5; background:#fff; }
+.traversal-legend .frontier { background:#e9f7f3; border-color:#87cdbd; }
+.traversal-legend .current { background:#eeeaff; border-color:#8f7df0; }
+.traversal-legend .neighbor { background:#fff3cf; border-color:#e1bb55; }
+.traversal-legend .visited { background:#dff5ee; border-color:#61b99f; }
+@media (max-width:760px){ .traversal-summary-strip{grid-template-columns:1fr;} .traversal-summary-strip > div + div{border-left:0;border-top:1px solid var(--color-border);} }

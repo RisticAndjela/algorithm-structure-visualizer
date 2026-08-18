@@ -410,6 +410,16 @@ public sealed class GraphSimulation : SimulationAlgorithmBase
         return Result(GraphOperationKind.Clear, true, null, null, null, beforeV + beforeE, beforeV, beforeE);
     }
 
+    private int FindVertexIndexForSnapshot(GraphVertex target)
+    {
+        for (var index = 0; index < _vertices.Count; index++)
+        {
+            if (ReferenceEquals(_vertices[index], target)) return index;
+        }
+
+        return -1;
+    }
+
     public GraphSnapshot CreateSnapshot()
     {
         var vertexSnapshots = new GraphVertexSnapshot[_vertices.Count];
@@ -424,7 +434,8 @@ public sealed class GraphSimulation : SimulationAlgorithmBase
                     neighbor.Vertex.Id,
                     neighbor.Vertex.Label,
                     neighbor.Edge.Id,
-                    neighbor.Edge.Weight);
+                    neighbor.Edge.Weight,
+                    FindVertexIndexForSnapshot(neighbor.Vertex));
             }
 
             var inDegree = 0;

@@ -1,0 +1,489 @@
+@using AlgorithmVisualizer.Core.Algorithms.GraphTraversal
+@using AlgorithmVisualizer.Core.DataStructures.Graph
+@using AlgorithmVisualizer.Client.Components.Visualization.GraphTraversal
+@implements IDisposable
+@inject SimulationState SimulationState
+@inject BreadthFirstSearchSimulation Bfs
+@inject DepthFirstSearchSimulation Dfs
+@inject GraphSimulation Graph
+@inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
+
+<div class="graph-traversal-page learning-module-page learning-module-shell">
+    <section class="learn-launchpad" aria-labelledby="traversal-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="traversal-learn-title">@LearnTitle</h2>
+            <p>@LearnIntro</p>
+            <ConceptLink class="learn-launchpad-link" Href="@ConceptHref">Open @ShortName concepts &amp; memory →</ConceptLink>
+        </div>
+        <div class="learn-grid">
+            @if (Kind == GraphTraversalLessonKind.BreadthFirst)
+            {
+                <article class="learn-card purple"><span>QUEUE</span><strong>Oldest discovery first</strong><small>FIFO is what makes BFS expand one distance layer before the next.</small></article>
+                <article class="learn-card blue"><span>DISCOVER</span><strong>Mark when enqueued</strong><small>A vertex enters the queue once, even when cycles point back to it.</small></article>
+                <article class="learn-card mint"><span>LEVELS</span><strong>Distance grows layer by layer</strong><small>In an unweighted graph, the first discovered path uses the fewest edges.</small></article>
+                <article class="learn-card gold"><span>LIMIT</span><strong>One start reaches one component</strong><small>Disconnected vertices remain untouched unless you start another traversal.</small></article>
+            }
+            else
+            {
+                <article class="learn-card purple"><span>DEPTH</span><strong>Follow one branch first</strong><small>DFS postpones siblings while it continues deeper through an unvisited neighbor.</small></article>
+                <article class="learn-card blue"><span>STACK</span><strong>Recursive or explicit LIFO</strong><small>The call stack and an explicit stack encode the same “return later” idea.</small></article>
+                <article class="learn-card mint"><span>BACKTRACK</span><strong>Return when a branch ends</strong><small>When no unvisited neighbor remains, DFS returns to the previous decision point.</small></article>
+                <article class="learn-card gold"><span>CYCLES</span><strong>Visited prevents looping forever</strong><small>Every edge may be inspected, but each reachable vertex is visited once.</small></article>
+            }
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow"><span>GRAPH SEARCH</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <h1>@FullName</h1>
+            <p>@HeaderText</p>
+        </div>
+        <div class="complexity-summary" aria-label="Traversal complexity">
+            <div><span>Time</span><strong>O(V + E)</strong><small>reachable vertices + adjacency entries</small></div>
+            <div><span>Extra space</span><strong>O(V)</strong><small>visited, parent and frontier state</small></div>
+            <div><span>Mutation</span><strong>Restart</strong><small>graph changes invalidate traversal state</small></div>
+        </div>
+    </header>
+
+    <section class="smart-tip">
+        <span class="tip-icon">✦</span>
+        <div><strong>@TipLead</strong><p>@TipText</p></div>
+        <ConceptLink Href="@ComplexityHref">Why O(V + E)? →</ConceptLink>
+    </section>
+
+    @if (Kind == GraphTraversalLessonKind.DepthFirst)
+    {
+        <section class="implementation-section">
+            <div class="section-heading-row"><div><span class="section-kicker">IMPLEMENTATION CHOICE</span><h2>Same DFS rule, two ways to remember where to return.</h2></div></div>
+            <div class="variant-grid">
+                <button type="button" class="variant-card @(_dfsVariant == DepthFirstTraversalVariant.Recursive ? "active" : string.Empty)" @onclick="() => SetDfsVariant(DepthFirstTraversalVariant.Recursive)" disabled="@IsBusy">
+                    <span>BASIC · RECURSIVE</span><strong>Language call stack</strong><p>Enter a vertex, recursively visit the first unvisited neighbor, then backtrack when the call returns.</p><small>Best for understanding recursion and backtracking.</small>
+                </button>
+                <button type="button" class="variant-card @(_dfsVariant == DepthFirstTraversalVariant.Iterative ? "active" : string.Empty)" @onclick="() => SetDfsVariant(DepthFirstTraversalVariant.Iterative)" disabled="@IsBusy">
+                    <span>ADVANCED · ITERATIVE</span><strong>Explicit manual Stack</strong><p>Push vertex indexes with our own manual storage, pop the newest one, and schedule neighbors in reverse order.</p><small>Same O(V + E), no recursive calls.</small>
+                </button>
+            </div>
+        </section>
+    }
+
+    <section class="builder-section">
+        <div class="section-heading-row">
+            <div class="heading-with-step"><span class="step-number">1</span><div><span class="section-kicker">CHOOSE THE GRAPH</span><h2>Traverse a preset or reuse the graph you built in Graph lab.</h2><p>Weights are ignored here. Direction still matters because traversal follows outgoing adjacency.</p></div></div>
+            <a class="concept-link" href="/structures/graph">Open Graph builder →</a>
+        </div>
+
+        <div class="graph-source-grid">
+            <div class="preset-panel">
+                <span class="control-label">PRESETS</span>
+                <div class="preset-row">
+                    <button type="button" @onclick="() => LoadPreset(GraphTraversalPreset.Branching)" disabled="@IsBusy">Branching</button>
+                    <button type="button" @onclick="() => LoadPreset(GraphTraversalPreset.Cycle)" disabled="@IsBusy">Cycle</button>
+                    <button type="button" @onclick="() => LoadPreset(GraphTraversalPreset.Directed)" disabled="@IsBusy">Directed</button>
+                    <button type="button" @onclick="() => LoadPreset(GraphTraversalPreset.Disconnected)" disabled="@IsBusy">Disconnected</button>
+                    <button type="button" @onclick="() => LoadPreset(GraphTraversalPreset.SelfLoop)" disabled="@IsBusy">Self-loop</button>
+                    <button type="button" @onclick="() => LoadPreset(GraphTraversalPreset.Single)" disabled="@IsBusy">Single</button>
+                </div>
+            </div>
+            <div class="graph-lab-panel">
+                <span class="control-label">YOUR GRAPH LAB STATE</span>
+                <strong>@GraphLabSummary</strong>
+                <button type="button" class="secondary-action" @onclick="UseGraphLabSnapshot" disabled="@(IsBusy || Graph.CreateSnapshot().VertexCount == 0)">Use current Graph lab snapshot</button>
+            </div>
+        </div>
+
+        <div class="start-row">
+            <label>
+                <span>START VERTEX</span>
+                <select value="@_startIndex" @onchange="StartChanged" disabled="@IsBusy">
+                    @foreach (var vertex in _graph.Vertices)
+                    {
+                        <option value="@vertex.Index">@vertex.Label</option>
+                    }
+                </select>
+            </label>
+            <div class="graph-mode"><span>@(_graph.Directed ? "Directed" : "Undirected")</span><span>@_graph.VertexCount vertices</span><span>@_graph.EdgeCount edges</span></div>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(_inputMessage))
+        {
+            <div class="input-message">@_inputMessage</div>
+        }
+    </section>
+
+    <section class="predict-section">
+        <div class="heading-with-step"><span class="step-number">2</span><div><span class="section-kicker">PREDICT</span><h2>Which vertex will be visited second?</h2><p>Commit before running. If the start has no reachable neighbor, choose “no second vertex”.</p></div></div>
+        <div class="prediction-row">
+            <select value="@_prediction" @onchange="PredictionChanged" disabled="@IsBusy">
+                <option value="-2">Choose prediction…</option>
+                <option value="-1">No second vertex</option>
+                @foreach (var vertex in _graph.Vertices)
+                {
+                    <option value="@vertex.Index">@vertex.Label</option>
+                }
+            </select>
+            @if (_predictionAnswered)
+            {
+                <span class="prediction-feedback @(_predictionCorrect ? "correct" : "wrong")">@PredictionFeedback</span>
+            }
+        </div>
+    </section>
+
+    <section class="lab-section">
+        <div class="lab-heading">
+            <div class="heading-with-step"><span class="step-number">3</span><div><span class="section-kicker">WATCH THE REAL C# RUN</span><h2>@LabHeading</h2></div></div>
+            <div class="lab-actions">
+                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Auto-open explanation</span></label>
+                <button class="sort-button" type="button" @onclick="RunAsync" disabled="@IsBusy"><span>▶</span> Run @ShortName</button>
+                @if (_lastResultExists)
+                {
+                    <button type="button" @onclick="OpenLastRun">Last run explanation</button>
+                }
+            </div>
+        </div>
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+
+        <div class="state-tabs" role="tablist"><button type="button" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual State</button><button type="button" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory State</button></div>
+        <div class="lesson-reference-links"><ConceptLink Href="@ConceptHref">Traversal rule →</ConceptLink><ConceptLink Href="@ComplexityHref">Complexity →</ConceptLink><a href="/structures/queue-stack">Review Queue &amp; Stack →</a></div>
+
+        <div class="state-surface">
+            @if (_view == StateView.Visual)
+            {
+                <GraphTraversalVisualization Snapshot="@DisplayedSnapshot" />
+            }
+            else
+            {
+                <GraphTraversalMemoryVisualization Snapshot="@DisplayedSnapshot" FrontierRule="@FrontierRule" />
+            }
+        </div>
+    </section>
+
+    <section class="fit-section">
+        <div class="section-heading-row"><div><span class="section-kicker">WHEN IT FITS</span><h2>@FitHeading</h2></div></div>
+        <div class="fit-grid">
+            @foreach (var card in FitCards)
+            {
+                <article class="fit-card"><span>@card.Tag</span><strong>@card.Title</strong><p>@card.Text</p></article>
+            }
+        </div>
+    </section>
+
+    <section class="practice-section">
+        <div class="practice-heading"><div><span class="section-kicker">GUIDED PRACTICE</span><h2>Tasks auto-complete from any matching run.</h2><p>Start task only loads a convenient graph. You may change the start, reuse your own Graph lab topology, or add extra vertices/edges when the concept still holds.</p></div><strong>@_completedTaskIds.Count / @PracticeTasks.Count complete</strong></div>
+        <div class="practice-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                <PracticeTaskCard TaskId="@task.Id" Title="@task.Title" Description="@task.Goal" InputText="@task.Suggested" HelpHref="@task.HelpHref" Completed="@_completedTaskIds.Contains(task.Id)" Active="@(_activeTaskId == task.Id)" Busy="@IsBusy" HasEvidence="@(GetTaskEvidence(task.Id) is not null)" Start="@(() => StartTask(task.Id))" OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
+            }
+        </div>
+    </section>
+
+    <NextLessonCard Eyebrow="NEXT LESSON" Level="@NextLevel" Title="@NextTitle" Description="@NextDescription" Href="@NextHref" />
+</div>
+
+@if (_lastRunPopupOpen)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRun">
+        <section class="run-popup" role="dialog" aria-modal="true" @onclick:stopPropagation="true">
+            <header>
+                <div><span class="section-kicker">LAST RUN</span><h2>@LastRunHeadline</h2></div>
+                <button type="button" class="popup-close" @onclick="CloseLastRun">×</button>
+            </header>
+            <div class="popup-body">
+                <p>@LastRunExplanation</p>
+                <div class="popup-metrics">
+                    @foreach (var metric in LastRunMetrics)
+                    {
+                        <div><span>@metric.Label</span><strong>@metric.Value</strong></div>
+                    }
+                </div>
+                <p class="popup-memory">@LastRunMemory</p>
+            </div>
+        </section>
+    </div>
+}
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
+
+@code {
+    [Parameter, EditorRequired] public GraphTraversalLessonKind Kind { get; set; }
+
+    private readonly List<RunFrame> _frames = [];
+    private readonly HashSet<int> _completedTaskIds = [];
+    private PracticeModuleProgress _practiceProgress = new();
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
+    private GraphSnapshot _graph = GraphTraversalPresets.Create(GraphTraversalPreset.Branching);
+    private int _startIndex;
+    private int _prediction = -2;
+    private bool _predictionAnswered;
+    private bool _predictionCorrect;
+    private string? _inputMessage;
+    private DepthFirstTraversalVariant _dfsVariant = DepthFirstTraversalVariant.Recursive;
+    private BreadthFirstSearchResult? _bfsResult;
+    private DepthFirstSearchResult? _dfsResult;
+    private string? _lastCapturedStep;
+    private int _frameIndex = -1;
+    private bool _lastRunPopupOpen;
+    private bool _storageLoaded;
+    private bool _showRunPopups = true;
+    private int? _activeTaskId;
+    private StateView _view = StateView.Visual;
+
+    private string ModuleKey => Kind == GraphTraversalLessonKind.BreadthFirst ? "bfs" : "dfs";
+    private string LegacyKey => $"algorithm-visualizer.{ModuleKey}.completed-tasks.v1";
+    private string PopupSettingStorageKey => $"algorithm-visualizer.{ModuleKey}.result-popups.v1";
+    private string FullName => Kind == GraphTraversalLessonKind.BreadthFirst ? "Breadth-First Search (BFS)" : "Depth-First Search (DFS)";
+    private string ShortName => Kind == GraphTraversalLessonKind.BreadthFirst ? "BFS" : "DFS";
+    private string ConceptHref => Kind == GraphTraversalLessonKind.BreadthFirst ? "/learn/concepts/bfs" : "/learn/concepts/dfs";
+    private string ComplexityHref => Kind == GraphTraversalLessonKind.BreadthFirst ? "/learn/concepts/bfs-complexity" : "/learn/concepts/dfs-complexity";
+    private string LearnTitle => Kind == GraphTraversalLessonKind.BreadthFirst ? "BFS explores the graph one distance layer at a time." : "DFS follows one branch until it must backtrack.";
+    private string LearnIntro => Kind == GraphTraversalLessonKind.BreadthFirst ? "The queue is the rule: discover neighbors, enqueue them once, and always process the oldest waiting vertex next." : "The stack is the rule: visit one neighbor immediately, remember where to return, and only then continue with a sibling branch.";
+    private string HeaderText => Kind == GraphTraversalLessonKind.BreadthFirst ? "Choose a start vertex and watch the existing Graph adjacency representation feed a real FIFO traversal. Distances and parents are produced as vertices are first discovered." : "Choose recursive or iterative DFS and watch the existing Graph adjacency representation drive depth, visited state, stack frames and backtracking.";
+    private string TipLead => Kind == GraphTraversalLessonKind.BreadthFirst ? "Queue order is the proof." : "Stack order is the proof.";
+    private string TipText => Kind == GraphTraversalLessonKind.BreadthFirst ? "If a vertex at distance d is dequeued before every vertex at distance d+1, the first discovery gives an unweighted shortest-path distance." : "A sibling waits while the newest branch stays on top of the call/explicit stack. Backtracking only happens after a branch has no unvisited neighbor.";
+    private string LabHeading => Kind == GraphTraversalLessonKind.BreadthFirst ? "Watch the queue grow and shrink while levels emerge." : _dfsVariant == DepthFirstTraversalVariant.Recursive ? "Watch recursive calls descend and return." : "Watch an explicit LIFO stack replace recursion.";
+    private string FrontierRule => Kind == GraphTraversalLessonKind.BreadthFirst ? "Front = next dequeue · rear = newest discovery" : _dfsVariant == DepthFirstTraversalVariant.Recursive ? "Bottom = root call · top = current recursive call" : "Top = next pop · newest scheduled branch runs first";
+    private string FitHeading => Kind == GraphTraversalLessonKind.BreadthFirst ? "Use BFS when layer/edge distance matters." : "Use DFS when structure, reachability or deep exploration matters.";
+    private bool IsBusy => SimulationState.IsRunning;
+    private bool _lastResultExists => _bfsResult is not null || _dfsResult is not null;
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_frames.Count > 0 && _frameIndex < _frames.Count - 1) || SimulationState.IsRunning;
+    private int TimelineCount => _frames.Count;
+    private int TimelinePosition => _frameIndex >= 0 ? _frameIndex + 1 : 0;
+    private string DisplayedStepText => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].StepText : SimulationState.CurrentStepText;
+    private GraphTraversalSnapshot DisplayedSnapshot => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].Snapshot : CurrentSnapshot;
+    private GraphTraversalSnapshot CurrentSnapshot => Kind == GraphTraversalLessonKind.BreadthFirst ? Bfs.CreateSnapshot() : Dfs.CreateSnapshot();
+    private string GraphLabSummary { get { var s = Graph.CreateSnapshot(); return s.VertexCount == 0 ? "Graph lab is empty." : $"{s.VertexCount} vertices · {s.EdgeCount} edges · {(s.Directed ? "directed" : "undirected")}"; } }
+    private string PredictionFeedback => _predictionCorrect ? "Correct — that is the next vertex under the current adjacency order." : $"The second visit is {SecondVisitLabel}. Follow the frontier to see why.";
+    private string SecondVisitLabel { get { var expected = ExpectedSecondVisit(); return expected < 0 ? "none" : _graph.Vertices[expected].Label; } }
+    private string LastRunHeadline => Kind == GraphTraversalLessonKind.BreadthFirst ? $"BFS reached {_bfsResult?.ReachableCount ?? 0} vertices" : $"DFS reached {_dfsResult?.ReachableCount ?? 0} vertices";
+    private string LastRunExplanation => Kind == GraphTraversalLessonKind.BreadthFirst && _bfsResult is not null ? $"Starting at {Label(_bfsResult.StartIndex)}, BFS visited {FormatOrder(_bfsResult.TraversalOrderIndices)}. Every newly discovered vertex was marked before enqueue, so cycles could not create duplicate queue entries." : _dfsResult is not null ? $"Starting at {Label(_dfsResult.StartIndex)}, {_dfsResult.Variant} DFS visited {FormatOrder(_dfsResult.TraversalOrderIndices)}. It kept one branch active until the stack/call path had to return." : string.Empty;
+    private string LastRunMemory => Kind == GraphTraversalLessonKind.BreadthFirst ? "The graph stayed read-only. visited[], parent[], distance[] and the manual queue were the traversal-specific O(V) state." : "The graph stayed read-only. visited[], parent[], depth[] and either the call stack or manual explicit stack were the traversal-specific O(V) state.";
+    private IReadOnlyList<PracticeEvidenceMetric> LastRunMetrics => Kind == GraphTraversalLessonKind.BreadthFirst && _bfsResult is not null ? [new("Reached", $"{_bfsResult.ReachableCount}/{_graph.VertexCount}"), new("Edge checks", _bfsResult.EdgeChecks.ToString()), new("Max queue", _bfsResult.MaxQueueSize.ToString())] : _dfsResult is not null ? [new("Reached", $"{_dfsResult.ReachableCount}/{_graph.VertexCount}"), new("Edge checks", _dfsResult.EdgeChecks.ToString()), new("Backtracks", _dfsResult.BacktrackCount.ToString())] : [];
+    private string NextTitle => Kind == GraphTraversalLessonKind.BreadthFirst ? "Depth-First Search" : "Dijkstra";
+    private string NextLevel => Kind == GraphTraversalLessonKind.BreadthFirst ? "Intermediate" : "Coming next";
+    private string NextDescription => Kind == GraphTraversalLessonKind.BreadthFirst ? "Compare Queue-driven layer expansion with Stack-driven deep exploration." : "Reuse the same graph foundation, then add edge weights and priority-driven relaxation.";
+    private string NextHref => Kind == GraphTraversalLessonKind.BreadthFirst ? "/search/dfs" : "/structures/graph";
+
+    private IReadOnlyList<(string Tag,string Title,string Text)> FitCards => Kind == GraphTraversalLessonKind.BreadthFirst
+        ? [("GOOD FIT","Unweighted shortest edge count","BFS first discovery gives minimum number of edges from the start."),("GOOD FIT","Level-order exploration","Use it when near vertices should be processed before farther ones."),("NOT THE TOOL","Weighted shortest path","Use Dijkstra when edge weights change path cost.")]
+        : [("GOOD FIT","Reachability and components","DFS naturally explores one reachable region and exposes branch structure."),("GOOD FIT","Backtracking problems","The return path is explicit, making DFS a foundation for cycle/topological algorithms."),("NOT A GUARANTEE","Shortest path","DFS can find a path, but not necessarily the fewest-edge path.")];
+
+    private IReadOnlyList<PracticeTaskDefinition> PracticeTasks => Kind == GraphTraversalLessonKind.BreadthFirst ? BfsTasks : DfsTasks;
+    private static readonly PracticeTaskDefinition[] BfsTasks =
+    [
+        new(1,"Grow the queue with siblings","Run BFS on any graph where one visited vertex discovers at least two waiting vertices.","Branching preset · start A",GraphTraversalPreset.Branching,"A",DepthFirstTraversalVariant.Recursive,"/learn/concepts/bfs"),
+        new(2,"Reach a deeper level","Produce at least one reachable vertex at distance 2 or more and preserve nondecreasing visit distances.","Branching preset · start A",GraphTraversalPreset.Branching,"A",DepthFirstTraversalVariant.Recursive,"/learn/concepts/bfs"),
+        new(3,"Respect a directed edge","Use any directed graph where the chosen start cannot reach every vertex because traversal follows outgoing edges only.","Directed preset · choose B",GraphTraversalPreset.Directed,"B",DepthFirstTraversalVariant.Recursive,"/learn/concepts/graph"),
+        new(4,"Handle a cycle once","Run on any cyclic graph and finish without visiting a reachable vertex twice.","Cycle preset · start A",GraphTraversalPreset.Cycle,"A",DepthFirstTraversalVariant.Recursive,"/learn/concepts/bfs"),
+        new(5,"Stop at the component boundary","Use a disconnected graph and finish with some vertices still unreachable.","Disconnected preset · start A",GraphTraversalPreset.Disconnected,"A",DepthFirstTraversalVariant.Recursive,"/learn/concepts/bfs"),
+        new(6,"Build a shortest-path parent chain","Reach any vertex at distance ≥ 2 whose parent chain contains exactly that many edges.","Branching preset · start A",GraphTraversalPreset.Branching,"A",DepthFirstTraversalVariant.Recursive,"/learn/concepts/bfs-complexity"),
+        new(7,"Test the one-vertex boundary","Use exactly one vertex. BFS must visit it once and finish.","Single preset",GraphTraversalPreset.Single,"A",DepthFirstTraversalVariant.Recursive,"/learn/concepts/bfs")
+    ];
+    private static readonly PracticeTaskDefinition[] DfsTasks =
+    [
+        new(1,"Go deep before a sibling","Reach depth 2 or more before the traversal finishes the whole start neighborhood.","Branching preset · Recursive · start A",GraphTraversalPreset.Branching,"A",DepthFirstTraversalVariant.Recursive,"/learn/concepts/dfs"),
+        new(2,"Show real backtracking","Use Recursive DFS and produce at least one return from a child to its parent.","Branching preset · Recursive",GraphTraversalPreset.Branching,"A",DepthFirstTraversalVariant.Recursive,"/learn/concepts/dfs"),
+        new(3,"Handle a cycle once","Run DFS on any cyclic graph and finish without duplicate visits.","Cycle preset",GraphTraversalPreset.Cycle,"A",DepthFirstTraversalVariant.Recursive,"/learn/concepts/dfs"),
+        new(4,"Respect direction","Use a directed graph where the start reaches only a strict subset through outgoing edges.","Directed preset · start B",GraphTraversalPreset.Directed,"B",DepthFirstTraversalVariant.Recursive,"/learn/concepts/graph"),
+        new(5,"Stop at one connected component","Use a disconnected graph and leave at least one vertex unvisited.","Disconnected preset",GraphTraversalPreset.Disconnected,"A",DepthFirstTraversalVariant.Recursive,"/learn/concepts/dfs"),
+        new(6,"Use the explicit Stack","Run Iterative DFS on a graph that makes the explicit stack hold at least two scheduled vertices.","Branching preset · Iterative",GraphTraversalPreset.Branching,"A",DepthFirstTraversalVariant.Iterative,"/learn/concepts/dfs-stack"),
+        new(7,"Test the one-vertex boundary","Use exactly one vertex. DFS must visit it once and finish.","Single preset",GraphTraversalPreset.Single,"A",DepthFirstTraversalVariant.Recursive,"/learn/concepts/dfs")
+    ];
+
+    protected override void OnInitialized()
+    {
+        SimulationState.Changed += HandleSimulationChanged;
+        LoadPreset(GraphTraversalPreset.Branching);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _storageLoaded) return;
+        _storageLoaded = true;
+        _practiceProgress = PracticeProgress.Load(ModuleKey, LegacyKey, PracticeTasks.Select(t => t.Id));
+        _completedTaskIds.Clear();
+        foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id);
+        var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
+        if (bool.TryParse(popupSetting, out var show)) _showRunPopups = show;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void LoadPreset(GraphTraversalPreset preset)
+    {
+        if (IsBusy) return;
+        ClearReview();
+        _graph = GraphTraversalPresets.Create(preset);
+        _startIndex = 0;
+        _prediction = -2;
+        _predictionAnswered = false;
+        _inputMessage = $"Loaded {preset} preset.";
+        LoadIntoSimulation();
+    }
+
+    private void UseGraphLabSnapshot()
+    {
+        if (IsBusy) return;
+        var snapshot = Graph.CreateSnapshot();
+        if (snapshot.VertexCount == 0){_inputMessage="Build at least one vertex in Graph lab first.";return;}
+        ClearReview();
+        _graph = snapshot;
+        _startIndex = 0;
+        _prediction = -2;
+        _predictionAnswered = false;
+        _inputMessage = "Using the current Graph lab snapshot. Traversal will not mutate it.";
+        LoadIntoSimulation();
+    }
+
+    private void LoadIntoSimulation(){ if (Kind == GraphTraversalLessonKind.BreadthFirst) Bfs.LoadGraph(_graph); else { Dfs.LoadGraph(_graph); Dfs.Configure(_dfsVariant); } }
+    private void SetDfsVariant(DepthFirstTraversalVariant variant){ if(IsBusy)return; _dfsVariant=variant; ClearReview(); Dfs.LoadGraph(_graph); Dfs.Configure(variant); _prediction=-2; _predictionAnswered=false; }
+    private void StartChanged(ChangeEventArgs args){ if(int.TryParse(args.Value?.ToString(),out var value) && value>=0 && value<_graph.VertexCount){_startIndex=value;ClearReview();LoadIntoSimulation();_prediction=-2;_predictionAnswered=false;} }
+    private void PredictionChanged(ChangeEventArgs args){ if(!int.TryParse(args.Value?.ToString(),out _prediction))_prediction=-2; if(_prediction==-2){_predictionAnswered=false;return;} _predictionAnswered=true; _predictionCorrect=_prediction==ExpectedSecondVisit(); }
+
+    private async Task RunAsync()
+    {
+        if(IsBusy || _graph.VertexCount==0)return;
+        PrepareRun();
+        var token=SimulationState.Start($"Start {ShortName} from {Label(_startIndex)}.");
+        try
+        {
+            if(Kind==GraphTraversalLessonKind.BreadthFirst){_bfsResult=await Bfs.TraverseAsync(_graph,_startIndex,token); if(IsCurrent(token)){SimulationState.Complete("BFS complete.");EvaluateBfs(_bfsResult);}}
+            else{_dfsResult=await Dfs.TraverseAsync(_graph,_startIndex,_dfsVariant,token); if(IsCurrent(token)){SimulationState.Complete("DFS complete.");EvaluateDfs(_dfsResult);}}
+            if(IsCurrent(token))_lastRunPopupOpen=_showRunPopups;
+        }
+        catch(OperationCanceledException) when(token.IsCancellationRequested){}
+        catch(Exception ex){_inputMessage=$"Traversal stopped: {ex.Message}"; if(IsCurrent(token))SimulationState.Complete("Traversal stopped because of an error.");}
+    }
+
+    private void PrepareRun(){_frames.Clear();_frameIndex=-1;_lastCapturedStep=null;_lastRunPopupOpen=false;_inputMessage=null;}
+    private void Capture(){var step=SimulationState.CurrentStepText;if(step==_lastCapturedStep)return;var tail=_frameIndex<0||_frameIndex==_frames.Count-1;_frames.Add(new(step,CurrentSnapshot));_lastCapturedStep=step;if(tail)_frameIndex=_frames.Count-1;}
+    private void HandleSimulationChanged(){if(SimulationState.IsRunning)Capture();_ = InvokeAsync(StateHasChanged);}
+    private bool IsCurrent(CancellationToken token)=>!token.IsCancellationRequested&&SimulationState.SimulationCancellationToken==token;
+    private void ClearReview(){SimulationState.Reset();_frames.Clear();_frameIndex=-1;_lastCapturedStep=null;_bfsResult=null;_dfsResult=null;_lastRunPopupOpen=false;}
+    private Task PlayTimelineAsync(){if(_frames.Count>0)_frameIndex=_frames.Count-1;SimulationState.Resume();return InvokeAsync(StateHasChanged);}
+    private Task PauseTimelineAsync(){SimulationState.Pause();return Task.CompletedTask;}
+    private Task StepBackAsync(){if(SimulationState.IsRunning&&!SimulationState.IsPaused)SimulationState.Pause();if(_frameIndex>0)_frameIndex--;return InvokeAsync(StateHasChanged);}
+    private Task StepForwardAsync(){if(_frameIndex>=0&&_frameIndex<_frames.Count-1){_frameIndex++;return InvokeAsync(StateHasChanged);}if(SimulationState.IsRunning)SimulationState.Step();return Task.CompletedTask;}
+    private Task ResetPlaybackAsync(){SimulationState.Reset();_frames.Clear();_frameIndex=-1;_lastCapturedStep=null;return InvokeAsync(StateHasChanged);}
+
+    private void ToggleRunPopups(ChangeEventArgs args)
+    {
+        _showRunPopups = args.Value is bool value
+            ? value
+            : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed;
+        LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString());
+    }
+
+    private void OpenLastRun()=>_lastRunPopupOpen=_lastResultExists;
+    private void CloseLastRun()=>_lastRunPopupOpen=false;
+
+    private void StartTask(int taskId)
+    {
+        if(IsBusy)return;var task=PracticeTasks.First(t=>t.Id==taskId);_activeTaskId=taskId;LoadPreset(task.Preset);_activeTaskId=taskId;var idx=FindLabel(task.StartLabel);if(idx>=0)_startIndex=idx;if(Kind==GraphTraversalLessonKind.DepthFirst)SetDfsVariant(task.Variant);_activeTaskId=taskId;
+    }
+
+    private void EvaluateBfs(BreadthFirstSearchResult result)
+    {
+        foreach(var task in BfsTasks)
+        {
+            if(_completedTaskIds.Contains(task.Id)&&GetTaskEvidence(task.Id)is not null&&_activeTaskId!=task.Id)continue;
+            var completed=task.Id switch
+            {
+                1=>result.MaxQueueSize>=2&&result.ReachableCount>=3,
+                2=>Max(result.Distances)>=2&&DistancesNondecreasing(result),
+                3=>result.Graph.Directed&&result.ReachableCount<result.Graph.VertexCount,
+                4=>HasCycle(result.Graph)&&UniqueOrder(result.TraversalOrderIndices),
+                5=>result.Graph.VertexCount>=2&&result.ReachableCount<result.Graph.VertexCount,
+                6=>HasValidDistanceParentChain(result),
+                7=>result.Graph.VertexCount==1&&result.ReachableCount==1&&result.TraversalOrderIndices.Length==1,
+                _=>false
+            };
+            if(completed)CompleteTask(task,result.TraversalOrderIndices,result.ReachableCount,result.EdgeChecks,$"Max queue {result.MaxQueueSize}","BFS marked vertices when enqueued, so the queue never needed duplicate entries for the same vertex.");
+        }
+    }
+
+    private void EvaluateDfs(DepthFirstSearchResult result)
+    {
+        foreach(var task in DfsTasks)
+        {
+            if(_completedTaskIds.Contains(task.Id)&&GetTaskEvidence(task.Id)is not null&&_activeTaskId!=task.Id)continue;
+            var completed=task.Id switch
+            {
+                1=>Max(result.Depths)>=2&&result.ReachableCount>=3,
+                2=>result.Variant==DepthFirstTraversalVariant.Recursive&&result.BacktrackCount>=1,
+                3=>HasCycle(result.Graph)&&UniqueOrder(result.TraversalOrderIndices),
+                4=>result.Graph.Directed&&result.ReachableCount<result.Graph.VertexCount,
+                5=>result.Graph.VertexCount>=2&&result.ReachableCount<result.Graph.VertexCount,
+                6=>result.Variant==DepthFirstTraversalVariant.Iterative&&result.MaxFrontierDepth>=2,
+                7=>result.Graph.VertexCount==1&&result.ReachableCount==1&&result.TraversalOrderIndices.Length==1,
+                _=>false
+            };
+            if(completed)CompleteTask(task,result.TraversalOrderIndices,result.ReachableCount,result.EdgeChecks,$"Max stack {result.MaxFrontierDepth}",result.Variant==DepthFirstTraversalVariant.Recursive?"Recursive DFS used the language call stack plus visited/parent/depth state; the graph itself remained unchanged.":"Iterative DFS used the project's manual storage as an explicit LIFO stack plus visited/parent/depth state.");
+        }
+    }
+
+    private void CompleteTask(PracticeTaskDefinition task,int[] order,int reached,int edgeChecks,string frontierMetric,string memoryText)
+    {
+        var evidence=new PracticeCompletionEvidence(task.Id,task.Title,$"{ShortName} completed the required behavior",$"Starting at {Label(_startIndex)}, the run visited {FormatOrder(order)}. The tracker matched the behavior rather than one hardcoded fixture.",memoryText,$"This case demonstrates the defining {ShortName} frontier rule while still allowing extra graph content whenever it does not invalidate the concept.",[new("Visit order",FormatOrder(order)),new("Reached",$"{reached}/{_graph.VertexCount}"),new("Edge checks",edgeChecks.ToString()),new("Frontier",frontierMetric)],$"{(_graph.Directed?"directed":"undirected")} graph · start {Label(_startIndex)} · {FormatOrder(order)}");
+        _completedTaskIds.Add(task.Id);PracticeProgress.Complete(ModuleKey,_practiceProgress,task.Id,evidence);if(_activeTaskId==task.Id)_activeTaskId=null;
+    }
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId)=>PracticeProgress.GetEvidence(_practiceProgress,taskId);
+    private void OpenTaskEvidence(int taskId)=>_practiceEvidencePopup=GetTaskEvidence(taskId);
+    private void CloseTaskEvidence()=>_practiceEvidencePopup=null;
+
+    private int ExpectedSecondVisit()
+    {
+        if (_graph.VertexCount == 0 || _startIndex < 0 || _startIndex >= _graph.VertexCount) return -1;
+
+        // At the start, the start vertex is already visited/scheduled. Self-loops therefore do not
+        // produce a second visit. The first distinct valid outgoing neighbor is the second visit
+        // for BFS, recursive DFS, and our reverse-push iterative DFS.
+        var neighbors = _graph.Vertices[_startIndex].Neighbors;
+        for (var index = 0; index < neighbors.Length; index++)
+        {
+            var candidate = FindVertex(neighbors[index].VertexId);
+            if (candidate >= 0 && candidate != _startIndex) return candidate;
+        }
+
+        return -1;
+    }
+    private int FindVertex(Guid id){for(var i=0;i<_graph.VertexCount;i++)if(_graph.Vertices[i].Id==id)return i;return-1;}
+    private int FindLabel(string label){for(var i=0;i<_graph.VertexCount;i++)if(string.Equals(_graph.Vertices[i].Label,label,StringComparison.OrdinalIgnoreCase))return i;return-1;}
+    private string Label(int index)=>index>=0&&index<_graph.VertexCount?_graph.Vertices[index].Label:"?";
+    private string FormatOrder(int[] order){if(order.Length==0)return"empty";var labels=new string[order.Length];for(var i=0;i<order.Length;i++)labels[i]=Label(order[i]);return string.Join(" → ",labels);}
+    private static int Max(int[] values){var max=-1;for(var i=0;i<values.Length;i++)if(values[i]>max)max=values[i];return max;}
+    private static bool UniqueOrder(int[] order){for(var i=0;i<order.Length;i++)for(var j=i+1;j<order.Length;j++)if(order[i]==order[j])return false;return true;}
+    private static bool DistancesNondecreasing(BreadthFirstSearchResult r){var prev=-1;for(var i=0;i<r.TraversalOrderIndices.Length;i++){var d=r.Distances[r.TraversalOrderIndices[i]];if(d<prev)return false;prev=d;}return true;}
+    private static bool HasValidDistanceParentChain(BreadthFirstSearchResult r){for(var i=0;i<r.Distances.Length;i++){if(r.Distances[i]<2)continue;var steps=0;var cur=i;while(cur>=0&&steps<=r.Graph.VertexCount){cur=r.ParentIndices[cur];steps++;}if(steps-1==r.Distances[i])return true;}return false;}
+    private static bool HasCycle(GraphSnapshot graph)
+    {
+        if(graph.VertexCount==0)return false;
+        if(!graph.Directed){var visited=new bool[graph.VertexCount];for(var s=0;s<graph.VertexCount;s++)if(!visited[s]&&UndirectedCycle(graph,s,-1,visited))return true;return false;}
+        var state=new int[graph.VertexCount];for(var s=0;s<graph.VertexCount;s++)if(state[s]==0&&DirectedCycle(graph,s,state))return true;return false;
+    }
+    private static bool UndirectedCycle(GraphSnapshot g,int v,int parent,bool[] visited){visited[v]=true;var ns=g.Vertices[v].Neighbors;for(var i=0;i<ns.Length;i++){var n=NeighborIndex(g,ns[i]);if(n<0)continue;if(n==v)return true;if(!visited[n]){if(UndirectedCycle(g,n,v,visited))return true;}else if(n!=parent)return true;}return false;}
+    private static bool DirectedCycle(GraphSnapshot g,int v,int[] state){state[v]=1;var ns=g.Vertices[v].Neighbors;for(var i=0;i<ns.Length;i++){var n=NeighborIndex(g,ns[i]);if(n<0)continue;if(state[n]==1)return true;if(state[n]==0&&DirectedCycle(g,n,state))return true;}state[v]=2;return false;}
+    private static int NeighborIndex(GraphSnapshot graph, GraphNeighborSnapshot neighbor)
+    {
+        if (neighbor.VertexIndex >= 0 && neighbor.VertexIndex < graph.VertexCount &&
+            graph.Vertices[neighbor.VertexIndex].Id == neighbor.VertexId)
+        {
+            return neighbor.VertexIndex;
+        }
+
+        for (var index = 0; index < graph.VertexCount; index++)
+        {
+            if (graph.Vertices[index].Id == neighbor.VertexId) return index;
+        }
+
+        return -1;
+    }
+
+    public void Dispose()=>SimulationState.Changed-=HandleSimulationChanged;
+    private sealed record RunFrame(string StepText,GraphTraversalSnapshot Snapshot);
+    private sealed record PracticeTaskDefinition(int Id,string Title,string Goal,string Suggested,GraphTraversalPreset Preset,string StartLabel,DepthFirstTraversalVariant Variant,string HelpHref);
+    private enum StateView{Visual,Memory}
+}

@@ -14,7 +14,7 @@
             <div class="hero-actions">
                 <a class="primary-action" href="/structures/queue-stack">Start lesson 01 <span>→</span></a>
                 <ConceptLink class="secondary-action" Href="/learn/concepts/visual-vs-memory">Concepts &amp; Memory</ConceptLink>
-                <a class="secondary-action" href="#learning-path">See all 16 modules</a>
+                <a class="secondary-action" href="#learning-path">See all 18 modules</a>
             </div>
             <div class="hero-note">
                 <span class="note-icon">i</span>
@@ -53,9 +53,9 @@
     </section>
 
     <section class="quick-stats" aria-label="Implemented learning modules">
-        <div><strong>16</strong><span>interactive modules</span></div>
+        <div><strong>18</strong><span>interactive modules</span></div>
         <div><strong>8</strong><span>data-structure labs</span></div>
-        <div><strong>8</strong><span>algorithm labs</span></div>
+        <div><strong>10</strong><span>algorithm labs</span></div>
         <div><strong>Auto</strong><span>checked guided practice</span></div>
     </section>
 
@@ -63,7 +63,7 @@
         <div class="foundation-copy">
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="foundation-title">Use Concepts &amp; Memory when a label is unclear.</h2>
-            <p>It is the shared reference for Visual vs Memory State, identity, Big-O, tree height, heap indexing, matrix storage, graph adjacency, every implemented sorting strategy, and both Linear and Binary Search.</p>
+            <p>It is the shared reference for Visual vs Memory State, identity, Big-O, tree height, heap indexing, matrix storage, graph adjacency, every implemented sorting strategy, Linear/Binary Search, and graph traversal with BFS/DFS.</p>
         </div>
         <div class="foundation-links">
             <ConceptLink Href="/learn/concepts/visual-vs-memory"><strong>Visual vs memory</strong><span>What the picture shows vs what is stored →</span></ConceptLink>
@@ -208,10 +208,10 @@
     <section class="learning-section search-home-section">
         <div class="section-heading">
             <div>
-                <span class="section-kicker">SEARCH · 01–02</span>
+                <span class="section-kicker">SEARCH &amp; TRAVERSAL · 01–04</span>
                 <h2>Find values by following the evidence.</h2>
             </div>
-            <p>Start without assumptions, then add sorted order and see how one comparison can eliminate half of the remaining candidates.</p>
+            <p>Start with value search, then move onto graph reachability and compare Queue-driven breadth with Stack-driven depth.</p>
         </div>
 
         <div class="path-grid module-grid">
@@ -226,6 +226,18 @@
                 <div class="path-icon sort-icon"><i></i><i></i><i></i><i></i><i></i></div>
                 <h3>Binary Search</h3><p>Shrink a sorted candidate range with left/right/mid, then compare any-match with first-occurrence duplicate handling.</p>
                 <div class="concept-row"><span>Sorted input</span><span>Θ(log n)</span><span>First occurrence</span></div><span class="card-link">Open lesson <b>→</b></span>
+            </a>
+            <a class="path-card available module-card" href="/search/bfs">
+                <div class="card-topline"><span class="path-index">03 · INTERMEDIATE</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="path-icon graph-icon"><i></i><i></i><i></i><i></i></div>
+                <h3>Breadth-First Search</h3><p>Use a manual FIFO Queue to expand the reachable graph layer by layer and build unweighted shortest-path distances.</p>
+                <div class="concept-row"><span>Queue</span><span>Levels</span><span>O(V + E)</span></div><span class="card-link">Open lesson <b>→</b></span>
+            </a>
+            <a class="path-card available module-card" href="/search/dfs">
+                <div class="card-topline"><span class="path-index">04 · INTERMEDIATE</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="path-icon graph-icon"><i></i><i></i><i></i><i></i></div>
+                <h3>Depth-First Search</h3><p>Compare recursive call-stack DFS with an explicit manual Stack and watch backtracking through one branch at a time.</p>
+                <div class="concept-row"><span>Stack</span><span>Backtrack</span><span>O(V + E)</span></div><span class="card-link">Open lesson <b>→</b></span>
             </a>
         </div>
     </section>

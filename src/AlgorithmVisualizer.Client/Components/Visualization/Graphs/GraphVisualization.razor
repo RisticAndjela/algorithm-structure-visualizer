@@ -92,16 +92,19 @@
         </div>
     }
 
-    <div class="state-legend" aria-label="Graph animation state legend">
-        <span><i class="normal"></i>Normal</span>
-        <span><i class="checking"></i>Checking</span>
-        <span><i class="source"></i>Source</span>
-        <span><i class="target"></i>Target</span>
-        <span><i class="neighbor"></i>Neighbor</span>
-        <span><i class="matched"></i>Match</span>
-        <span><i class="added"></i>New</span>
-        <span><i class="removing"></i>Removing</span>
-    </div>
+    @if (ShowDefaultLegend)
+    {
+        <div class="state-legend" aria-label="Graph animation state legend">
+            <span><i class="normal"></i>Normal</span>
+            <span><i class="checking"></i>Checking</span>
+            <span><i class="source"></i>Source</span>
+            <span><i class="target"></i>Target</span>
+            <span><i class="neighbor"></i>Neighbor</span>
+            <span><i class="matched"></i>Match</span>
+            <span><i class="added"></i>New</span>
+            <span><i class="removing"></i>Removing</span>
+        </div>
+    }
 </div>
 
 @code {
@@ -112,6 +115,9 @@
 
     [Parameter, EditorRequired]
     public GraphSnapshot Snapshot { get; set; } = new(false, false, 0, 0, Array.Empty<GraphVertexSnapshot>(), Array.Empty<GraphEdgeSnapshot>(), Array.Empty<GraphMatrixCellSnapshot>());
+
+    [Parameter]
+    public bool ShowDefaultLegend { get; set; } = true;
 
     private ManualVertexPosition[] _manualPositions = Array.Empty<ManualVertexPosition>();
     private Guid? _draggedVertexId;
