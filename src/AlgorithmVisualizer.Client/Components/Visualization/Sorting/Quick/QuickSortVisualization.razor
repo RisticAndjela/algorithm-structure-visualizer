@@ -1,0 +1,148 @@
+@using AlgorithmVisualizer.Core.Algorithms.Sorting.Quick
+
+<section class="quick-visualization" aria-label="Quick Sort visual state">
+    @if (Snapshot.Count == 0)
+    {
+        <div class="empty-state"><strong>No values yet.</strong><span>Load an array to see a pivot partition one active range at a time.</span></div>
+    }
+    else
+    {
+        <section class="focus-panel @PhaseClass" aria-label="Current partition focus">
+            <div class="focus-number">@FocusNumber</div>
+            <div class="focus-copy">
+                <span>CURRENT PARTITION IDEA</span>
+                <strong>@FocusTitle</strong>
+                <p>@FocusHelp</p>
+            </div>
+            <div class="focus-range">
+                <span>ACTIVE RANGE</span>
+                <strong>@ActiveRangeLabel</strong>
+                <small>depth @Snapshot.CurrentDepth</small>
+            </div>
+        </section>
+
+        @if (Snapshot.Variant == QuickSortVariant.LomutoLastPivot)
+        {
+            <section class="partition-map basic-map" aria-label="Lomuto partition invariant">
+                <article><span>LEFT OF BOUNDARY</span><strong>≤ pivot</strong><small>Already accepted into this partition's left side.</small></article>
+                <article class="scan"><span>SCAN</span><strong>@IndexOrDash(Snapshot.ScanIndex)</strong><small>The next value being compared with the pivot.</small></article>
+                <article class="pivot"><span>PIVOT</span><strong>@PivotLabel</strong><small>The last item starts as pivot; after placement its index is final.</small></article>
+            </section>
+        }
+        else
+        {
+            <section class="partition-map three-map" aria-label="Three-way partition invariant">
+                <article class="less"><span>LEFT REGION</span><strong>&lt; pivot</strong><small>@RegionLabel(Snapshot.ActiveStart, Snapshot.LessEnd)</small></article>
+                <article class="equal"><span>EQUAL REGION</span><strong>= pivot</strong><small>@RegionLabel(Snapshot.EqualStart, Snapshot.EqualEnd)</small></article>
+                <article class="unknown"><span>UNCLASSIFIED</span><strong>scan here</strong><small>@IndexOrDash(Snapshot.ScanIndex)</small></article>
+                <article class="greater"><span>RIGHT REGION</span><strong>&gt; pivot</strong><small>@RegionLabel(Snapshot.GreaterStart, Snapshot.ActiveEnd)</small></article>
+            </section>
+        }
+
+        <section class="array-stage" aria-label="Quick Sort current array">
+            <header><div><span>CURRENT ARRAY</span><strong>@ArrayCaption</strong></div><small>Item numbers keep identity visible when equal values swap.</small></header>
+            <div class="array-track" role="list">
+                @for (var index = 0; index < Snapshot.Elements.Length; index++)
+                {
+                    var element = Snapshot.Elements[index];
+                    <article class="quick-item @StateClass(element.VisualState)" role="listitem">
+                        <span class="index-label">index @index</span>
+                        <strong>@element.Value</strong>
+                        <span class="identity-label">item #@(element.OriginalIndex + 1)</span>
+                        <span class="state-label">@StateLabel(element.VisualState)</span>
+                    </article>
+                }
+            </div>
+        </section>
+
+        <div class="legend" aria-label="Quick Sort legend">
+            <span><i class="swatch active"></i>active range</span>
+            <span><i class="swatch pivot"></i>pivot</span>
+            <span><i class="swatch scan"></i>scan</span>
+            <span><i class="swatch region"></i>classified region</span>
+            <span><i class="swatch sorted"></i>final position</span>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public QuickSortSnapshot Snapshot { get; set; } = default!;
+
+    private string FocusNumber => Snapshot.Phase switch
+    {
+        QuickSortPhase.ChoosePivot => "1",
+        QuickSortPhase.Scanning => "2",
+        QuickSortPhase.Swapping => "2",
+        QuickSortPhase.PlacePivot => "3",
+        QuickSortPhase.PartitionComplete => "4",
+        QuickSortPhase.BaseCase => "✓",
+        QuickSortPhase.Complete => "✓",
+        _ => "→"
+    };
+
+    private string FocusTitle => Snapshot.Phase switch
+    {
+        QuickSortPhase.ChoosePivot => "Choose a pivot for this range.",
+        QuickSortPhase.Scanning => Snapshot.Variant == QuickSortVariant.LomutoLastPivot
+            ? "Compare one scanned value with the pivot."
+            : "Classify one value as <, =, or > the pivot.",
+        QuickSortPhase.Swapping => "Move the classified value into its correct partition region.",
+        QuickSortPhase.PlacePivot => "Place the basic pivot into its final index.",
+        QuickSortPhase.PartitionComplete => "This partition is finished; recurse only on unfinished sides.",
+        QuickSortPhase.BaseCase => "A one-item range is already sorted.",
+        QuickSortPhase.Complete => "Every range is finished.",
+        _ => "Choose a pivot, partition, then recurse."
+    };
+
+    private string FocusHelp => Snapshot.Phase switch
+    {
+        QuickSortPhase.ChoosePivot => Snapshot.Variant == QuickSortVariant.LomutoLastPivot
+            ? "Basic mode always starts with the last element. That is simple, but sorted input can create very unbalanced recursion."
+            : "Advanced mode looks at first, middle, and last values and chooses their median before making a three-way partition.",
+        QuickSortPhase.Scanning => "Partitioning does not fully sort the range. It only builds a correct invariant around the pivot.",
+        QuickSortPhase.Swapping => "A swap changes array positions immediately. Quick Sort is in-place, but these swaps also mean it is not stable.",
+        QuickSortPhase.PlacePivot => "After Lomuto scanning, every value left of this destination is ≤ pivot and every remaining value to the right is > pivot.",
+        QuickSortPhase.PartitionComplete => Snapshot.Variant == QuickSortVariant.MedianOfThreeThreeWay
+            ? "The entire = pivot band is already finished, so duplicate values do not create unnecessary recursive work."
+            : "The pivot itself is now fixed forever; only its left and right subranges still need sorting.",
+        QuickSortPhase.BaseCase => "Recursion stops here because a one-item range cannot be out of order.",
+        QuickSortPhase.Complete => "The array is sorted. Green cells are all in final positions.",
+        _ => "Start the run to watch one partition at a time."
+    };
+
+    private string PhaseClass => Snapshot.Phase.ToString().ToLowerInvariant();
+    private string ActiveRangeLabel => Snapshot.ActiveStart >= 0 ? $"[{Snapshot.ActiveStart}..{Snapshot.ActiveEnd}]" : "—";
+    private string PivotLabel => Snapshot.PivotValue is int value ? $"{value} @ {Snapshot.PivotIndex}" : "—";
+    private string ArrayCaption => Snapshot.Phase == QuickSortPhase.Complete ? "sorted result" : Snapshot.ActiveStart >= 0 ? $"focus on {ActiveRangeLabel}" : "ready";
+
+    private static string IndexOrDash(int index) => index >= 0 ? $"index {index}" : "—";
+    private static string RegionLabel(int start, int end) => start >= 0 && end >= start ? $"[{start}..{end}]" : "empty";
+
+    private static string StateClass(QuickSortElementVisualState state) => state switch
+    {
+        QuickSortElementVisualState.Pivot => "is-pivot",
+        QuickSortElementVisualState.Scan => "is-scan",
+        QuickSortElementVisualState.Boundary => "is-boundary",
+        QuickSortElementVisualState.LessRegion => "is-less",
+        QuickSortElementVisualState.EqualRegion => "is-equal",
+        QuickSortElementVisualState.GreaterRegion => "is-greater",
+        QuickSortElementVisualState.Swapping => "is-swapping",
+        QuickSortElementVisualState.Sorted => "is-sorted",
+        QuickSortElementVisualState.ActiveRange => "is-active",
+        _ => string.Empty
+    };
+
+    private static string StateLabel(QuickSortElementVisualState state) => state switch
+    {
+        QuickSortElementVisualState.Pivot => "PIVOT",
+        QuickSortElementVisualState.Scan => "SCAN",
+        QuickSortElementVisualState.Boundary => "BOUNDARY",
+        QuickSortElementVisualState.LessRegion => "LEFT",
+        QuickSortElementVisualState.EqualRegion => "EQUAL",
+        QuickSortElementVisualState.GreaterRegion => "RIGHT",
+        QuickSortElementVisualState.Swapping => "SWAP",
+        QuickSortElementVisualState.Sorted => "SORTED",
+        QuickSortElementVisualState.ActiveRange => "ACTIVE",
+        _ => string.Empty
+    };
+}

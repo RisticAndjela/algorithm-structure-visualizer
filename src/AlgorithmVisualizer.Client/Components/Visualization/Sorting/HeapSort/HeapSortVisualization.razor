@@ -1,0 +1,182 @@
+@using AlgorithmVisualizer.Core.Algorithms.Sorting.HeapSort
+
+<section class="heap-sort-visualization" aria-label="Heap Sort visual state">
+    @if (Snapshot.Count == 0)
+    {
+        <div class="empty-state"><strong>No values yet.</strong><span>Load an array to build a Max Heap and grow a sorted suffix.</span></div>
+    }
+    else
+    {
+        <section class="focus-panel @PhaseClass" aria-label="Current Heap Sort idea">
+            <div class="focus-number">@FocusNumber</div>
+            <div class="focus-copy">
+                <span>NOW</span>
+                <strong>@FocusTitle</strong>
+                <p>@FocusHelp</p>
+            </div>
+            <div class="focus-range">
+                <span>HEAP BOUNDARY</span>
+                <strong>@HeapRangeLabel</strong>
+                <small>@SortedSuffixLabel</small>
+            </div>
+        </section>
+
+        <section class="heap-story" aria-label="Active Max Heap">
+            <header>
+                <div><span>ACTIVE HEAP</span><strong>@TreeCaption</strong></div>
+                <small>Tree position and array index are the same objects viewed two ways.</small>
+            </header>
+            @if (Snapshot.HeapSize > 0)
+            {
+                <div class="tree-shell">
+                    @for (var level = 0; level < ActiveHeight; level++)
+                    {
+                        var levelStart = (1 << level) - 1;
+                        var levelEnd = Math.Min((1 << (level + 1)) - 2, Snapshot.HeapSize - 1);
+                        <div class="heap-level">
+                            @for (var index = levelStart; index <= levelEnd; index++)
+                            {
+                                var element = Snapshot.Elements[index];
+                                <article class="tree-node @StateClass(element.VisualState)">
+                                    <span class="index-label">i=@index</span>
+                                    <strong>@element.Value</strong>
+                                    <small>item #@(element.OriginalIndex + 1)</small>
+                                    <span class="role-label">@TreeRole(index, element.VisualState)</span>
+                                </article>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else if (Snapshot.Phase == HeapSortPhase.Ready)
+            {
+                <div class="finished-tree"><strong>The heap has not been built yet.</strong><span>Start the run. Heap Sort must establish Max Heap order before it can extract a maximum.</span></div>
+            }
+            else
+            {
+                <div class="finished-tree"><strong>No active heap remains.</strong><span>Every array slot is now in the sorted suffix.</span></div>
+            }
+        </section>
+
+        <section class="array-stage" aria-label="Heap Sort array and boundary">
+            <header>
+                <div><span>SAME ARRAY</span><strong>active heap | sorted suffix</strong></div>
+                <small>The boundary moves left only after the root maximum is placed at the end.</small>
+            </header>
+            <div class="boundary-labels">
+                <span class="heap-label">HEAP @HeapRangeLabel</span>
+                <span class="suffix-label">SORTED @SortedRangeLabel</span>
+            </div>
+            <div class="array-track" role="list">
+                @for (var index = 0; index < Snapshot.Elements.Length; index++)
+                {
+                    var element = Snapshot.Elements[index];
+                    <article class="array-item @StateClass(element.VisualState)" role="listitem">
+                        <span class="index-label">index @index</span>
+                        <strong>@element.Value</strong>
+                        <span class="identity-label">item #@(element.OriginalIndex + 1)</span>
+                        <span class="state-label">@StateLabel(element.VisualState)</span>
+                    </article>
+                }
+            </div>
+        </section>
+
+        <div class="legend" aria-label="Heap Sort legend">
+            <span><i class="swatch heap"></i>active heap</span>
+            <span><i class="swatch parent"></i>parent</span>
+            <span><i class="swatch child"></i>larger child</span>
+            <span><i class="swatch swap"></i>swap</span>
+            <span><i class="swatch sorted"></i>final suffix</span>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public HeapSortSnapshot Snapshot { get; set; } = default!;
+
+    private int ActiveHeight => Snapshot.HeapSize <= 0 ? 0 : (int)Math.Floor(Math.Log2(Snapshot.HeapSize)) + 1;
+    private string PhaseClass => Snapshot.Phase.ToString().ToLowerInvariant();
+    private string HeapRangeLabel => Snapshot.HeapSize > 0 ? $"[0..{Snapshot.HeapSize - 1}]" : "empty";
+    private string SortedRangeLabel => Snapshot.BuildFinished && Snapshot.HeapSize < Snapshot.Count ? $"[{Snapshot.HeapSize}..{Snapshot.Count - 1}]" : "empty";
+    private string SortedSuffixLabel => Snapshot.BuildFinished ? $"sorted suffix: {SortedRangeLabel}" : "building the heap first";
+    private string TreeCaption => Snapshot.BuildFinished ? "Max Heap inside the current boundary" : Snapshot.Variant == HeapSortVariant.IncrementalBuild ? "heap prefix being built by insertion" : "subtrees being heapified bottom-up";
+
+    private string FocusNumber => Snapshot.Phase switch
+    {
+        HeapSortPhase.BuildInsert or HeapSortPhase.BuildCompare or HeapSortPhase.BuildSwap or HeapSortPhase.BuildHeapify => "1",
+        HeapSortPhase.BuildComplete => "✓",
+        HeapSortPhase.ExtractRoot => "2",
+        HeapSortPhase.ShrinkHeap => "3",
+        HeapSortPhase.RepairCompare or HeapSortPhase.RepairSwap or HeapSortPhase.RepairComplete => "4",
+        HeapSortPhase.Complete => "✓",
+        _ => "→"
+    };
+
+    private string FocusTitle => Snapshot.Phase switch
+    {
+        HeapSortPhase.BuildInsert => "Grow the Max Heap prefix with one new item.",
+        HeapSortPhase.BuildHeapify => "Turn this subtree into a Max Heap.",
+        HeapSortPhase.BuildCompare => "Check the heap rule while building.",
+        HeapSortPhase.BuildSwap => "Move the larger value upward during heap construction.",
+        HeapSortPhase.BuildComplete => "The whole array is now a Max Heap.",
+        HeapSortPhase.ExtractRoot => "Move the maximum root to the end of the active heap.",
+        HeapSortPhase.ShrinkHeap => "Freeze that suffix slot and shrink the heap boundary.",
+        HeapSortPhase.RepairCompare => "Choose the larger child and compare it with the new parent.",
+        HeapSortPhase.RepairSwap => "Sift the new root downward inside the reduced heap.",
+        HeapSortPhase.RepairComplete => "The reduced heap is valid again.",
+        HeapSortPhase.Complete => "The heap disappeared because every slot is sorted.",
+        _ => "Build a Max Heap before extracting anything."
+    };
+
+    private string FocusHelp => Snapshot.Phase switch
+    {
+        HeapSortPhase.BuildInsert => "Basic mode reuses the Binary Heap insertion idea: append to the current heap prefix, then bubble the new value upward.",
+        HeapSortPhase.BuildHeapify => "Advanced Floyd build skips leaf work and repairs parents from the bottom upward.",
+        HeapSortPhase.BuildCompare => "A Max Heap requires every parent to be at least as large as its children.",
+        HeapSortPhase.BuildSwap => "Only array references are exchanged. The same element identities move to new indexes.",
+        HeapSortPhase.BuildComplete => "Because the root is the maximum, it is exactly the next value that belongs at the far right of the final ascending array.",
+        HeapSortPhase.ExtractRoot => "This is not a priority-queue delete: the root is swapped into its final array position and remains in the same array.",
+        HeapSortPhase.ShrinkHeap => "The green suffix is final. Sift-down must never compare against it again.",
+        HeapSortPhase.RepairCompare => "For a Max Heap, repair follows the larger child because that child is the only one that can replace the parent correctly.",
+        HeapSortPhase.RepairSwap => "The displaced value may still violate the heap rule lower in the tree, so repair continues down that path.",
+        HeapSortPhase.RepairComplete => "The root is maximum again, so the next extraction can safely place another final suffix value.",
+        HeapSortPhase.Complete => "The array is ascending. Heap Sort needed no second O(n) array, but distant swaps mean it is not stable.",
+        _ => "Start the run to see the heap boundary become a sorted suffix."
+    };
+
+    private static string StateClass(HeapSortElementVisualState state) => state switch
+    {
+        HeapSortElementVisualState.Unbuilt => "is-unbuilt",
+        HeapSortElementVisualState.Root => "is-root",
+        HeapSortElementVisualState.BuildItem => "is-build",
+        HeapSortElementVisualState.Parent => "is-parent",
+        HeapSortElementVisualState.ChildCandidate => "is-child",
+        HeapSortElementVisualState.Comparing => "is-comparing",
+        HeapSortElementVisualState.Swapping => "is-swapping",
+        HeapSortElementVisualState.SortedSuffix => "is-sorted",
+        HeapSortElementVisualState.ActiveHeap => "is-heap",
+        _ => string.Empty
+    };
+
+    private static string StateLabel(HeapSortElementVisualState state) => state switch
+    {
+        HeapSortElementVisualState.Unbuilt => "WAIT",
+        HeapSortElementVisualState.Root => "ROOT",
+        HeapSortElementVisualState.BuildItem => "BUILD",
+        HeapSortElementVisualState.Parent => "PARENT",
+        HeapSortElementVisualState.ChildCandidate => "CHILD",
+        HeapSortElementVisualState.Swapping => "SWAP",
+        HeapSortElementVisualState.SortedSuffix => "SORTED",
+        HeapSortElementVisualState.ActiveHeap => "HEAP",
+        _ => string.Empty
+    };
+
+    private static string TreeRole(int index, HeapSortElementVisualState state)
+    {
+        if (state == HeapSortElementVisualState.Parent) return "PARENT";
+        if (state == HeapSortElementVisualState.ChildCandidate) return "LARGER CHILD";
+        if (state == HeapSortElementVisualState.Swapping) return "SWAP";
+        if (state == HeapSortElementVisualState.BuildItem) return "BUILD HERE";
+        return index == 0 ? "ROOT" : "HEAP NODE";
+    }
+}

@@ -75,4 +75,32 @@ Complexity taught by the module:
 
 Active create/update/delete mutations require restart because range boundaries, run boundaries, and buffer contents belong to the old snapshot.
 
-Quick Sort and Heap Sort are still planned and must not be presented as interactive until their Core logic exists.
+### Quick Sort
+
+Route: `/sorting/quick`
+
+Core namespace: `AlgorithmVisualizer.Core.Algorithms.Sorting.Quick`
+
+The implementation is manual and in-place over `QuickSortElement[]`. **LomutoLastPivot** uses the last element as pivot and one growing `<= pivot` boundary. **MedianOfThreeThreeWay** chooses the median of first/middle/last values, then builds `< pivot`, `= pivot`, and `> pivot` regions so duplicate-heavy inputs can finish the equal band without recurring through it.
+
+Complexity taught by the module:
+
+- best/average: `Θ(n log n)` when partitions stay reasonably balanced;
+- worst: `Θ(n²)` when pivots repeatedly create highly unbalanced ranges;
+- extra array storage: `O(1)`;
+- recursion stack: `O(log n)` average and `O(n)` worst;
+- both variants are intentionally not stable.
+
+Active create/update/delete mutations require restart because pivot choices, indexes, and recursive partition ranges belong to the old snapshot.
+
+### Heap Sort
+
+Route: `/sorting/heap`
+
+Core namespace: `AlgorithmVisualizer.Core.Algorithms.Sorting.HeapSort`
+
+The implementation is written from scratch over one `HeapSortElement[]`. **IncrementalBuild** grows a Max Heap prefix with explicit parent comparisons and bubble-up. **FloydBottomUp** heapifies from the last parent toward the root with explicit sift-down, giving a `Θ(n)` build phase. Both variants then swap the maximum root into the final suffix, shrink `heapSize`, and sift the new root down inside the reduced heap.
+
+Heap Sort keeps `Θ(n log n)` best/average/worst total time and `O(1)` extra array storage. It is not stable. Active create/update/delete mutations require restart because heap order, the heap boundary, and sorted-suffix finality belong to the old snapshot.
+
+Bubble Sort, Selection Sort, Insertion Sort, Merge Sort, Quick Sort, and Heap Sort are all live.

@@ -1,0 +1,59 @@
+@using AlgorithmVisualizer.Core.Algorithms.Sorting.HeapSort
+
+<section class="heap-sort-memory" aria-label="Heap Sort memory state">
+    <div class="memory-note">
+        <div><span>MAIN STORAGE</span><strong>One fixed <code>HeapSortElement[]</code></strong></div>
+        <p>The tree is only a visual interpretation of array indexes. Heap Sort swaps the same element references inside this array and needs no second O(n) buffer.</p>
+    </div>
+
+    @if (Snapshot.Count == 0)
+    {
+        <div class="empty-memory">Load an array to inspect its slots, heap boundary, and item identity.</div>
+    }
+    else
+    {
+        <div class="boundary-strip">
+            <div><span>ACTIVE HEAP</span><strong>@HeapRange</strong><small>parent i → children 2i+1 and 2i+2</small></div>
+            <div class="sorted"><span>FINAL SORTED SUFFIX</span><strong>@SortedRange</strong><small>these slots are never touched by repair again</small></div>
+        </div>
+
+        <div class="slot-strip" role="list">
+            @for (var index = 0; index < Snapshot.Elements.Length; index++)
+            {
+                var element = Snapshot.Elements[index];
+                <article class="memory-slot @StateClass(element.VisualState)" role="listitem">
+                    <header><span>slot</span><strong>[@index]</strong></header>
+                    <div class="reference-arrow">↓</div>
+                    <div class="element-object"><span>item #@(element.OriginalIndex + 1)</span><strong>@element.Value</strong></div>
+                    <small>@SlotRole(index)</small>
+                </article>
+            }
+        </div>
+
+        <div class="memory-facts">
+            <article><span>Extra array</span><strong>O(1)</strong><small>No merge buffer or copied heap is created.</small></article>
+            <article><span>Tree storage</span><strong>None</strong><small>The complete tree is encoded entirely by indexes in the same array.</small></article>
+            <article><span>Heap size now</span><strong>@Snapshot.HeapSize</strong><small>The boundary shrinks after every root extraction.</small></article>
+            <article><span>Stability</span><strong>Not stable</strong><small>Root/end and repair swaps may reverse equal-value item identities.</small></article>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public HeapSortSnapshot Snapshot { get; set; } = default!;
+
+    private string HeapRange => Snapshot.HeapSize > 0 ? $"[0..{Snapshot.HeapSize - 1}]" : "empty";
+    private string SortedRange => Snapshot.BuildFinished && Snapshot.HeapSize < Snapshot.Count ? $"[{Snapshot.HeapSize}..{Snapshot.Count - 1}]" : "empty";
+    private string SlotRole(int index) => Snapshot.BuildFinished && index >= Snapshot.HeapSize ? "final sorted slot" : index < Snapshot.HeapSize ? "inside active heap" : "not built yet";
+
+    private static string StateClass(HeapSortElementVisualState state) => state switch
+    {
+        HeapSortElementVisualState.Root => "is-root",
+        HeapSortElementVisualState.Parent => "is-parent",
+        HeapSortElementVisualState.ChildCandidate => "is-child",
+        HeapSortElementVisualState.Swapping => "is-swapping",
+        HeapSortElementVisualState.SortedSuffix => "is-sorted",
+        HeapSortElementVisualState.Unbuilt => "is-unbuilt",
+        _ => string.Empty
+    };
+}

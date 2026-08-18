@@ -1,0 +1,18 @@
+<article class="range-card @Emphasis">
+    <span>@Label · [@Start..@End]</span>
+    <div class="range-values">
+        @for (var index = Start; index <= End && index < Values.Length; index++)
+        {
+            <strong>@Values[index]</strong>
+        }
+    </div>
+    <small>@(Start == End ? "one-item range" : $"{End - Start + 1} items")</small>
+</article>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+    [Parameter] public int Start { get; set; }
+    [Parameter] public int End { get; set; }
+    [Parameter, EditorRequired] public int[] Values { get; set; } = [];
+    [Parameter] public string Emphasis { get; set; } = string.Empty;
+}

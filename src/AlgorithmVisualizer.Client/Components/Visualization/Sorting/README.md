@@ -44,8 +44,27 @@ Merge Sort exposes two real Core modes:
 - **Top-down Recursive** — canonical divide-and-conquer midpoint splitting and recursive merge-up; `Θ(n log n)` best/average/worst;
 - **Natural Merge** — detects maximal nondecreasing runs already present in the input; adaptive `Θ(n)` best case for one sorted run and `Θ(n log n)` worst case.
 
-Basic Top-down Visual state must show the recursion tree as an actual teaching structure: immutable input ranges split level by level to one-item base cases, and merge-back is shown separately with left/right sorted children, front reads, the temporary buffer, and copy-back. Do not collapse the divide phase into color changes on one flat array. Natural Merge intentionally uses a separate detected-runs presentation instead of pretending it has the same recursion tree.
+Basic Top-down Visual state uses a single-focus teaching view: during divide steps it shows only the active parent range and the two child ranges it creates; during merge steps that divide view disappears and the learner sees only the two already-sorted child runs, the temporary buffer, and copy-back. The main array stays visible as the stable reference at the bottom. Natural Merge intentionally uses a separate detected-runs presentation instead of pretending it follows recursive midpoint splitting.
 
 Both modes use one reusable `O(n)` auxiliary buffer and preserve duplicate identity by selecting from the left run on equality. Visual State exposes active ranges, run fronts, buffer writes, and copy-back. Memory State shows the main array and auxiliary buffer side by side. Reads are safe during analysis, but active create/update/delete mutations require a new run because range/run boundaries and playback frames belong to the previous snapshot.
 
-Quick and Heap Sort remain TODO placeholders until their Core implementations are added.
+
+## Quick Sort — live
+
+Quick Sort exposes two real Core modes:
+
+- **Basic Lomuto** — last element pivot, one `<= pivot` boundary, then explicit pivot placement;
+- **Advanced median-of-three + 3-way** — median heuristic for first/middle/last candidates plus `<`, `=`, and `>` regions so duplicate-heavy inputs do not recurse through the full equal band.
+
+Visual State keeps one active partition in focus and labels pivot, scan, classified regions, and finalized indexes. Memory State shows the fixed array slots, stable item identity labels (to demonstrate that Quick Sort itself is not stable), and the recursion-stack cost: `O(log n)` average, `O(n)` worst. Reads are safe, but create/update/delete during partitioning requires a new run because the old pivot/range trace is no longer valid.
+
+Quick Sort is live with Basic Lomuto and Advanced median-of-three + 3-way partition visualizations.
+
+## Heap Sort — live
+
+Heap Sort exposes two real Core construction modes:
+
+- **Basic Incremental Build** — grows a Max Heap prefix with insertion + bubble-up (`O(n log n)` build);
+- **Advanced Floyd Bottom-Up** — heapifies parents from the last parent to the root (`Θ(n)` build).
+
+Both then use the same in-place root extraction and sift-down loop. Visual State deliberately shows the same objects as a complete binary tree and as one array separated into `ACTIVE HEAP | SORTED SUFFIX`. Memory State removes the teaching tree and exposes the actual fixed array slots, item identity, and `O(1)` extra-array cost. Heap Sort is not stable and create/update/delete mutations require a new run because they invalidate both heap order and suffix-finality.

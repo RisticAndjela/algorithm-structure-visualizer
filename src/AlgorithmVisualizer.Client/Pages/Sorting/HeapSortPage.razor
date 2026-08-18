@@ -1,25 +1,517 @@
 @page "/sorting/heap"
+@using AlgorithmVisualizer.Core.Algorithms.Sorting.HeapSort
+@using AlgorithmVisualizer.Client.Components.Visualization.Sorting.HeapSort
+@implements IDisposable
+@inject SimulationState SimulationState
+@inject HeapSortSimulation HeapSort
+@inject IJSRuntime JS
 
 <PageTitle>Heap Sort — Algorithm Visualizer</PageTitle>
 
-<LearningPlaceholder
-    Title="Heap Sort"
-    Eyebrow="Sorting algorithm"
-    Description="See how a heap turns repeated maximum selection into an efficient in-place sort: build the heap, move the root to the end, then repair the reduced heap."
-    Complexity="O(n log n)"
-    ComplexityNote="Heap construction is O(n); repeated extraction dominates."
-    Concepts="heapify · extract max · sorted suffix · sift down"
-    TipTitle="Keep the heap boundary visible."
-    TipText="The same array contains two logical regions: an active heap and a finished sorted suffix. The boundary moves after every extraction."
-    FocusText="The simulation should make the active heap size explicit so swaps in the sorted suffix can never be mistaken for heap members."
-    PromptText="Which region is still a heap, and which region is already final?"
-    LearnTitle="Heap Sort turns one array into an active heap plus a sorted suffix."
-    LearnSummary="Build a Max Heap, move its root to the end, shrink the heap boundary, and repair the remaining heap with sift-down."
-    ConceptHref="/learn/concepts#heap-sort"
-    LearnCards="BUILD|Create the heap first|Heapify establishes the parent ≥ child rule before repeated extraction begins.;;ROOT|The maximum lives at index 0|In a Max Heap, the root is the next value that belongs at the end of the sorted array.;;BOUNDARY|Shrink the active heap|After moving the root to the end, that suffix position is final and leaves the heap.;;REPAIR|Sift the new root down|Restore the heap property only inside the reduced active heap."
-    NextLessonEyebrow="NEXT TRACK PREP"
-    NextLessonTitle="Review complexity before search algorithms"
-    NextLessonDescription="Use Concepts & Memory to review Big-O and representation trade-offs before the search-algorithm track is implemented."
-    NextLessonHref="/learn/concepts#big-o"
-    NextLessonLevel="Sorting track complete"
-    NextLessonLinkLabel="Review Big-O" />
+<div class="heap-sort-page learning-module-page learning-module-shell">
+    <section class="learn-launchpad" aria-labelledby="heap-sort-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="heap-sort-learn-title">Heap Sort keeps one array, but gives it two jobs.</h2>
+            <p>The left side is an active Max Heap. The right side is a final sorted suffix. Every extraction moves the maximum root into that suffix, shrinks the heap boundary, then repairs only what remains.</p>
+            <a class="learn-launchpad-link" href="/learn/concepts#heap-sort">Open Heap Sort concepts &amp; memory →</a>
+        </div>
+        <div class="learn-grid">
+            <article class="learn-card purple"><span>BUILD</span><strong>First create a Max Heap</strong><small>Parent ≥ children must be true before repeated root extraction is safe.</small></article>
+            <article class="learn-card mint"><span>ROOT</span><strong>The maximum is always at index 0</strong><small>That root is exactly the next value that belongs at the far right of the ascending result.</small></article>
+            <article class="learn-card blue"><span>BOUNDARY</span><strong>Sorted suffix only grows</strong><small>After the root is moved to the end, that slot leaves the heap forever.</small></article>
+            <article class="learn-card gold"><span>REPAIR</span><strong>Sift the new root downward</strong><small>Compare only inside the reduced heap. The finished suffix must never re-enter heap repair.</small></article>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow"><span>SORTING ALGORITHMS</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <h1>Heap Sort</h1>
+            <p>Connect the Binary Heap structure to sorting: build a Max Heap, place its root at the end, shrink the heap, and repeat.</p>
+        </div>
+        <div class="complexity-summary" aria-label="Heap Sort complexity">
+            <div><span>Selected mode</span><strong>@VariantLabel</strong><small>@VariantNote</small></div>
+            <div><span>Total time</span><strong>Θ(n log n)</strong><small>best · average · worst</small></div>
+            <div><span>Extra array</span><strong>O(1)</strong><small>in-place · not stable</small></div>
+        </div>
+    </header>
+
+    <section class="smart-tip" aria-label="Heap Sort learning tip">
+        <span class="tip-icon">✦</span>
+        <div><strong>Do not confuse heap order with sorted order:</strong><p>a Max Heap only guarantees parent ≥ children. The full array becomes sorted only after repeated root extraction.</p></div>
+        <a href="/learn/concepts#heap-sort">Why a heap is not a sorted array →</a>
+    </section>
+
+    <section class="implementation-section" aria-labelledby="heap-sort-implementation-title">
+        <div class="section-heading-row">
+            <div><span class="section-kicker">IMPLEMENTATION CHOICE</span><h2 id="heap-sort-implementation-title">Build the same Max Heap in two different ways.</h2><p>Both variants use the same extraction + sift-down sorting phase. The advanced variant improves only heap construction.</p></div>
+        </div>
+        <div class="variant-grid">
+            <button type="button" class="variant-card @(_variant == HeapSortVariant.IncrementalBuild ? "active" : string.Empty)" @onclick="() => SetVariant(HeapSortVariant.IncrementalBuild)" disabled="@IsBusy">
+                <span>BASIC · INSERT + BUBBLE-UP</span><strong>Reuse the Binary Heap insertion mental model</strong><p>Grow a heap prefix one element at a time. Every new value compares upward with its parent until Max Heap order is restored.</p><small>Build O(n log n) · easiest bridge from the Heap data-structure lesson</small>
+            </button>
+            <button type="button" class="variant-card @(_variant == HeapSortVariant.FloydBottomUp ? "active" : string.Empty)" @onclick="() => SetVariant(HeapSortVariant.FloydBottomUp)" disabled="@IsBusy">
+                <span>ADVANCED · FLOYD BUILD-HEAP</span><strong>Heapify parents from the bottom upward</strong><p>Leaves are already one-item heaps. Start from the last parent and sift downward, avoiding repeated bubble-up work.</p><small>Build Θ(n) · same Θ(n log n) total sort · fewer construction operations on many inputs</small>
+            </button>
+        </div>
+        <div class="live-data-card">
+            <div><span>REAL-TIME CRUD</span><strong>READ is safe; CREATE, UPDATE, and DELETE require a new sort</strong></div>
+            <p>The active heap boundary, parent/child indexes, and finished suffix all describe one fixed snapshot. A mutation can invalidate both heap order and final suffix claims. For continuously changing priority data, use the Binary Heap structure instead of Heap Sort.</p>
+            <span class="compatibility-badge restart">READ safe · mutations restart</span>
+        </div>
+        <div class="lesson-reference-links"><a href="/structures/binary-heap">Review the Binary Heap lab →</a><a href="/learn/concepts#binary-heap">Binary Heap concepts →</a></div>
+    </section>
+
+    <section id="heap-sort-lab" class="builder-section" aria-labelledby="heap-sort-build-title">
+        <div class="section-heading-row">
+            <div class="heading-with-step"><span class="step-number">1</span><div><span class="section-kicker">BUILD THE ARRAY</span><h2 id="heap-sort-build-title">Choose values that make the heap shape visible.</h2><p>Use 1–12 integers. The same indexes will appear as both an array and a complete binary tree.</p></div></div>
+            <a class="concept-link" href="/learn/concepts#heap-sort">How Heap Sort works →</a>
+        </div>
+        <div class="array-builder">
+            <label class="array-input"><span>VALUES</span><input value="@_arrayText" @oninput="ArrayTextChanged" disabled="@IsBusy" aria-label="Heap Sort array values" placeholder="Example: 4, 10, 3, 5, 1" /><small>Separate values with spaces or commas. Duplicates and negatives are allowed.</small></label>
+            <button class="primary-action" type="button" @onclick="ApplyArray" disabled="@IsBusy">Use this array</button>
+        </div>
+        <div class="preset-row" aria-label="Heap Sort example arrays">
+            <span>TRY AN EXAMPLE</span>
+            <button type="button" @onclick="() => LoadPreset(Preset.Classic)" disabled="@IsBusy">Classic</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Ascending)" disabled="@IsBusy">Ascending</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.AlreadyHeap)" disabled="@IsBusy">Already a Max Heap</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Duplicates)" disabled="@IsBusy">Duplicates</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Mixed)" disabled="@IsBusy">Mixed signs</button>
+            <button type="button" @onclick="LoadRandom" disabled="@IsBusy">Random</button>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(_inputError))
+        {
+            <div class="input-error" role="alert"><strong>Check the array.</strong><span>@_inputError</span></div>
+        }
+        <div class="current-array" aria-label="Current Heap Sort input">
+            <span>CURRENT INPUT</span>
+            <div>@for (var index = 0; index < Current.Elements.Length; index++) { <span><small>@index</small><strong>@Current.Elements[index].Value</strong></span> }</div>
+        </div>
+    </section>
+
+    <section class="predict-section" aria-labelledby="heap-sort-predict-title">
+        <div class="prediction-copy"><span class="step-number">2</span><div><span class="section-kicker">PREDICT FIRST</span><h2 id="heap-sort-predict-title">Which value must be at the root after Max Heap construction?</h2><p>A Max Heap does not fully sort the array, but its root has one guaranteed property.</p></div></div>
+        @if (Current.Count > 0)
+        {
+            <div class="prediction-card">
+                <div class="prediction-actions heap-root-options">
+                    @foreach (var option in PredictionOptions)
+                    {
+                        <button type="button" class="@(_predictionValue == option ? "chosen" : string.Empty)" @onclick="() => AnswerPrediction(option)" disabled="@IsBusy"><strong>@option</strong></button>
+                    }
+                </div>
+                @if (_predictionValue is not null)
+                {
+                    <p class="prediction-feedback @(_predictionCorrect ? "correct" : "incorrect")" aria-live="polite">@PredictionFeedback</p>
+                }
+            </div>
+        }
+    </section>
+
+    <section class="lab-section" aria-labelledby="heap-sort-visualizer-title">
+        <div class="lab-heading">
+            <div><span class="section-kicker">3 · WATCH THE ALGORITHM</span><h2 id="heap-sort-visualizer-title">Watch the heap shrink while the sorted suffix grows.</h2></div>
+            <div class="lab-actions">
+                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopupsAsync" /><span>Open explanation after run</span></label>
+                @if (_lastResult is not null) { <button class="secondary-action" type="button" @onclick="OpenLastRunPopup">Last explanation</button> }
+                <button class="sort-button" type="button" @onclick="RunSortAsync" disabled="@(IsBusy || Current.Count == 0)"><span>▶</span> Sort this array</button>
+            </div>
+        </div>
+
+        <div class="run-dashboard heap-dashboard">
+            <div><span>HEAP SIZE</span><strong>@DisplayedSnapshot.HeapSize</strong></div>
+            <div><span>EXTRACTIONS</span><strong>@DisplayedSnapshot.Extractions</strong></div>
+            <div><span>COMPARISONS</span><strong>@DisplayedSnapshot.Comparisons</strong></div>
+            <div><span>SWAPS</span><strong>@DisplayedSnapshot.Swaps</strong></div>
+            <div><span>BUILD WORK</span><strong>@DisplayedSnapshot.BuildComparisons / @DisplayedSnapshot.BuildSwaps</strong><small>comparisons / swaps</small></div>
+        </div>
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist" aria-label="Heap Sort simulation view">
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state</button>
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
+            </div>
+            <p>@(_view == StateView.Visual ? "Visual state keeps the complete-tree view synchronized with the same array and makes the active heap/sorted suffix boundary explicit." : "Memory state shows that no tree nodes or O(n) helper array exist: Heap Sort only swaps element references inside one fixed array.")</p>
+        </div>
+        <div class="lesson-reference-links"><a href="/learn/concepts#heap-sort">Heap Sort concepts →</a><a href="/learn/concepts#binary-heap">Heap indexing →</a><a href="/learn/concepts#memory">Array memory →</a><a href="/learn/concepts#big-o">Complexity guide →</a></div>
+
+        <div class="visual-shell">
+            @if (_view == StateView.Visual) { <HeapSortVisualization Snapshot="@DisplayedSnapshot" /> }
+            else { <HeapSortMemoryVisualization Snapshot="@DisplayedSnapshot" /> }
+        </div>
+    </section>
+
+    <section class="algorithm-map" aria-labelledby="heap-sort-map-title">
+        <div class="section-heading-row"><div><span class="section-kicker">WHAT THE CODE IS PROVING</span><h2 id="heap-sort-map-title">Heap Sort repeats one four-part invariant.</h2><p>Only the construction strategy changes between Basic and Advanced. Extraction is identical.</p></div></div>
+        <div class="why-cards">
+            <article><span>1 · Build</span><strong>Every parent in the active range is ≥ its children.</strong><p>That property makes index 0 the maximum without sorting siblings or subtrees internally.</p></article>
+            <article><span>2 · Extract</span><strong>Swap root with the final slot of the active heap.</strong><p>The maximum is now exactly where it belongs in ascending order.</p></article>
+            <article><span>3 · Shrink + repair</span><strong>Exclude the final suffix, then sift the new root down.</strong><p>Repair never touches finished indexes; this is what makes the suffix a permanent invariant.</p></article>
+        </div>
+    </section>
+
+    <section class="fit-section" aria-labelledby="heap-sort-fit-title">
+        <div class="section-heading-row"><div><span class="section-kicker">WHEN SHOULD I USE IT?</span><h2 id="heap-sort-fit-title">Heap Sort is the predictable in-place choice when worst-case guarantees matter more than stability.</h2><p>Its main strength is not usually raw practical speed; it is the combination of guaranteed Θ(n log n) and O(1) extra array storage.</p></div></div>
+        <div class="fit-grid">
+            <article class="fit-card good"><span>GOOD FIT</span><strong>Memory-constrained arrays with a strict worst-case bound</strong><p>Heap Sort never falls to Θ(n²), does not need Merge Sort's O(n) buffer, and uses the same compact array representation as Binary Heap.</p></article>
+            <article class="fit-card avoid"><span>AVOID FOR</span><strong>Stable ordering or nearly sorted/online workloads</strong><p>Distant heap swaps are not stable, and already-nearly-sorted input does not give Heap Sort a linear shortcut. Live mutations invalidate the current sort.</p></article>
+            <article class="fit-card better"><span>BETTER ALTERNATIVES</span><strong>Choose the property your workload actually needs</strong><p>Use Merge Sort for stable predictable Θ(n log n), Quick Sort for strong average in-memory performance, or Insertion Sort for small/nearly-sorted and online maintenance.</p><div class="fit-links"><a href="/sorting/merge">Merge Sort →</a><a href="/sorting/quick">Quick Sort →</a><a href="/sorting/insertion">Insertion Sort →</a></div></article>
+        </div>
+    </section>
+
+    <section class="practice-section" aria-labelledby="heap-sort-practice-title">
+        <div class="practice-heading"><div><span class="section-kicker">GUIDED PRACTICE</span><h2 id="heap-sort-practice-title">Prove the heap boundary and construction trade-off.</h2></div><div class="task-score"><strong>@_completedTaskIds.Count / @PracticeTasks.Count</strong><span>completed</span></div></div>
+        @if (_activeTaskId is not null)
+        {
+            var task = PracticeTasks.First(item => item.Id == _activeTaskId.Value);
+            <div class="active-task-banner"><span>ACTIVE TASK @task.Id.ToString("00")</span><strong>@task.Title</strong><small>@GetActiveTaskProgressText(task.Id)</small></div>
+        }
+        <div class="practice-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                var completed = _completedTaskIds.Contains(task.Id);
+                var active = _activeTaskId == task.Id;
+                <article class="task-card @(completed ? "completed" : string.Empty) @(active ? "active" : string.Empty)">
+                    <div class="task-topline"><span>@task.Id.ToString("00")</span><span>@(completed ? "✓ Completed" : active ? "In progress" : "Practice")</span></div>
+                    <h3>@task.Title</h3><p>@task.Goal</p><div class="task-input">Input: <code>@FormatValues(task.Input)</code></div>
+                    <div class="task-actions"><a href="/learn/concepts#heap-sort">Need the concept? →</a><button type="button" @onclick="() => StartTask(task.Id)" disabled="@IsBusy">@(active ? "Restart task" : completed ? "Practice again" : "Start task")</button></div>
+                </article>
+            }
+        </div>
+    </section>
+
+    <NextLessonCard Eyebrow="NEXT TRACK PREP" Title="Review Big-O before search algorithms" Description="You have completed the sorting track. Review how Θ(n), Θ(n log n), and Θ(n²) grow before moving into the upcoming search-algorithm lessons." Href="/learn/concepts#big-o" Level="Sorting track complete" LinkLabel="Review Big-O" />
+</div>
+
+@if (_lastRunPopupOpen && _lastResult is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRunPopup">
+        <section class="run-popup" role="dialog" aria-modal="true" aria-labelledby="heap-sort-run-popup-title" @onclick="IgnorePopupClick" @onclick:stopPropagation="true">
+            <header><div><span class="section-kicker">WHAT JUST HAPPENED?</span><h2 id="heap-sort-run-popup-title">@RunHeadline</h2></div><button class="popup-close" type="button" @onclick="CloseLastRunPopup" aria-label="Close result explanation">×</button></header>
+            <div class="popup-tabs" role="tablist"><button type="button" class="@(_popupTab == ResultPopupTab.Action ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Action">Run</button><button type="button" class="@(_popupTab == ResultPopupTab.Complexity ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Complexity">Complexity</button><button type="button" class="@(_popupTab == ResultPopupTab.Memory ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Memory">Memory &amp; stability</button></div>
+            @if (_popupTab == ResultPopupTab.Action)
+            {
+                <div class="popup-body"><div class="popup-metrics"><div><span>Mode</span><strong>@VariantLabelFor(_lastResult.Variant)</strong></div><div><span>Extractions</span><strong>@_lastResult.Extractions</strong></div><div><span>Comparisons</span><strong>@_lastResult.Comparisons</strong></div><div><span>Swaps</span><strong>@_lastResult.Swaps</strong></div></div><h3>The Max Heap root repeatedly became the next final suffix value.</h3><p><strong>@FormatValues(_lastResult.InitialValues)</strong> became <strong>@FormatValues(_lastResult.SortedValues)</strong>. Heap construction used @_lastResult.BuildComparisons comparison(s) and @_lastResult.BuildSwaps swap(s).</p></div>
+            }
+            else if (_popupTab == ResultPopupTab.Complexity)
+            {
+                <div class="popup-body"><h3>Floyd improves heap construction, not the total asymptotic sort.</h3><p>Basic incremental construction can cost O(n log n). Advanced Floyd build is Θ(n), but the n−1 root extractions still require logarithmic repair, so total Heap Sort remains Θ(n log n) in best, average, and worst cases.</p><div class="complexity-line"><span>Build</span><strong>@_lastResult.BuildComplexity</strong><span>Total</span><strong>Θ(n log n)</strong><span>Worst</span><strong>Θ(n log n)</strong></div><a class="popup-concept-link" href="/learn/concepts#big-o">Open the Big-O guide →</a></div>
+            }
+            else
+            {
+                <div class="popup-body"><h3>The tree costs no separate tree memory.</h3><p>Heap Sort uses the input array itself as a complete binary tree, so extra array storage is O(1). It is not stable: distant root/end and sift-down swaps can change the relative identity order of equal values. This run happened to @(_lastResult.PreservedEqualValueOrder ? "preserve" : "change") equal-value identity order.</p><a class="popup-concept-link" href="/learn/concepts#heap-sort">Open Heap Sort concepts &amp; memory →</a></div>
+            }
+        </section>
+    </div>
+}
+
+@code {
+    private const string CompletedTasksStorageKey = "algorithm-visualizer.heap-sort.completed-tasks.v1";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.heap-sort.result-popups.v1";
+
+    private readonly List<RunFrame> _frames = [];
+    private readonly HashSet<int> _completedTaskIds = [];
+    private readonly List<HeapSortResult> _practiceResults = [];
+
+    private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
+    [
+        new(1, "Trace one complete Heap Sort", "Use Basic mode and finish the classic input. Confirm that every extraction grows the final suffix by one slot.", [4, 10, 3, 5, 1], HeapSortVariant.IncrementalBuild),
+        new(2, "Measure insertion-build work", "Use Basic mode on ascending input. Building by repeated bubble-up should use 10 build comparisons and 10 build swaps.", [1, 2, 3, 4, 5, 6, 7], HeapSortVariant.IncrementalBuild),
+        new(3, "Use Floyd's linear build", "Use Advanced mode on the same ascending input. Verify 8 build comparisons and only 4 build swaps before extraction begins.", [1, 2, 3, 4, 5, 6, 7], HeapSortVariant.FloydBottomUp),
+        new(4, "A Max Heap is not a sorted array", "Use Advanced mode on 7,6,5,4,3,2,1. Heap construction needs zero swaps, but the sort still needs six root extractions.", [7, 6, 5, 4, 3, 2, 1], HeapSortVariant.FloydBottomUp),
+        new(5, "See why Heap Sort is not stable", "Use Basic mode on 2,2,1, then open Memory state. The equal 2 item identities should reverse even though the values are sorted.", [2, 2, 1], HeapSortVariant.IncrementalBuild),
+        new(6, "Test the one-item boundary", "Use Advanced mode on one value and verify zero comparisons, swaps, and extractions.", [42], HeapSortVariant.FloydBottomUp)
+    ];
+
+    private string _arrayText = "4, 10, 3, 5, 1";
+    private string? _inputError;
+    private string? _lastCapturedStep;
+    private int _frameIndex = -1;
+    private int? _predictionValue;
+    private bool _predictionCorrect;
+    private HeapSortResult? _lastResult;
+    private bool _lastRunPopupOpen;
+    private bool _showRunPopups = true;
+    private bool _storageLoaded;
+    private bool _memoryOpenedDuringTask;
+    private int? _activeTaskId;
+    private StateView _view = StateView.Visual;
+    private ResultPopupTab _popupTab = ResultPopupTab.Action;
+    private HeapSortVariant _variant = HeapSortVariant.IncrementalBuild;
+
+    private bool IsBusy => SimulationState.IsRunning;
+    private HeapSortSnapshot Current => HeapSort.CreateSnapshot();
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_frames.Count > 0 && _frameIndex < _frames.Count - 1) || SimulationState.IsRunning;
+    private int TimelineCount => _frames.Count;
+    private int TimelinePosition => _frameIndex >= 0 ? _frameIndex + 1 : 0;
+    private RunFrame? DisplayedFrame => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex] : null;
+    private string DisplayedStepText => DisplayedFrame?.StepText ?? SimulationState.CurrentStepText;
+    private HeapSortSnapshot DisplayedSnapshot => DisplayedFrame?.Snapshot ?? HeapSort.CreateSnapshot();
+    private string VariantLabel => VariantLabelFor(_variant);
+    private string VariantNote => _variant == HeapSortVariant.IncrementalBuild ? "insert + bubble-up build" : "Floyd bottom-up build";
+    private string RunHeadline => _lastResult is null ? "Heap Sort finished." : $"{VariantLabelFor(_lastResult.Variant)} finished with {_lastResult.Extractions} extraction(s).";
+
+    private IReadOnlyList<int> PredictionOptions
+    {
+        get
+        {
+            var values = new List<int>();
+            foreach (var element in Current.Elements)
+            {
+                if (!values.Contains(element.Value)) values.Add(element.Value);
+                if (values.Count == 6 && values.Contains(ExpectedRootValue)) break;
+            }
+            if (!values.Contains(ExpectedRootValue))
+            {
+                if (values.Count >= 6) values[^1] = ExpectedRootValue;
+                else values.Add(ExpectedRootValue);
+            }
+            return values;
+        }
+    }
+
+    private int ExpectedRootValue
+    {
+        get
+        {
+            if (Current.Count == 0) return 0;
+            var maximum = Current.Elements[0].Value;
+            for (var index = 1; index < Current.Elements.Length; index++) if (Current.Elements[index].Value > maximum) maximum = Current.Elements[index].Value;
+            return maximum;
+        }
+    }
+
+    private string PredictionFeedback => _predictionCorrect ? "Correct — every Max Heap must place the maximum value at its root." : $"Not this one. The root must be the maximum value, {ExpectedRootValue}.";
+
+    protected override void OnInitialized()
+    {
+        HeapSort.LoadValues([4, 10, 3, 5, 1]);
+        SimulationState.Changed += HandleSimulationChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _storageLoaded) return;
+        _storageLoaded = true;
+        try
+        {
+            var popupValue = await JS.InvokeAsync<string?>("localStorage.getItem", PopupSettingStorageKey);
+            if (bool.TryParse(popupValue, out var parsedPopup)) _showRunPopups = parsedPopup;
+            var saved = await JS.InvokeAsync<string?>("localStorage.getItem", CompletedTasksStorageKey);
+            if (!string.IsNullOrWhiteSpace(saved))
+            {
+                var ids = System.Text.Json.JsonSerializer.Deserialize<int[]>(saved) ?? [];
+                foreach (var id in ids) _completedTaskIds.Add(id);
+            }
+            StateHasChanged();
+        }
+        catch { }
+    }
+
+    private void SetVariant(HeapSortVariant variant)
+    {
+        if (IsBusy || _variant == variant) return;
+        _variant = variant;
+        _predictionValue = null;
+        _predictionCorrect = false;
+        ClearReview();
+        HeapSort.LoadValues(ParseCurrentValues());
+    }
+
+    private void ArrayTextChanged(ChangeEventArgs args) => _arrayText = args.Value?.ToString() ?? string.Empty;
+
+    private void ApplyArray()
+    {
+        if (IsBusy) return;
+        if (!TryParseArray(_arrayText, out var values, out var error)) { _inputError = error; return; }
+        LoadValues(values);
+    }
+
+    private void LoadPreset(Preset preset)
+    {
+        if (IsBusy) return;
+        LoadValues(preset switch
+        {
+            Preset.Classic => [4, 10, 3, 5, 1],
+            Preset.Ascending => [1, 2, 3, 4, 5, 6, 7],
+            Preset.AlreadyHeap => [9, 7, 8, 4, 3, 2, 1],
+            Preset.Duplicates => [2, 2, 1, 4, 2, 4],
+            Preset.Mixed => [0, -4, 7, -1, 7, 2],
+            _ => [4, 10, 3, 5, 1]
+        });
+    }
+
+    private void LoadRandom()
+    {
+        if (IsBusy) return;
+        var values = new int[7];
+        for (var index = 0; index < values.Length; index++) values[index] = Random.Shared.Next(-6, 16);
+        LoadValues(values);
+    }
+
+    private void LoadValues(int[] values)
+    {
+        ClearReview();
+        HeapSort.LoadValues(values);
+        _arrayText = FormatValues(values);
+        _inputError = null;
+        _predictionValue = null;
+        _predictionCorrect = false;
+    }
+
+    private int[] ParseCurrentValues()
+    {
+        if (TryParseArray(_arrayText, out var values, out _)) return values;
+        var snapshot = HeapSort.CreateSnapshot();
+        values = new int[snapshot.Elements.Length];
+        for (var index = 0; index < values.Length; index++) values[index] = snapshot.Elements[index].Value;
+        return values;
+    }
+
+    private static bool TryParseArray(string input, out int[] values, out string error)
+    {
+        var parts = (input ?? string.Empty).Split([',', ';', ' ', '\n', '\r', '\t'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length == 0) { values = []; error = "Enter at least one integer."; return false; }
+        if (parts.Length > 12) { values = []; error = "Keep this learning view to at most 12 values so the heap tree stays readable."; return false; }
+        values = new int[parts.Length];
+        for (var index = 0; index < parts.Length; index++) if (!int.TryParse(parts[index], out values[index])) { values = []; error = $"“{parts[index]}” is not a whole number."; return false; }
+        error = string.Empty;
+        return true;
+    }
+
+    private void AnswerPrediction(int value)
+    {
+        if (IsBusy || Current.Count == 0) return;
+        _predictionValue = value;
+        _predictionCorrect = value == ExpectedRootValue;
+    }
+
+    private async Task RunSortAsync()
+    {
+        if (IsBusy || Current.Count == 0) return;
+        PrepareRun();
+        HeapSort.ResetVisualState();
+        var token = SimulationState.Start("Heap Sort is ready to build the Max Heap.");
+        try
+        {
+            var result = await HeapSort.SortAsync(_variant, token);
+            if (!IsCurrent(token)) return;
+            FinishRun(result);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception ex)
+        {
+            _inputError = $"The sorting run stopped: {ex.Message}";
+            if (IsCurrent(token)) SimulationState.Complete("The run stopped because of an error.");
+        }
+    }
+
+    private void FinishRun(HeapSortResult result)
+    {
+        _lastResult = result;
+        RecordPracticeResult(result);
+        SimulationState.Complete($"Sorted. {result.Extractions} extractions, {result.Comparisons} comparisons, {result.Swaps} swaps.");
+        _popupTab = ResultPopupTab.Action;
+        _lastRunPopupOpen = _showRunPopups;
+    }
+
+    private void PrepareRun() { _inputError = null; _lastRunPopupOpen = false; _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; }
+    private void Capture() { var step = SimulationState.CurrentStepText; if (step == _lastCapturedStep) return; var tail = _frameIndex < 0 || _frameIndex == _frames.Count - 1; _frames.Add(new RunFrame(step, HeapSort.CreateSnapshot())); _lastCapturedStep = step; if (tail) _frameIndex = _frames.Count - 1; }
+    private void HandleSimulationChanged() { if (SimulationState.IsRunning) Capture(); _ = InvokeAsync(StateHasChanged); }
+    private bool IsCurrent(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;
+    private void ClearReview() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; _lastResult = null; _lastRunPopupOpen = false; }
+    private Task PlayTimelineAsync() { if (_frames.Count > 0) _frameIndex = _frames.Count - 1; SimulationState.Resume(); return InvokeAsync(StateHasChanged); }
+    private Task PauseTimelineAsync() { SimulationState.Pause(); return Task.CompletedTask; }
+    private Task StepBackAsync() { if (SimulationState.IsRunning && !SimulationState.IsPaused) SimulationState.Pause(); if (_frameIndex > 0) _frameIndex--; return InvokeAsync(StateHasChanged); }
+    private Task StepForwardAsync() { if (_frameIndex >= 0 && _frameIndex < _frames.Count - 1) { _frameIndex++; return InvokeAsync(StateHasChanged); } if (SimulationState.IsRunning) SimulationState.Step(); return Task.CompletedTask; }
+    private Task ResetPlaybackAsync() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; return InvokeAsync(StateHasChanged); }
+
+    private void SetStateView(StateView view)
+    {
+        _view = view;
+        if (view == StateView.Memory && _activeTaskId is not null && _practiceResults.Count > 0) { _memoryOpenedDuringTask = true; CheckActiveTaskCompletion(); }
+    }
+
+    private void StartTask(int taskId)
+    {
+        if (IsBusy) return;
+        var task = PracticeTasks.First(item => item.Id == taskId);
+        _activeTaskId = taskId;
+        _practiceResults.Clear();
+        _memoryOpenedDuringTask = false;
+        _variant = task.Variant;
+        LoadValues(CloneValues(task.Input));
+    }
+
+    private void RecordPracticeResult(HeapSortResult result) { if (_activeTaskId is null) return; _practiceResults.Add(result); CheckActiveTaskCompletion(); }
+
+    private void CheckActiveTaskCompletion()
+    {
+        if (_activeTaskId is null || _practiceResults.Count == 0) return;
+        var result = _practiceResults[^1];
+        var complete = _activeTaskId.Value switch
+        {
+            1 => result.Variant == HeapSortVariant.IncrementalBuild && SameValues(result.InitialValues, [4, 10, 3, 5, 1]) && IsSorted(result.SortedValues) && result.Extractions == 4,
+            2 => result.Variant == HeapSortVariant.IncrementalBuild && SameValues(result.InitialValues, [1, 2, 3, 4, 5, 6, 7]) && result.BuildComparisons == 10 && result.BuildSwaps == 10,
+            3 => result.Variant == HeapSortVariant.FloydBottomUp && SameValues(result.InitialValues, [1, 2, 3, 4, 5, 6, 7]) && result.BuildComparisons == 8 && result.BuildSwaps == 4 && result.UsesLinearHeapConstruction,
+            4 => result.Variant == HeapSortVariant.FloydBottomUp && SameValues(result.InitialValues, [7, 6, 5, 4, 3, 2, 1]) && result.BuildSwaps == 0 && result.Extractions == 6 && IsSorted(result.SortedValues),
+            5 => result.Variant == HeapSortVariant.IncrementalBuild && SameValues(result.InitialValues, [2, 2, 1]) && !result.PreservedEqualValueOrder && _memoryOpenedDuringTask,
+            6 => result.Variant == HeapSortVariant.FloydBottomUp && SameValues(result.InitialValues, [42]) && result.Extractions == 0 && result.Comparisons == 0 && result.Swaps == 0,
+            _ => false
+        };
+        if (!complete) return;
+        _completedTaskIds.Add(_activeTaskId.Value);
+        _activeTaskId = null;
+        _practiceResults.Clear();
+        _memoryOpenedDuringTask = false;
+        _ = PersistCompletedTasksAsync();
+    }
+
+    private string GetActiveTaskProgressText(int taskId)
+    {
+        if (_practiceResults.Count == 0) return taskId == 5 ? "Run the loaded Basic case, then open Memory state to inspect equal item identities." : "Input and required mode are loaded. Run Heap Sort and inspect the heap/build metrics.";
+        var result = _practiceResults[^1];
+        return taskId switch
+        {
+            2 => $"Need build 10 comparisons / 10 swaps. Last run: {result.BuildComparisons} / {result.BuildSwaps}.",
+            3 => $"Need Floyd build 8 comparisons / 4 swaps. Last run: {result.BuildComparisons} / {result.BuildSwaps}.",
+            4 => $"Need zero build swaps and six extractions. Last run: {result.BuildSwaps} build swaps, {result.Extractions} extractions.",
+            5 => $"Equal identity preserved={result.PreservedEqualValueOrder}; Memory opened={_memoryOpenedDuringTask}.",
+            6 => $"Need zero work. Last run: {result.Extractions} extractions, {result.Comparisons} comparisons, {result.Swaps} swaps.",
+            _ => $"Last run: {result.Extractions} extractions, {result.Comparisons} comparisons, {result.Swaps} swaps."
+        };
+    }
+
+    private async Task PersistCompletedTasksAsync()
+    {
+        try { var json = System.Text.Json.JsonSerializer.Serialize(_completedTaskIds.OrderBy(id => id).ToArray()); await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { CompletedTasksStorageKey, json }); } catch { }
+    }
+
+    private async Task ToggleRunPopupsAsync(ChangeEventArgs args)
+    {
+        _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed;
+        try { await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { PopupSettingStorageKey, _showRunPopups.ToString() }); } catch { }
+    }
+
+    private void OpenLastRunPopup() { if (_lastResult is null) return; _popupTab = ResultPopupTab.Action; _lastRunPopupOpen = true; }
+    private void CloseLastRunPopup() => _lastRunPopupOpen = false;
+    private static void IgnorePopupClick() { }
+    private static string VariantLabelFor(HeapSortVariant variant) => variant == HeapSortVariant.IncrementalBuild ? "Basic · Incremental build" : "Advanced · Floyd build";
+    private static int[] CloneValues(int[] source) { var copy = new int[source.Length]; for (var index = 0; index < source.Length; index++) copy[index] = source[index]; return copy; }
+    private static bool SameValues(int[] left, int[] right) { if (left.Length != right.Length) return false; for (var index = 0; index < left.Length; index++) if (left[index] != right[index]) return false; return true; }
+    private static bool IsSorted(int[] values) { for (var index = 1; index < values.Length; index++) if (values[index - 1] > values[index]) return false; return true; }
+    private static string FormatValues(int[] values) => string.Join(", ", values);
+
+    public void Dispose() => SimulationState.Changed -= HandleSimulationChanged;
+
+    private sealed record RunFrame(string StepText, HeapSortSnapshot Snapshot);
+    private sealed record PracticeTaskDefinition(int Id, string Title, string Goal, int[] Input, HeapSortVariant Variant);
+    private enum StateView { Visual, Memory }
+    private enum ResultPopupTab { Action, Complexity, Memory }
+    private enum Preset { Classic, Ascending, AlreadyHeap, Duplicates, Mixed }
+}

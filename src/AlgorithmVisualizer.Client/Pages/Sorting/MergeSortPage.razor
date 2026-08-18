@@ -120,7 +120,7 @@
 
     <section class="lab-section" aria-labelledby="merge-visualizer-title">
         <div class="lab-heading">
-            <div><span class="section-kicker">3 · WATCH THE ALGORITHM</span><h2 id="merge-visualizer-title">See the recursion tree split down, then watch sorted ranges merge back up.</h2></div>
+            <div><span class="section-kicker">3 · WATCH THE ALGORITHM</span><h2 id="merge-visualizer-title">Follow one recursive idea at a time: split the active range, then merge sorted children back.</h2></div>
             <div class="lab-actions">
                 <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopupsAsync" /><span>Open explanation after run</span></label>
                 @if (_lastResult is not null) { <button class="secondary-action" type="button" @onclick="OpenLastRunPopup">Last explanation</button> }
@@ -134,7 +134,7 @@
                 <button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
             </div>
             <p>@(_view == StateView.Visual
-                ? "The visual view separates recursive splitting from merge-back, so the recursion tree and the two sorted input runs stay easy to follow."
+                ? "The visual view shows only the current recursive focus: either one parent splitting into two children, or two sorted child runs merging through the buffer. The main array stays visible below as your reference."
                 : "The memory view shows the main array beside the O(n) auxiliary buffer and makes copy-back writes explicit.")</p>
         </div>
 
@@ -203,7 +203,7 @@
         <div class="fit-grid">
             <article class="fit-card good"><span>GOOD FIT</span><strong>Large datasets, stable ordering, linked/external-style merging</strong><p>Performance does not collapse on reverse or adversarial input. Stable equal-key order is preserved, and merging sequential sorted runs maps naturally to data that is already split into chunks.</p></article>
             <article class="fit-card avoid"><span>AVOID FOR</span><strong>Tiny arrays or strict in-place memory constraints</strong><p>For a handful of values, recursion and buffer copying can be unnecessary overhead. This teaching implementation intentionally uses O(n) auxiliary storage.</p></article>
-            <article class="fit-card better"><span>BETTER NEXT CHOICE</span><strong>Choose based on the constraint, not the name</strong><p>For tiny/nearly sorted arrays, <b>Insertion Sort</b> can be simpler and adaptive. If O(n) extra memory is unacceptable, compare the upcoming <b>Quick Sort</b> and <b>Heap Sort</b> labs.</p><div class="fit-links"><a href="/sorting/insertion">Insertion Sort →</a><a href="/sorting/quick">Quick Sort →</a><a href="/sorting/heap">Heap Sort →</a></div></article>
+            <article class="fit-card better"><span>BETTER NEXT CHOICE</span><strong>Choose based on the constraint, not the name</strong><p>For tiny/nearly sorted arrays, <b>Insertion Sort</b> can be simpler and adaptive. If O(n) extra memory is unacceptable, compare the live <b>Quick Sort</b> lab and the upcoming <b>Heap Sort</b> lesson.</p><div class="fit-links"><a href="/sorting/insertion">Insertion Sort →</a><a href="/sorting/quick">Quick Sort →</a><a href="/sorting/heap">Heap Sort →</a></div></article>
         </div>
     </section>
 
@@ -230,10 +230,10 @@
         </div>
     </section>
     <NextLessonCard Title="Quick Sort"
-                    Description="Next, compare merge-based divide-and-conquer with pivot partitioning. The Quick Sort lab is the next planned implementation."
+                    Description="Next, compare merge-based divide-and-conquer with the live pivot-partitioning Quick Sort lab."
                     Href="/sorting/quick"
-                    Level="05 · Intermediate · Planned"
-                    LinkLabel="Preview Quick Sort" />
+                    Level="05 · Intermediate"
+                    LinkLabel="Open Quick Sort" />
 
 </div>
 

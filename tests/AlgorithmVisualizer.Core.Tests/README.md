@@ -99,9 +99,28 @@ The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctnes
 
 `Algorithms/Sorting/Merge/MergeSortSimulationTests.cs` verifies:
 
-- canonical Top-down split/merge counts, exact work, explicit one-item base-case playback, full recursion depth, and preservation of the immutable initial input used by the recursion-tree visual;
-- already-sorted Top-down input still follows the canonical recursion tree;
+- canonical Top-down split/merge counts, exact work, explicit one-item base-case playback, full recursion depth, and preservation of the immutable initial input used by the divide visualization;
+- already-sorted Top-down input still follows the canonical recursive split/base-case/merge work;
 - Natural Merge recognizes one sorted run and skips merging;
 - two existing natural runs collapse in one merge pass;
 - stable duplicate identity through left-first equality handling;
 - the one-item zero-work boundary and mutation-restart capability flag.
+
+
+`Algorithms/Sorting/Quick/QuickSortSimulationTests.cs` verifies:
+
+- Basic Lomuto ascending correctness and in-place/no-buffer capability flags;
+- the sorted-input last-pivot worst shape (`10` comparisons, `4` partitions, depth `5` for five values);
+- Advanced median-of-three + three-way partition reducing recursion depth on sorted input;
+- duplicate-heavy Advanced input finalizing an equal-value band without one partition per duplicate;
+- the `2, 2, 1` instability counterexample by original item identity;
+- the one-element zero-partition boundary and mutation-restart capability flag.
+
+`Algorithms/Sorting/HeapSort/HeapSortSimulationTests.cs` verifies:
+
+- ascending correctness for both Basic Incremental Build and Advanced Floyd Bottom-Up modes;
+- the Basic ascending-input build cost (`10` build comparisons / `10` build swaps for seven values);
+- Floyd's linear bottom-up build behavior (`8` build comparisons / `4` build swaps for the same input);
+- an already valid Max Heap needs zero Floyd build swaps but still requires all root extractions to sort;
+- equal-value identity can reverse, demonstrating that Heap Sort is not stable;
+- the one-element zero-work boundary and mutation-restart capability flags.

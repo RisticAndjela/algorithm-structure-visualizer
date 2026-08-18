@@ -11,6 +11,8 @@ using AlgorithmVisualizer.Core.Algorithms.Sorting.Bubble;
 using AlgorithmVisualizer.Core.Algorithms.Sorting.Selection;
 using AlgorithmVisualizer.Core.Algorithms.Sorting.Insertion;
 using AlgorithmVisualizer.Core.Algorithms.Sorting.Merge;
+using AlgorithmVisualizer.Core.Algorithms.Sorting.Quick;
+using AlgorithmVisualizer.Core.Algorithms.Sorting.HeapSort;
 using AlgorithmVisualizer.Core.Simulation.Contracts;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -38,5 +40,7 @@ builder.Services.AddScoped<BubbleSortSimulation>();
 builder.Services.AddScoped<SelectionSortSimulation>();
 builder.Services.AddScoped<InsertionSortSimulation>();
 builder.Services.AddScoped<MergeSortSimulation>();
+builder.Services.AddScoped<QuickSortSimulation>();
+builder.Services.AddScoped<HeapSortSimulation>();
 
 await builder.Build().RunAsync();

@@ -3,138 +3,150 @@
 <section class="merge-visualization" aria-label="Merge Sort visual state">
     @if (Snapshot.Count == 0)
     {
-        <div class="empty-state"><strong>No values yet.</strong><span>Load an array to see Merge Sort divide it into single-item ranges and merge those ranges back together.</span></div>
+        <div class="empty-state"><strong>No values yet.</strong><span>Load an array to see one divide-or-merge idea at a time.</span></div>
     }
     else
     {
-        @if (Snapshot.Variant == MergeSortVariant.TopDownRecursive)
-        {
-            <section class="algorithm-stage divide-stage" aria-label="Recursive divide tree">
-                <header class="stage-heading">
-                    <div><span>1 · DIVIDE</span><strong>Keep splitting each range in half until every leaf contains one item.</strong></div>
-                    <small>A one-item range is already sorted. No values move during this phase.</small>
-                </header>
+        <section class="focus-strip @PhaseClass" aria-label="Current Merge Sort focus">
+            <div class="focus-step">@FocusStep</div>
+            <div><span>NOW</span><strong>@FocusTitle</strong><p>@FocusHelp</p></div>
+            <div class="focus-range"><span>ACTIVE RANGE</span><strong>@ActiveRangeLabel</strong><small>depth @Snapshot.CurrentDepth</small></div>
+        </section>
 
-                @{ var divideLevels = DivideLevels; }
-                <div class="divide-tree">
-                    @for (var levelIndex = 0; levelIndex < divideLevels.Count; levelIndex++)
-                    {
-                        var level = divideLevels[levelIndex];
-                        <div class="tree-level">
-                            @foreach (var node in level)
-                            {
-                                <article class="range-node @RangeNodeClass(node)">
-                                    <span class="range-label">@($"[{node.Start}..{node.End}]")</span>
-                                    <div class="range-values">
-                                        @for (var index = node.Start; index <= node.End; index++)
-                                        {
-                                            <strong>@Snapshot.InitialValues[index]</strong>
-                                        }
-                                    </div>
-                                    <small>@RangeNodeCaption(node)</small>
-                                </article>
-                            }
-                        </div>
-                        @if (levelIndex < divideLevels.Count - 1)
+        @if (ShowDivideWorkspace)
+        {
+            <section class="single-workspace divide-workspace" aria-label="Current recursive split">
+                <header><div><span>DIVIDE</span><strong>@DivideTitle</strong></div><small>No values move here. We are only defining smaller problems.</small></header>
+
+                @if (Snapshot.Phase == MergeSortPhase.BaseCase)
+                {
+                    <div class="base-case-card">
+                        <span>BASE CASE</span>
+                        <strong>@ValueAt(Snapshot.ActiveStart)</strong>
+                        <small>One item is already sorted → return this run to its parent.</small>
+                    </div>
+                }
+                else if (Snapshot.ActiveStart >= 0 && Snapshot.ActiveEnd >= Snapshot.ActiveStart)
+                {
+                    var middle = Snapshot.ActiveStart + ((Snapshot.ActiveEnd - Snapshot.ActiveStart) / 2);
+                    <div class="split-story">
+                        <RangeCard Label="PARENT RANGE" Start="@Snapshot.ActiveStart" End="@Snapshot.ActiveEnd" Values="@Snapshot.InitialValues" Emphasis="parent" />
+                        @if (Snapshot.ActiveStart < Snapshot.ActiveEnd)
                         {
-                            <div class="tree-arrow" aria-hidden="true">↓ split each non-single range ↓</div>
+                            <div class="split-arrow" aria-hidden="true">↓ split in half ↓</div>
+                            <div class="child-row">
+                                <RangeCard Label="LEFT CHILD" Start="@Snapshot.ActiveStart" End="@middle" Values="@Snapshot.InitialValues" Emphasis="left" />
+                                <RangeCard Label="RIGHT CHILD" Start="@(middle + 1)" End="@Snapshot.ActiveEnd" Values="@Snapshot.InitialValues" Emphasis="right" />
+                            </div>
                         }
-                    }
-                </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="waiting"><strong>Ready to divide.</strong><span>Start the run and the first active range will appear here.</span></div>
+                }
             </section>
         }
-        else
+        else if (ShowNaturalRuns)
         {
-            <section class="algorithm-stage divide-stage" aria-label="Natural run detection">
-                <header class="stage-heading">
-                    <div><span>1 · DETECT EXISTING RUNS</span><strong>Natural Merge Sort does not recursively split the array.</strong></div>
-                    <small>It scans left to right and keeps each maximal nondecreasing run that already exists.</small>
-                </header>
+            <section class="single-workspace natural-workspace" aria-label="Natural Merge Sort run detection">
+                <header><div><span>DETECT RUNS</span><strong>Reuse sorted order that already exists.</strong></div><small>Natural mode scans left to right instead of recursively splitting.</small></header>
                 <div class="natural-runs">
                     @foreach (var run in NaturalRuns)
                     {
-                        <article class="range-node natural-run">
-                            <span class="range-label">@($"[{run.Start}..{run.End}]")</span>
-                            <div class="range-values">
-                                @for (var index = run.Start; index <= run.End; index++)
-                                {
-                                    <strong>@Snapshot.Elements[index].Value</strong>
-                                }
-                            </div>
-                            <small>existing sorted run</small>
-                        </article>
+                        <RangeCard Label="SORTED RUN" Start="@run.Start" End="@run.End" Values="@CurrentValues" Emphasis="natural" />
                     }
                 </div>
             </section>
         }
+        else if (ShowMergeWorkspace)
+        {
+            <section class="single-workspace merge-workspace" aria-label="Current merge">
+                <header><div><span>MERGE BACK</span><strong>@MergeTitle</strong></div><small>@MergeWorkspaceHelp</small></header>
 
-        <section class="algorithm-stage merge-stage" aria-label="Merge workspace">
-            <header class="stage-heading">
-                <div><span>2 · MERGE BACK</span><strong>@MergeStageTitle</strong></div>
-                <small>@MergeStageHelp</small>
-            </header>
-
-            @if (IsActivelyMerging)
-            {
-                <div class="merge-equation">
-                    <article class="run-panel left-run">
-                        <div class="run-panel-title"><span>LEFT SORTED RUN</span><strong>@($"[{Snapshot.ActiveStart}..{Snapshot.LeftEnd}]")</strong></div>
-                        <div class="mini-array">
-                            @for (var index = Snapshot.ActiveStart; index <= Snapshot.LeftEnd; index++)
-                            {
-                                <div class="mini-cell @(index == Snapshot.LeftReadIndex ? "front" : string.Empty)">
-                                    <small>@index</small><strong>@Snapshot.Elements[index].Value</strong><span>@(index == Snapshot.LeftReadIndex ? "front" : "")</span>
-                                </div>
-                            }
-                        </div>
-                    </article>
-
-                    <div class="merge-symbol" aria-hidden="true">+</div>
-
-                    <article class="run-panel right-run">
-                        <div class="run-panel-title"><span>RIGHT SORTED RUN</span><strong>@($"[{Snapshot.RightStart}..{Snapshot.ActiveEnd}]")</strong></div>
-                        <div class="mini-array">
-                            @for (var index = Snapshot.RightStart; index <= Snapshot.ActiveEnd; index++)
-                            {
-                                <div class="mini-cell @(index == Snapshot.RightReadIndex ? "front" : string.Empty)">
-                                    <small>@index</small><strong>@Snapshot.Elements[index].Value</strong><span>@(index == Snapshot.RightReadIndex ? "front" : "")</span>
-                                </div>
-                            }
-                        </div>
-                    </article>
-
-                    <div class="merge-symbol arrow" aria-hidden="true">→</div>
-
-                    <article class="run-panel buffer-run">
-                        <div class="run-panel-title"><span>TEMP BUFFER</span><strong>choose smaller front</strong></div>
+                @if (Snapshot.Phase is MergeSortPhase.Comparing or MergeSortPhase.FillingBuffer)
+                {
+                    <div class="merge-flow">
+                        <article class="run-card left-run">
+                            <header><span>LEFT SORTED RUN</span><strong>@RangeText(Snapshot.ActiveStart, Snapshot.LeftEnd)</strong></header>
+                            <div class="mini-array">
+                                @for (var index = Snapshot.ActiveStart; index <= Snapshot.LeftEnd; index++)
+                                {
+                                    <div class="mini-cell @(index == Snapshot.LeftReadIndex ? "front" : string.Empty)"><small>@index</small><strong>@Snapshot.Elements[index].Value</strong><span>@(index == Snapshot.LeftReadIndex ? "READ" : "")</span></div>
+                                }
+                            </div>
+                        </article>
+                        <div class="flow-arrow">→</div>
+                        <article class="run-card right-run">
+                            <header><span>RIGHT SORTED RUN</span><strong>@RangeText(Snapshot.RightStart, Snapshot.ActiveEnd)</strong></header>
+                            <div class="mini-array">
+                                @for (var index = Snapshot.RightStart; index <= Snapshot.ActiveEnd; index++)
+                                {
+                                    <div class="mini-cell @(index == Snapshot.RightReadIndex ? "front" : string.Empty)"><small>@index</small><strong>@Snapshot.Elements[index].Value</strong><span>@(index == Snapshot.RightReadIndex ? "READ" : "")</span></div>
+                                }
+                            </div>
+                        </article>
+                        <div class="flow-arrow">→</div>
+                        <article class="run-card buffer-run">
+                            <header><span>TEMP BUFFER</span><strong>build one sorted range</strong></header>
+                            <div class="mini-array">
+                                @for (var index = Snapshot.ActiveStart; index <= Snapshot.ActiveEnd; index++)
+                                {
+                                    var slot = Snapshot.Buffer[index];
+                                    <div class="mini-cell buffer @(slot.Occupied ? "occupied" : string.Empty) @(slot.IsWriteTarget ? "write" : string.Empty)"><small>@index</small><strong>@(slot.Occupied ? slot.Value.ToString() : "·")</strong><span>@(slot.IsWriteTarget ? "WRITE" : "")</span></div>
+                                }
+                            </div>
+                        </article>
+                    </div>
+                }
+                else if (Snapshot.Phase == MergeSortPhase.CopyingBack)
+                {
+                    <div class="copy-flow">
+                        <article class="run-card buffer-run copy-source">
+                            <header><span>FINISHED TEMP BUFFER</span><strong>@RangeText(Snapshot.ActiveStart, Snapshot.ActiveEnd)</strong></header>
+                            <div class="mini-array">
+                                @for (var index = Snapshot.ActiveStart; index <= Snapshot.ActiveEnd; index++)
+                                {
+                                    var slot = Snapshot.Buffer[index];
+                                    <div class="mini-cell buffer occupied @(index == Snapshot.WriteIndex ? "write" : string.Empty)"><small>@index</small><strong>@(slot.Occupied ? slot.Value.ToString() : "·")</strong><span>@(index == Snapshot.WriteIndex ? "COPY" : "")</span></div>
+                                }
+                            </div>
+                        </article>
+                        <div class="copy-arrow" aria-hidden="true">↓ copy one slot ↓</div>
+                        <article class="run-card copy-target">
+                            <header><span>ACTIVE MAIN-ARRAY RANGE</span><strong>@RangeText(Snapshot.ActiveStart, Snapshot.ActiveEnd)</strong></header>
+                            <div class="mini-array">
+                                @for (var index = Snapshot.ActiveStart; index <= Snapshot.ActiveEnd; index++)
+                                {
+                                    <div class="mini-cell @(index == Snapshot.WriteIndex ? "write-back" : string.Empty)"><small>@index</small><strong>@Snapshot.Elements[index].Value</strong><span>@(index == Snapshot.WriteIndex ? "WRITE" : "")</span></div>
+                                }
+                            </div>
+                        </article>
+                    </div>
+                }
+                else if (Snapshot.Phase == MergeSortPhase.MergeComplete)
+                {
+                    <div class="merged-range-card">
+                        <span>MERGED RANGE</span>
+                        <strong>@RangeText(Snapshot.ActiveStart, Snapshot.ActiveEnd) is sorted</strong>
                         <div class="mini-array">
                             @for (var index = Snapshot.ActiveStart; index <= Snapshot.ActiveEnd; index++)
                             {
-                                var slot = Snapshot.Buffer[index];
-                                <div class="mini-cell buffer-cell @(slot.IsWriteTarget ? "write-target" : string.Empty) @(slot.Occupied ? "occupied" : string.Empty)">
-                                    <small>@index</small><strong>@(slot.Occupied ? slot.Value.ToString() : "·")</strong><span>@(slot.IsWriteTarget ? "write" : "")</span>
-                                </div>
+                                <div class="mini-cell merged"><small>@index</small><strong>@Snapshot.Elements[index].Value</strong><span>DONE</span></div>
                             }
                         </div>
-                    </article>
-                </div>
-            }
-            else if (Snapshot.Phase == MergeSortPhase.Splitting)
-            {
-                <div class="waiting-merge"><strong>No merge yet.</strong><span>Merge Sort must finish sorting the two smaller halves first. Step forward until two neighboring sorted runs are ready to combine.</span></div>
-            }
-            else if (Snapshot.Phase == MergeSortPhase.Complete)
-            {
-                <div class="waiting-merge complete"><strong>All merge levels are finished.</strong><span>The full range is now one sorted run.</span></div>
-            }
-            else
-            {
-                <div class="waiting-merge"><strong>The merge workspace activates when two sorted runs are ready.</strong><span>@(Snapshot.Variant == MergeSortVariant.NaturalRuns ? "Natural mode first detects the runs that already exist." : "Top-down mode first descends to the one-item base cases.")</span></div>
-            }
-        </section>
+                        <small>This one sorted run now returns to its parent. The next frame will focus on the next recursive job.</small>
+                    </div>
+                }
+            </section>
+        }
+        else if (Snapshot.Phase == MergeSortPhase.Complete)
+        {
+            <section class="complete-workspace"><span>DONE</span><strong>The full array is now one sorted run.</strong><small>Every smaller merge has been copied back into the main array.</small></section>
+        }
 
         <section class="main-array-stage" aria-label="Current main array">
-            <div class="main-array-heading"><span>CURRENT MAIN ARRAY</span><strong>@MainArrayCaption</strong></div>
+            <header><div><span>MAIN ARRAY · ALWAYS YOUR REFERENCE</span><strong>@MainArrayCaption</strong></div><small>The buffer is temporary; this is the array that survives after each copy-back.</small></header>
             <div class="array-track" role="list">
                 @for (var index = 0; index < Snapshot.Elements.Length; index++)
                 {
@@ -149,83 +161,95 @@
             </div>
         </section>
 
-        <div class="legend">
-            <span><i class="swatch split"></i>Range being divided</span>
-            <span><i class="swatch left"></i>Left sorted run</span>
-            <span><i class="swatch right"></i>Right sorted run</span>
-            <span><i class="swatch compare"></i>Front value</span>
-            <span><i class="swatch write"></i>Buffer/copy target</span>
-            <span><i class="swatch sorted"></i>Finished</span>
-        </div>
+        <div class="legend"><span><i class="swatch divide"></i>divide focus</span><span><i class="swatch read"></i>read front</span><span><i class="swatch write"></i>buffer/copy</span><span><i class="swatch sorted"></i>finished</span></div>
     }
 </section>
 
 @code {
     [Parameter, EditorRequired] public MergeSortSnapshot Snapshot { get; set; } = default!;
 
-    private IReadOnlyList<IReadOnlyList<RangeNode>> DivideLevels => BuildDivideLevels();
+    private sealed record RangeNode(int Start, int End);
+
+    private bool ShowDivideWorkspace => Snapshot.Variant == MergeSortVariant.TopDownRecursive && (Snapshot.Phase is MergeSortPhase.Ready or MergeSortPhase.Splitting or MergeSortPhase.BaseCase);
+    private bool ShowNaturalRuns => Snapshot.Variant == MergeSortVariant.NaturalRuns && (Snapshot.Phase is MergeSortPhase.Ready or MergeSortPhase.DetectingRuns);
+    private bool ShowMergeWorkspace => Snapshot.ActiveStart >= 0 && Snapshot.RightStart >= 0 && (Snapshot.Phase is MergeSortPhase.Comparing or MergeSortPhase.FillingBuffer or MergeSortPhase.CopyingBack or MergeSortPhase.MergeComplete);
+
+    private int[] CurrentValues
+    {
+        get
+        {
+            var values = new int[Snapshot.Elements.Length];
+            for (var index = 0; index < values.Length; index++) values[index] = Snapshot.Elements[index].Value;
+            return values;
+        }
+    }
     private IReadOnlyList<RangeNode> NaturalRuns => BuildNaturalRuns();
 
-    private bool IsActivelyMerging => Snapshot.ActiveStart >= 0 && Snapshot.RightStart >= 0 && Snapshot.Phase is
-        MergeSortPhase.Comparing or MergeSortPhase.FillingBuffer or MergeSortPhase.CopyingBack or MergeSortPhase.MergeComplete;
-
-    private string MergeStageTitle => Snapshot.Phase switch
+    private string FocusStep => Snapshot.Phase switch
     {
-        MergeSortPhase.Comparing => "Compare only the two front unread values.",
-        MergeSortPhase.FillingBuffer => "Write the smaller front value into the temporary buffer.",
-        MergeSortPhase.BaseCase => "One-item base case reached — return it as an already-sorted run.",
-        MergeSortPhase.CopyingBack => "The buffer is sorted; copy it back into the same range.",
-        MergeSortPhase.MergeComplete => "Two sorted runs have become one larger sorted run.",
-        MergeSortPhase.Complete => "The whole array is one sorted run.",
-        _ => "After the divide phase, combine neighboring sorted runs from the bottom up."
+        MergeSortPhase.Splitting => "1",
+        MergeSortPhase.BaseCase => "2",
+        MergeSortPhase.DetectingRuns => "1",
+        MergeSortPhase.Comparing or MergeSortPhase.FillingBuffer or MergeSortPhase.CopyingBack or MergeSortPhase.MergeComplete => "3",
+        MergeSortPhase.Complete => "✓",
+        _ => "→"
     };
 
-    private string MergeStageHelp => Snapshot.Phase switch
+    private string FocusTitle => Snapshot.Phase switch
     {
-        MergeSortPhase.Comparing or MergeSortPhase.FillingBuffer => "Because both inputs are already sorted, the smaller front is always the next correct output value.",
-        MergeSortPhase.BaseCase => "This is where recursive splitting stops. The parent can merge this one-item run with its sorted sibling.",
-        MergeSortPhase.CopyingBack => "Copy-back does not re-sort anything; it commits the order that was already built in the buffer.",
-        MergeSortPhase.MergeComplete => "That merged result can now participate as one sorted run at the next recursion level.",
-        _ => "The algorithm never merges arbitrary unsorted halves. Each half is sorted recursively before its parent merge begins."
+        MergeSortPhase.Splitting => "Split only this active range.",
+        MergeSortPhase.BaseCase => "Stop: one item is already sorted.",
+        MergeSortPhase.DetectingRuns => "Detect existing sorted runs.",
+        MergeSortPhase.Comparing => "Compare the two unread front values.",
+        MergeSortPhase.FillingBuffer => "Write the smaller front into the buffer.",
+        MergeSortPhase.CopyingBack => "Copy the finished buffer back into the same range.",
+        MergeSortPhase.MergeComplete => "Two child runs are now one larger sorted run.",
+        MergeSortPhase.Complete => "The whole array is sorted.",
+        _ => "Divide first; merge only after child ranges are sorted."
+    };
+
+    private string FocusHelp => Snapshot.Phase switch
+    {
+        MergeSortPhase.Splitting => "Ignore every other recursion branch for this frame. This parent becomes exactly two smaller subproblems.",
+        MergeSortPhase.BaseCase => "This is where recursion turns around. The one-item run is returned upward without changing its value.",
+        MergeSortPhase.DetectingRuns => "Advanced Natural Merge finds maximal nondecreasing runs instead of manufacturing single-item runs recursively.",
+        MergeSortPhase.Comparing => "Do not scan the whole runs. Because both are sorted, only their two front unread values need comparison.",
+        MergeSortPhase.FillingBuffer => "The chosen value leaves its run front conceptually and occupies the next temporary slot.",
+        MergeSortPhase.CopyingBack => "Only now does the main array change for this merge.",
+        MergeSortPhase.MergeComplete => "That merged range can now participate as a sorted child in a larger merge.",
+        MergeSortPhase.Complete => "The root range has been merged back, so recursion is finished.",
+        _ => "Start the simulation to reveal one operation at a time."
+    };
+
+    private string PhaseClass => Snapshot.Phase.ToString().ToLowerInvariant();
+    private string ActiveRangeLabel => Snapshot.ActiveStart >= 0 ? RangeText(Snapshot.ActiveStart, Snapshot.ActiveEnd) : "—";
+    private string DivideTitle => Snapshot.Phase == MergeSortPhase.BaseCase ? "The active range cannot be divided further." : "One parent becomes two child ranges.";
+    private string MergeTitle => Snapshot.Phase switch
+    {
+        MergeSortPhase.Comparing => "Read two fronts; choose the smaller value.",
+        MergeSortPhase.FillingBuffer => "Fill the temporary result left to right.",
+        MergeSortPhase.CopyingBack => "Commit the sorted buffer to the main array.",
+        MergeSortPhase.MergeComplete => "This range is ready to return upward.",
+        _ => "Merge two sorted child runs."
+    };
+    private string MergeWorkspaceHelp => Snapshot.Phase switch
+    {
+        MergeSortPhase.Comparing or MergeSortPhase.FillingBuffer => "Two sorted child runs feed one temporary buffer. The main array does not change yet.",
+        MergeSortPhase.CopyingBack => "The comparison work is finished. Follow only buffer → main array for this frame.",
+        MergeSortPhase.MergeComplete => "The active range is now one sorted run and can return upward.",
+        _ => "Focus only on the current merge."
     };
 
     private string MainArrayCaption => Snapshot.Phase switch
     {
-        MergeSortPhase.Splitting => "Values have not moved during this split step.",
-        MergeSortPhase.BaseCase => "A one-item range is already sorted; nothing moves.",
-        MergeSortPhase.CopyingBack => "The active merged result is being committed here.",
-        MergeSortPhase.Complete => "Final sorted result.",
-        _ => "The array changes only when a completed buffer is copied back."
+        MergeSortPhase.Splitting or MergeSortPhase.BaseCase => "unchanged while recursion divides",
+        MergeSortPhase.CopyingBack => $"copying merged range {ActiveRangeLabel}",
+        MergeSortPhase.Complete => "final sorted result",
+        _ => "changes only during copy-back"
     };
 
-    private IReadOnlyList<IReadOnlyList<RangeNode>> BuildDivideLevels()
-    {
-        var levels = new List<IReadOnlyList<RangeNode>>();
-        if (Snapshot.InitialValues.Length == 0) return levels;
-
-        var current = new List<RangeNode> { new(0, Snapshot.InitialValues.Length - 1) };
-        while (current.Count > 0)
-        {
-            levels.Add(current.ToArray());
-            var next = new List<RangeNode>();
-            var hasSplit = false;
-            foreach (var node in current)
-            {
-                if (node.Start >= node.End)
-                {
-                    next.Add(node);
-                    continue;
-                }
-                var middle = node.Start + ((node.End - node.Start) / 2);
-                next.Add(new RangeNode(node.Start, middle));
-                next.Add(new RangeNode(middle + 1, node.End));
-                hasSplit = true;
-            }
-            if (!hasSplit) break;
-            current = next;
-        }
-        return levels;
-    }
+    private string ValueAt(int index) => index >= 0 && index < Snapshot.InitialValues.Length ? Snapshot.InitialValues[index].ToString() : "—";
+    private static string RangeText(int start, int end) => start >= 0 && end >= start ? $"[{start}..{end}]" : "—";
 
     private IReadOnlyList<RangeNode> BuildNaturalRuns()
     {
@@ -242,57 +266,21 @@
         return runs;
     }
 
-    private string RangeNodeClass(RangeNode node)
-    {
-        if (Snapshot.ActiveStart == node.Start && Snapshot.ActiveEnd == node.End)
-        {
-            if (Snapshot.Phase == MergeSortPhase.Splitting) return "active-split";
-            if (Snapshot.Phase == MergeSortPhase.BaseCase) return "active-base";
-            if (IsActivelyMerging) return "active-merge";
-        }
-        return node.Start == node.End ? "leaf" : string.Empty;
-    }
-
-    private string RangeNodeCaption(RangeNode node)
-    {
-        if (Snapshot.ActiveStart == node.Start && Snapshot.ActiveEnd == node.End && Snapshot.Phase == MergeSortPhase.Splitting)
-            return "split this range now";
-        if (Snapshot.ActiveStart == node.Start && Snapshot.ActiveEnd == node.End && Snapshot.Phase == MergeSortPhase.BaseCase)
-            return "base case · return sorted run";
-        if (Snapshot.ActiveStart == node.Start && Snapshot.ActiveEnd == node.End && IsActivelyMerging)
-            return "merge returns here";
-        return node.Start == node.End ? "base case · already sorted" : "recursive range";
-    }
-
     private string StateClass(int index, MergeSortElementSnapshot element)
     {
-        var classes = new List<string>();
-        if (index == Snapshot.LeftReadIndex || index == Snapshot.RightReadIndex) classes.Add("is-comparing");
-        if (Snapshot.Phase == MergeSortPhase.CopyingBack && index == Snapshot.WriteIndex) classes.Add("is-writing");
-        classes.Add(element.VisualState switch
-        {
-            MergeSortElementVisualState.LeftRun => "is-left",
-            MergeSortElementVisualState.RightRun => "is-right",
-            MergeSortElementVisualState.Comparing => "is-comparing",
-            MergeSortElementVisualState.Writing => "is-writing",
-            MergeSortElementVisualState.Sorted => "is-sorted",
-            _ => string.Empty
-        });
-        return string.Join(" ", classes.Where(value => !string.IsNullOrWhiteSpace(value)));
+        if (Snapshot.Phase == MergeSortPhase.Complete) return "is-sorted";
+        if (index == Snapshot.LeftReadIndex || index == Snapshot.RightReadIndex) return "is-read";
+        if (Snapshot.Phase == MergeSortPhase.CopyingBack && index >= Snapshot.ActiveStart && index <= Snapshot.ActiveEnd) return "is-writing";
+        if ((Snapshot.Phase is MergeSortPhase.Splitting or MergeSortPhase.BaseCase) && index >= Snapshot.ActiveStart && index <= Snapshot.ActiveEnd) return "is-divide";
+        return element.VisualState == MergeSortElementVisualState.Sorted ? "is-sorted" : string.Empty;
     }
 
     private string StateLabel(int index, MergeSortElementSnapshot element)
     {
         if (Snapshot.Phase == MergeSortPhase.Complete) return "SORTED";
-        if (Snapshot.Phase == MergeSortPhase.Splitting && index >= Snapshot.ActiveStart && index <= Snapshot.ActiveEnd) return "DIVIDE RANGE";
-        if (Snapshot.Phase == MergeSortPhase.BaseCase && index == Snapshot.ActiveStart) return "BASE CASE";
-        if (index == Snapshot.LeftReadIndex) return "LEFT FRONT";
-        if (index == Snapshot.RightReadIndex) return "RIGHT FRONT";
-        if (Snapshot.Phase == MergeSortPhase.CopyingBack && index == Snapshot.WriteIndex) return "COPY BACK";
-        if (element.VisualState == MergeSortElementVisualState.LeftRun) return "LEFT RUN";
-        if (element.VisualState == MergeSortElementVisualState.RightRun) return "RIGHT RUN";
-        return "WAITING";
+        if (index == Snapshot.LeftReadIndex || index == Snapshot.RightReadIndex) return "READ";
+        if (Snapshot.Phase == MergeSortPhase.CopyingBack && index >= Snapshot.ActiveStart && index <= Snapshot.ActiveEnd) return "COPY";
+        if ((Snapshot.Phase is MergeSortPhase.Splitting or MergeSortPhase.BaseCase) && index >= Snapshot.ActiveStart && index <= Snapshot.ActiveEnd) return "ACTIVE";
+        return element.VisualState == MergeSortElementVisualState.Sorted ? "SORTED" : string.Empty;
     }
-
-    private readonly record struct RangeNode(int Start, int End);
 }

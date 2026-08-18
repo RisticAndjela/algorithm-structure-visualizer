@@ -1,0 +1,48 @@
+@using AlgorithmVisualizer.Core.Algorithms.Sorting.Quick
+
+<section class="quick-memory" aria-label="Quick Sort memory state">
+    <div class="memory-note">
+        <div><span>MAIN STORAGE</span><strong>One fixed <code>QuickSortElement[]</code></strong></div>
+        <p>Partitioning swaps element references inside the same array. There is no second O(n) merge buffer; the extra cost comes from recursive calls that remember unfinished subranges.</p>
+    </div>
+
+    @if (Snapshot.Count == 0)
+    {
+        <div class="empty-memory">Load an array to inspect its slots and recursion state.</div>
+    }
+    else
+    {
+        <div class="slot-strip" role="list">
+            @for (var index = 0; index < Snapshot.Elements.Length; index++)
+            {
+                var element = Snapshot.Elements[index];
+                <article class="memory-slot @StateClass(element.VisualState)" role="listitem">
+                    <header><span>slot</span><strong>[@index]</strong></header>
+                    <div class="reference-arrow">↓</div>
+                    <div class="element-object"><span>item #@(element.OriginalIndex + 1)</span><strong>@element.Value</strong></div>
+                </article>
+            }
+        </div>
+
+        <div class="memory-facts">
+            <article><span>Extra array</span><strong>O(1)</strong><small>Partition swaps occur in the input array itself.</small></article>
+            <article><span>Current recursion depth</span><strong>@Snapshot.CurrentDepth</strong><small>Observed maximum: @Snapshot.MaxDepth.</small></article>
+            <article><span>Stack space</span><strong>O(log n) avg.</strong><small>Worst case O(n) when partitions become extremely unbalanced.</small></article>
+            <article><span>Stability</span><strong>Not stable</strong><small>Long-distance swaps can reverse equal-value item identities.</small></article>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public QuickSortSnapshot Snapshot { get; set; } = default!;
+
+    private static string StateClass(QuickSortElementVisualState state) => state switch
+    {
+        QuickSortElementVisualState.Pivot => "is-pivot",
+        QuickSortElementVisualState.Scan => "is-scan",
+        QuickSortElementVisualState.Swapping => "is-swapping",
+        QuickSortElementVisualState.Sorted => "is-sorted",
+        QuickSortElementVisualState.LessRegion or QuickSortElementVisualState.EqualRegion or QuickSortElementVisualState.GreaterRegion => "is-region",
+        _ => string.Empty
+    };
+}

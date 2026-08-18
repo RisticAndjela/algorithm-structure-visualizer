@@ -1,24 +1,525 @@
 @page "/sorting/quick"
+@using AlgorithmVisualizer.Core.Algorithms.Sorting.Quick
+@using AlgorithmVisualizer.Client.Components.Visualization.Sorting.Quick
+@implements IDisposable
+@inject SimulationState SimulationState
+@inject QuickSortSimulation QuickSort
+@inject IJSRuntime JS
 
 <PageTitle>Quick Sort — Algorithm Visualizer</PageTitle>
 
-<LearningPlaceholder
-    Title="Quick Sort"
-    Eyebrow="Sorting algorithm"
-    Description="Follow a pivot as partitioning rearranges values into smaller and larger regions, then recurse only where work remains. Pivot quality controls the shape of the recursion."
-    Complexity="O(n log n) avg."
-    ComplexityNote="Worst case is O(n²) when partitions become highly unbalanced."
-    Concepts="pivot · partition · recursion · balanced split"
-    TipTitle="Partition first, recursion second."
-    TipText="A partition does not fully sort the array. It only guarantees that the pivot is in its final place and values are separated into the correct side regions."
-    FocusText="The future visualization should expose pivot position, scanning pointers, and the partition invariant throughout the pass."
-    PromptText="What is already guaranteed about values on each side of the pivot?"
-    LearnTitle="Quick Sort gives one pivot its final position, then solves the two sides."
-    LearnSummary="Partitioning is the core idea: choose a pivot, rearrange values around it, then recurse only on the unfinished left and right regions."
-    ConceptHref="/learn/concepts#quick-sort"
-    LearnCards="PIVOT|Choose one reference value|The pivot is used to split the current range into values that belong on different sides.;;PARTITION|Rearrange before recursing|A partition does not fully sort the range; it establishes the side invariant around the pivot.;;RECURSION|Solve smaller ranges next|After partitioning, only the left and right unfinished regions need recursive work.;;RISK|Bad pivots create deep recursion|Highly unbalanced partitions can degrade the run from average Θ(n log n) to Θ(n²)."
-    NextLessonTitle="Heap Sort"
-    NextLessonDescription="Finish the sorting track by combining heap construction with repeated root extraction."
-    NextLessonHref="/sorting/heap"
-    NextLessonLevel="06 · Advanced · Planned"
-    NextLessonLinkLabel="Preview Heap Sort" />
+<div class="quick-page learning-module-page learning-module-shell">
+    <section class="learn-launchpad" aria-labelledby="quick-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="quick-learn-title">Quick Sort does not sort everything at once. It makes one partition correct.</h2>
+            <p>Choose a pivot, rearrange the active range around that pivot, then recurse only on the unfinished sides. A partition creates useful structure; recursion finishes the sorting.</p>
+            <a class="learn-launchpad-link" href="/learn/concepts#quick-sort">Open Quick Sort concepts &amp; memory →</a>
+        </div>
+        <div class="learn-grid">
+            <article class="learn-card purple"><span>PIVOT</span><strong>Choose one reference value</strong><small>Basic mode uses the last item. Advanced mode uses a median-of-three pivot to avoid blindly trusting an endpoint.</small></article>
+            <article class="learn-card mint"><span>PARTITION</span><strong>Build correct regions around the pivot</strong><small>Partitioning does not fully sort the range. It only guarantees which side each classified value belongs to.</small></article>
+            <article class="learn-card blue"><span>RECURSION</span><strong>Ignore the finished pivot region</strong><small>After partitioning, only smaller unfinished subranges are solved again.</small></article>
+            <article class="learn-card gold"><span>MEMORY</span><strong>In-place array, recursive stack</strong><small>No O(n) merge buffer is needed, but recursive calls consume O(log n) stack space on average and O(n) in the worst case.</small></article>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow"><span>SORTING ALGORITHMS</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <h1>Quick Sort</h1>
+            <p>Watch one active range at a time: choose its pivot, classify values, finish the pivot region, then recurse.</p>
+        </div>
+        <div class="complexity-summary" aria-label="Quick Sort complexity">
+            <div><span>Selected mode</span><strong>@VariantLabel</strong><small>@VariantNote</small></div>
+            <div><span>Average</span><strong>Θ(n log n)</strong><small>worst Θ(n²) if partitions become unbalanced</small></div>
+            <div><span>Array space</span><strong>O(1)</strong><small>plus recursion stack · not stable</small></div>
+        </div>
+    </header>
+
+    <section class="smart-tip" aria-label="Quick Sort learning tip">
+        <span class="tip-icon">✦</span>
+        <div><strong>Keep one invariant in mind:</strong><p>after a partition, the pivot/equal band is finished, but the values inside the left and right regions are not necessarily internally sorted yet.</p></div>
+        <a href="/learn/concepts#quick-sort">Why partition ≠ full sort →</a>
+    </section>
+
+    <section class="implementation-section" aria-labelledby="quick-implementation-title">
+        <div class="section-heading-row">
+            <div><span class="section-kicker">IMPLEMENTATION CHOICE</span><h2 id="quick-implementation-title">Learn a simple partition first, then fix its two most common weaknesses.</h2><p>The advanced version improves pivot selection and duplicate-heavy inputs, but it cannot remove Quick Sort's theoretical Θ(n²) worst case.</p></div>
+        </div>
+        <div class="variant-grid">
+            <button type="button" class="variant-card @(_variant == QuickSortVariant.LomutoLastPivot ? "active" : string.Empty)" @onclick="() => SetVariant(QuickSortVariant.LomutoLastPivot)" disabled="@IsBusy">
+                <span>BASIC · LOMUTO</span><strong>Last element is the pivot</strong><p>Scan left to right with one boundary. Values ≤ pivot are moved to the left side, then the pivot is swapped into its final index.</p><small>Simple · in-place · average Θ(n log n) · sorted input can degrade to Θ(n²)</small>
+            </button>
+            <button type="button" class="variant-card @(_variant == QuickSortVariant.MedianOfThreeThreeWay ? "active" : string.Empty)" @onclick="() => SetVariant(QuickSortVariant.MedianOfThreeThreeWay)" disabled="@IsBusy">
+                <span>ADVANCED · MEDIAN-OF-THREE + 3-WAY</span><strong>Create &lt;, =, and &gt; pivot regions</strong><p>Choose the median of first/middle/last values, then keep all values equal to the pivot in one finished band. This avoids repeatedly recursing through many duplicates.</p><small>Better pivot heuristic · duplicate-friendly · in-place · still not stable</small>
+            </button>
+        </div>
+        <div class="live-data-card">
+            <div><span>REAL-TIME CRUD</span><strong>READ is safe; CREATE, UPDATE, and DELETE require a new run</strong></div>
+            <p>An active Quick Sort trace depends on exact indexes, recursion ranges, pivot choice, and partition boundaries. Any mutation changes that snapshot and invalidates the current proof. Finish or restart after the mutation rather than trying to continue the old partition.</p>
+            <span class="compatibility-badge restart">READ safe · mutations restart</span>
+        </div>
+    </section>
+
+    <section id="quick-lab" class="builder-section" aria-labelledby="quick-build-title">
+        <div class="section-heading-row">
+            <div class="heading-with-step"><span class="step-number">1</span><div><span class="section-kicker">BUILD THE ARRAY</span><h2 id="quick-build-title">Choose a range worth partitioning.</h2><p>Use 1–12 integers so the pivot and both regions stay readable.</p></div></div>
+            <a class="concept-link" href="/learn/concepts#quick-sort">How Quick Sort works →</a>
+        </div>
+        <div class="array-builder">
+            <label class="array-input"><span>VALUES</span><input value="@_arrayText" @oninput="ArrayTextChanged" disabled="@IsBusy" aria-label="Quick Sort array values" placeholder="Example: 4, 2, 7, 3, 1, 6" /><small>Separate values with spaces or commas. Duplicates and negatives are allowed.</small></label>
+            <button class="primary-action" type="button" @onclick="ApplyArray" disabled="@IsBusy">Use this array</button>
+        </div>
+        <div class="preset-row" aria-label="Quick Sort example arrays">
+            <span>TRY AN EXAMPLE</span>
+            <button type="button" @onclick="() => LoadPreset(Preset.Classic)" disabled="@IsBusy">Classic</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.SortedTrap)" disabled="@IsBusy">Sorted trap</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Duplicates)" disabled="@IsBusy">Many duplicates</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Reverse)" disabled="@IsBusy">Reverse</button>
+            <button type="button" @onclick="() => LoadPreset(Preset.Mixed)" disabled="@IsBusy">Mixed signs</button>
+            <button type="button" @onclick="LoadRandom" disabled="@IsBusy">Random</button>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(_inputError))
+        {
+            <div class="input-error" role="alert"><strong>Check the array.</strong><span>@_inputError</span></div>
+        }
+        <div class="current-array" aria-label="Current Quick Sort input">
+            <span>CURRENT INPUT</span>
+            <div>@for (var index = 0; index < Current.Elements.Length; index++) { <span><small>@index</small><strong>@Current.Elements[index].Value</strong></span> }</div>
+        </div>
+    </section>
+
+    <section class="predict-section" aria-labelledby="quick-predict-title">
+        <div class="prediction-copy"><span class="step-number">2</span><div><span class="section-kicker">PREDICT FIRST</span><h2 id="quick-predict-title">Which value will be the first pivot?</h2><p>@PredictionPrompt</p></div></div>
+        @if (Current.Count >= 2)
+        {
+            <div class="prediction-card">
+                <div class="prediction-actions pivot-options">
+                    @foreach (var option in PredictionOptions)
+                    {
+                        <button type="button" class="@(_predictionIndex == option.Index ? "chosen" : string.Empty)" @onclick="() => AnswerPrediction(option.Index)" disabled="@IsBusy"><small>@option.Label</small><strong>@option.Value</strong></button>
+                    }
+                </div>
+                @if (_predictionIndex is not null)
+                {
+                    <p class="prediction-feedback @(_predictionCorrect ? "correct" : "incorrect")" aria-live="polite">@PredictionFeedback</p>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="prediction-card empty"><strong>No pivot is needed.</strong><p>One value is already sorted.</p></div>
+        }
+    </section>
+
+    <section class="lab-section" aria-labelledby="quick-visualizer-title">
+        <div class="lab-heading">
+            <div><span class="section-kicker">3 · WATCH THE ALGORITHM</span><h2 id="quick-visualizer-title">Follow one partition at a time.</h2></div>
+            <div class="lab-actions">
+                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopupsAsync" /><span>Open explanation after run</span></label>
+                @if (_lastResult is not null) { <button class="secondary-action" type="button" @onclick="OpenLastRunPopup">Last explanation</button> }
+                <button class="sort-button" type="button" @onclick="RunSortAsync" disabled="@(IsBusy || Current.Count == 0)"><span>▶</span> Sort this array</button>
+            </div>
+        </div>
+
+        <div class="run-dashboard">
+            <div><span>PARTITIONS</span><strong>@DisplayedSnapshot.Partitions</strong></div>
+            <div><span>COMPARISONS</span><strong>@DisplayedSnapshot.Comparisons</strong></div>
+            <div><span>SWAPS</span><strong>@DisplayedSnapshot.Swaps</strong></div>
+            <div><span>DEPTH</span><strong>@DisplayedSnapshot.CurrentDepth / @DisplayedSnapshot.MaxDepth</strong></div>
+            <div><span>PIVOT</span><strong>@DisplayedPivot</strong></div>
+        </div>
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist" aria-label="Quick Sort simulation view">
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state</button>
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
+            </div>
+            <p>@(_view == StateView.Visual ? "Visual state shows the current pivot, scan, partition regions, and which indexes are already final." : "Memory state shows the same fixed array slots, item identity, and the recursion-stack cost that Quick Sort adds even though it uses no O(n) buffer.")</p>
+        </div>
+        <div class="lesson-reference-links"><a href="/learn/concepts#quick-sort">Quick Sort concepts →</a><a href="/learn/concepts#memory">Array &amp; recursion memory →</a><a href="/learn/concepts#big-o">Complexity guide →</a></div>
+
+        <div class="visual-shell">
+            @if (_view == StateView.Visual) { <QuickSortVisualization Snapshot="@DisplayedSnapshot" /> }
+            else { <QuickSortMemoryVisualization Snapshot="@DisplayedSnapshot" /> }
+        </div>
+    </section>
+
+    <section class="algorithm-map" aria-labelledby="quick-map-title">
+        <div class="section-heading-row"><div><span class="section-kicker">WHAT THE CODE IS PROVING</span><h2 id="quick-map-title">Partition creates an invariant; recursion repeats it.</h2><p>The two variants differ in partition strategy, but both keep the work in the same input array.</p></div></div>
+        <div class="why-cards">
+            <article><span>Basic invariant</span><strong>Indexes ≤ boundary contain values ≤ pivot.</strong><p>Lomuto advances one scan pointer and grows the accepted left region. The pivot is placed only after scanning finishes.</p></article>
+            <article><span>Advanced invariant</span><strong>&lt; pivot | = pivot | unknown | &gt; pivot.</strong><p>The three-way form permanently finishes the equal band, which is especially useful when many values repeat.</p></article>
+            <article><span>Not stable</span><strong>Long-distance swaps can reverse equal item identities.</strong><p>Open Memory state on the duplicate task to see why sorted values alone do not prove stability.</p></article>
+        </div>
+    </section>
+
+    <section class="fit-section" aria-labelledby="quick-fit-title">
+        <div class="section-heading-row"><div><span class="section-kicker">WHEN SHOULD I USE IT?</span><h2 id="quick-fit-title">Quick Sort is excellent for in-memory arrays when average speed and low extra array memory matter.</h2><p>Pivot strategy and data distribution matter more here than they did for Merge Sort.</p></div></div>
+        <div class="fit-grid">
+            <article class="fit-card good"><span>GOOD FIT</span><strong>Large in-memory arrays with cheap swaps</strong><p>Average Θ(n log n), good locality, and no O(n) auxiliary merge buffer make Quick Sort a strong practical array sorter when stability is not required.</p></article>
+            <article class="fit-card avoid"><span>AVOID FOR</span><strong>Stable ordering or guaranteed Θ(n log n)</strong><p>Quick Sort is not stable, and adversarial or repeatedly unbalanced pivots can produce Θ(n²) work and O(n) recursion depth.</p></article>
+            <article class="fit-card better"><span>BETTER ALTERNATIVES</span><strong>Match the requirement, not the popularity</strong><p>Use Merge Sort when stable predictable Θ(n log n) is more important than O(n) auxiliary memory. Use Heap Sort when you want O(1) extra array storage with guaranteed Θ(n log n).</p><div class="fit-links"><a href="/sorting/merge">Merge Sort →</a><a href="/sorting/heap">Heap Sort →</a></div></article>
+        </div>
+    </section>
+
+    <section class="practice-section" aria-labelledby="quick-practice-title">
+        <div class="practice-heading"><div><span class="section-kicker">GUIDED PRACTICE</span><h2 id="quick-practice-title">Prove the partition behavior, not only the final sorted order.</h2></div><div class="task-score"><strong>@_completedTaskIds.Count / @PracticeTasks.Count</strong><span>completed</span></div></div>
+        @if (_activeTaskId is not null)
+        {
+            var task = PracticeTasks.First(item => item.Id == _activeTaskId.Value);
+            <div class="active-task-banner"><span>ACTIVE TASK @task.Id.ToString("00")</span><strong>@task.Title</strong><small>@GetActiveTaskProgressText(task.Id)</small></div>
+        }
+        <div class="practice-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                var completed = _completedTaskIds.Contains(task.Id);
+                var active = _activeTaskId == task.Id;
+                <article class="task-card @(completed ? "completed" : string.Empty) @(active ? "active" : string.Empty)">
+                    <div class="task-topline"><span>@task.Id.ToString("00")</span><span>@(completed ? "✓ Completed" : active ? "In progress" : "Practice")</span></div>
+                    <h3>@task.Title</h3><p>@task.Goal</p><div class="task-input">Input: <code>@FormatValues(task.Input)</code></div>
+                    <div class="task-actions"><a href="/learn/concepts#quick-sort">Need the concept? →</a><button type="button" @onclick="() => StartTask(task.Id)" disabled="@IsBusy">@(active ? "Restart task" : completed ? "Practice again" : "Start task")</button></div>
+                </article>
+            }
+        </div>
+    </section>
+
+    <NextLessonCard Title="Heap Sort" Description="Finish the sorting track by combining heap construction with repeated root extraction and guaranteed Θ(n log n) time." Href="/sorting/heap" Level="06 · Advanced" LinkLabel="Open Heap Sort" />
+</div>
+
+@if (_lastRunPopupOpen && _lastResult is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRunPopup">
+        <section class="run-popup" role="dialog" aria-modal="true" aria-labelledby="quick-run-popup-title" @onclick="IgnorePopupClick" @onclick:stopPropagation="true">
+            <header><div><span class="section-kicker">WHAT JUST HAPPENED?</span><h2 id="quick-run-popup-title">@RunHeadline</h2></div><button class="popup-close" type="button" @onclick="CloseLastRunPopup" aria-label="Close result explanation">×</button></header>
+            <div class="popup-tabs" role="tablist"><button type="button" class="@(_popupTab == ResultPopupTab.Action ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Action">Run</button><button type="button" class="@(_popupTab == ResultPopupTab.Complexity ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Complexity">Complexity</button><button type="button" class="@(_popupTab == ResultPopupTab.Memory ? "active" : string.Empty)" @onclick="() => _popupTab = ResultPopupTab.Memory">Memory &amp; stability</button></div>
+            @if (_popupTab == ResultPopupTab.Action)
+            {
+                <div class="popup-body"><div class="popup-metrics"><div><span>Mode</span><strong>@VariantLabelFor(_lastResult.Variant)</strong></div><div><span>Partitions</span><strong>@_lastResult.Partitions</strong></div><div><span>Comparisons</span><strong>@_lastResult.Comparisons</strong></div><div><span>Swaps</span><strong>@_lastResult.Swaps</strong></div></div><h3>Each partition finished a pivot or equal band before recursion continued.</h3><p><strong>@FormatValues(_lastResult.InitialValues)</strong> became <strong>@FormatValues(_lastResult.SortedValues)</strong>.</p></div>
+            }
+            else if (_popupTab == ResultPopupTab.Complexity)
+            {
+                <div class="popup-body"><h3>Quick Sort's recursion shape controls its cost.</h3><p>Balanced partitions keep the run around Θ(n log n). Repeatedly tiny/huge splits can degrade to Θ(n²), which is why pivot selection matters.</p><div class="complexity-line"><span>Best</span><strong>@_lastResult.BestCaseComplexity</strong><span>Average</span><strong>@_lastResult.AverageCaseComplexity</strong><span>Worst</span><strong>@_lastResult.WorstCaseComplexity</strong></div><a class="popup-concept-link" href="/learn/concepts#big-o">Open the Big-O guide →</a></div>
+            }
+            else
+            {
+                <div class="popup-body"><h3>In-place does not mean zero extra memory.</h3><p>The array itself needs O(1) extra partition storage, but recursive calls use O(log n) stack space on average and O(n) in the worst case. Quick Sort is not stable; this run happened to @(_lastResult.PreservedEqualValueOrder ? "preserve" : "change") equal-value identity order.</p><a class="popup-concept-link" href="/learn/concepts#quick-sort">Open Quick Sort concepts &amp; memory →</a></div>
+            }
+        </section>
+    </div>
+}
+
+@code {
+    private const string CompletedTasksStorageKey = "algorithm-visualizer.quick-sort.completed-tasks.v1";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.quick-sort.result-popups.v1";
+
+    private readonly List<RunFrame> _frames = [];
+    private readonly HashSet<int> _completedTaskIds = [];
+    private readonly List<QuickSortResult> _practiceResults = [];
+
+    private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
+    [
+        new(1, "Trace one Lomuto run", "Use Basic mode and finish the classic input. Confirm that pivot placement creates final positions before recursion continues.", [4, 2, 7, 3, 1, 6], QuickSortVariant.LomutoLastPivot),
+        new(2, "Expose the sorted-input trap", "Use Basic mode on sorted input and observe 10 scan comparisons and recursion reaching depth 5.", [1, 2, 3, 4, 5], QuickSortVariant.LomutoLastPivot),
+        new(3, "Improve pivot balance", "Use Advanced mode on the same sorted input and prove its recursion depth is lower than the Basic last-pivot run.", [1, 2, 3, 4, 5], QuickSortVariant.MedianOfThreeThreeWay),
+        new(4, "Collapse duplicate values", "Use Advanced mode on duplicate-heavy input. The equal pivot band should be finished without recursive calls through every equal value.", [3, 3, 2, 3, 1, 3, 3], QuickSortVariant.MedianOfThreeThreeWay),
+        new(5, "See why Quick Sort is not stable", "Use Basic mode on 2, 2, 1, then open Memory state. The two equal item identities should reverse even though the values are sorted.", [2, 2, 1], QuickSortVariant.LomutoLastPivot),
+        new(6, "Test the one-item base case", "Use Basic mode on one value and verify zero partitions, comparisons, and swaps.", [42], QuickSortVariant.LomutoLastPivot)
+    ];
+
+    private string _arrayText = "4, 2, 7, 3, 1, 6";
+    private string? _inputError;
+    private string? _lastCapturedStep;
+    private int _frameIndex = -1;
+    private int? _predictionIndex;
+    private bool _predictionCorrect;
+    private QuickSortResult? _lastResult;
+    private bool _lastRunPopupOpen;
+    private bool _showRunPopups = true;
+    private bool _storageLoaded;
+    private bool _memoryOpenedDuringTask;
+    private int? _activeTaskId;
+    private StateView _view = StateView.Visual;
+    private ResultPopupTab _popupTab = ResultPopupTab.Action;
+    private QuickSortVariant _variant = QuickSortVariant.LomutoLastPivot;
+
+    private bool IsBusy => SimulationState.IsRunning;
+    private QuickSortSnapshot Current => QuickSort.CreateSnapshot();
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_frames.Count > 0 && _frameIndex < _frames.Count - 1) || SimulationState.IsRunning;
+    private int TimelineCount => _frames.Count;
+    private int TimelinePosition => _frameIndex >= 0 ? _frameIndex + 1 : 0;
+    private RunFrame? DisplayedFrame => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex] : null;
+    private string DisplayedStepText => DisplayedFrame?.StepText ?? SimulationState.CurrentStepText;
+    private QuickSortSnapshot DisplayedSnapshot => DisplayedFrame?.Snapshot ?? QuickSort.CreateSnapshot();
+    private string DisplayedPivot => DisplayedSnapshot.PivotValue is int value ? value.ToString() : "—";
+    private string VariantLabel => VariantLabelFor(_variant);
+    private string VariantNote => _variant == QuickSortVariant.LomutoLastPivot ? "last-item pivot + Lomuto" : "median-of-three + 3-way";
+    private string PredictionPrompt => _variant == QuickSortVariant.LomutoLastPivot ? "Basic mode always chooses the last value of the first active range." : "Advanced mode compares first, middle, and last candidates and chooses their median value.";
+    private string RunHeadline => _lastResult is null ? "Quick Sort finished." : $"{VariantLabelFor(_lastResult.Variant)} finished in {_lastResult.Partitions} partition(s).";
+
+    private IReadOnlyList<PivotOption> PredictionOptions
+    {
+        get
+        {
+            if (Current.Count == 0) return [];
+            var options = new List<PivotOption>();
+            var first = 0;
+            var middle = (Current.Count - 1) / 2;
+            var last = Current.Count - 1;
+            options.Add(new PivotOption(first, Current.Elements[first].Value, "first"));
+            if (middle != first && middle != last) options.Add(new PivotOption(middle, Current.Elements[middle].Value, "middle"));
+            if (last != first) options.Add(new PivotOption(last, Current.Elements[last].Value, "last"));
+            return options;
+        }
+    }
+
+    private string PredictionFeedback => _predictionCorrect ? "Correct — that is the pivot strategy used by this mode." : $"Not this one. The first pivot will be {ExpectedPivotValue}.";
+    private int ExpectedPivotIndex => _variant == QuickSortVariant.LomutoLastPivot ? Math.Max(0, Current.Count - 1) : MedianCandidateIndex();
+    private int ExpectedPivotValue => Current.Count == 0 ? 0 : Current.Elements[ExpectedPivotIndex].Value;
+
+    protected override void OnInitialized()
+    {
+        QuickSort.LoadValues([4, 2, 7, 3, 1, 6]);
+        SimulationState.Changed += HandleSimulationChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _storageLoaded) return;
+        _storageLoaded = true;
+        try
+        {
+            var popupValue = await JS.InvokeAsync<string?>("localStorage.getItem", PopupSettingStorageKey);
+            if (bool.TryParse(popupValue, out var parsedPopup)) _showRunPopups = parsedPopup;
+            var saved = await JS.InvokeAsync<string?>("localStorage.getItem", CompletedTasksStorageKey);
+            if (!string.IsNullOrWhiteSpace(saved))
+            {
+                var ids = System.Text.Json.JsonSerializer.Deserialize<int[]>(saved) ?? [];
+                foreach (var id in ids) _completedTaskIds.Add(id);
+            }
+            StateHasChanged();
+        }
+        catch { }
+    }
+
+    private void SetVariant(QuickSortVariant variant)
+    {
+        if (IsBusy || _variant == variant) return;
+        _variant = variant;
+        _predictionIndex = null;
+        _predictionCorrect = false;
+        ClearReview();
+        QuickSort.LoadValues(ParseCurrentValues());
+    }
+
+    private void ArrayTextChanged(ChangeEventArgs args) => _arrayText = args.Value?.ToString() ?? string.Empty;
+
+    private void ApplyArray()
+    {
+        if (IsBusy) return;
+        if (!TryParseArray(_arrayText, out var values, out var error)) { _inputError = error; return; }
+        LoadValues(values);
+    }
+
+    private void LoadPreset(Preset preset)
+    {
+        if (IsBusy) return;
+        LoadValues(preset switch
+        {
+            Preset.Classic => [4, 2, 7, 3, 1, 6],
+            Preset.SortedTrap => [1, 2, 3, 4, 5, 6, 7],
+            Preset.Duplicates => [3, 3, 2, 3, 1, 3, 3],
+            Preset.Reverse => [7, 6, 5, 4, 3, 2, 1],
+            Preset.Mixed => [0, -4, 7, -1, 7, 2],
+            _ => [4, 2, 7, 3, 1, 6]
+        });
+    }
+
+    private void LoadRandom()
+    {
+        if (IsBusy) return;
+        var values = new int[7];
+        for (var index = 0; index < values.Length; index++) values[index] = Random.Shared.Next(-6, 16);
+        LoadValues(values);
+    }
+
+    private void LoadValues(int[] values)
+    {
+        ClearReview();
+        QuickSort.LoadValues(values);
+        _arrayText = FormatValues(values);
+        _inputError = null;
+        _predictionIndex = null;
+        _predictionCorrect = false;
+    }
+
+    private int[] ParseCurrentValues()
+    {
+        if (TryParseArray(_arrayText, out var values, out _)) return values;
+        var snapshot = QuickSort.CreateSnapshot();
+        values = new int[snapshot.Elements.Length];
+        for (var index = 0; index < values.Length; index++) values[index] = snapshot.Elements[index].Value;
+        return values;
+    }
+
+    private static bool TryParseArray(string input, out int[] values, out string error)
+    {
+        var parts = (input ?? string.Empty).Split([',', ';', ' ', '\n', '\r', '\t'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length == 0) { values = []; error = "Enter at least one integer."; return false; }
+        if (parts.Length > 12) { values = []; error = "Keep this learning view to at most 12 values so every partition stays readable."; return false; }
+        values = new int[parts.Length];
+        for (var index = 0; index < parts.Length; index++) if (!int.TryParse(parts[index], out values[index])) { values = []; error = $"“{parts[index]}” is not a whole number."; return false; }
+        error = string.Empty;
+        return true;
+    }
+
+    private void AnswerPrediction(int index)
+    {
+        if (IsBusy || Current.Count < 2) return;
+        _predictionIndex = index;
+        _predictionCorrect = index == ExpectedPivotIndex;
+    }
+
+    private int MedianCandidateIndex()
+    {
+        if (Current.Count == 0) return 0;
+        var first = 0;
+        var middle = (Current.Count - 1) / 2;
+        var last = Current.Count - 1;
+        var a = Current.Elements[first].Value;
+        var b = Current.Elements[middle].Value;
+        var c = Current.Elements[last].Value;
+        if ((a <= b && b <= c) || (c <= b && b <= a)) return middle;
+        if ((b <= a && a <= c) || (c <= a && a <= b)) return first;
+        return last;
+    }
+
+    private async Task RunSortAsync()
+    {
+        if (IsBusy || Current.Count == 0) return;
+        PrepareRun();
+        QuickSort.ResetVisualState();
+        var token = SimulationState.Start("Quick Sort is ready to choose the first pivot.");
+        try
+        {
+            var result = await QuickSort.SortAsync(_variant, token);
+            if (!IsCurrent(token)) return;
+            FinishRun(result);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception ex)
+        {
+            _inputError = $"The sorting run stopped: {ex.Message}";
+            if (IsCurrent(token)) SimulationState.Complete("The run stopped because of an error.");
+        }
+    }
+
+    private void FinishRun(QuickSortResult result)
+    {
+        _lastResult = result;
+        RecordPracticeResult(result);
+        SimulationState.Complete($"Sorted. {result.Partitions} partitions, {result.Comparisons} comparisons, {result.Swaps} swaps.");
+        _popupTab = ResultPopupTab.Action;
+        _lastRunPopupOpen = _showRunPopups;
+    }
+
+    private void PrepareRun() { _inputError = null; _lastRunPopupOpen = false; _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; }
+    private void Capture() { var step = SimulationState.CurrentStepText; if (step == _lastCapturedStep) return; var tail = _frameIndex < 0 || _frameIndex == _frames.Count - 1; _frames.Add(new RunFrame(step, QuickSort.CreateSnapshot())); _lastCapturedStep = step; if (tail) _frameIndex = _frames.Count - 1; }
+    private void HandleSimulationChanged() { if (SimulationState.IsRunning) Capture(); _ = InvokeAsync(StateHasChanged); }
+    private bool IsCurrent(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;
+    private void ClearReview() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; _lastResult = null; _lastRunPopupOpen = false; }
+    private Task PlayTimelineAsync() { if (_frames.Count > 0) _frameIndex = _frames.Count - 1; SimulationState.Resume(); return InvokeAsync(StateHasChanged); }
+    private Task PauseTimelineAsync() { SimulationState.Pause(); return Task.CompletedTask; }
+    private Task StepBackAsync() { if (SimulationState.IsRunning && !SimulationState.IsPaused) SimulationState.Pause(); if (_frameIndex > 0) _frameIndex--; return InvokeAsync(StateHasChanged); }
+    private Task StepForwardAsync() { if (_frameIndex >= 0 && _frameIndex < _frames.Count - 1) { _frameIndex++; return InvokeAsync(StateHasChanged); } if (SimulationState.IsRunning) SimulationState.Step(); return Task.CompletedTask; }
+    private Task ResetPlaybackAsync() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; return InvokeAsync(StateHasChanged); }
+
+    private void SetStateView(StateView view)
+    {
+        _view = view;
+        if (view == StateView.Memory && _activeTaskId is not null && _practiceResults.Count > 0) { _memoryOpenedDuringTask = true; CheckActiveTaskCompletion(); }
+    }
+
+    private void StartTask(int taskId)
+    {
+        if (IsBusy) return;
+        var task = PracticeTasks.First(item => item.Id == taskId);
+        _activeTaskId = taskId;
+        _practiceResults.Clear();
+        _memoryOpenedDuringTask = false;
+        _variant = task.Variant;
+        LoadValues(CloneValues(task.Input));
+    }
+
+    private void RecordPracticeResult(QuickSortResult result) { if (_activeTaskId is null) return; _practiceResults.Add(result); CheckActiveTaskCompletion(); }
+
+    private void CheckActiveTaskCompletion()
+    {
+        if (_activeTaskId is null || _practiceResults.Count == 0) return;
+        var result = _practiceResults[^1];
+        var complete = _activeTaskId.Value switch
+        {
+            1 => result.Variant == QuickSortVariant.LomutoLastPivot && SameValues(result.InitialValues, [4, 2, 7, 3, 1, 6]) && IsSorted(result.SortedValues) && result.Partitions > 0,
+            2 => result.Variant == QuickSortVariant.LomutoLastPivot && SameValues(result.InitialValues, [1, 2, 3, 4, 5]) && result.Comparisons == 10 && result.MaxDepth == 5,
+            3 => result.Variant == QuickSortVariant.MedianOfThreeThreeWay && SameValues(result.InitialValues, [1, 2, 3, 4, 5]) && result.MaxDepth < 5,
+            4 => result.Variant == QuickSortVariant.MedianOfThreeThreeWay && SameValues(result.InitialValues, [3, 3, 2, 3, 1, 3, 3]) && result.HandlesDuplicateHeavyInputBetter && IsSorted(result.SortedValues),
+            5 => result.Variant == QuickSortVariant.LomutoLastPivot && SameValues(result.InitialValues, [2, 2, 1]) && !result.PreservedEqualValueOrder && _memoryOpenedDuringTask,
+            6 => result.Variant == QuickSortVariant.LomutoLastPivot && SameValues(result.InitialValues, [42]) && result.Partitions == 0 && result.Comparisons == 0 && result.Swaps == 0,
+            _ => false
+        };
+        if (!complete) return;
+        _completedTaskIds.Add(_activeTaskId.Value);
+        _activeTaskId = null;
+        _practiceResults.Clear();
+        _memoryOpenedDuringTask = false;
+        _ = PersistCompletedTasksAsync();
+    }
+
+    private string GetActiveTaskProgressText(int taskId)
+    {
+        if (_practiceResults.Count == 0) return taskId == 5 ? "Run the loaded Basic case, then open Memory state to inspect the two equal item identities." : "Input and required mode are loaded. Run Quick Sort and inspect the partition metrics.";
+        var result = _practiceResults[^1];
+        return taskId switch
+        {
+            2 => $"Need 10 comparisons and depth 5. Last run: {result.Comparisons} comparisons, depth {result.MaxDepth}.",
+            3 => $"Need Advanced depth < 5. Last run depth: {result.MaxDepth}.",
+            4 => $"Advanced duplicate run: {result.Partitions} partitions, sorted={IsSorted(result.SortedValues)}.",
+            5 => $"Equal identity preserved={result.PreservedEqualValueOrder}; Memory opened={_memoryOpenedDuringTask}.",
+            6 => $"Need zero work. Last run: {result.Partitions} partitions, {result.Comparisons} comparisons, {result.Swaps} swaps.",
+            _ => $"Last run: {result.Partitions} partitions, {result.Comparisons} comparisons, {result.Swaps} swaps."
+        };
+    }
+
+    private async Task PersistCompletedTasksAsync()
+    {
+        try { var json = System.Text.Json.JsonSerializer.Serialize(_completedTaskIds.OrderBy(id => id).ToArray()); await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { CompletedTasksStorageKey, json }); } catch { }
+    }
+
+    private async Task ToggleRunPopupsAsync(ChangeEventArgs args)
+    {
+        _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed;
+        try { await JS.InvokeVoidAsync("localStorage.setItem", new object?[] { PopupSettingStorageKey, _showRunPopups.ToString() }); } catch { }
+    }
+
+    private void OpenLastRunPopup() { if (_lastResult is null) return; _popupTab = ResultPopupTab.Action; _lastRunPopupOpen = true; }
+    private void CloseLastRunPopup() => _lastRunPopupOpen = false;
+    private static void IgnorePopupClick() { }
+    private static string VariantLabelFor(QuickSortVariant variant) => variant == QuickSortVariant.LomutoLastPivot ? "Basic · Lomuto" : "Advanced · 3-way";
+    private static int[] CloneValues(int[] source) { var copy = new int[source.Length]; for (var index = 0; index < source.Length; index++) copy[index] = source[index]; return copy; }
+    private static bool SameValues(int[] left, int[] right) { if (left.Length != right.Length) return false; for (var index = 0; index < left.Length; index++) if (left[index] != right[index]) return false; return true; }
+    private static bool IsSorted(int[] values) { for (var index = 1; index < values.Length; index++) if (values[index - 1] > values[index]) return false; return true; }
+    private static string FormatValues(int[] values) => string.Join(", ", values);
+
+    public void Dispose() => SimulationState.Changed -= HandleSimulationChanged;
+
+    private sealed record RunFrame(string StepText, QuickSortSnapshot Snapshot);
+    private sealed record PracticeTaskDefinition(int Id, string Title, string Goal, int[] Input, QuickSortVariant Variant);
+    private sealed record PivotOption(int Index, int Value, string Label);
+    private enum StateView { Visual, Memory }
+    private enum ResultPopupTab { Action, Complexity, Memory }
+    private enum Preset { Classic, SortedTrap, Duplicates, Reverse, Mixed }
+}

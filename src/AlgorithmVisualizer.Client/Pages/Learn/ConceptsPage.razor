@@ -674,29 +674,31 @@
     <section id="quick-sort" class="concept-section">
         <div class="section-heading">
             <span>A5</span>
-            <div><h2>Quick Sort: pivot, partition, then recurse</h2><p>Quick Sort earns its speed by putting one pivot into its final position and recursively solving the unfinished regions around it.</p></div>
+            <div><h2>Quick Sort: pivot, partition, then recurse</h2><p>Quick Sort earns its speed by finishing a pivot position (or an equal-pivot band) and recursively solving only the unfinished regions around it.</p></div>
         </div>
         <div class="concept-grid two">
             <article class="concept-card"><span class="term">PIVOT</span><h3>Choose one value to organize the range around</h3><p>The pivot is a reference for partitioning. It is not automatically the median and a poor pivot can create very uneven subproblems.</p></article>
-            <article class="concept-card"><span class="term queue">PARTITION</span><h3>Partitioning is not the same as fully sorting</h3><p>After partitioning, the pivot is final and values belong on the correct side of it, but each side can still be internally unsorted.</p></article>
-            <article class="concept-card"><span class="term">COMPLEXITY</span><h3>Balanced partitions give the useful case</h3><p>Average behavior is Θ(n log n). Repeatedly extreme pivots can create Θ(n²) work and a deep recursion stack.</p></article>
-            <article class="concept-card"><span class="term queue">MEMORY + CRUD</span><h3>Usually in-place, but an active trace still needs a fixed snapshot</h3><p>A typical array implementation uses swaps plus recursion rather than an O(n) merge buffer. CREATE/UPDATE/DELETE during partitioning invalidates boundaries and requires a new run.</p></article>
+            <article class="concept-card"><span class="term queue">PARTITION</span><h3>Partitioning is not the same as fully sorting</h3><p>Basic Lomuto finishes one pivot index. Advanced 3-way partition finishes the whole = pivot band. In both cases, the remaining left and right regions can still be internally unsorted.</p></article>
+            <article class="concept-card"><span class="term">COMPLEXITY</span><h3>Balanced partitions give the useful case</h3><p>Average behavior is Θ(n log n). Repeatedly extreme pivots can create Θ(n²) work and a deep recursion stack. Median-of-three is a heuristic that often improves pivot quality, not a worst-case guarantee. With 3-way partitioning, an all-equal range is finished in one linear scan, so that special best case is Θ(n).</p></article>
+            <article class="concept-card"><span class="term queue">MEMORY + CRUD</span><h3>In-place array, recursive stack, fixed active snapshot</h3><p>This implementation swaps inside one array, so extra array storage is O(1). Recursive calls use O(log n) stack space on average and O(n) in the worst case. CREATE/UPDATE/DELETE during partitioning invalidates ranges and requires a new run. Quick Sort is not stable.</p></article>
         </div>
-        <div class="concept-lesson-links"><a href="/sorting/quick">Open the planned Quick Sort lesson →</a><a href="/sorting/merge">Compare with Merge Sort →</a></div>
+        <div class="concept-lesson-links"><a href="/sorting/quick">Open the Quick Sort lab →</a><a href="/sorting/merge">Compare with Merge Sort →</a></div>
     </section>
 
     <section id="heap-sort" class="concept-section">
         <div class="section-heading">
             <span>A6</span>
-            <div><h2>Heap Sort: heapify, extract the root, shrink the heap</h2><p>Heap Sort reuses the array as two logical regions: an active Max Heap and a finished sorted suffix.</p></div>
+            <div><h2>Heap Sort: build a Max Heap, extract the root, shrink the boundary</h2><p>Heap Sort reuses one array as two logical regions: an active Max Heap on the left and a permanently finished sorted suffix on the right.</p></div>
         </div>
         <div class="concept-grid two">
-            <article class="concept-card"><span class="term">HEAPIFY</span><h3>Build a Max Heap before extraction</h3><p>The largest active value must be at the root so it can be moved directly into the next final position.</p></article>
-            <article class="concept-card"><span class="term queue">BOUNDARY</span><h3>The sorted suffix is no longer part of the heap</h3><p>After swapping the root with the last active element, reduce the heap size before sifting the new root down.</p></article>
-            <article class="concept-card"><span class="term">TRADE-OFF</span><h3>Predictable Θ(n log n) with O(1) auxiliary array space</h3><p>Heap Sort avoids Merge Sort's O(n) buffer, but its long-distance swaps mean the standard algorithm is not stable.</p></article>
-            <article class="concept-card"><span class="term queue">CRUD</span><h3>Sorting and maintaining a heap are different jobs</h3><p>While Heap Sort is extracting into the final suffix, CREATE/UPDATE/DELETE invalidates the active heap boundary and requires restart. A standalone Heap structure can support its own mutations separately.</p></article>
+            <article class="concept-card"><span class="term">BASIC BUILD</span><h3>Insertion-build grows a heap prefix with bubble-up</h3><p>The teaching version adds one array item to the current heap prefix and compares it upward with its parent. This directly reuses the Binary Heap insertion mental model, but construction can cost O(n log n).</p></article>
+            <article class="concept-card"><span class="term queue">ADVANCED BUILD</span><h3>Floyd heapify builds the same Max Heap in Θ(n)</h3><p>Leaves are already one-item heaps. Start at the last parent and sift parents downward from right to left. This avoids repeatedly bubbling every inserted value from the bottom.</p></article>
+            <article class="concept-card"><span class="term">BOUNDARY</span><h3>Root → final suffix, then repair only the reduced heap</h3><p>Swap the maximum at index 0 with the last active heap slot, reduce heap size, then sift the new root down. The green suffix is final and must never participate in heap comparisons again.</p></article>
+            <article class="concept-card"><span class="term queue">COMPLEXITY + MEMORY</span><h3>Guaranteed Θ(n log n), O(1) extra array storage, not stable</h3><p>Floyd improves construction to Θ(n), but repeated root extraction still dominates, so total best/average/worst time is Θ(n log n). Tree shape is encoded only by array indexes; distant swaps can reverse equal-item identity order.</p></article>
+            <article class="concept-card"><span class="term">CRUD</span><h3>Heap Sort is snapshot-based, unlike a dynamic Heap ADT</h3><p>READ is safe, but CREATE/UPDATE/DELETE during sorting invalidates heap order, the boundary, and the finished-suffix proof, so restart on the changed data. For continuously changing priorities, use the Binary Heap structure instead.</p></article>
+            <article class="concept-card"><span class="term queue">WHEN TO USE</span><h3>Choose it for strict memory + worst-case guarantees</h3><p>Heap Sort is useful when O(1) auxiliary array space and guaranteed Θ(n log n) matter. Prefer Merge Sort when stability matters, Quick Sort for strong average in-memory performance, or Insertion Sort for small/nearly-sorted online data.</p></article>
         </div>
-        <div class="concept-lesson-links"><a href="/sorting/heap">Open the planned Heap Sort lesson →</a><a href="/structures/binary-heap">Learn Binary Heap first →</a></div>
+        <div class="concept-lesson-links"><a href="/sorting/heap">Open the Heap Sort lab →</a><a href="/structures/binary-heap">Review Binary Heap →</a><a href="/sorting/quick">Compare with Quick Sort →</a></div>
     </section>
 
     <section class="concept-section implementation-note">
