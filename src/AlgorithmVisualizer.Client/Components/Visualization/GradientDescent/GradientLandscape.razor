@@ -1,0 +1,87 @@
+@using System.Globalization
+@using System.Text
+@using AlgorithmVisualizer.Core.MachineLearning.Optimization.GradientDescent
+
+<section class="gradient-landscape" aria-label="Gradient descent parameter landscape">
+    <div class="landscape-copy">
+        <span>PARAMETER SPACE</span>
+        <strong>Contours represent equal-loss regions.</strong>
+        <small>The path shows each committed parameter vector. The center marker is the target/minimum.</small>
+    </div>
+    <div class="landscape-canvas">
+        <svg viewBox="0 0 100 100" role="img" aria-label="Gradient descent path toward the loss minimum" preserveAspectRatio="none">
+            <ellipse class="loss-contour outer" cx="@CenterX" cy="@CenterY" rx="@ContourRx(31)" ry="@ContourRy(31)" />
+            <ellipse class="loss-contour middle" cx="@CenterX" cy="@CenterY" rx="@ContourRx(21)" ry="@ContourRy(21)" />
+            <ellipse class="loss-contour inner" cx="@CenterX" cy="@CenterY" rx="@ContourRx(11)" ry="@ContourRy(11)" />
+            @if (!string.IsNullOrWhiteSpace(PathPoints))
+            {
+                <polyline class="trajectory-line" points="@PathPoints" />
+            }
+            @foreach (var point in Snapshot.History)
+            {
+                if (point.Parameters.Length >= 2)
+                {
+                    <circle class="trajectory-point" cx="@CoordinateX(point.Parameters[0])" cy="@CoordinateY(point.Parameters[1])" r="1.45" />
+                }
+            }
+            @if (HasCandidate)
+            {
+                <line class="candidate-line" x1="@CurrentX" y1="@CurrentY" x2="@CandidateX" y2="@CandidateY" />
+                <circle class="candidate-point" cx="@CandidateX" cy="@CandidateY" r="2" />
+            }
+            <circle class="minimum-point" cx="@CenterX" cy="@CenterY" r="2.3" />
+            <circle class="current-point" cx="@CurrentX" cy="@CurrentY" r="2.7" />
+        </svg>
+        <div class="landscape-label minimum-label" style="left:@Percent(CenterX);top:@Percent(CenterY);">minimum</div>
+        <div class="landscape-label current-label" style="left:@Percent(CurrentX);top:@Percent(CurrentY);">θ</div>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public GradientDescentSnapshot Snapshot { get; set; } = default!;
+
+    private double CenterX => Snapshot.Target.Length > 0 ? MapX(Snapshot.Target[0]) : 50d;
+    private double CenterY => Snapshot.Target.Length > 1 ? MapY(Snapshot.Target[1]) : 50d;
+    private double CurrentX => Snapshot.Parameters.Length > 0 ? MapX(Snapshot.Parameters[0]) : 50d;
+    private double CurrentY => Snapshot.Parameters.Length > 1 ? MapY(Snapshot.Parameters[1]) : 50d;
+    private double CandidateX => Snapshot.NextParameters.Length > 0 ? MapX(Snapshot.NextParameters[0]) : CurrentX;
+    private double CandidateY => Snapshot.NextParameters.Length > 1 ? MapY(Snapshot.NextParameters[1]) : CurrentY;
+    private bool HasCandidate => Snapshot.Phase == GradientDescentPhase.UpdatingParameters;
+
+    private string PathPoints
+    {
+        get
+        {
+            var builder = new StringBuilder();
+            for (var index = 0; index < Snapshot.History.Length; index++)
+            {
+                var point = Snapshot.History[index];
+                if (point.Parameters.Length < 2) continue;
+                if (builder.Length > 0) builder.Append(' ');
+                builder.Append(CoordinateX(point.Parameters[0]));
+                builder.Append(',');
+                builder.Append(CoordinateY(point.Parameters[1]));
+            }
+            return builder.ToString();
+        }
+    }
+
+    private string ContourRx(double basis)
+    {
+        var curvature = Snapshot.Curvature.Length > 0 ? Snapshot.Curvature[0] : 1d;
+        return FormatCoordinate(Math.Clamp(basis / Math.Sqrt(Math.Max(0.05d, curvature)), 6d, 43d));
+    }
+
+    private string ContourRy(double basis)
+    {
+        var curvature = Snapshot.Curvature.Length > 1 ? Snapshot.Curvature[1] : 1d;
+        return FormatCoordinate(Math.Clamp(basis / Math.Sqrt(Math.Max(0.05d, curvature)), 6d, 43d));
+    }
+
+    private static double MapX(double value) => Math.Clamp((value + 8d) / 16d * 100d, 2d, 98d);
+    private static double MapY(double value) => Math.Clamp((8d - value) / 16d * 100d, 2d, 98d);
+    private static string CoordinateX(double value) => FormatCoordinate(MapX(value));
+    private static string CoordinateY(double value) => FormatCoordinate(MapY(value));
+    private static string FormatCoordinate(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
+    private static string Percent(double value) => $"{FormatCoordinate(value)}%";
+}

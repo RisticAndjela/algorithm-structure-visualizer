@@ -15,7 +15,6 @@ algorithm-structure-visualizer/
 │  │  ├─ Algorithms/GraphTraversal/
 │  │  ├─ Algorithms/GraphShortestPath/Dijkstra/
 │  │  ├─ Algorithms/GraphOrdering/Topological/
-│  │  ├─ Algorithms/GraphSpanningTree/Mst/
 │  │  └─ Simulation/
 │  ├─ AlgorithmVisualizer.Client/
 │  │  ├─ Components/
@@ -189,7 +188,7 @@ The dedicated Binary Heap specialization adds:
 
 ### Graph
 
-The Graph structure module adds canonical `GraphVertex`/`GraphEdge` objects, manually stored adjacency lists, and a synchronized adjacency matrix backed by the existing `ManualMatrix`. Graph Core has no fixed eight-vertex cap; `ManualMatrix` is reusable storage whose dimensions follow the graph, while MatrixPage keeps its separate 8×8 teaching/input limit. The Client renders topology separately from representation memory, scrolls large matrix views internally, and uses ring-then-grid automatic topology placement before optional manual dragging. BFS and DFS are now live algorithm modules that consume this exact Graph snapshot instead of introducing a second graph representation. Dijkstra now follows this reuse pattern: it consumes the same Graph snapshot and adds renderer-neutral shortest-path state. Topological Sort and Minimum Spanning Tree now follow the same reuse pattern. MST adds only renderer-neutral forest/DSU/frontier state over the existing undirected Graph snapshot.
+The Graph structure module adds canonical `GraphVertex`/`GraphEdge` objects, manually stored adjacency lists, and a synchronized adjacency matrix backed by the existing `ManualMatrix`. Graph Core has no fixed eight-vertex cap; `ManualMatrix` is reusable storage whose dimensions follow the graph, while MatrixPage keeps its separate 8×8 teaching/input limit. The Client renders topology separately from representation memory, scrolls large matrix views internally, and uses ring-then-grid automatic topology placement before optional manual dragging. BFS and DFS are now live algorithm modules that consume this exact Graph snapshot instead of introducing a second graph representation. Dijkstra now follows this reuse pattern: it consumes the same Graph snapshot and adds renderer-neutral shortest-path state. Topological Sort and Prim/Kruskal MST now follow the same reuse pattern.
 
 ### Breadth-First Search and Depth-First Search
 
@@ -201,7 +200,7 @@ Dijkstra reuses the immutable Graph snapshot and renderer-neutral simulation run
 
 ## Planned extension path
 
-Future graph/path modules should reuse the same Core/runtime/Client separation rather than duplicating playback infrastructure. Dijkstra is live: Basic mode uses manual linear minimum selection and Advanced mode uses a Dijkstra-specific binary min-heap built on the existing `ManualHeapArray` storage priority frontier with lazy stale entries. Topological Sort is live and reuses the established Graph plus the manual Queue/recursive DFS foundations. MST is live: Prim reuses Graph plus existing ManualHeapArray storage, while Kruskal adds manual merge-sort ordering and a hand-written Union-Find/DSU.
+Future graph/path modules should reuse the same Core/runtime/Client separation rather than duplicating playback infrastructure. Dijkstra is live: Basic mode uses manual linear minimum selection and Advanced mode uses a Dijkstra-specific binary min-heap built on the existing `ManualHeapArray` storage priority frontier with lazy stale entries. Topological Sort is live and reuses the established Graph plus the manual Queue/recursive DFS foundations. MST is also live: Prim reuses `ManualHeapArray` for its min-edge frontier and Kruskal uses a hand-written DSU with path compression and union by rank.
 
 
 ## Matrix module
@@ -235,6 +234,17 @@ The Server owns persistence only. It must not contain sorting, tree, graph, heap
 This preserves the architectural rule: Core teaches algorithms, Client visualizes them, and Server persists learning state.
 
 
-### Minimum Spanning Tree
+## Vector / AI-ML numerical foundation
 
-MST consumes the immutable undirected `GraphSnapshot`. Prim owns `inForest[]`, component state, selected edge indexes and a minimum cut-edge frontier backed by the existing `ManualHeapArray<T>`. Kruskal owns manually merge-sorted edge indexes plus DSU `parent[]`/`rank[]` arrays with path compression and union by rank. Negative/zero weights are legal, directed input is rejected, and disconnected input yields a renderer-neutral minimum spanning forest result. The Client owns presets, prediction, playback frames, Visual/Memory presentation and SQLite-backed practice evidence.
+`DataStructures/Vector/ManualVector` is a reusable numerical primitive stored in a contiguous project-owned `double[]`. It belongs in Core because later ML algorithms need vector arithmetic independently of rendering. `VectorSimulation` owns renderer-neutral state for aligned component reads, result writes and scalar reductions. The Client owns text parsing, operation selection, Visual/Memory presentation, prediction, playback review, practice state and SQLite evidence.
+
+The Vector module must remain dependency-light: no numerical package, `System.Numerics.Vector<T>`, or framework search/aggregation helper may replace the explicit loops being taught. Gradient Descent now reuses this Core for L2 norm, scalar multiplication and subtraction; later regression, KNN, K-Means and PCA modules should follow the same composition rule.
+
+
+## Gradient Descent / ML optimization boundary
+
+`MachineLearning/Optimization/GradientDescent/GradientDescentSimulation` owns optimizer-specific orchestration and the analytical gradient of the lesson's convex quadratic objective. It does **not** own generic vector arithmetic. An internal immediate `ISimulationRuntime` lets it call the existing renderer-neutral `VectorSimulation` for gradient L2 norm, scalar multiplication and subtraction without replaying nested Vector lesson steps into the outer Gradient Descent timeline.
+
+The live Client route `/ml-foundations/gradient-descent` owns input parsing, Basic/Advanced variant selection, categorical prediction, loss-landscape/path rendering, Visual/Memory presentation, playback history, popup explanations and persisted practice evidence. The Core remains renderer-neutral. Runtime working state is O(n); Client-visible review history intentionally stores O(k·n) snapshots to support rewind and visualization.
+
+Linear Regression at `/ml-foundations/linear-regression` is currently a planned `LearningPlaceholder`. When implemented, model-specific prediction/loss/gradient logic should compose with the existing Vector and Gradient Descent foundations rather than moving numerical behavior into Client or Server code.

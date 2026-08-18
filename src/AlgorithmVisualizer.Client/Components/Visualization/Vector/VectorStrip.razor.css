@@ -1,0 +1,12 @@
+.vector-strip { display:grid; gap:.5rem; }
+.vector-strip header { display:flex; justify-content:space-between; align-items:center; }
+.vector-strip header span { width:2rem; height:2rem; display:grid; place-items:center; border-radius:.65rem; color:#fff; background:#4b42a8; font-weight:900; }
+.vector-strip.result header span { background:#16816e; }
+.vector-strip header strong { color:var(--color-text-muted); font-size:.72rem; }
+.vector-components { display:flex; flex-wrap:wrap; gap:.5rem; }
+.vector-component { min-width:4.5rem; display:grid; gap:.15rem; padding:.72rem .8rem; border:1px solid var(--color-border); border-radius:.8rem; background:#fff; text-align:center; transition:.15s ease; }
+.vector-component small { color:var(--color-text-muted); font-size:.62rem; }
+.vector-component strong { font-size:1rem; }
+.vector-component.current { border-color:#6757e5; background:#f0edff; transform:translateY(-2px); box-shadow:0 6px 18px rgba(103,87,229,.12); }
+.vector-component.read,.vector-component.contributing { border-color:#9dc8ff; background:#eff7ff; }
+.vector-component.written { border-color:#93d5c8; background:#effbf8; }

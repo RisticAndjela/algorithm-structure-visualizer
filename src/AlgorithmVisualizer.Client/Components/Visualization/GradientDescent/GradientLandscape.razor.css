@@ -1,0 +1,20 @@
+.gradient-landscape { display:grid; gap:.8rem; }
+.landscape-copy { display:grid; gap:.2rem; }
+.landscape-copy span { color:#6557c7; font-size:.82rem; font-weight:900; letter-spacing:.08em; }
+.landscape-copy strong { font-size:1rem; }
+.landscape-copy small { color:var(--color-text-muted); font-size:.95rem; }
+.landscape-canvas { position:relative; min-height:24rem; overflow:hidden; border:1px solid var(--color-border); border-radius:1rem; background-color:#fbfbfe; background-image:linear-gradient(rgba(80,72,150,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(80,72,150,.055) 1px,transparent 1px); background-size:28px 28px; }
+.landscape-canvas svg { position:absolute; inset:0; width:100%; height:100%; }
+.loss-contour { fill:none; stroke:#cbc5f2; stroke-width:.55; vector-effect:non-scaling-stroke; }
+.loss-contour.middle { stroke:#aaa1e4; }
+.loss-contour.inner { stroke:#8d82d6; }
+.trajectory-line { fill:none; stroke:#5146b7; stroke-width:1.15; stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke; }
+.trajectory-point { fill:#fff; stroke:#5146b7; stroke-width:.85; vector-effect:non-scaling-stroke; }
+.minimum-point { fill:#17755f; stroke:#fff; stroke-width:1; vector-effect:non-scaling-stroke; }
+.current-point { fill:#5146b7; stroke:#fff; stroke-width:1.1; vector-effect:non-scaling-stroke; }
+.candidate-line { stroke:#17755f; stroke-width:1; stroke-dasharray:2.2 2; vector-effect:non-scaling-stroke; }
+.candidate-point { fill:#fff; stroke:#17755f; stroke-width:1; vector-effect:non-scaling-stroke; }
+.landscape-label { position:absolute; transform:translate(.6rem,-1.5rem); pointer-events:none; padding:.2rem .42rem; border-radius:.45rem; background:rgba(255,255,255,.92); border:1px solid var(--color-border); font-size:.82rem; font-weight:850; }
+.minimum-label { color:#17755f; }
+.current-label { color:#5146b7; transform:translate(.6rem,.35rem); }
+@media (max-width:720px) { .landscape-canvas { min-height:19rem; } }

@@ -1,0 +1,454 @@
+@page "/ml-foundations/gradient-descent"
+@using System.Globalization
+@using AlgorithmVisualizer.Core.MachineLearning.Optimization.GradientDescent
+@implements IDisposable
+@inject SimulationState SimulationState
+@inject GradientDescentSimulation GradientLab
+@inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
+
+<PageTitle>Gradient Descent — AI/ML Foundations — Algorithm Visualizer</PageTitle>
+
+<div class="gd-page learning-module-page learning-module-shell">
+    <section class="learn-launchpad" aria-labelledby="gd-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">AI / ML FOUNDATION · LEARN FIRST</span>
+            <h2 id="gd-learn-title">Gradient Descent repeatedly moves parameters downhill on a loss function.</h2>
+            <p>The gradient points toward the steepest local increase. Gradient Descent multiplies that vector by a learning rate and subtracts it from the current parameters.</p>
+            <ConceptLink class="learn-launchpad-link" Href="/learn/concepts/gradient-descent">Open Gradient Descent concepts &amp; memory →</ConceptLink>
+        </div>
+        <div class="learn-grid">
+            <article class="learn-card purple"><span>LOSS</span><strong>One scalar rates the current parameters.</strong><small>Optimization tries to reduce J(θ), not merely change θ.</small></article>
+            <article class="learn-card blue"><span>GRADIENT</span><strong>∇J points uphill.</strong><small>Subtract it to move downhill.</small></article>
+            <article class="learn-card mint"><span>LEARNING RATE</span><strong>η controls step size.</strong><small>Too small can crawl; too large can overshoot or diverge.</small></article>
+            <article class="learn-card gold"><span>STOPPING</span><strong>A tiny gradient means the surface is locally flat.</strong><small>The tolerance turns “close enough” into a measurable rule.</small></article>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow"><span>AI / ML FOUNDATIONS</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <h1>Gradient Descent</h1>
+            <p>Choose a loss landscape, starting parameter vector and learning rate. Then follow loss evaluation, analytical gradient calculation, vector scaling, subtraction and convergence one real C# step at a time.</p>
+        </div>
+        <div class="complexity-summary" aria-label="Gradient Descent complexity">
+            <div><span>k updates · n parameters</span><strong>Θ(k·n)</strong><small>for the explicit teaching objective</small></div>
+            <div><span>Working memory</span><strong>O(n)</strong><small>θ, gradient, scaled gradient and next θ</small></div>
+            <div><span>Update</span><strong>θ − η∇J</strong><small>reuses VectorSimulation</small></div>
+        </div>
+    </header>
+
+    <section class="smart-tip" aria-label="Gradient Descent learning tip">
+        <span class="tip-icon">✦</span>
+        <div><strong>Do not memorize “gradient = downhill.”</strong><p>The gradient is uphill. The minus sign in <code>θ ← θ − η∇J(θ)</code> is what turns it into a descent method.</p></div>
+        <ConceptLink Href="/learn/concepts/gradient-descent-update">Why the minus sign matters →</ConceptLink>
+    </section>
+
+    <section class="implementation-section" aria-labelledby="gd-implementation-title">
+        <div class="section-heading-row">
+            <div><span class="section-kicker">IMPLEMENTATION</span><h2 id="gd-implementation-title">The optimizer is manual; Vector Core performs the shared vector arithmetic.</h2><p><code>GradientDescentSimulation</code> computes the convex teaching loss and each analytical gradient component with explicit loops. It then calls the existing <code>VectorSimulation</code> for L2 norm, scalar multiplication and subtraction.</p></div>
+        </div>
+        <div class="variant-grid gd-implementation-grid">
+            <article class="variant-card active static-card"><span>BASIC</span><strong>Fixed learning rate</strong><p>Every update uses the same η. This exposes convergence, slow progress and overshoot with the fewest moving parts.</p><small>ηₜ = η₀</small></article>
+            <article class="variant-card static-card"><span>ADVANCED</span><strong>Learning-rate decay</strong><p>The same update starts with η₀ and gradually shrinks it so later steps become more conservative.</p><small>ηₜ = η₀ / (1 + decay·t)</small></article>
+            <article class="variant-card static-card"><span>OBJECTIVE</span><strong>Convex quadratic bowl</strong><p>The standalone optimizer uses a transparent two-parameter objective. Linear Regression will later replace it with dataset prediction error.</p><small>No optimizer or numerical package.</small></article>
+        </div>
+        <div class="live-data-card"><div><span>REAL-TIME CHANGES</span><strong>Changing θ, η, target, curvature or stopping settings restarts the run.</strong></div><p>One timeline represents one stable optimization problem. Mutating the objective halfway through would make the path mathematically incoherent.</p><span class="compatibility-badge restart">EDIT → restart optimizer</span></div>
+    </section>
+
+    <section class="builder-section" aria-labelledby="gd-build-title">
+        <div class="section-heading-row"><div class="heading-with-step"><span class="step-number">1</span><div><span class="section-kicker">CONFIGURE THE OPTIMIZER</span><h2 id="gd-build-title">Pick a landscape, variant, starting point and step size.</h2><p>The lab uses two parameters so the optimization path can be drawn. The Core itself accepts any positive parameter dimension.</p></div></div><ConceptLink Href="/learn/concepts/gradient-descent-learning-rate">Learning rate →</ConceptLink></div>
+
+        <div class="gd-objective-picker" role="group" aria-label="Loss landscape">
+            @foreach (var option in ObjectiveOptions)
+            {
+                var selected = _objective == option.Kind;
+                <button type="button" class="@(selected ? "active" : string.Empty)" @onclick="() => SelectObjective(option.Kind)" disabled="@IsBusy"><span>@option.Kicker</span><strong>@option.Title</strong><small>@option.Description</small></button>
+            }
+        </div>
+
+        <div class="gd-variant-picker" role="group" aria-label="Gradient Descent variant">
+            <button type="button" class="@(_variant == GradientDescentVariant.FixedLearningRate ? "active" : string.Empty)" @onclick="() => SelectVariant(GradientDescentVariant.FixedLearningRate)" disabled="@IsBusy"><span>BASIC</span><strong>Fixed η</strong><small>Same step multiplier every update.</small></button>
+            <button type="button" class="@(_variant == GradientDescentVariant.LearningRateDecay ? "active" : string.Empty)" @onclick="() => SelectVariant(GradientDescentVariant.LearningRateDecay)" disabled="@IsBusy"><span>ADVANCED</span><strong>η decay</strong><small>Shrink the learning rate as updates accumulate.</small></button>
+        </div>
+
+        <div class="gd-builder-grid">
+            <label><span>θ[0] START</span><input value="@_theta0Text" @oninput="Theta0Changed" disabled="@IsBusy" inputmode="decimal" /></label>
+            <label><span>θ[1] START</span><input value="@_theta1Text" @oninput="Theta1Changed" disabled="@IsBusy" inputmode="decimal" /></label>
+            <label><span>LEARNING RATE η₀</span><input value="@_learningRateText" @oninput="LearningRateChanged" disabled="@IsBusy" inputmode="decimal" /></label>
+            <label><span>MAX UPDATES</span><input value="@_iterationsText" @oninput="IterationsChanged" disabled="@IsBusy" inputmode="numeric" /></label>
+            <label><span>GRADIENT TOLERANCE</span><input value="@_toleranceText" @oninput="ToleranceChanged" disabled="@IsBusy" inputmode="decimal" /></label>
+            <label><span>DECAY</span><input value="@_decayText" @oninput="DecayChanged" disabled="@(IsBusy || _variant == GradientDescentVariant.FixedLearningRate)" inputmode="decimal" /><small>Used only by Advanced.</small></label>
+            <button class="primary-action" type="button" @onclick="ApplyInputs" disabled="@IsBusy">Use these settings</button>
+        </div>
+
+        <div class="preset-row gd-presets" aria-label="Gradient Descent presets"><span>TRY A CASE</span><button @onclick="() => LoadPreset(Preset.Balanced)" disabled="@IsBusy">Balanced</button><button @onclick="() => LoadPreset(Preset.Slow)" disabled="@IsBusy">Too slow</button><button @onclick="() => LoadPreset(Preset.Overshoot)" disabled="@IsBusy">Overshoot</button><button @onclick="() => LoadPreset(Preset.AtMinimum)" disabled="@IsBusy">At minimum</button><button @onclick="() => LoadPreset(Preset.Narrow)" disabled="@IsBusy">Narrow valley</button><button @onclick="() => LoadPreset(Preset.Decay)" disabled="@IsBusy">Decay rescue</button><button @onclick="() => LoadPreset(Preset.Shifted)" disabled="@IsBusy">Shifted target</button></div>
+
+        @if (!string.IsNullOrWhiteSpace(_inputError))
+        {
+            <div class="input-error" role="alert"><strong>Check the optimizer settings.</strong><span>@_inputError</span></div>
+        }
+    </section>
+
+    <section class="predict-section" aria-labelledby="gd-predict-title">
+        <div class="prediction-copy"><span class="step-number">2</span><div><span class="section-kicker">PREDICT FIRST</span><h2 id="gd-predict-title">What will happen to loss after the first committed update?</h2><p>Choose before running. A sensible η usually lowers loss; an aggressive η can jump across the bowl and make it larger.</p></div></div>
+        <div class="gd-prediction-options" role="group" aria-label="First-step loss prediction">
+            @foreach (var prediction in PredictionOptions)
+            {
+                <button type="button" class="@(_prediction == prediction.Value ? "active" : string.Empty)" @onclick="() => SetPrediction(prediction.Value)" disabled="@IsBusy"><strong>@prediction.Label</strong><small>@prediction.Description</small></button>
+            }
+        </div>
+        @if (_predictionAnswered)
+        {
+            <p class="prediction-feedback @(_predictionCorrect ? "correct" : "incorrect")">@PredictionFeedback</p>
+        }
+    </section>
+
+    <section class="lab-section" aria-labelledby="gd-lab-title">
+        <div class="lab-heading">
+            <div><span class="section-kicker">3 · FOLLOW THE DESCENT</span><h2 id="gd-lab-title">Watch θ, ∇J, η∇J and the next parameter vector stay aligned.</h2></div>
+            <div class="lab-actions"><label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Open explanation after run</span></label>@if (_lastResult is not null){<button class="secondary-action" type="button" @onclick="OpenLastRunPopup">Last Run</button>}<button class="primary-action" type="button" @onclick="RunAsync" disabled="@IsBusy">Run Gradient Descent</button></div>
+        </div>
+
+        <div class="state-tabs-row"><div class="state-tabs" role="group" aria-label="Gradient Descent state view"><button class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual State</button><button class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory State</button></div><p>@ViewExplanation</p></div>
+        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/gradient-descent">Gradient Descent →</ConceptLink><ConceptLink Href="/learn/concepts/gradient-descent-loss">Loss surface →</ConceptLink><ConceptLink Href="/learn/concepts/gradient-descent-learning-rate">Learning rate →</ConceptLink><ConceptLink Href="/learn/concepts/gradient-descent-convergence">Convergence →</ConceptLink></div>
+
+        <div class="gd-visualizer-shell">
+            @if (_view == StateView.Visual)
+            {
+                <div class="gd-visual-state">
+                    <GradientLandscape Snapshot="@DisplayedSnapshot" />
+                    <div class="gd-vector-stack">
+                        <GradientVectorStrip Name="θ" Values="@DisplayedSnapshot.Parameters" CurrentIndex="@DisplayedSnapshot.CurrentIndex" Subtitle="current parameters" />
+                        <GradientVectorStrip Name="∇J" Values="@DisplayedSnapshot.Gradient" CurrentIndex="@DisplayedSnapshot.CurrentIndex" Subtitle="analytical gradient" Kind="gradient" />
+                        <GradientVectorStrip Name="η∇J" Values="@DisplayedSnapshot.ScaledGradient" CurrentIndex="@DisplayedSnapshot.CurrentIndex" Subtitle="scaled gradient from Vector Core" Kind="gradient" />
+                        <GradientVectorStrip Name="θ′" Values="@DisplayedSnapshot.NextParameters" CurrentIndex="@DisplayedSnapshot.CurrentIndex" Subtitle="next parameters after subtraction" Kind="candidate" />
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="gd-memory-state">
+                    <div class="memory-header"><div><span>MANUAL VECTOR STORAGE</span><strong>Four same-dimension project-owned vectors hold the optimizer working state.</strong></div><small>History is additional O(k·n) review storage for this visualizer; the optimization working set itself is O(n).</small></div>
+                    <div class="memory-table-wrap"><table><thead><tr><th>slot</th><th>byte offset</th><th>θ[index]</th><th>gradient[index]</th><th>η∇J[index]</th><th>next θ[index]</th><th>role</th></tr></thead><tbody>
+                    @for (var index = 0; index < DisplayedSnapshot.Parameters.Length; index++)
+                    {
+                        var active = DisplayedSnapshot.CurrentIndex == index;
+                        <tr class="@(active ? "active" : string.Empty)"><td>@index</td><td>@(index * sizeof(double))</td><td>@Format(DisplayedSnapshot.Parameters[index])</td><td>@Format(DisplayedSnapshot.Gradient[index])</td><td>@Format(DisplayedSnapshot.ScaledGradient[index])</td><td>@Format(DisplayedSnapshot.NextParameters[index])</td><td>@(active ? PhaseRole : "stable slot")</td></tr>
+                    }
+                    </tbody></table></div>
+                </div>
+            }
+        </div>
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+
+        <div class="run-dashboard"><article><span>Update</span><strong>@DisplayedSnapshot.Iteration</strong><small>current optimization step</small></article><article><span>Loss J(θ)</span><strong>@Format(DisplayedSnapshot.Loss)</strong><small>lower is better</small></article><article><span>||∇J||₂</span><strong>@Format(DisplayedSnapshot.GradientNorm)</strong><small>local slope magnitude</small></article><article><span>Effective η</span><strong>@Format(DisplayedSnapshot.EffectiveLearningRate)</strong><small>@VariantLabel(_variant)</small></article></div>
+
+        <div class="invariant-panel"><div><span>INVARIANT TO WATCH</span><h3>Every vector component keeps the same parameter meaning.</h3><p>Gradient component i, scaled-gradient component i and θ[i] all refer to the same axis. The update is valid only because those indexes remain aligned.</p></div><div class="early-exit-note"><span>IMPORTANT</span><strong>A correct gradient does not make every learning rate safe.</strong><p>The Overshoot and Narrow valley presets show how η can dominate behavior even on a simple convex objective.</p></div></div>
+    </section>
+
+    <section class="fit-section" aria-labelledby="gd-fit-title">
+        <div class="section-heading-row"><div><span class="section-kicker">WHEN IS IT A GOOD CHOICE?</span><h2 id="gd-fit-title">Gradient Descent is useful when derivatives are available and direct optimization is inconvenient.</h2></div></div>
+        <div class="fit-grid"><article class="fit-card good"><span>GOOD FIT</span><strong>Large differentiable models.</strong><p>Regression and neural networks can optimize many parameters iteratively without solving one giant symbolic system.</p></article><article class="fit-card caution"><span>WATCH OUT</span><strong>Learning rate and feature scale matter.</strong><p>Bad η, poorly conditioned curvature, flat regions or difficult non-convex surfaces can make optimization slow or unstable.</p></article><article class="fit-card better"><span>NEXT CONNECTION</span><strong>Linear Regression gives the optimizer a real model loss.</strong><p>The next module will turn feature vectors, predictions and MSE into the objective that Gradient Descent minimizes.</p></article></div>
+    </section>
+
+    <section class="practice-section" aria-labelledby="gd-practice-title">
+        <div class="practice-heading"><div><span class="section-kicker">GUIDED PRACTICE</span><h2 id="gd-practice-title">Prove optimizer behavior instead of memorizing the formula.</h2></div><div class="task-score"><strong>@_completedTaskIds.Count / @PracticeTasks.Length</strong><span>completed</span></div></div>
+        @if (_activeTaskId is int activeId)
+        {
+            var task = PracticeTasks.First(item => item.Id == activeId);
+            <div class="active-task-banner"><span>ACTIVE TASK @task.Id.ToString("00")</span><strong>@task.Title</strong><small>@GetActiveTaskProgressText(task.Id)</small></div>
+        }
+        <div class="practice-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                <PracticeTaskCard TaskId="@task.Id" Title="@task.Title" Description="@task.Goal" InputText="@task.Suggested" HelpHref="/learn/concepts/gradient-descent" Completed="@_completedTaskIds.Contains(task.Id)" Active="@(_activeTaskId == task.Id)" Busy="@IsBusy" HasEvidence="@(GetTaskEvidence(task.Id) is not null)" Start="@(() => StartTask(task.Id))" OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
+            }
+        </div>
+    </section>
+
+    <NextLessonCard Eyebrow="AI / ML PHASE 1 · NEXT" Level="Lesson 3 · Planned" Title="Linear Regression" Description="Use feature vectors, weighted predictions and mean-squared error, then connect training back to the Gradient Descent update you just watched." Href="/ml-foundations/linear-regression" LinkLabel="Preview Linear Regression" />
+</div>
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
+
+@if (_lastRunPopupOpen && _lastResult is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRunPopup"><section class="run-popup" role="dialog" aria-modal="true" @onclick:stopPropagation="true"><header><div><span class="section-kicker">WHAT JUST HAPPENED?</span><h2>@LastRunHeadline</h2></div><button class="popup-close" type="button" @onclick="CloseLastRunPopup">×</button></header><div class="popup-tabs"><button class="@(_popupTab == PopupTab.Action ? "active" : string.Empty)" @onclick="() => _popupTab = PopupTab.Action">Optimization</button><button class="@(_popupTab == PopupTab.Memory ? "active" : string.Empty)" @onclick="() => _popupTab = PopupTab.Memory">Memory</button><button class="@(_popupTab == PopupTab.Why ? "active" : string.Empty)" @onclick="() => _popupTab = PopupTab.Why">ML link</button></div><div class="popup-body">@if (_popupTab == PopupTab.Action){<h3>@RunActionExplanation(_lastResult)</h3><p>@_lastResult.Summary</p>}else if (_popupTab == PopupTab.Memory){<h3>The optimizer reused the Vector foundation.</h3><p>θ, ∇J, η∇J and next θ are project-owned vector state. VectorSimulation supplies the norm, scale and subtraction operations. Review history is stored only so you can step backward and inspect the path.</p>}else{<h3>@RunMlExplanation(_lastResult)</h3><p>Linear Regression will replace this standalone quadratic loss with prediction error over a dataset while retaining the same optimization mental model.</p>}</div></section></div>
+}
+
+@code {
+    private const string ModuleKey = "gradient-descent";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.gradient-descent.show-run-popup.v1";
+    private readonly List<RunFrame> _frames = [];
+    private readonly List<GradientDescentRunResult> _practiceResults = [];
+    private PracticeModuleProgress _practiceProgress = new();
+    private HashSet<int> _completedTaskIds = [];
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
+    private GradientDescentRunResult? _lastResult;
+    private string? _lastCapturedStep;
+    private string _theta0Text = "5";
+    private string _theta1Text = "-3";
+    private string _learningRateText = "0.2";
+    private string _iterationsText = "30";
+    private string _toleranceText = "0.01";
+    private string _decayText = "0.15";
+    private string? _inputError;
+    private ObjectivePreset _objective = ObjectivePreset.Balanced;
+    private GradientDescentVariant _variant = GradientDescentVariant.FixedLearningRate;
+    private bool _showRunPopups = true;
+    private bool _lastRunPopupOpen;
+    private bool _predictionAnswered;
+    private bool _predictionCorrect;
+    private LossPrediction? _prediction;
+    private int _frameIndex = -1;
+    private int? _activeTaskId;
+    private StateView _view = StateView.Visual;
+    private PopupTab _popupTab = PopupTab.Action;
+
+    private static readonly ObjectiveOption[] ObjectiveOptions =
+    [
+        new(ObjectivePreset.Balanced, "BALANCED", "Round bowl", "Target [0,0] with moderate curvature [1,2]."),
+        new(ObjectivePreset.NarrowValley, "CONDITIONING", "Narrow valley", "One parameter direction is much steeper: curvature [0.25,4]."),
+        new(ObjectivePreset.Shifted, "SHIFTED", "Shifted bowl", "The minimum moves to [2,-1], proving zero is not special.")
+    ];
+
+    private static readonly PredictionOption[] PredictionOptions =
+    [
+        new(LossPrediction.Down, "Loss goes down", "The first update improves the objective."),
+        new(LossPrediction.Up, "Loss goes up", "The first step overshoots and makes the objective worse."),
+        new(LossPrediction.Same, "Almost unchanged", "The start is already flat or the step is tiny.")
+    ];
+
+    private static readonly PracticeTaskDefinition[] PracticeTasks =
+    [
+        new(1, "Reduce the loss", "Run any non-divergent configuration whose final loss is lower than its initial loss.", "Try Balanced with fixed η=0.2", Preset.Balanced),
+        new(2, "Converge by gradient tolerance", "Reach ||∇J||₂ ≤ tolerance before the maximum update budget.", "Try At minimum or a stable long run", Preset.AtMinimum),
+        new(3, "Make an aggressive rate diverge", "Choose a positive fixed learning rate that causes repeated loss growth.", "Try Overshoot", Preset.Overshoot),
+        new(4, "Use the advanced decay variant", "Run Learning-rate decay and finish with an effective η smaller than η₀ while reducing loss.", "Try Decay rescue", Preset.Decay),
+        new(5, "Expose narrow-valley sensitivity", "On the Narrow valley objective, create a divergent run with fixed η.", "Try Narrow valley with η=0.8", Preset.Narrow),
+        new(6, "Spend the full update budget", "Finish a valid non-divergent run because maximum iterations were reached rather than tolerance.", "Try Too slow", Preset.Slow),
+        new(7, "Converge to a non-zero target", "Converge on the Shifted bowl so the final parameters approach [2,-1] instead of the origin.", "Try Shifted target", Preset.Shifted)
+    ];
+
+    private GradientDescentSnapshot Current => GradientLab.CreateSnapshot();
+    private GradientDescentSnapshot DisplayedSnapshot => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].Snapshot : Current;
+    private string DisplayedStepText => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].StepText : SimulationState.CurrentStepText;
+    private int TimelineCount => _frames.Count;
+    private int TimelinePosition => _frameIndex < 0 ? 0 : _frameIndex + 1;
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_frameIndex >= 0 && _frameIndex < _frames.Count - 1) || SimulationState.IsRunning;
+    private bool IsBusy => SimulationState.IsRunning;
+    private string ViewExplanation => _view == StateView.Visual ? "The visual view shows the loss contours and committed parameter path." : "The memory view separates current parameters, gradient, scaled gradient and next-parameter storage.";
+    private string PhaseRole => DisplayedSnapshot.Phase switch { GradientDescentPhase.ComputingGradient => "gradient component", GradientDescentPhase.ScalingGradient => "scaled gradient", GradientDescentPhase.UpdatingParameters => "vector subtraction", GradientDescentPhase.EvaluatingLoss => "loss evaluation", _ => "current component" };
+    private string PredictionFeedback => _predictionCorrect ? "Correct — your first-step prediction matched the actual loss change." : $"Not quite. The first committed update made loss {ActualFirstStepDirection}.";
+    private string ActualFirstStepDirection => FirstStepDirection(_lastResult);
+    private string LastRunHeadline => _lastResult is null ? "Gradient Descent run" : _lastResult.Diverged ? "The learning rate drove the optimizer away from the minimum." : _lastResult.Converged ? "The optimizer met the gradient-tolerance stopping rule." : "The optimizer completed its update budget.";
+
+    protected override void OnInitialized()
+    {
+        SimulationState.Changed += HandleSimulationChanged;
+        try { _showRunPopups = !bool.TryParse(LearningStore.GetItem(PopupSettingStorageKey), out var saved) || saved; } catch { _showRunPopups = true; }
+        _practiceProgress = PracticeProgress.Load(ModuleKey, null, PracticeTasks.Select(task => task.Id));
+        _completedTaskIds = _practiceProgress.CompletedTaskIds;
+        ApplyInputs();
+    }
+
+    private void Theta0Changed(ChangeEventArgs args) { _theta0Text = args.Value?.ToString() ?? string.Empty; ClearReview(); }
+    private void Theta1Changed(ChangeEventArgs args) { _theta1Text = args.Value?.ToString() ?? string.Empty; ClearReview(); }
+    private void LearningRateChanged(ChangeEventArgs args) { _learningRateText = args.Value?.ToString() ?? string.Empty; ClearReview(); }
+    private void IterationsChanged(ChangeEventArgs args) { _iterationsText = args.Value?.ToString() ?? string.Empty; ClearReview(); }
+    private void ToleranceChanged(ChangeEventArgs args) { _toleranceText = args.Value?.ToString() ?? string.Empty; ClearReview(); }
+    private void DecayChanged(ChangeEventArgs args) { _decayText = args.Value?.ToString() ?? string.Empty; ClearReview(); }
+    private void SelectObjective(ObjectivePreset kind) { if (IsBusy) return; _objective = kind; ClearReview(); ApplyInputs(); }
+    private void SelectVariant(GradientDescentVariant variant) { if (IsBusy) return; _variant = variant; ClearReview(); ApplyInputs(); }
+    private void SetPrediction(LossPrediction value) { if (IsBusy) return; _prediction = value; _predictionAnswered = false; }
+
+    private void ApplyInputs()
+    {
+        if (!TryParseDouble(_theta0Text, out var theta0) || !TryParseDouble(_theta1Text, out var theta1)) { _inputError = "Both starting parameters must be finite real numbers."; return; }
+        if (!TryParseDouble(_learningRateText, out var learningRate)) { _inputError = "Learning rate must be a real number."; return; }
+        if (!int.TryParse(_iterationsText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var iterations)) { _inputError = "Maximum updates must be a whole number."; return; }
+        if (!TryParseDouble(_toleranceText, out var tolerance)) { _inputError = "Gradient tolerance must be a real number."; return; }
+        if (!TryParseDouble(_decayText, out var decay)) { _inputError = "Decay must be a real number."; return; }
+        if (!double.IsFinite(theta0) || !double.IsFinite(theta1) || !double.IsFinite(learningRate) || !double.IsFinite(tolerance) || !double.IsFinite(decay)) { _inputError = "NaN and infinity are not accepted in this learning lab."; return; }
+        if (learningRate <= 0d) { _inputError = "Learning rate must be greater than 0."; return; }
+        if (iterations is < 1 or > 40) { _inputError = "Use between 1 and 40 updates in the visual lesson."; return; }
+        if (tolerance <= 0d) { _inputError = "Gradient tolerance must be greater than 0."; return; }
+        if (decay < 0d) { _inputError = "Decay cannot be negative."; return; }
+
+        var landscape = GetLandscape(_objective);
+        _inputError = null;
+        try
+        {
+            GradientLab.Configure(new GradientDescentConfiguration([theta0, theta1], landscape.Target, landscape.Curvature, learningRate, iterations, tolerance, decay));
+        }
+        catch (ArgumentException ex)
+        {
+            _inputError = ex.Message;
+            return;
+        }
+        ClearReview();
+        StateHasChanged();
+    }
+
+    private async Task RunAsync()
+    {
+        ApplyInputs();
+        if (!string.IsNullOrWhiteSpace(_inputError)) return;
+        _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; _lastRunPopupOpen = false;
+        var token = SimulationState.Start($"Starting {VariantLabel(_variant)} Gradient Descent.");
+        Capture();
+        try
+        {
+            var result = await GradientLab.ExecuteAsync(_variant, token);
+            if (!IsCurrent(token)) return;
+            _lastResult = result;
+            SimulationState.Complete(result.Summary);
+            Capture();
+            EvaluatePrediction(result);
+            RecordPracticeResult(result);
+            if (_showRunPopups) OpenLastRunPopup();
+        }
+        catch (OperationCanceledException) { }
+        finally { await InvokeAsync(StateHasChanged); }
+    }
+
+    private void Capture()
+    {
+        var step = SimulationState.CurrentStepText;
+        if (step == _lastCapturedStep) return;
+        var followTail = _frameIndex < 0 || _frameIndex == _frames.Count - 1;
+        _frames.Add(new RunFrame(step, GradientLab.CreateSnapshot()));
+        _lastCapturedStep = step;
+        if (followTail) _frameIndex = _frames.Count - 1;
+    }
+
+    private void HandleSimulationChanged() { if (SimulationState.IsRunning) Capture(); _ = InvokeAsync(StateHasChanged); }
+    private bool IsCurrent(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;
+    private void ClearReview() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; _lastRunPopupOpen = false; _lastResult = null; _predictionAnswered = false; }
+    private Task PlayTimelineAsync() { if (_frames.Count > 0) _frameIndex = _frames.Count - 1; SimulationState.Resume(); return InvokeAsync(StateHasChanged); }
+    private Task PauseTimelineAsync() { SimulationState.Pause(); return Task.CompletedTask; }
+    private Task StepBackAsync() { if (SimulationState.IsRunning && !SimulationState.IsPaused) SimulationState.Pause(); if (_frameIndex > 0) _frameIndex--; return InvokeAsync(StateHasChanged); }
+    private Task StepForwardAsync() { if (_frameIndex >= 0 && _frameIndex < _frames.Count - 1) { _frameIndex++; return InvokeAsync(StateHasChanged); } if (SimulationState.IsRunning) SimulationState.Step(); return Task.CompletedTask; }
+    private Task ResetPlaybackAsync() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; return InvokeAsync(StateHasChanged); }
+
+    private void EvaluatePrediction(GradientDescentRunResult result)
+    {
+        _predictionAnswered = _prediction.HasValue && result.History.Length >= 2;
+        if (!_predictionAnswered) return;
+        _predictionCorrect = FirstStepPrediction(result) == _prediction.Value;
+    }
+
+    private static LossPrediction FirstStepPrediction(GradientDescentRunResult result)
+    {
+        if (result.History.Length < 2) return LossPrediction.Same;
+        var delta = result.History[1].Loss - result.History[0].Loss;
+        if (Math.Abs(delta) <= 1e-9) return LossPrediction.Same;
+        return delta < 0d ? LossPrediction.Down : LossPrediction.Up;
+    }
+
+    private static string FirstStepDirection(GradientDescentRunResult? result) => result is null || result.History.Length < 2 ? "unavailable" : FirstStepPrediction(result) switch { LossPrediction.Down => "go down", LossPrediction.Up => "go up", _ => "stay almost unchanged" };
+
+    private void StartTask(int taskId)
+    {
+        if (IsBusy) return;
+        var task = PracticeTasks.First(item => item.Id == taskId);
+        _activeTaskId = taskId;
+        LoadPreset(task.Preset, keepActiveTask: true);
+    }
+
+    private void LoadPreset(Preset preset, bool keepActiveTask = false)
+    {
+        if (IsBusy) return;
+        switch (preset)
+        {
+            case Preset.Slow: SetInputs(ObjectivePreset.Balanced, 5d, -3d, 0.01d, 6, 0.000001d, 0.15d, GradientDescentVariant.FixedLearningRate); break;
+            case Preset.Overshoot: SetInputs(ObjectivePreset.Balanced, 5d, -3d, 1.2d, 20, 0.01d, 0.15d, GradientDescentVariant.FixedLearningRate); break;
+            case Preset.AtMinimum: SetInputs(ObjectivePreset.Shifted, 2d, -1d, 0.2d, 20, 0.01d, 0.15d, GradientDescentVariant.FixedLearningRate); break;
+            case Preset.Narrow: SetInputs(ObjectivePreset.NarrowValley, -4d, 4d, 0.8d, 20, 0.01d, 0.15d, GradientDescentVariant.FixedLearningRate); break;
+            case Preset.Decay: SetInputs(ObjectivePreset.NarrowValley, -4d, 4d, 0.55d, 30, 0.01d, 0.55d, GradientDescentVariant.LearningRateDecay); break;
+            case Preset.Shifted: SetInputs(ObjectivePreset.Shifted, -3d, 3d, 0.25d, 30, 0.02d, 0.15d, GradientDescentVariant.FixedLearningRate); break;
+            default: SetInputs(ObjectivePreset.Balanced, 5d, -3d, 0.2d, 30, 0.01d, 0.15d, GradientDescentVariant.FixedLearningRate); break;
+        }
+        _prediction = null;
+        _predictionAnswered = false;
+        ApplyInputs();
+        if (!keepActiveTask) _activeTaskId = null;
+    }
+
+    private void SetInputs(ObjectivePreset objective, double theta0, double theta1, double learningRate, int iterations, double tolerance, double decay, GradientDescentVariant variant)
+    {
+        _objective = objective; _theta0Text = Format(theta0); _theta1Text = Format(theta1); _learningRateText = Format(learningRate); _iterationsText = iterations.ToString(CultureInfo.InvariantCulture); _toleranceText = Format(tolerance); _decayText = Format(decay); _variant = variant;
+    }
+
+    private void RecordPracticeResult(GradientDescentRunResult result)
+    {
+        _practiceResults.Add(result);
+        if (_practiceResults.Count > 40) _practiceResults.RemoveAt(0);
+        foreach (var task in PracticeTasks)
+        {
+            if (_completedTaskIds.Contains(task.Id) && GetTaskEvidence(task.Id) is not null && _activeTaskId != task.Id) continue;
+            var complete = task.Id switch
+            {
+                1 => !result.Diverged && result.FinalLoss < result.InitialLoss,
+                2 => result.Converged && result.StopReason == GradientDescentStopReason.GradientTolerance,
+                3 => result.Diverged,
+                4 => result.Variant == GradientDescentVariant.LearningRateDecay && !result.Diverged && result.FinalLearningRate < result.InitialLearningRate && result.FinalLoss < result.InitialLoss,
+                5 => result.Diverged && IsNarrowLandscape(result.Target, result.Curvature),
+                6 => !result.Diverged && result.StopReason == GradientDescentStopReason.MaximumIterations,
+                7 => result.Converged && IsShiftedLandscape(result.Target, result.Curvature) && result.FinalLoss < result.InitialLoss,
+                _ => false
+            };
+            if (complete) CompletePracticeTask(task, result);
+        }
+    }
+
+    private void CompletePracticeTask(PracticeTaskDefinition task, GradientDescentRunResult result)
+    {
+        var evidence = new PracticeCompletionEvidence(
+            task.Id,
+            task.Title,
+            result.Summary,
+            RunActionExplanation(result),
+            "Current θ, gradient, scaled gradient and next θ are stored as project-owned ManualVector instances. O(k·n) history is kept only so this visualizer can rewind the run.",
+            RunMlExplanation(result),
+            [new("Variant", VariantLabel(result.Variant)), new("η start", Format(result.InitialLearningRate)), new("η final", Format(result.FinalLearningRate)), new("Initial loss", Format(result.InitialLoss)), new("Final loss", Format(result.FinalLoss)), new("Updates", result.IterationsCompleted.ToString(CultureInfo.InvariantCulture))],
+            $"target={FormatVector(result.Target)} · curvature={FormatVector(result.Curvature)} · start={FormatVector(result.InitialParameters)} · end={FormatVector(result.FinalParameters)}");
+        _completedTaskIds.Add(task.Id);
+        PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
+        if (_activeTaskId == task.Id) _activeTaskId = null;
+    }
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
+    private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
+    private void CloseTaskEvidence() => _practiceEvidencePopup = null;
+    private string GetActiveTaskProgressText(int taskId) => _practiceResults.Count == 0 ? "Suggested settings are loaded. Completion is checked from the actual optimization behavior, not the preset button." : $"Last run: loss {Format(_practiceResults[^1].InitialLoss)} → {Format(_practiceResults[^1].FinalLoss)} · {_practiceResults[^1].StopReason}.";
+
+    private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed; try { LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); } catch { } }
+    private void OpenLastRunPopup() { if (_lastResult is null) return; _popupTab = PopupTab.Action; _lastRunPopupOpen = true; }
+    private void CloseLastRunPopup() => _lastRunPopupOpen = false;
+
+    private static string RunActionExplanation(GradientDescentRunResult result) => $"The optimizer started with loss {Format(result.InitialLoss)}, repeatedly calculated ∇J, reused Vector Core for ||∇J||₂, η∇J and θ − η∇J, and finished at loss {Format(result.FinalLoss)} after {result.IterationsCompleted} committed update(s).";
+    private static string RunMlExplanation(GradientDescentRunResult result) => result.Diverged ? "This is why learning rate is a hyperparameter: the gradient direction can be correct while the step size is still destructive." : result.Converged ? "Convergence means the chosen gradient-norm rule judged the surface locally flat enough. On non-convex ML objectives that does not automatically imply a unique global minimum." : result.Variant == GradientDescentVariant.LearningRateDecay ? "Learning-rate schedules can stabilize later updates by shrinking step size, although modern training may use other schedules or adaptive optimizers." : "A fixed update budget is common when training cost is controlled explicitly, but the resulting parameters still need model-level validation.";
+    private static string VariantLabel(GradientDescentVariant variant) => variant == GradientDescentVariant.LearningRateDecay ? "Learning-rate decay" : "Fixed learning rate";
+    private static (double[] Target, double[] Curvature) GetLandscape(ObjectivePreset preset) => preset switch { ObjectivePreset.NarrowValley => ([1.5d, -1.5d], [0.25d, 4d]), ObjectivePreset.Shifted => ([2d, -1d], [1d, 1.5d]), _ => ([0d, 0d], [1d, 2d]) };
+    private static bool IsNarrowLandscape(IReadOnlyList<double> target, IReadOnlyList<double> curvature) => target.Count == 2 && curvature.Count == 2 && Math.Abs(target[0] - 1.5d) < 1e-9 && Math.Abs(target[1] + 1.5d) < 1e-9 && Math.Abs(curvature[0] - 0.25d) < 1e-9 && Math.Abs(curvature[1] - 4d) < 1e-9;
+    private static bool IsShiftedLandscape(IReadOnlyList<double> target, IReadOnlyList<double> curvature) => target.Count == 2 && curvature.Count == 2 && Math.Abs(target[0] - 2d) < 1e-9 && Math.Abs(target[1] + 1d) < 1e-9 && Math.Abs(curvature[0] - 1d) < 1e-9 && Math.Abs(curvature[1] - 1.5d) < 1e-9;
+    private static bool TryParseDouble(string? text, out double value) => double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value) || double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out value);
+    private static string Format(double value) => Math.Abs(value) < 1e-12 ? "0" : value.ToString("0.####", CultureInfo.InvariantCulture);
+    private static string FormatVector(IReadOnlyList<double> values) { var parts = new string[values.Count]; for (var index = 0; index < values.Count; index++) parts[index] = Format(values[index]); return $"[{string.Join(", ", parts)}]"; }
+
+    public void Dispose() => SimulationState.Changed -= HandleSimulationChanged;
+
+    private sealed record RunFrame(string StepText, GradientDescentSnapshot Snapshot);
+    private sealed record ObjectiveOption(ObjectivePreset Kind, string Kicker, string Title, string Description);
+    private sealed record PredictionOption(LossPrediction Value, string Label, string Description);
+    private sealed record PracticeTaskDefinition(int Id, string Title, string Goal, string Suggested, Preset Preset);
+    private enum ObjectivePreset { Balanced, NarrowValley, Shifted }
+    private enum LossPrediction { Down, Up, Same }
+    private enum StateView { Visual, Memory }
+    private enum PopupTab { Action, Memory, Why }
+    private enum Preset { Balanced, Slow, Overshoot, AtMinimum, Narrow, Decay, Shifted }
+}

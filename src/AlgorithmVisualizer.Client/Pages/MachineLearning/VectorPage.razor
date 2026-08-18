@@ -1,0 +1,458 @@
+@page "/ml-foundations/vector"
+@using System.Globalization
+@using AlgorithmVisualizer.Core.DataStructures.Vector
+@implements IDisposable
+@inject SimulationState SimulationState
+@inject VectorSimulation VectorLab
+@inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
+
+<PageTitle>Vector — AI/ML Foundations — Algorithm Visualizer</PageTitle>
+
+<div class="vector-page learning-module-page learning-module-shell">
+    <section class="learn-launchpad" aria-labelledby="vector-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">AI / ML FOUNDATION · LEARN FIRST</span>
+            <h2 id="vector-learn-title">A vector is an ordered list of numbers that carries direction, magnitude, features or parameters.</h2>
+            <p>Machine learning constantly moves between vectors: one sample can be a feature vector, model weights are a parameter vector, gradients are vectors, and similarity often comes from distance or angle.</p>
+            <ConceptLink class="learn-launchpad-link" Href="/learn/concepts/vector">Open Vector concepts &amp; memory →</ConceptLink>
+        </div>
+        <div class="learn-grid">
+            <article class="learn-card purple"><span>COMPONENTS</span><strong>Index alignment matters</strong><small>A[2] combines with B[2]. Dimension is part of the mathematical contract.</small></article>
+            <article class="learn-card blue"><span>DOT</span><strong>Many values become one score</strong><small>Linear models use weighted sums built from dot products.</small></article>
+            <article class="learn-card mint"><span>NORMS</span><strong>Measure length</strong><small>L1 and L2 norms quantify vector magnitude and support normalization.</small></article>
+            <article class="learn-card gold"><span>SIMILARITY</span><strong>Compare distance or direction</strong><small>Euclidean, Manhattan and cosine comparisons appear throughout ML.</small></article>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow"><span>AI / ML FOUNDATIONS</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <h1>Vector</h1>
+            <p>Build vectors A and B, choose a mathematical operation, predict the result, then inspect every component read and accumulator update in the real C# implementation.</p>
+        </div>
+        <div class="complexity-summary" aria-label="Vector operation complexity">
+            <div><span>Component operations</span><strong>Θ(n)</strong><small>one pass over aligned components</small></div>
+            <div><span>Reductions</span><strong>O(1)</strong><small>extra accumulator state</small></div>
+            <div><span>Storage</span><strong>double[]</strong><small>contiguous 8-byte components</small></div>
+        </div>
+    </header>
+
+    <section class="smart-tip" aria-label="Vector learning tip">
+        <span class="tip-icon">✦</span>
+        <div><strong>ML connection:</strong><p>Gradient Descent now reuses this exact arithmetic: its parameter update is vector subtraction, θ ← θ − η∇J(θ).</p></div>
+        <ConceptLink Href="/learn/concepts/vector-ml">Why vectors dominate ML →</ConceptLink>
+    </section>
+
+    <section class="implementation-section" aria-labelledby="vector-implementation-title">
+        <div class="section-heading-row">
+            <div><span class="section-kicker">IMPLEMENTATION</span><h2 id="vector-implementation-title">The storage is deliberately small and transparent.</h2><p>The Core uses a project-owned <code>double[]</code> and explicit loops. No numerical library, LINQ vector helper, or <code>System.Numerics.Vector&lt;T&gt;</code> performs the taught operation.</p></div>
+        </div>
+        <div class="variant-grid vector-implementation-grid">
+            <article class="variant-card active static-card"><span>BASIC · STORAGE</span><strong>ManualVector</strong><p>Component i is stored in slot i. The Memory view shows the fixed index and conceptual byte offset.</p><small>O(n) input storage</small></article>
+            <article class="variant-card static-card"><span>REDUCTION</span><strong>Accumulator loop</strong><p>Dot products, norms, distances and cosine similarity expose the running scalar instead of hiding it inside a library call.</p><small>O(1) extra state</small></article>
+            <article class="variant-card static-card"><span>VECTOR RESULT</span><strong>Explicit output buffer</strong><p>Add, subtract, scale, Hadamard and normalize write a new result vector component by component.</p><small>O(n) result storage</small></article>
+        </div>
+        <div class="live-data-card"><div><span>REAL-TIME CHANGES</span><strong>Changing A, B or the scalar resets the current run.</strong></div><p>A simulation uses one stable input snapshot. Build changes are allowed between runs, not halfway through a reduction.</p><span class="compatibility-badge restart">EDIT → restart current operation</span></div>
+    </section>
+
+    <section class="builder-section" aria-labelledby="vector-build-title">
+        <div class="section-heading-row"><div class="heading-with-step"><span class="step-number">1</span><div><span class="section-kicker">BUILD THE INPUT</span><h2 id="vector-build-title">Choose two vectors and one operation.</h2><p>Use 1–12 real numbers per vector. Binary operations validate dimensions instead of silently truncating data.</p></div></div><ConceptLink Href="/learn/concepts/vector-memory">Vector memory →</ConceptLink></div>
+
+        <div class="vector-builder-grid">
+            <label><span>VECTOR A</span><input value="@_aText" @oninput="AChanged" disabled="@IsBusy" placeholder="2, -1, 3" /><small>Main vector or first operand.</small></label>
+            <label><span>VECTOR B</span><input value="@_bText" @oninput="BChanged" disabled="@IsBusy" placeholder="4, 5, -2" /><small>Second operand for paired operations.</small></label>
+            <label><span>SCALAR</span><input value="@_scalarText" @oninput="ScalarChanged" disabled="@IsBusy" inputmode="decimal" /><small>Used by scalar multiplication.</small></label>
+            <button class="primary-action" type="button" @onclick="ApplyInputs" disabled="@IsBusy">Use these values</button>
+        </div>
+
+        <div class="preset-row vector-presets" aria-label="Vector presets">
+            <span>TRY A CASE</span>
+            <button @onclick="() => LoadPreset(Preset.General)" disabled="@IsBusy">General</button>
+            <button @onclick="() => LoadPreset(Preset.Orthogonal)" disabled="@IsBusy">Orthogonal</button>
+            <button @onclick="() => LoadPreset(Preset.Parallel)" disabled="@IsBusy">Same direction</button>
+            <button @onclick="() => LoadPreset(Preset.Zero)" disabled="@IsBusy">Zero vector</button>
+            <button @onclick="() => LoadPreset(Preset.Distance)" disabled="@IsBusy">Distance</button>
+            <button @onclick="() => LoadPreset(Preset.Mismatch)" disabled="@IsBusy">Dimension mismatch</button>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_inputError))
+        {
+            <div class="input-error" role="alert"><strong>Check the vector input.</strong><span>@_inputError</span></div>
+        }
+
+        <div class="operation-picker" aria-label="Vector operation">
+            @foreach (var option in OperationOptions)
+            {
+                var selected = _operation == option.Operation;
+                <button type="button" class="@(selected ? "active" : string.Empty)" @onclick="() => SelectOperation(option.Operation)" disabled="@IsBusy"><span>@option.Group</span><strong>@option.Label</strong><small>@option.Short</small></button>
+            }
+        </div>
+    </section>
+
+    <section class="predict-section" aria-labelledby="vector-predict-title">
+        <div class="prediction-copy"><span class="step-number">2</span><div><span class="section-kicker">PREDICT FIRST</span><h2 id="vector-predict-title">Predict the value the current operation will produce.</h2><p>For vector-producing operations, predict <strong>result[0]</strong>. For reductions, predict the final scalar.</p></div></div>
+        <div class="prediction-card vector-prediction">
+            <label><span>@PredictionLabel</span><input value="@_predictionText" @oninput="PredictionChanged" disabled="@IsBusy" inputmode="decimal" placeholder="Your estimate" /></label>
+            @if (_predictionAnswered) { <p class="prediction-feedback @(_predictionCorrect ? "correct" : "incorrect")">@PredictionFeedback</p> }
+        </div>
+    </section>
+
+    <section class="lab-section" aria-labelledby="vector-lab-title">
+        <div class="lab-heading">
+            <div><span class="section-kicker">3 · WATCH THE OPERATION</span><h2 id="vector-lab-title">Follow the active index and the accumulator.</h2></div>
+            <div class="lab-actions">
+                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Open explanation after run</span></label>
+                @if (_lastResult is not null) { <button class="secondary-action" type="button" @onclick="OpenLastRunPopup">Last Run</button> }
+                <button class="primary-action" type="button" @onclick="RunAsync" disabled="@IsBusy">Run @OperationLabel</button>
+            </div>
+        </div>
+
+        <div class="state-switch" role="group" aria-label="Vector state view"><button class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual State</button><button class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory State</button></div>
+        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/vector">Vector concepts →</ConceptLink><ConceptLink Href="/learn/concepts/vector-dot-product">Dot product →</ConceptLink><ConceptLink Href="/learn/concepts/vector-norms">Norms &amp; distance →</ConceptLink><ConceptLink Href="/learn/concepts/vector-similarity">Cosine similarity →</ConceptLink></div>
+
+        <div class="vector-visualizer-shell">
+            @if (_view == StateView.Visual)
+            {
+                <div class="vector-visual-state">
+                    <VectorStrip Name="A" Values="@DisplayedSnapshot.A" States="@DisplayedSnapshot.AStates" />
+                    @if (OperationUsesB(_operation)) { <VectorStrip Name="B" Values="@DisplayedSnapshot.B" States="@DisplayedSnapshot.BStates" /> }
+                    @if (OperationProducesVector(_operation)) { <VectorStrip Name="Result" Values="@DisplayedSnapshot.Result" States="@DisplayedSnapshot.ResultStates" Result="true" /> }
+                    else { <div class="scalar-result-card"><span>SCALAR RESULT / ACCUMULATOR</span><strong>@FormatNullable(DisplayedSnapshot.ScalarResult ?? DisplayedSnapshot.RunningValue)</strong><small>@DisplayedSnapshot.FocusText</small></div> }
+                </div>
+            }
+            else
+            {
+                <div class="vector-memory-state">
+                    <div class="memory-header"><div><span>CONTIGUOUS STORAGE</span><strong>Each component maps to one <code>double[]</code> slot.</strong></div><small>Conceptual byte offset = index × 8.</small></div>
+                    <div class="memory-table-wrap"><table><thead><tr><th>index</th><th>byte offset</th><th>A[index]</th><th>B[index]</th><th>result[index]</th><th>state</th></tr></thead><tbody>
+                    @for (var index = 0; index < MaxDisplayedDimension; index++)
+                    {
+                        var active = DisplayedSnapshot.CurrentIndex == index;
+                        <tr class="@(active ? "active" : string.Empty)"><td>@index</td><td>@(index * sizeof(double))</td><td>@ValueAt(DisplayedSnapshot.A, index)</td><td>@ValueAt(DisplayedSnapshot.B, index)</td><td>@ValueAt(DisplayedSnapshot.Result, index)</td><td>@(active ? "current read" : "stable slot")</td></tr>
+                    }
+                    </tbody></table></div>
+                </div>
+            }
+        </div>
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+
+        <div class="run-dashboard"><article><span>Operation</span><strong>@OperationLabel</strong><small>@OperationCategory</small></article><article><span>Current index</span><strong>@(DisplayedSnapshot.CurrentIndex < 0 ? "—" : DisplayedSnapshot.CurrentIndex)</strong><small>component pair being processed</small></article><article><span>Running value</span><strong>@Format(DisplayedSnapshot.RunningValue)</strong><small>reduction accumulator when applicable</small></article><article><span>Dimension</span><strong>@DisplayedSnapshot.DimensionA</strong><small>A component count</small></article></div>
+
+        <div class="invariant-panel"><div><span>INVARIANT TO WATCH</span><h3>Component order never changes.</h3><p>Vector operations read aligned slots. Reductions compress those reads into one accumulator; vector-producing operations write a corresponding output slot.</p></div><div class="early-exit-note"><span>ML INTERPRETATION</span><strong>Features, parameters and embeddings are meaningful only when component positions keep the same semantics.</strong><p>Dimension mismatch is therefore a correctness error, not something to silently ignore.</p></div></div>
+    </section>
+
+    <section class="fit-section" aria-labelledby="vector-fit-title">
+        <div class="section-heading-row"><div><span class="section-kicker">WHY THIS MATTERS FOR ML</span><h2 id="vector-fit-title">Almost every Phase 1 algorithm reuses one of these operations.</h2></div></div>
+        <div class="fit-grid"><article class="fit-card good"><span>GRADIENT DESCENT</span><strong>Parameter vectors move opposite the gradient.</strong><p>Scale a gradient by learning rate, then subtract it from the parameters.</p></article><article class="fit-card good"><span>KNN / K-MEANS</span><strong>Distance compares samples and centroids.</strong><p>Euclidean and Manhattan distance are direct building blocks for neighborhood and clustering algorithms.</p></article><article class="fit-card better"><span>LINEAR MODELS</span><strong>Dot product creates the weighted score.</strong><p>Linear and logistic regression start from a feature vector and weight vector meeting in a dot product.</p></article></div>
+    </section>
+
+    <section class="practice-section" aria-labelledby="vector-practice-title">
+        <div class="practice-heading"><div><span class="section-kicker">GUIDED PRACTICE</span><h2 id="vector-practice-title">Prove the vector rules with your own numbers.</h2></div><div class="task-score"><strong>@_completedTaskIds.Count / @PracticeTasks.Length</strong><span>completed</span></div></div>
+        @if (_activeTaskId is int activeId)
+        {
+            var task = PracticeTasks.First(item => item.Id == activeId);
+            <div class="active-task-banner"><span>ACTIVE TASK @task.Id.ToString("00")</span><strong>@task.Title</strong><small>@GetActiveTaskProgressText(task.Id)</small></div>
+        }
+        <div class="practice-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                <PracticeTaskCard TaskId="@task.Id" Title="@task.Title" Description="@task.Goal" InputText="@task.SuggestedInput" HelpHref="/learn/concepts/vector" Completed="@_completedTaskIds.Contains(task.Id)" Active="@(_activeTaskId == task.Id)" Busy="@IsBusy" HasEvidence="@(GetTaskEvidence(task.Id) is not null)" Start="@(() => StartTask(task.Id))" OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
+            }
+        </div>
+    </section>
+
+    <NextLessonCard Eyebrow="AI / ML PHASE 1 · NEXT" Level="OPTIMIZATION" Title="Gradient Descent" Description="Use this Vector Core directly for gradient magnitude, learning-rate scaling and parameter subtraction." Href="/ml-foundations/gradient-descent" LinkLabel="Open Gradient Descent" />
+</div>
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
+
+@if (_lastRunPopupOpen && _lastResult is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRunPopup"><section class="run-popup" role="dialog" aria-modal="true" @onclick:stopPropagation="true"><header><div><span class="section-kicker">WHAT JUST HAPPENED?</span><h2>@_lastResult.Summary</h2></div><button class="popup-close" @onclick="CloseLastRunPopup">×</button></header><div class="popup-tabs"><button class="@(_popupTab == PopupTab.Action ? "active" : string.Empty)" @onclick="() => _popupTab = PopupTab.Action">Operation</button><button class="@(_popupTab == PopupTab.Memory ? "active" : string.Empty)" @onclick="() => _popupTab = PopupTab.Memory">Memory</button><button class="@(_popupTab == PopupTab.Ml ? "active" : string.Empty)" @onclick="() => _popupTab = PopupTab.Ml">ML link</button></div>
+        <div class="popup-body">
+            @if (_popupTab == PopupTab.Action) { <h3>@RunActionExplanation(_lastResult)</h3><p>@RunMetricSummary(_lastResult)</p> }
+            else if (_popupTab == PopupTab.Memory) { <h3>No library object hid the component loop.</h3><p>A and B remain contiguous <code>double[]</code> storage. Reduction operations keep O(1) accumulator state; vector-producing operations allocate only the explicit O(n) result vector.</p> }
+            else { <h3>@MlExplanation(_lastResult.Operation)</h3><p>Gradient Descent already calls these same concepts; later Phase 1 models continue that reuse.</p> }
+        </div>
+    </section></div>
+}
+
+@code {
+    private const string ModuleKey = "vector";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.vector.show-run-popup.v1";
+    private readonly List<RunFrame> _frames = [];
+    private readonly List<VectorOperationResult> _practiceResults = [];
+    private PracticeModuleProgress _practiceProgress = new();
+    private HashSet<int> _completedTaskIds = [];
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
+    private VectorOperationResult? _lastResult;
+    private string? _lastCapturedStep;
+    private string _aText = "2, -1, 3";
+    private string _bText = "4, 5, -2";
+    private string _scalarText = "2";
+    private string _predictionText = string.Empty;
+    private string? _inputError;
+    private VectorOperationKind _operation = VectorOperationKind.Add;
+    private StateView _view = StateView.Visual;
+    private PopupTab _popupTab = PopupTab.Action;
+    private bool _showRunPopups = true;
+    private bool _lastRunPopupOpen;
+    private bool _predictionAnswered;
+    private bool _predictionCorrect;
+    private double? _predictionValue;
+    private int _frameIndex = -1;
+    private int? _activeTaskId;
+
+    private static readonly OperationOption[] OperationOptions =
+    [
+        new(VectorOperationKind.Add, "ARITHMETIC", "A + B", "component-wise addition"),
+        new(VectorOperationKind.Subtract, "ARITHMETIC", "A − B", "component-wise subtraction"),
+        new(VectorOperationKind.ScalarMultiply, "ARITHMETIC", "s × A", "scale every component"),
+        new(VectorOperationKind.Hadamard, "ARITHMETIC", "A ⊙ B", "component-wise product"),
+        new(VectorOperationKind.DotProduct, "REDUCTION", "A · B", "weighted sum primitive"),
+        new(VectorOperationKind.L1Norm, "MAGNITUDE", "||A||₁", "sum absolute values"),
+        new(VectorOperationKind.L2Norm, "MAGNITUDE", "||A||₂", "Euclidean length"),
+        new(VectorOperationKind.NormalizeL2, "MAGNITUDE", "normalize(A)", "unit-length vector"),
+        new(VectorOperationKind.EuclideanDistance, "DISTANCE", "Euclidean(A,B)", "straight-line distance"),
+        new(VectorOperationKind.ManhattanDistance, "DISTANCE", "Manhattan(A,B)", "axis-aligned distance"),
+        new(VectorOperationKind.CosineSimilarity, "SIMILARITY", "cos(A,B)", "direction similarity")
+    ];
+
+    private static readonly PracticeTaskDefinition[] PracticeTasks =
+    [
+        new(1, "Add aligned feature vectors", "Run successful addition on any same-dimension vectors with at least three components.", "Any A and B with same n ≥ 3", VectorOperationKind.Add, [1d,2d,3d], [4d,-1d,2d], 2d),
+        new(2, "Prove orthogonality with dot product", "Use any two non-zero vectors whose dot product is approximately zero.", "Example A=[1,0], B=[0,4]", VectorOperationKind.DotProduct, [1d,0d], [0d,4d], 2d),
+        new(3, "Normalize to unit length", "Normalize any non-zero vector and finish with L2 norm ≈ 1.", "Example A=[3,4]", VectorOperationKind.NormalizeL2, [3d,4d], [1d,1d], 2d),
+        new(4, "Reject zero-vector normalization", "Attempt to normalize any all-zero vector and observe the divide-by-zero guard.", "Example A=[0,0,0]", VectorOperationKind.NormalizeL2, [0d,0d,0d], [1d,1d,1d], 2d),
+        new(5, "Recognize the same direction", "Use non-zero parallel vectors pointing in the same direction and obtain cosine similarity ≈ 1.", "Example A=[1,2], B=[3,6]", VectorOperationKind.CosineSimilarity, [1d,2d], [3d,6d], 2d),
+        new(6, "Compare Euclidean and Manhattan distance", "Run both distances on the same pair and verify Manhattan distance is not smaller than Euclidean distance.", "Example A=[0,0], B=[3,4]", VectorOperationKind.EuclideanDistance, [0d,0d], [3d,4d], 2d),
+        new(7, "Flip direction with a negative scalar", "Scale any vector containing a non-zero component by a negative scalar.", "Example s=-2, A=[2,-1,3]", VectorOperationKind.ScalarMultiply, [2d,-1d,3d], [1d,1d,1d], -2d),
+        new(8, "Catch a dimension mismatch", "Run any paired operation with A and B of different dimensions and let Core reject it.", "Example A=[1,2,3], B=[4,5]", VectorOperationKind.Add, [1d,2d,3d], [4d,5d], 2d)
+    ];
+
+    private VectorSnapshot Current => VectorLab.CreateSnapshot();
+    private VectorSnapshot DisplayedSnapshot => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].Snapshot : Current;
+    private string DisplayedStepText => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].StepText : SimulationState.CurrentStepText;
+    private int TimelineCount => _frames.Count;
+    private int TimelinePosition => _frameIndex < 0 ? 0 : _frameIndex + 1;
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_frameIndex >= 0 && _frameIndex < _frames.Count - 1) || SimulationState.IsRunning;
+    private bool IsBusy => SimulationState.IsRunning;
+    private int MaxDisplayedDimension => Math.Max(DisplayedSnapshot.A.Length, Math.Max(DisplayedSnapshot.B.Length, DisplayedSnapshot.Result.Length));
+    private string OperationLabel => OperationOptions.First(option => option.Operation == _operation).Label;
+    private string OperationCategory => OperationOptions.First(option => option.Operation == _operation).Group;
+    private string PredictionLabel => OperationProducesVector(_operation) ? "PREDICT RESULT[0]" : "PREDICT FINAL SCALAR";
+    private string PredictionFeedback => _predictionCorrect ? "Correct — your prediction matches this run." : $"Not quite. This run produced {ExpectedPredictionText}.";
+    private string ExpectedPredictionText => _lastResult is null ? "—" : Format(ExpectedPrediction(_lastResult));
+
+    protected override void OnInitialized()
+    {
+        SimulationState.Changed += HandleSimulationChanged;
+        try { _showRunPopups = !bool.TryParse(LearningStore.GetItem(PopupSettingStorageKey), out var saved) || saved; } catch { _showRunPopups = true; }
+        _practiceProgress = PracticeProgress.Load(ModuleKey, null, PracticeTasks.Select(task => task.Id));
+        _completedTaskIds = _practiceProgress.CompletedTaskIds;
+        ApplyInputs();
+    }
+
+    private void AChanged(ChangeEventArgs args) { _aText = args.Value?.ToString() ?? string.Empty; ClearReview(); }
+    private void BChanged(ChangeEventArgs args) { _bText = args.Value?.ToString() ?? string.Empty; ClearReview(); }
+    private void ScalarChanged(ChangeEventArgs args) { _scalarText = args.Value?.ToString() ?? string.Empty; ClearReview(); }
+    private void PredictionChanged(ChangeEventArgs args) { _predictionText = args.Value?.ToString() ?? string.Empty; _predictionAnswered = false; }
+    private void SelectOperation(VectorOperationKind operation) { if (IsBusy) return; _operation = operation; _predictionAnswered = false; ClearReview(keepLastResult: false); }
+
+    private void ApplyInputs()
+    {
+        if (!TryParseVector(_aText, out var a, out var errorA)) { _inputError = $"Vector A: {errorA}"; return; }
+        if (!TryParseVector(_bText, out var b, out var errorB)) { _inputError = $"Vector B: {errorB}"; return; }
+        if (!TryParseDouble(_scalarText, out _)) { _inputError = "Scalar must be a real number."; return; }
+        _inputError = null;
+        VectorLab.LoadVectors(a, b);
+        ClearReview();
+        StateHasChanged();
+    }
+
+    private async Task RunAsync()
+    {
+        ApplyInputs();
+        if (!string.IsNullOrWhiteSpace(_inputError)) return;
+        TryParseDouble(_scalarText, out var scalar);
+        _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; _lastRunPopupOpen = false;
+        var token = SimulationState.Start($"Starting {OperationLabel}.");
+        Capture();
+        try
+        {
+            var result = await VectorLab.ExecuteAsync(_operation, scalar, token);
+            if (!IsCurrent(token)) return;
+            _lastResult = result;
+            SimulationState.Complete(result.Succeeded ? result.Summary : result.FailureReason);
+            Capture();
+            EvaluatePrediction(result);
+            RecordPracticeResult(result);
+            if (_showRunPopups) OpenLastRunPopup();
+        }
+        catch (OperationCanceledException) { }
+        finally { await InvokeAsync(StateHasChanged); }
+    }
+
+    private void Capture()
+    {
+        var step = SimulationState.CurrentStepText;
+        if (step == _lastCapturedStep) return;
+        var followTail = _frameIndex < 0 || _frameIndex == _frames.Count - 1;
+        _frames.Add(new RunFrame(step, VectorLab.CreateSnapshot()));
+        _lastCapturedStep = step;
+        if (followTail) _frameIndex = _frames.Count - 1;
+    }
+
+    private void HandleSimulationChanged() { if (SimulationState.IsRunning) Capture(); _ = InvokeAsync(StateHasChanged); }
+    private bool IsCurrent(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;
+    private void ClearReview(bool keepLastResult = false) { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; _lastRunPopupOpen = false; if (!keepLastResult) _lastResult = null; }
+    private Task PlayTimelineAsync() { if (_frames.Count > 0) _frameIndex = _frames.Count - 1; SimulationState.Resume(); return InvokeAsync(StateHasChanged); }
+    private Task PauseTimelineAsync() { SimulationState.Pause(); return Task.CompletedTask; }
+    private Task StepBackAsync() { if (SimulationState.IsRunning && !SimulationState.IsPaused) SimulationState.Pause(); if (_frameIndex > 0) _frameIndex--; return InvokeAsync(StateHasChanged); }
+    private Task StepForwardAsync() { if (_frameIndex >= 0 && _frameIndex < _frames.Count - 1) { _frameIndex++; return InvokeAsync(StateHasChanged); } if (SimulationState.IsRunning) SimulationState.Step(); return Task.CompletedTask; }
+    private Task ResetPlaybackAsync() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; return InvokeAsync(StateHasChanged); }
+
+    private void EvaluatePrediction(VectorOperationResult result)
+    {
+        _predictionAnswered = TryParseDouble(_predictionText, out var prediction);
+        if (!_predictionAnswered) return;
+        _predictionValue = prediction;
+        _predictionCorrect = Math.Abs(prediction - ExpectedPrediction(result)) <= 1e-3;
+    }
+
+    private static double ExpectedPrediction(VectorOperationResult result) => result.ProducesVector && result.ResultVector.Length > 0 ? result.ResultVector[0] : result.ScalarResult ?? double.NaN;
+
+    private void StartTask(int taskId)
+    {
+        if (IsBusy) return;
+        var task = PracticeTasks.First(item => item.Id == taskId);
+        _activeTaskId = taskId;
+        _operation = task.Operation;
+        _aText = FormatVector(task.A);
+        _bText = FormatVector(task.B);
+        _scalarText = Format(task.Scalar);
+        _predictionText = string.Empty;
+        _predictionAnswered = false;
+        ApplyInputs();
+        _activeTaskId = taskId;
+    }
+
+    private void RecordPracticeResult(VectorOperationResult result)
+    {
+        _practiceResults.Add(result);
+        if (_practiceResults.Count > 40) _practiceResults.RemoveAt(0);
+        EvaluatePracticeTasks(result);
+    }
+
+    private void EvaluatePracticeTasks(VectorOperationResult result)
+    {
+        foreach (var task in PracticeTasks)
+        {
+            if (_completedTaskIds.Contains(task.Id) && GetTaskEvidence(task.Id) is not null && _activeTaskId != task.Id) continue;
+            var complete = task.Id switch
+            {
+                1 => result.Succeeded && result.Operation == VectorOperationKind.Add && result.A.Length >= 3 && result.A.Length == result.B.Length,
+                2 => result.Succeeded && result.Operation == VectorOperationKind.DotProduct && !IsZero(result.A) && !IsZero(result.B) && Math.Abs(result.ScalarResult ?? 1d) <= 1e-8,
+                3 => result.Succeeded && result.Operation == VectorOperationKind.NormalizeL2 && Math.Abs(L2(result.ResultVector) - 1d) <= 1e-8,
+                4 => !result.Succeeded && result.Operation == VectorOperationKind.NormalizeL2 && IsZero(result.A),
+                5 => result.Succeeded && result.Operation == VectorOperationKind.CosineSimilarity && Math.Abs((result.ScalarResult ?? 0d) - 1d) <= 1e-8,
+                6 => HasDistancePair(result),
+                7 => result.Succeeded && result.Operation == VectorOperationKind.ScalarMultiply && result.Scalar < 0d && HasSignFlip(result.A, result.ResultVector),
+                8 => !result.Succeeded && result.A.Length != result.B.Length && OperationUsesB(result.Operation),
+                _ => false
+            };
+            if (complete) CompletePracticeTask(task, result);
+        }
+    }
+
+    private bool HasDistancePair(VectorOperationResult current)
+    {
+        if (!current.Succeeded || current.Operation is not (VectorOperationKind.EuclideanDistance or VectorOperationKind.ManhattanDistance)) return false;
+        var otherOperation = current.Operation == VectorOperationKind.EuclideanDistance ? VectorOperationKind.ManhattanDistance : VectorOperationKind.EuclideanDistance;
+        var other = _practiceResults.LastOrDefault(candidate => candidate.Succeeded && candidate.Operation == otherOperation && SameValues(candidate.A, current.A) && SameValues(candidate.B, current.B));
+        if (other is null || !other.ScalarResult.HasValue || !current.ScalarResult.HasValue) return false;
+        var euclidean = current.Operation == VectorOperationKind.EuclideanDistance ? current.ScalarResult.Value : other.ScalarResult.Value;
+        var manhattan = current.Operation == VectorOperationKind.ManhattanDistance ? current.ScalarResult.Value : other.ScalarResult.Value;
+        return manhattan + 1e-9 >= euclidean;
+    }
+
+    private void CompletePracticeTask(PracticeTaskDefinition task, VectorOperationResult result)
+    {
+        var evidence = new PracticeCompletionEvidence(task.Id, task.Title,
+            result.Succeeded ? result.Summary : "Core correctly rejected an invalid vector case",
+            RunActionExplanation(result),
+            result.ProducesVector ? "A and B stayed in their original raw-array slots while a separate result array was written component by component." : "The input arrays stayed unchanged. Only scalar accumulators, indexes and counters changed during the reduction.",
+            MlExplanation(result.Operation),
+            [new("Operation", OperationName(result.Operation)), new("A dimension", result.A.Length.ToString()), new("B dimension", result.B.Length.ToString()), new("Result", ResultText(result))],
+            $"A={FormatVector(result.A)} · B={FormatVector(result.B)} · {ResultText(result)}");
+        _completedTaskIds.Add(task.Id);
+        PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
+        if (_activeTaskId == task.Id) _activeTaskId = null;
+    }
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
+    private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
+    private void CloseTaskEvidence() => _practiceEvidencePopup = null;
+    private string GetActiveTaskProgressText(int taskId) => _practiceResults.Count == 0 ? "Suggested setup is loaded. You may change the numbers; completion follows the mathematical behavior, not the fixture." : $"Last run: {OperationName(_practiceResults[^1].Operation)} · {ResultText(_practiceResults[^1])}.";
+
+    private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed; try { LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); } catch { } }
+    private void OpenLastRunPopup() { if (_lastResult is null) return; _popupTab = PopupTab.Action; _lastRunPopupOpen = true; }
+    private void CloseLastRunPopup() => _lastRunPopupOpen = false;
+
+    private void LoadPreset(Preset preset)
+    {
+        if (IsBusy) return;
+        (double[] A, double[] B, double Scalar, VectorOperationKind Operation) data = preset switch
+        {
+            Preset.Orthogonal => ([1d, 0d], [0d, 4d], 2d, VectorOperationKind.DotProduct),
+            Preset.Parallel => ([1d, 2d], [3d, 6d], 2d, VectorOperationKind.CosineSimilarity),
+            Preset.Zero => ([0d, 0d, 0d], [1d, 2d, 3d], 2d, VectorOperationKind.NormalizeL2),
+            Preset.Distance => ([0d, 0d], [3d, 4d], 2d, VectorOperationKind.EuclideanDistance),
+            Preset.Mismatch => ([1d, 2d, 3d], [4d, 5d], 2d, VectorOperationKind.Add),
+            _ => ([2d, -1d, 3d], [4d, 5d, -2d], 2d, VectorOperationKind.Add)
+        };
+        _aText = FormatVector(data.A); _bText = FormatVector(data.B); _scalarText = Format(data.Scalar); _operation = data.Operation; _predictionText = string.Empty; _predictionAnswered = false; ApplyInputs();
+    }
+
+    private static bool TryParseVector(string text, out double[] values, out string error)
+    {
+        var tokens = (text ?? string.Empty).Split([',', ';', ' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (tokens.Length is < 1 or > 12) { values = []; error = "Use between 1 and 12 numbers."; return false; }
+        values = new double[tokens.Length];
+        for (var index = 0; index < tokens.Length; index++)
+        {
+            if (!TryParseDouble(tokens[index], out values[index])) { error = $"'{tokens[index]}' is not a valid real number."; values = []; return false; }
+            if (double.IsNaN(values[index]) || double.IsInfinity(values[index])) { error = "NaN and infinity are not accepted in this learning lab."; values = []; return false; }
+        }
+        error = string.Empty; return true;
+    }
+
+    private static bool TryParseDouble(string? text, out double value) => double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value) || double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out value);
+    private static string ValueAt(double[] values, int index) => index >= 0 && index < values.Length ? Format(values[index]) : "—";
+    private static string FormatNullable(double? value) => value.HasValue ? Format(value.Value) : "—";
+    private static string Format(double value) => Math.Abs(value) < 1e-12 ? "0" : value.ToString("0.###", CultureInfo.InvariantCulture);
+    private static string FormatVector(IReadOnlyList<double> values) { var parts = new string[values.Count]; for (var i = 0; i < values.Count; i++) parts[i] = Format(values[i]); return string.Join(", ", parts); }
+    private static bool IsZero(IReadOnlyList<double> values) { for (var i = 0; i < values.Count; i++) if (Math.Abs(values[i]) > 1e-10) return false; return true; }
+    private static double L2(IReadOnlyList<double> values) { var sum = 0d; for (var i = 0; i < values.Count; i++) sum += values[i] * values[i]; return Math.Sqrt(sum); }
+    private static bool SameValues(IReadOnlyList<double> left, IReadOnlyList<double> right) { if (left.Count != right.Count) return false; for (var i = 0; i < left.Count; i++) if (Math.Abs(left[i] - right[i]) > 1e-9) return false; return true; }
+    private static bool HasSignFlip(IReadOnlyList<double> before, IReadOnlyList<double> after) { var count = Math.Min(before.Count, after.Count); for (var i = 0; i < count; i++) if (Math.Abs(before[i]) > 1e-10 && before[i] * after[i] < 0d) return true; return false; }
+    private static bool OperationUsesB(VectorOperationKind operation) => operation is VectorOperationKind.Add or VectorOperationKind.Subtract or VectorOperationKind.Hadamard or VectorOperationKind.DotProduct or VectorOperationKind.EuclideanDistance or VectorOperationKind.ManhattanDistance or VectorOperationKind.CosineSimilarity;
+    private static bool OperationProducesVector(VectorOperationKind operation) => operation is VectorOperationKind.Add or VectorOperationKind.Subtract or VectorOperationKind.ScalarMultiply or VectorOperationKind.Hadamard or VectorOperationKind.NormalizeL2;
+    private static string OperationName(VectorOperationKind operation) => operation switch { VectorOperationKind.Add => "Vector addition", VectorOperationKind.Subtract => "Vector subtraction", VectorOperationKind.ScalarMultiply => "Scalar multiplication", VectorOperationKind.Hadamard => "Hadamard product", VectorOperationKind.DotProduct => "Dot product", VectorOperationKind.L1Norm => "L1 norm", VectorOperationKind.L2Norm => "L2 norm", VectorOperationKind.NormalizeL2 => "L2 normalization", VectorOperationKind.EuclideanDistance => "Euclidean distance", VectorOperationKind.ManhattanDistance => "Manhattan distance", VectorOperationKind.CosineSimilarity => "Cosine similarity", _ => operation.ToString() };
+    private static string ResultText(VectorOperationResult result) => result.Succeeded ? result.ProducesVector ? $"result=[{FormatVector(result.ResultVector)}]" : $"scalar={FormatNullable(result.ScalarResult)}" : $"rejected: {result.FailureReason}";
+    private static string RunMetricSummary(VectorOperationResult result) => result.Succeeded ? $"Visited {result.ComponentsVisited} component step(s) and recorded {result.ArithmeticOperations} arithmetic operation(s). Time grows Θ(n)." : result.FailureReason;
+    private static string RunActionExplanation(VectorOperationResult result) => result.Succeeded ? result.ProducesVector ? $"{OperationName(result.Operation)} read the required input component(s) and wrote a separate result vector {FormatVector(result.ResultVector)}." : $"{OperationName(result.Operation)} reduced the visited components to the scalar {FormatNullable(result.ScalarResult)}." : $"The operation did not run because its mathematical precondition failed: {result.FailureReason}";
+    private static string MlExplanation(VectorOperationKind operation) => operation switch { VectorOperationKind.DotProduct => "Dot products are the weighted-sum core of linear and logistic regression and neural-network layers.", VectorOperationKind.EuclideanDistance or VectorOperationKind.ManhattanDistance => "Distance functions drive neighborhood methods such as KNN and assignment steps such as K-Means.", VectorOperationKind.CosineSimilarity => "Cosine similarity compares direction and is common for high-dimensional feature or embedding vectors.", VectorOperationKind.NormalizeL2 or VectorOperationKind.L1Norm or VectorOperationKind.L2Norm => "Norms measure scale, support normalization and appear in regularization and optimization.", VectorOperationKind.Add or VectorOperationKind.Subtract or VectorOperationKind.ScalarMultiply => "Gradient-based optimization updates parameter vectors with exactly these add/subtract/scale operations.", _ => "Component-wise vector operations are reusable numerical primitives across machine-learning pipelines." };
+
+    public void Dispose() => SimulationState.Changed -= HandleSimulationChanged;
+
+    private sealed record RunFrame(string StepText, VectorSnapshot Snapshot);
+    private sealed record OperationOption(VectorOperationKind Operation, string Group, string Label, string Short);
+    private sealed record PracticeTaskDefinition(int Id, string Title, string Goal, string SuggestedInput, VectorOperationKind Operation, double[] A, double[] B, double Scalar);
+    private enum StateView { Visual, Memory }
+    private enum PopupTab { Action, Memory, Ml }
+    private enum Preset { General, Orthogonal, Parallel, Zero, Distance, Mismatch }
+}

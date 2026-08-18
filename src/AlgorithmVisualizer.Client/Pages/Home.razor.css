@@ -637,3 +637,10 @@
 .search-home-section .module-grid {
     grid-template-columns: minmax(16rem, 24rem);
 }
+
+.ai-home-section .planned-card {
+    opacity: .72;
+    border-style: dashed;
+    background: linear-gradient(135deg, #fbfbfd, #f6f4ff);
+}
+.ai-home-section .planned-card .card-link { color: var(--color-text-muted); }

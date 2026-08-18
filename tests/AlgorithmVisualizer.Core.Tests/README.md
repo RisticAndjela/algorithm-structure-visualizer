@@ -154,3 +154,13 @@ The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctnes
 - Topological Sort: Kahn and DFS valid-order checks, multiple sources, cycle detection, weighted-edge ignoring, undirected rejection, and single-vertex boundary.
 
 - MST tests cover Prim/Kruskal minimum-weight agreement, negative/zero weights, disconnected forests, Kruskal cycle rejection, directed precondition rejection, and the single-vertex boundary.
+
+
+## Vector coverage
+
+`DataStructures/Vector/VectorSimulationTests.cs` verifies raw component order, component-wise addition, orthogonal dot product, unit L2 normalization, zero-vector normalization rejection, parallel cosine similarity, Euclidean/Manhattan distance, and dimension-mismatch rejection.
+
+
+## Gradient Descent coverage
+
+`MachineLearning/Optimization/GradientDescentSimulationTests.cs` verifies stable fixed-rate convergence, zero-update convergence when theta already equals the target, controlled divergence under an overly aggressive learning rate, Advanced learning-rate decay reducing the effective eta, arbitrary three-parameter optimization, and configuration rejection for dimension mismatch.

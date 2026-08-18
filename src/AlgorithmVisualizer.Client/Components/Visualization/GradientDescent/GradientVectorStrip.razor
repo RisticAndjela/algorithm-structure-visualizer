@@ -1,0 +1,26 @@
+@using AlgorithmVisualizer.Core.MachineLearning.Optimization.GradientDescent
+
+<section class="gd-vector-strip @KindClass">
+    <header><span>@Name</span><strong>@Subtitle</strong></header>
+    <div class="gd-vector-components">
+        @for (var index = 0; index < Values.Length; index++)
+        {
+            var active = index == CurrentIndex;
+            <div class="gd-vector-component @(active ? "current" : string.Empty)">
+                <small>[@index]</small>
+                <strong>@Format(Values[index])</strong>
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public string Name { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public double[] Values { get; set; } = [];
+    [Parameter] public int CurrentIndex { get; set; } = -1;
+    [Parameter] public string Subtitle { get; set; } = string.Empty;
+    [Parameter] public string Kind { get; set; } = string.Empty;
+
+    private string KindClass => string.IsNullOrWhiteSpace(Kind) ? string.Empty : $"kind-{Kind.ToLowerInvariant()}";
+    private static string Format(double value) => Math.Abs(value) < 1e-12 ? "0" : value.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture);
+}

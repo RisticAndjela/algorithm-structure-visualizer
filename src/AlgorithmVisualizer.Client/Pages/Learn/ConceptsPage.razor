@@ -76,6 +76,12 @@
                 <a href="#topological-sort">Topological Sort</a>
                 <a href="#mst">Minimum Spanning Tree</a>
             </div>
+            <div class="concept-jump-group">
+                <span>AI / ML FOUNDATIONS</span>
+                <a href="#vector">Vector</a>
+                <a href="#gradient-descent">Gradient Descent</a>
+                <a href="#linear-regression">Linear Regression</a>
+            </div>
         </nav>
 
         <section class="concepts-start" aria-label="Quick start concepts">
@@ -451,6 +457,52 @@
         </div>
 
         <div class="concept-lesson-links"><a href="/structures/matrix">Open Matrix lab →</a></div>
+    </section>
+
+    <section id="vector" class='@SectionClass("vector")'>
+        <div class="section-heading">
+            <span>ML1</span>
+            <div><h2>Vector: the numerical building block behind ML parameters, features and embeddings</h2><p>A vector is an ordered one-dimensional sequence of numbers. The component index has meaning: feature 0, feature 1, weight 0 and weight 1 cannot be silently swapped.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article id="vector-memory" class='@CardClass("vector-memory", "concept-card")'><span class="term">DOUBLE[]</span><h3>One mathematical vector can live in contiguous memory</h3><p>Our <code>ManualVector</code> stores every component in a project-owned raw <code>double[]</code>. Component <code>i</code> maps directly to slot <code>i</code>; the lab shows a conceptual 8-byte offset for each double.</p><div class="example"><strong>Dimension 3:</strong> values [2, -1, 3] occupy slots 0, 1 and 2 in that exact order.</div></article>
+            <article id="vector-dot-product" class='@CardClass("vector-dot-product", "concept-card")'><span class="term queue">DOT PRODUCT</span><h3>Multiply matching components, then reduce to one scalar</h3><p><code>A·B = Σ A[i]B[i]</code>. The dimensions must match because each position is paired with the same semantic position in the other vector.</p><div class="example"><strong>ML bridge:</strong> a linear model score starts from the dot product between feature vector x and weight vector w.</div></article>
+            <article id="vector-norms" class='@CardClass("vector-norms", "concept-card")'><span class="term">NORMS</span><h3>L1 and L2 measure magnitude in different ways</h3><p><code>||A||₁ = Σ|A[i]|</code>. <code>||A||₂ = √ΣA[i]²</code>. L2 normalization divides every component by the L2 norm and is undefined for the zero vector.</p><div class="example"><strong>[3,4]:</strong> L2 norm = 5, normalized vector = [0.6, 0.8].</div></article>
+            <article id="vector-similarity" class='@CardClass("vector-similarity", "concept-card")'><span class="term queue">DISTANCE + ANGLE</span><h3>Euclidean, Manhattan and cosine answer different questions</h3><p>Euclidean measures straight-line distance, Manhattan sums axis-aligned differences, and cosine similarity compares direction through <code>(A·B)/(||A||||B||)</code>.</p><div class="example"><strong>Use case:</strong> KNN can choose a distance metric; embedding systems often care about cosine direction.</div></article>
+            <article id="vector-ml" class='@CardClass("vector-ml", "concept-card")'><span class="term">ML FOUNDATION</span><h3>Later algorithms reuse vector arithmetic instead of duplicating it</h3><p>Gradient Descent now uses Vector Core for norm, scaling and subtraction. Linear and logistic regression use dot products. KNN and K-Means use distances. PCA projects data onto vector directions.</p><div class="example"><strong>Live reuse:</strong> open Gradient Descent and watch θ − η∇J use the same project-owned vector primitives.</div></article>
+            <article class="concept-card"><span class="term queue">DIMENSION</span><h3>Dimension mismatch is a correctness error</h3><p>Component-wise operations, dot product, distances and cosine similarity require equal dimensions. The lab rejects mismatched inputs rather than truncating the longer vector.</p><div class="example"><strong>Why:</strong> dropping one feature would silently change the meaning of the data.</div></article>
+        </div>
+        <div class="concept-lesson-links"><a href="/ml-foundations/vector">Open Vector AI/ML foundation lab →</a><a href="/ml-foundations/gradient-descent">Continue to Gradient Descent →</a></div>
+    </section>
+
+    <section id="gradient-descent" class='@SectionClass("gradient-descent")'>
+        <div class="section-heading">
+            <span>ML2</span>
+            <div><h2>Gradient Descent: follow the slope, control the step, stop deliberately</h2><p>Gradient Descent minimizes a differentiable loss by repeatedly moving a parameter vector opposite the gradient. The live lab isolates optimizer behavior on a convex quadratic surface before regression adds model-specific prediction logic.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article id="gradient-descent-loss" class='@CardClass("gradient-descent-loss", "concept-card")'><span class="term">LOSS</span><h3>The objective turns parameter quality into one scalar</h3><p>The teaching objective is <code>J(θ)=½Σ cᵢ(θᵢ−targetᵢ)²</code>. Positive curvature means one convex minimum exists at <code>target</code>.</p><div class="example"><strong>Why this bowl?</strong> It exposes optimization mechanics without hiding them inside a model API.</div></article>
+            <article id="gradient-descent-update" class='@CardClass("gradient-descent-update", "concept-card")'><span class="term queue">UPDATE</span><h3>Subtract the scaled gradient vector</h3><p><code>θ ← θ − η∇J(θ)</code>. The gradient points toward local increase, so subtraction moves downhill. Component i of every vector refers to the same parameter axis.</p><div class="example"><strong>Reuse:</strong> the live Core calls Vector L2 norm, scalar multiplication and subtraction rather than reimplementing those loops.</div></article>
+            <article id="gradient-descent-learning-rate" class='@CardClass("gradient-descent-learning-rate", "concept-card")'><span class="term">LEARNING RATE η</span><h3>Step size changes behavior even when the gradient is correct</h3><p>A small η can improve loss too slowly to meet the iteration budget. A suitable η converges. An overly large η can overshoot repeatedly and make loss grow.</p><div class="example"><strong>Advanced lab:</strong> learning-rate decay uses <code>ηₜ=η₀/(1+decay·t)</code>.</div></article>
+            <article id="gradient-descent-convergence" class='@CardClass("gradient-descent-convergence", "concept-card")'><span class="term queue">CONVERGENCE</span><h3>A stopping rule makes “done” measurable</h3><p>This lesson converges when <code>||∇J||₂ ≤ tolerance</code>. It can also stop at the maximum iteration count, or classify repeated loss growth as divergence.</p><div class="example"><strong>Important:</strong> hitting max iterations does not necessarily mean the update rule is wrong; η may simply be too small.</div></article>
+            <article class="concept-card"><span class="term">FULL GRADIENT</span><h3>Phase 1 is deterministic before SGD adds sampling noise</h3><p>The current objective computes every gradient component on every update. Stochastic and mini-batch variants belong later with SGD, Momentum and Adam.</p></article>
+            <article class="concept-card"><span class="term queue">COMPLEXITY</span><h3>n parameters per update, k updates per run</h3><p>For this explicit objective, one loss/gradient/update pass is Θ(n), so k updates are Θ(k·n). Working optimizer state is O(n); O(k·n) review history is kept only for educational rewind and plotting.</p></article>
+        </div>
+        <div class="concept-lesson-links"><a href="/ml-foundations/gradient-descent">Open Gradient Descent lab →</a><a href="/ml-foundations/vector">Review Vector foundation →</a></div>
+    </section>
+
+    <section id="linear-regression" class='@SectionClass("linear-regression")'>
+        <div class="section-heading">
+            <span>ML3</span>
+            <div><h2>Linear Regression: planned first supervised model</h2><p>The model will predict a continuous value with a weighted sum, measure residuals, aggregate error with mean squared error, and reuse the existing Gradient Descent foundation for training.</p></div>
+        </div>
+        <div class="concept-grid two">
+            <article class="concept-card"><span class="term">PREDICTION</span><h3>Features and weights meet in a dot product</h3><p><code>ŷ = w·x + b</code>. Vector dimension and index semantics therefore remain part of model correctness.</p></article>
+            <article class="concept-card"><span class="term queue">RESIDUAL</span><h3>Prediction minus target exposes sample error</h3><p>A residual keeps the direction of error; squared error then prevents positive and negative residuals from cancelling.</p></article>
+            <article class="concept-card"><span class="term">TRAINING</span><h3>The model should supply the gradient, not duplicate the optimizer</h3><p>Linear Regression will implement prediction, MSE and their derivatives, then reuse the established Gradient Descent parameter-update pattern.</p></article>
+            <article class="concept-card"><span class="term queue">STATUS</span><h3>The simulation is intentionally still planned</h3><p>The concept route exists so curriculum links are not dead, but no fake interactive Linear Regression behavior is presented before its implementation commit.</p></article>
+        </div>
+        <div class="concept-lesson-links"><a href="/ml-foundations/linear-regression">Preview Linear Regression lesson →</a><a href="/ml-foundations/gradient-descent">Review optimizer foundation →</a></div>
     </section>
 
     <section id="graph" class='@SectionClass("graph")'>
@@ -916,11 +968,11 @@
     <section class="concept-section implementation-note">
         <div class="section-heading">
             <span>✓</span>
-            <div><h2>Implemented from scratch</h2><p>The learning structures and algorithms do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, Matrix, Graph, sorting, Linear Search, Binary Search, BFS, DFS, Dijkstra, Topological Sort, Minimum Spanning Tree, or balancing behavior to ready-made framework collections/search helpers.</p></div>
+            <div><h2>Implemented from scratch</h2><p>The learning structures and algorithms do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, Matrix, Vector, Graph, sorting, Linear Search, Binary Search, BFS, DFS, Dijkstra, Topological Sort, Minimum Spanning Tree, or balancing behavior to ready-made framework collections/search helpers.</p></div>
         </div>
         <div class="plain-note">
             <strong>What our code does itself</strong>
-            <p>Linear structures keep and grow their own raw array and move references with manual loops. BST, AVL, and Red-Black Tree keep explicit node links and perform their own comparisons, transplants, recoloring, and rotations. BST Balance uses our own Day-Stout-Warren vine/compression logic over those same node references. Heap uses its own growable raw array and manual index swaps for bubble-up/bubble-down instead of PriorityQueue or a library heap. Matrix uses its own row-major <code>double[]</code>, manual cell/index loops, row operations, multiplication and elimination instead of a numerical or linear-algebra library. Graph keeps canonical vertex/edge objects, manual adjacency lists over our own dynamic-array storage, and reuses ManualMatrix for the synchronized adjacency table instead of a graph package or dictionary-backed graph. Linear Search uses its own explicit index loop and does not call LINQ First/Contains or a framework search helper. Binary Search uses its own iterative left/right/mid loop and does not call Array.BinarySearch or another framework binary-search helper. BFS uses the existing Graph adjacency snapshot plus the project's manual dynamic-array storage as a FIFO Queue; DFS uses recursive calls or the same manual storage as an explicit LIFO Stack. Neither delegates traversal to a graph library or framework Queue/Stack collection. Dijkstra reuses that same Graph snapshot, performs its own relaxation/minimum selection, and in Advanced mode uses a project-owned binary min-heap instead of <code>PriorityQueue&lt;TElement, TPriority&gt;</code>. Topological Sort also reuses the same Graph snapshot: Kahn mode maintains indegree[] and a head-index FIFO over the project manual array, while DFS mode uses white/gray/black recursion plus a manual postorder buffer; neither delegates ordering or cycle detection to a graph library. MST reuses the same undirected Graph snapshot: Prim uses the existing ManualHeapArray as a min-edge frontier, while Kruskal manually merge-sorts edge indexes and uses a hand-written DSU with path compression and union by rank. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the taught data-structure algorithms for us.</p>
+            <p>Linear structures keep and grow their own raw array and move references with manual loops. BST, AVL, and Red-Black Tree keep explicit node links and perform their own comparisons, transplants, recoloring, and rotations. BST Balance uses our own Day-Stout-Warren vine/compression logic over those same node references. Heap uses its own growable raw array and manual index swaps for bubble-up/bubble-down instead of PriorityQueue or a library heap. Matrix uses its own row-major <code>double[]</code>, manual cell/index loops, row operations, multiplication and elimination instead of a numerical or linear-algebra library. Vector uses its own contiguous <code>double[]</code> and explicit loops for component operations, dot products, norms, normalization, distances and cosine similarity instead of a numerical-vector library. Gradient Descent computes its convex teaching loss and analytical gradient with explicit loops, then reuses Vector Core for L2 norm, scalar multiplication and subtraction instead of delegating to a numerical optimizer. Graph keeps canonical vertex/edge objects, manual adjacency lists over our own dynamic-array storage, and reuses ManualMatrix for the synchronized adjacency table instead of a graph package or dictionary-backed graph. Linear Search uses its own explicit index loop and does not call LINQ First/Contains or a framework search helper. Binary Search uses its own iterative left/right/mid loop and does not call Array.BinarySearch or another framework binary-search helper. BFS uses the existing Graph adjacency snapshot plus the project's manual dynamic-array storage as a FIFO Queue; DFS uses recursive calls or the same manual storage as an explicit LIFO Stack. Neither delegates traversal to a graph library or framework Queue/Stack collection. Dijkstra reuses that same Graph snapshot, performs its own relaxation/minimum selection, and in Advanced mode uses a project-owned binary min-heap instead of <code>PriorityQueue&lt;TElement, TPriority&gt;</code>. Topological Sort also reuses the same Graph snapshot: Kahn mode maintains indegree[] and a head-index FIFO over the project manual array, while DFS mode uses white/gray/black recursion plus a manual postorder buffer; neither delegates ordering or cycle detection to a graph library. MST reuses the same undirected Graph snapshot: Prim uses the existing ManualHeapArray as a min-edge frontier, while Kruskal manually merge-sorts edge indexes and uses a hand-written DSU with path compression and union by rank. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the taught data-structure algorithms for us.</p>
         </div>
     </section>
 
@@ -947,6 +999,8 @@
     {
         "binary-heap" or "general-heap" => "heap",
         "matrix-compatibility" => "matrix",
+        "vector-memory" or "vector-dot-product" or "vector-norms" or "vector-similarity" or "vector-ml" => "vector",
+        "gradient-descent-loss" or "gradient-descent-update" or "gradient-descent-learning-rate" or "gradient-descent-convergence" => "gradient-descent",
         "linear-search-complexity" => "linear-search",
         "binary-search-complexity" or "binary-search-duplicates" => "binary-search",
         "linear-vs-binary-search" => "binary-search",
@@ -976,6 +1030,18 @@
         "avl-balance" => "AVL balancing and rotations",
         "matrix" => "Matrix: dimensions and memory",
         "matrix-compatibility" => "Matrix operation compatibility",
+        "vector" => "Vector foundations for AI and ML",
+        "vector-memory" => "Vector memory and component indexing",
+        "vector-dot-product" => "Vector dot product",
+        "vector-norms" => "Vector norms and normalization",
+        "vector-similarity" => "Vector distance and cosine similarity",
+        "vector-ml" => "Why vectors are foundational in machine learning",
+        "gradient-descent" => "Gradient Descent optimization",
+        "gradient-descent-loss" => "Gradient Descent loss surface",
+        "gradient-descent-update" => "Gradient Descent update rule",
+        "gradient-descent-learning-rate" => "Gradient Descent learning rate",
+        "gradient-descent-convergence" => "Gradient Descent convergence and stopping",
+        "linear-regression" => "Linear Regression foundations",
         "graph" => "Graph: vertices, edges and adjacency",
         "red-black" => "Red-Black Tree invariants",
         "bubble-sort" => "Bubble Sort",
@@ -1026,6 +1092,9 @@
         "general-heap" => "/structures/heap",
         "avl-balance" => "/structures/avl",
         "matrix" or "matrix-compatibility" => "/structures/matrix",
+        "vector" or "vector-memory" or "vector-dot-product" or "vector-norms" or "vector-similarity" or "vector-ml" => "/ml-foundations/vector",
+        "gradient-descent" or "gradient-descent-loss" or "gradient-descent-update" or "gradient-descent-learning-rate" or "gradient-descent-convergence" => "/ml-foundations/gradient-descent",
+        "linear-regression" => "/ml-foundations/linear-regression",
         "graph" => "/structures/graph",
         "red-black" => "/structures/red-black",
         "bubble-sort" => "/sorting/bubble",
@@ -1076,6 +1145,8 @@
         "visual-vs-memory" or "memory" or "identity" or "big-o" or
         "queue-stack" or "bst" or "bst-balancing" or "binary-heap" or
         "general-heap" or "avl-balance" or "matrix" or "matrix-compatibility" or
+        "vector" or "vector-memory" or "vector-dot-product" or "vector-norms" or "vector-similarity" or "vector-ml" or
+        "gradient-descent" or "gradient-descent-loss" or "gradient-descent-update" or "gradient-descent-learning-rate" or "gradient-descent-convergence" or "linear-regression" or
         "graph" or "red-black" or "bubble-sort" or "selection-sort" or
         "insertion-sort" or "merge-sort" or "quick-sort" or "heap-sort" or
         "linear-search" or "linear-search-complexity" or "linear-vs-binary-search" or
