@@ -1,0 +1,102 @@
+@using System.Globalization
+@using AlgorithmVisualizer.Core.MachineLearning.Supervised.DecisionTree
+
+<div class="dt-visual-shell">
+    <section class="dt-space-card" aria-label="Decision tree training examples and active split">
+        <header><div><span>TRAINING SPACE</span><strong>@SpaceTitle</strong></div><small>feature 1 × feature 2</small></header>
+        <div class="dt-space">
+            @if (HasVisibleSplit)
+            {
+                if (SplitFeature == 0)
+                {
+                    <div class="split-line vertical" style="@VerticalSplitStyle"><span>f1 ≤ @Format(SplitThreshold)</span></div>
+                }
+                else if (SplitFeature == 1)
+                {
+                    <div class="split-line horizontal" style="@HorizontalSplitStyle"><span>f2 ≤ @Format(SplitThreshold)</span></div>
+                }
+            }
+            @for (var i = 0; i < Snapshot.Features.Length; i++)
+            {
+                <span class="@PointClass(i)" style="@PointStyle(i)" title="Example @i · [@Format(Snapshot.Features[i][0]), @Format(Snapshot.Features[i][1])] · class @Snapshot.Labels[i]">
+                    <b>@Snapshot.Labels[i]</b>
+                </span>
+            }
+            <span class="axis-label x">feature 1</span><span class="axis-label y">feature 2</span>
+        </div>
+        <div class="dt-space-legend"><span><i class="zero"></i>class 0</span><span><i class="one"></i>class 1</span><span><i class="line"></i>current split</span></div>
+    </section>
+
+    <section class="dt-tree-card" aria-label="Decision tree nodes">
+        <header><div><span>TREE VIEW</span><strong>One question per level</strong></div><small>@Snapshot.Nodes.Length nodes</small></header>
+        @if (Snapshot.Nodes.Length == 0)
+        {
+            <div class="tree-empty"><strong>No nodes yet.</strong><span>Run the lesson to build the root question.</span></div>
+        }
+        else
+        {
+            <div class="tree-levels">
+                @for (var depth = 0; depth <= MaxDepth; depth++)
+                {
+                    var level = NodesAtDepth(depth);
+                    if (level.Length == 0) continue;
+                    <div class="tree-level">
+                        <span class="level-label">depth @depth</span>
+                        <div class="tree-level-nodes">
+                            @foreach (var node in level)
+                            {
+                                <article class="tree-node @NodeClass(node)">
+                                    <span>NODE @node.Id</span>
+                                    @if (node.IsLeaf)
+                                    {
+                                        <strong>Predict class @node.Prediction</strong>
+                                        <small>@node.ZeroCount zero · @node.OneCount one</small>
+                                    }
+                                    else if (node.SplitFeature >= 0)
+                                    {
+                                        <strong>f@(node.SplitFeature + 1) ≤ @Format(node.SplitThreshold)?</strong>
+                                        <small>gain @Format(node.Gain) · @node.ExampleIndices.Length examples</small>
+                                    }
+                                    else
+                                    {
+                                        <strong>@node.ExampleIndices.Length examples</strong>
+                                        <small>impurity @Format(node.Impurity)</small>
+                                    }
+                                </article>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        <div class="tree-story"><span>CURRENT STEP</span><strong>@StepTitle</strong><p>@Snapshot.FocusText</p></div>
+    </section>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public DecisionTreeSnapshot Snapshot { get; set; } = default!;
+
+    private DecisionTreeNodeSnapshot? ActiveNode => Snapshot.Nodes.FirstOrDefault(n => n.Id == Snapshot.CurrentNodeId);
+    private DecisionTreeNodeSnapshot? RootNode => Snapshot.Nodes.FirstOrDefault(n => n.Id == 0);
+    private int SplitFeature => Snapshot.CandidateFeature >= 0 ? Snapshot.CandidateFeature : ActiveNode?.SplitFeature ?? (Snapshot.Phase == DecisionTreePhase.Complete ? RootNode?.SplitFeature ?? -1 : -1);
+    private double SplitThreshold => Snapshot.CandidateFeature >= 0 ? Snapshot.CandidateThreshold : ActiveNode?.SplitThreshold ?? (Snapshot.Phase == DecisionTreePhase.Complete ? RootNode?.SplitThreshold ?? 0d : 0d);
+    private bool HasVisibleSplit => Snapshot.Dimension >= 2 && SplitFeature is 0 or 1;
+    private string VerticalSplitStyle => $"left:{PercentX(SplitThreshold).ToString("0.###", CultureInfo.InvariantCulture)}%;";
+    private string HorizontalSplitStyle => $"top:{PercentY(SplitThreshold).ToString("0.###", CultureInfo.InvariantCulture)}%;";
+    private int MaxDepth => Snapshot.Nodes.Length == 0 ? 0 : Snapshot.Nodes.Max(n => n.Depth);
+    private string SpaceTitle => Snapshot.Phase switch { DecisionTreePhase.EvaluatingSplit => "Test one candidate question.", DecisionTreePhase.Splitting => "Keep the best question.", DecisionTreePhase.Complete => "Final training partitions.", _ => "See which examples a node owns." };
+    private string StepTitle => Snapshot.Phase switch { DecisionTreePhase.InspectingNode => "Inspect this node", DecisionTreePhase.EvaluatingSplit => "Score a candidate", DecisionTreePhase.Splitting => "Commit the best split", DecisionTreePhase.Complete => "Tree complete", _ => "Ready" };
+
+    private DecisionTreeNodeSnapshot[] NodesAtDepth(int depth) => Snapshot.Nodes.Where(n => n.Depth == depth).ToArray();
+    private bool ActiveContains(int index) => ActiveNode?.ExampleIndices.Contains(index) == true;
+    private string PointClass(int index) => $"example-dot class-{Snapshot.Labels[index]} {(ActiveContains(index) ? "active" : string.Empty)}";
+    private string PointStyle(int index) => $"left:{PercentX(Snapshot.Features[index][0]).ToString("0.###", CultureInfo.InvariantCulture)}%;top:{PercentY(Snapshot.Features[index][1]).ToString("0.###", CultureInfo.InvariantCulture)}%;";
+    private static string NodeClass(DecisionTreeNodeSnapshot node) => node.State switch { DecisionTreeNodeState.Active => "active", DecisionTreeNodeState.Leaf => "leaf", DecisionTreeNodeState.Split => "split", _ => "stored" };
+
+    private double PercentX(double value) => Scale(value, Min(0), Max(0), 8d, 92d);
+    private double PercentY(double value) => 100d - Scale(value, Min(1), Max(1), 8d, 92d);
+    private double Min(int axis) { var min = double.PositiveInfinity; for (var i=0;i<Snapshot.Features.Length;i++) min=Math.Min(min,Snapshot.Features[i][axis]); return double.IsFinite(min)?min-0.5d:0d; }
+    private double Max(int axis) { var max = double.NegativeInfinity; for (var i=0;i<Snapshot.Features.Length;i++) max=Math.Max(max,Snapshot.Features[i][axis]); return double.IsFinite(max)?max+0.5d:1d; }
+    private static double Scale(double v,double min,double max,double a,double b) => Math.Abs(max-min)<1e-12d ? (a+b)/2d : a+((v-min)/(max-min))*(b-a);
+    private static string Format(double value) => Math.Abs(value) < 1e-12d ? "0" : value.ToString("0.##", CultureInfo.InvariantCulture);
+}

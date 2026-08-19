@@ -66,7 +66,7 @@ The application now has twenty-eight fully implemented learning modules: **Queue
 - Concepts & Memory learning page;
 - shared learner-facing module chrome in `wwwroot/css/learning-modules.css`, using the mature Queue & Stack / BST / Matrix / Graph visual language for sorting Learn First panels, module headers, tips, reference links, and lesson progression;
 - one application-wide curriculum hierarchy: Learn → Data Structures → Sorting → Search & Traversal → Machine Learning; advanced live lessons use a red difficulty dot, while planned lessons keep the neutral planned marker; Graph algorithms are classified inside those algorithm tracks rather than forming a separate navigation section: Topological Sort is Sorting; Dijkstra and MST are Search & Traversal;
-- difficulty-ordered curriculum navigation with reusable `NextLessonCard` links: Queue & Stack → BST → Binary Heap → d-ary Heap → AVL → Vector → Matrix → Graph → Red-Black Tree, then Bubble → Selection → Insertion → Merge → Quick → Heap Sort → Topological Sort (Advanced), then Linear Search → Binary Search → BFS → DFS → Dijkstra (Advanced) → Minimum Spanning Tree (Advanced), then Machine Learning continues Gradient Descent → Linear Regression → Logistic Regression → KNN → KD-Tree → K-Means → Decision Tree (planned);
+- difficulty-ordered curriculum navigation with reusable `NextLessonCard` links: Queue & Stack → BST → Binary Heap → d-ary Heap → AVL → Vector → Matrix → Graph → Red-Black Tree, then Bubble → Selection → Insertion → Merge → Quick → Heap Sort → Topological Sort (Advanced), then Linear Search → Binary Search → BFS → DFS → Dijkstra (Advanced) → Minimum Spanning Tree (Advanced), then Machine Learning continues Gradient Descent → Linear Regression → Logistic Regression → KNN → KD-Tree → K-Means → Decision Tree → PCA (planned);
 - exact route-based links from every live lab to the relevant Concepts & Memory topic, plus reverse links from the concept sections back to the matching lesson;
 - BST insert, search, delete, explicit DSW balance, and reset;
 - BST leaf / one-child / two-child deletion simulation;
@@ -223,7 +223,7 @@ All seven sorting lessons in the current curriculum are live: Bubble, Selection,
 
 Linear Search, Binary Search, BFS, DFS, advanced Dijkstra, and advanced Minimum Spanning Tree are live in Search & Traversal. Topological Sort is live as the advanced final Sorting lesson. BFS/DFS reuse the existing Graph representation and manual Queue/Stack foundations; Dijkstra reuses the same Graph and adds manual linear-minimum and binary-min-heap priority selection over non-negative weighted edges; Topological Sort reuses the same directed Graph with Kahn indegree/FIFO and DFS reverse-postorder variants.
 
-Decision Tree is the next planned Machine Learning lesson (Phase 1 step 8), followed by PCA. K-Means is now live.
+K-Means is live as Phase 1 step 7 and Decision Tree is live as Phase 1 step 8. PCA is the next planned Machine Learning lesson (step 9).
 
 ---
 
@@ -1587,5 +1587,11 @@ K-Means is the sixth live Machine Learning lesson and Phase 1 roadmap step 7. Th
 
 The clustering layer itself is explicit project code: every point scans all `k` centroids, stores its nearest assignment and distance, cluster means are recomputed with visible sum/count loops, empty clusters keep their previous centroid, and the run stops when assignments stabilize or centroid movement falls under tolerance. No clustering/ML library, framework grouping helper, or hidden numerical optimizer performs the taught behavior.
 
-The Client keeps the first interaction small: choose a preset and `k`, predict whether the first grouping will change, then watch **Assign → Move centroids → Repeat**. Custom points and seed indexes are progressively disclosed. Visual State shows cluster membership and centroid movement; Memory State shows fixed point vectors beside assignments, distances, cluster counts, and mutable centroid vectors. Guided Practice covers clear 2/3/4-cluster cases, poor starting centroids, and a real empty-cluster edge case. Decision Tree is the next planned Phase 1 step 8.
+The Client keeps the first interaction small: choose a preset and `k`, predict whether the first grouping will change, then watch **Assign → Move centroids → Repeat**. Custom points and seed indexes are progressively disclosed. Visual State shows cluster membership and centroid movement; Memory State shows fixed point vectors beside assignments, distances, cluster counts, and mutable centroid vectors. Guided Practice covers clear 2/3/4-cluster cases, poor starting centroids, and a real empty-cluster edge case. Decision Tree is the next live Phase 1 step 8.
 
+
+### Decision Tree — Phase 1 step 8
+
+The live `/ml-foundations/decision-tree` lesson teaches a binary classification tree from first principles instead of delegating fitting to an ML package. Training examples are project-owned `ManualVector` feature vectors. For each active node, Core explicitly orders example indexes by feature with insertion sort, tests thresholds between distinct feature values, partitions the node's example indexes, computes Gini or entropy impurity, and keeps the candidate with the largest weighted impurity reduction. Pure nodes, maximum depth, too-small nodes, or no useful gain become leaves that store the majority class. Prediction then follows exactly one root-to-leaf path.
+
+The beginner UI starts with one preset dataset and Gini impurity. Entropy, max depth, and raw `x,y,label` editing are progressively disclosed. Prediction asks which feature the root question will use. Visual State shows labeled 2D examples, the current/committed threshold, and the tree node hierarchy; Memory State shows fixed examples beside custom node records (example indexes, class counts, impurity, split feature/threshold/gain, child IDs, and leaf prediction). Guided Practice validates both root features, a deeper tree, an already-pure root leaf, and an imperfect/noisy case. The shared Last Run modal explains the chosen root rule, depth, leaf count, and training accuracy. PCA remains the next planned Phase 1 step 9.

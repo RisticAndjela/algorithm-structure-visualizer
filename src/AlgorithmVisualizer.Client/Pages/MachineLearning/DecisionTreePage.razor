@@ -1,25 +1,318 @@
 @page "/ml-foundations/decision-tree"
+@using System.Globalization
+@using AlgorithmVisualizer.Core.MachineLearning.Supervised.DecisionTree
+@implements IDisposable
+@inject SimulationState SimulationState
+@inject DecisionTreeSimulation DecisionTreeLab
+@inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
 
-<PageTitle>Decision Tree — Planned — Algorithm Visualizer</PageTitle>
+<PageTitle>Decision Tree — Machine Learning — Algorithm Visualizer</PageTitle>
 
-<LearningPlaceholder
-    Title="Decision Tree"
-    Eyebrow="MACHINE LEARNING · PHASE 1 STEP 8"
-    Description="Build an interpretable classifier by choosing feature-threshold splits that make child groups purer, then predict by following one root-to-leaf path."
-    Complexity="O(n·f·s) teaching scan"
-    ComplexityNote="Candidate split work depends on examples, features, and thresholds considered."
-    Concepts="Feature split · Threshold · Gini / entropy · Information gain · Leaf prediction · Overfitting"
-    LearnTitle="A decision tree is a sequence of simple questions."
-    LearnSummary="At each node, choose a feature and threshold, send examples left or right, then repeat until a leaf can make a useful prediction."
-    ConceptHref="/learn/concepts/decision-tree"
-    LearnCards="1 · ASK|Choose one feature threshold.|A split turns one mixed group into two smaller groups.;;2 · SCORE|Measure how pure the children became.|A useful split reduces class mixing.;;3 · REPEAT|Split a child only when it still needs work.|The tree grows recursively.;;4 · PREDICT|Follow one path to a leaf.|The reached leaf makes the final class prediction."
-    TipTitle="The tree should explain its own prediction."
-    TipText="Every prediction can be traced through the exact feature-threshold decisions that were taken."
-    FocusText="After a split, every example must belong to exactly one child and the chosen score must be computed from those real child groups."
-    PromptText="Which candidate split reduces impurity the most without making the tree unnecessarily complex?"
-    NextLessonEyebrow="NEXT MACHINE-LEARNING LESSON"
-    NextLessonTitle="PCA"
-    NextLessonDescription="Move from supervised splits to dimensionality reduction by finding directions that preserve the most variance."
-    NextLessonHref="/ml-foundations/pca"
-    NextLessonLevel="09 · Planned"
-    NextLessonLinkLabel="Preview PCA" />
+<div class="decision-tree-page learning-module-page learning-module-shell">
+    <section class="learn-launchpad" aria-labelledby="dt-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="dt-learn-title">A decision tree learns a sequence of small yes/no questions.</h2>
+            <p>At each node, test candidate feature thresholds, keep the question that separates the classes best, then repeat only where the child group is still mixed.</p>
+            <ConceptLink class="learn-launchpad-link" Href="/learn/concepts/decision-tree">Open Decision Tree concepts &amp; memory →</ConceptLink>
+        </div>
+        <div class="learn-grid">
+            <article class="learn-card purple"><span>1 · INSPECT</span><strong>Look at one mixed node.</strong><small>Count class 0 and class 1 examples and measure its impurity.</small></article>
+            <article class="learn-card blue"><span>2 · ASK</span><strong>Try a feature threshold.</strong><small>The question sends every example to exactly one child.</small></article>
+            <article class="learn-card mint"><span>3 · SCORE</span><strong>Measure impurity reduction.</strong><small>The best split creates purer child groups than the parent.</small></article>
+            <article class="learn-card gold"><span>4 · REPEAT</span><strong>Grow only where needed.</strong><small>Pure groups or stopping rules become leaves that make predictions.</small></article>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow"><span>MACHINE LEARNING · PHASE 1 STEP 8</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <h1>Decision Tree</h1>
+            <p>Build an interpretable binary classifier by scanning feature thresholds, measuring impurity reduction, and following one root-to-leaf path for each prediction.</p>
+        </div>
+        <div class="complexity-summary" aria-label="Decision Tree complexity">
+            <div><span>Teaching build</span><strong>O(n·f·s)</strong><small>examples × features × candidate splits</small></div>
+            <div><span>Prediction</span><strong>O(depth)</strong><small>one question per visited level</small></div>
+            <div><span>Tree state</span><strong>O(nodes)</strong><small>split metadata + example indexes</small></div>
+        </div>
+    </header>
+
+    <section class="smart-tip" aria-label="Decision Tree learning tip">
+        <span class="tip-icon">✦</span>
+        <div><strong>A good split is not the threshold with the prettiest picture.</strong><p>It is the candidate that reduces the chosen impurity score the most on the actual child groups.</p></div>
+        <ConceptLink Href="/learn/concepts/decision-tree">Why does impurity reduction matter? →</ConceptLink>
+    </section>
+
+    <section class="builder-section" aria-labelledby="dt-build-title">
+        <div class="section-heading-row">
+            <div class="heading-with-step"><span class="step-number">1</span><div><span class="section-kicker">BUILD THE TRAINING SET</span><h2 id="dt-build-title">Start with a small labeled dataset.</h2><p>Choose a preset first. Each point has two numeric features and a binary class label, so every split stays visible.</p></div></div>
+            <ConceptLink Href="/structures/vector">Review vector features →</ConceptLink>
+        </div>
+
+        <div class="preset-row dt-preset-row" aria-label="Decision Tree examples">
+            <span>START WITH</span>
+            <button type="button" class="@PresetClass(Preset.CleanVertical)" @onclick="() => LoadPreset(Preset.CleanVertical)" disabled="@IsBusy">Clean feature 1 split</button>
+            <button type="button" class="@PresetClass(Preset.CleanHorizontal)" @onclick="() => LoadPreset(Preset.CleanHorizontal)" disabled="@IsBusy">Clean feature 2 split</button>
+            <button type="button" class="@PresetClass(Preset.TwoLevel)" @onclick="() => LoadPreset(Preset.TwoLevel)" disabled="@IsBusy">Needs two levels</button>
+        </div>
+        <details class="more-examples">
+            <summary>More examples</summary>
+            <div class="preset-row"><button type="button" class="@PresetClass(Preset.Mixed)" @onclick="() => LoadPreset(Preset.Mixed)" disabled="@IsBusy">Mixed / imperfect</button><button type="button" class="@PresetClass(Preset.AlreadyPure)" @onclick="() => LoadPreset(Preset.AlreadyPure)" disabled="@IsBusy">Already pure</button></div>
+            <p>Use these after the basic split is clear: one demonstrates limited accuracy; the other demonstrates an immediate leaf.</p>
+        </details>
+
+        <div class="dt-builder-grid">
+            <article class="dataset-preview-card">
+                <div class="dataset-heading"><div><span>TRAINING EXAMPLES</span><strong>@_features.Length labeled vectors</strong></div><div class="class-key"><span><i class="zero"></i>class 0</span><span><i class="one"></i>class 1</span></div></div>
+                <div class="dataset-chip-grid">
+                    @for (var i = 0; i < _features.Length; i++)
+                    {
+                        <span class="@DatasetChipClass(i)"><small>example @i</small><strong>[@Format(_features[i][0]), @Format(_features[i][1])]</strong><em>class @_labels[i]</em></span>
+                    }
+                </div>
+            </article>
+
+            <article class="dt-rule-card">
+                <span>DEFAULT LEARNING RULE</span>
+                <strong>Choose the split with the largest Gini reduction.</strong>
+                <p>Gini impurity is the default because it is easy to read in a small binary-class example. Entropy is available below as a real alternative criterion.</p>
+                <div class="rule-formula"><small>PARENT</small><b>impurity</b><i>−</i><small>CHILDREN</small><b>weighted impurity</b><i>=</i><small>GAIN</small><b>larger is better</b></div>
+            </article>
+        </div>
+
+        <button type="button" class="secondary-action advanced-toggle" @onclick="ToggleAdvancedSettings" disabled="@IsBusy">@(_showAdvancedSettings ? "Hide advanced settings" : "Advanced settings")</button>
+        @if (_showAdvancedSettings)
+        {
+            <section class="dt-advanced-panel" aria-label="Decision Tree advanced settings">
+                <div class="advanced-copy"><span>OPTIONAL</span><strong>Change criterion, stopping depth, or training data.</strong><p>These settings change real tree behavior, but they stay out of the beginner path.</p></div>
+                <div class="criterion-choice"><span>IMPURITY</span><div class="prediction-actions"><button type="button" class="@CriterionClass(DecisionTreeCriterion.Gini)" @onclick="() => SetCriterion(DecisionTreeCriterion.Gini)" disabled="@IsBusy">Gini</button><button type="button" class="@CriterionClass(DecisionTreeCriterion.Entropy)" @onclick="() => SetCriterion(DecisionTreeCriterion.Entropy)" disabled="@IsBusy">Entropy</button></div></div>
+                <label class="depth-field"><span>MAX DEPTH</span><input type="number" min="1" max="6" value="@_maxDepth" @onchange="MaxDepthChanged" disabled="@IsBusy" /></label>
+                <label class="dataset-editor"><span>CUSTOM DATASET · x,y,label; …</span><textarea value="@_datasetText" @onchange="DatasetChanged" disabled="@IsBusy"></textarea><small>Use 4–20 examples. Labels must be 0 or 1.</small></label>
+            </section>
+        }
+        @if (!string.IsNullOrWhiteSpace(_inputError)) { <div class="input-error"><strong>Check the training set.</strong><span>@_inputError</span></div> }
+    </section>
+
+    <section class="predict-section" aria-labelledby="dt-predict-title">
+        <div class="prediction-card">
+            <div class="prediction-copy"><span class="step-number">2</span><div><span class="section-kicker">PREDICT BEFORE PLAYBACK</span><h2 id="dt-predict-title">Which feature will the root question use?</h2><p>Do not guess the exact threshold yet. Predict which axis will provide the largest first impurity reduction.</p></div></div>
+            <div class="prediction-actions"><button type="button" class="@PredictionClass(0)" @onclick="() => SetPrediction(0)" disabled="@IsBusy">Feature 1</button><button type="button" class="@PredictionClass(1)" @onclick="() => SetPrediction(1)" disabled="@IsBusy">Feature 2</button><button type="button" class="@PredictionClass(-1)" @onclick="() => SetPrediction(-1)" disabled="@IsBusy">No split — root is a leaf</button></div>
+            @if (_predictionAnswered) { <p class="prediction-feedback @(_predictionCorrect ? "correct" : "incorrect")">@PredictionFeedback</p> }
+        </div>
+    </section>
+
+    <section class="lab-section" aria-labelledby="dt-watch-title">
+        <div class="lab-heading">
+            <div class="heading-with-step"><span class="step-number">3</span><div><span class="section-kicker">WATCH IT BUILD</span><h2 id="dt-watch-title">Inspect → score candidates → commit the best split.</h2><p>The simulator pauses on meaningful tree-building decisions rather than hiding the candidate scan behind one final tree.</p></div></div>
+            <div class="lab-actions">
+                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Open explanation after run</span></label>
+                @if (_lastResult is not null)
+                {
+                    <button type="button" class="secondary-action" @onclick="OpenLastRunPopup">Last explanation</button>
+                }
+                <button type="button" class="sort-button" @onclick="RunAsync" disabled="@IsBusy"><span>▶</span> Build Decision Tree</button>
+            </div>
+        </div>
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+
+        <div class="state-tabs-row"><div class="state-tabs" role="tablist"><button type="button" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual state</button><button type="button" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory state</button></div><p>@ViewExplanation</p></div>
+        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/decision-tree">Decision Tree concepts →</ConceptLink><ConceptLink Href="/ml-foundations/k-means">Compare with K-Means →</ConceptLink><ConceptLink Href="/structures/vector">Feature vectors →</ConceptLink></div>
+
+        <div class="state-surface">
+            @if (_view == StateView.Visual)
+            {
+                <DecisionTreePlot Snapshot="@DisplayedSnapshot" />
+            }
+            else
+            {
+                <section class="dt-memory" aria-label="Decision Tree memory state">
+                    <div class="memory-intro"><span>MEMORY STATE</span><strong>The examples stay fixed; tree nodes store indexes and split metadata.</strong><p>Each node keeps the indexes of the examples it owns, class counts, impurity, and — when split — one feature index, threshold, gain, and child IDs.</p></div>
+                    <div class="memory-summary-strip"><span><small>EXAMPLES</small><strong>@DisplayedSnapshot.Count</strong></span><span><small>NODES</small><strong>@DisplayedSnapshot.Nodes.Length</strong></span><span><small>CRITERION</small><strong>@DisplayedSnapshot.Criterion</strong></span><span><small>ACTIVE NODE</small><strong>@ActiveNodeText</strong></span></div>
+                    <div class="table-scroll"><table><thead><tr><th>Node</th><th>Examples</th><th>Class counts</th><th>Impurity</th><th>Rule / prediction</th></tr></thead><tbody>
+                        @foreach (var node in DisplayedSnapshot.Nodes)
+                        {
+                            <tr class="@(node.Id == DisplayedSnapshot.CurrentNodeId ? "active-row" : string.Empty)"><td>@node.Id</td><td>[@string.Join(", ", node.ExampleIndices)]</td><td>0:@node.ZeroCount · 1:@node.OneCount</td><td>@Format(node.Impurity)</td><td>@NodeRule(node)</td></tr>
+                        }
+                    </tbody></table></div>
+                    <div class="memory-note"><strong>No framework tree builder or sort helper is hidden here.</strong><span>Candidate ordering uses explicit insertion sort over example indexes. Partitioning, impurity, recursion, stopping, node storage, and prediction are project-owned C# loops.</span></div>
+                </section>
+            }
+        </div>
+        <div class="run-dashboard dt-run-dashboard"><article><span>Phase</span><strong>@PhaseText(DisplayedSnapshot.Phase)</strong><small>Current tree-building action.</small></article><article><span>Candidate</span><strong>@CandidateText</strong><small>Feature threshold under review.</small></article><article><span>Gain</span><strong>@FormatMetric(DisplayedSnapshot.CandidateGain)</strong><small>Impurity reduction.</small></article><article><span>Children</span><strong>@ChildrenText</strong><small>Examples sent left / right.</small></article></div>
+    </section>
+
+    <section class="fit-section" aria-labelledby="dt-fit-title">
+        <div class="section-heading-row"><div><span class="section-kicker">WHEN SHOULD I USE IT?</span><h2 id="dt-fit-title">Use a Decision Tree when readable rules matter as much as the prediction.</h2><p>The model is strongest when feature-threshold questions are meaningful and you want to inspect exactly why an example reached a class.</p></div></div>
+        <div class="fit-grid">
+            <article class="fit-card good"><span>GOOD FIT</span><strong>Interpretable tabular classification with nonlinear rules</strong><p>Trees can mix different numeric features and create piecewise decision regions without feature scaling or a linear boundary assumption.</p></article>
+            <article class="fit-card avoid"><span>AVOID FOR</span><strong>Very smooth relationships where a deep tree would memorize noise</strong><p>An unconstrained tree can overfit small details. Depth, minimum gain, and later ensemble methods matter when stability is more important than one fully grown tree.</p></article>
+            <article class="fit-card better"><span>BETTER ALTERNATIVE</span><strong>Use Logistic Regression when one smooth linear boundary is enough</strong><p>If the relationship is approximately linear and calibrated probabilities matter, Logistic Regression is often simpler. Use KNN when local neighborhood shape matters more than explicit rules.</p><div class="fit-links"><a href="/ml-foundations/logistic-regression">Logistic Regression →</a><a href="/ml-foundations/knn">KNN →</a></div></article>
+        </div>
+    </section>
+
+    <section class="practice-section" aria-labelledby="dt-practice-title">
+        <div class="practice-heading"><div><span class="section-kicker">GUIDED PRACTICE</span><h2 id="dt-practice-title">Test pure leaves, different root features, and a deeper tree.</h2><p>Tasks complete from the actual built tree, not from fixed button clicks.</p></div><strong>@_completedTaskIds.Count / @PracticeTasks.Length complete</strong></div>
+        <div class="practice-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                <PracticeTaskCard TaskId="@task.Id" Title="@task.Title" Description="@task.Goal" InputText="@task.Suggested" HelpHref="/learn/concepts/decision-tree" Completed="@_completedTaskIds.Contains(task.Id)" Active="@(_activeTaskId == task.Id)" Busy="@IsBusy" HasEvidence="@(GetTaskEvidence(task.Id) is not null)" Start="@(() => StartTask(task.Id))" OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
+            }
+        </div>
+    </section>
+
+    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="09 · Planned" Title="PCA" Description="Move from supervised feature-threshold rules to dimensionality reduction by finding directions that preserve the most variance." Href="/ml-foundations/pca" LinkLabel="Preview PCA" />
+</div>
+
+@if (_lastRunPopupOpen && _lastResult is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRunPopup">
+        <section class="run-popup" role="dialog" aria-modal="true" aria-labelledby="dt-run-popup-title" @onclick:stopPropagation="true">
+            <header><div><span class="section-kicker">LAST RUN</span><h2 id="dt-run-popup-title">@RunHeadline(_lastResult)</h2></div><button type="button" class="popup-close" @onclick="CloseLastRunPopup" aria-label="Close result explanation">×</button></header>
+            <div class="popup-body"><p>@RunActionExplanation(_lastResult)</p><div class="popup-metrics"><div><span>ROOT</span><strong>@RootRule(_lastResult)</strong></div><div><span>DEPTH</span><strong>@_lastResult.TreeDepth</strong></div><div><span>LEAVES</span><strong>@_lastResult.LeafCount</strong></div><div><span>TRAIN ACCURACY</span><strong>@Percent(_lastResult.TrainingAccuracy)</strong></div></div><p class="popup-memory">@RunMemoryExplanation(_lastResult)</p></div>
+        </section>
+    </div>
+}
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
+
+@code {
+    private const string ModuleKey = "decision-tree";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.decision-tree.show-run-popup.v1";
+    private readonly List<RunFrame> _frames = [];
+    private PracticeModuleProgress _practiceProgress = new();
+    private HashSet<int> _completedTaskIds = [];
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
+    private DecisionTreeRunResult? _lastResult;
+    private string? _lastCapturedStep;
+    private string? _inputError;
+    private double[][] _features = CleanVerticalFeatures();
+    private int[] _labels = [0,0,0,1,1,1];
+    private string _datasetText = FormatDataset(CleanVerticalFeatures(), [0,0,0,1,1,1]);
+    private DecisionTreeCriterion _criterion = DecisionTreeCriterion.Gini;
+    private int _maxDepth = 3;
+    private Preset? _preset = Preset.CleanVertical;
+    private bool _showAdvancedSettings;
+    private bool _showRunPopups = true;
+    private bool _lastRunPopupOpen;
+    private int? _prediction;
+    private bool _predictionAnswered;
+    private bool _predictionCorrect;
+    private int _frameIndex = -1;
+    private int? _activeTaskId;
+    private StateView _view = StateView.Visual;
+
+    private static readonly PracticeTaskDefinition[] PracticeTasks =
+    [
+        new(1,"Find a feature 1 root split","Build the clean vertical dataset and verify feature 1 is the root question.","Clean feature 1 split",Preset.CleanVertical),
+        new(2,"Find a feature 2 root split","Build the horizontal dataset and verify feature 2 is the root question.","Clean feature 2 split",Preset.CleanHorizontal),
+        new(3,"Grow beyond the root","Build the two-level example and produce a tree deeper than one split.","Needs two levels",Preset.TwoLevel),
+        new(4,"Stop immediately on a pure node","Use an all-class-0 dataset and verify the root becomes a leaf without a split.","Already pure",Preset.AlreadyPure),
+        new(5,"Handle imperfect training data","Build the mixed example without requiring 100% training accuracy.","Mixed / imperfect",Preset.Mixed)
+    ];
+
+    private DecisionTreeSnapshot Current => DecisionTreeLab.CreateSnapshot();
+    private DecisionTreeSnapshot DisplayedSnapshot => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].Snapshot : Current;
+    private string DisplayedStepText => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].StepText : SimulationState.CurrentStepText;
+    private int TimelineCount => _frames.Count;
+    private int TimelinePosition => _frameIndex < 0 ? 0 : _frameIndex + 1;
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_frameIndex >= 0 && _frameIndex < _frames.Count - 1) || SimulationState.IsRunning;
+    private bool IsBusy => SimulationState.IsRunning;
+    private string ViewExplanation => _view == StateView.Visual ? "See the examples, current split, and tree nodes that own those examples." : "See the real node records: example indexes, class counts, impurity, split metadata, child IDs, and leaf predictions.";
+    private string ActiveNodeText => DisplayedSnapshot.CurrentNodeId < 0 ? "—" : DisplayedSnapshot.CurrentNodeId.ToString(CultureInfo.InvariantCulture);
+    private string CandidateText => DisplayedSnapshot.CandidateFeature < 0 ? "—" : $"f{DisplayedSnapshot.CandidateFeature + 1} ≤ {Format(DisplayedSnapshot.CandidateThreshold)}";
+    private string ChildrenText => DisplayedSnapshot.CandidateFeature < 0 ? "—" : $"{DisplayedSnapshot.CandidateLeftCount} / {DisplayedSnapshot.CandidateRightCount}";
+    private string PredictionFeedback => _lastResult is null ? string.Empty : _predictionCorrect ? "Correct — your root-feature prediction matched the split chosen from the impurity scan." : $"Not quite. The root was {(_lastResult.RootFeature < 0 ? "a leaf with no split" : $"feature {_lastResult.RootFeature + 1}")}.";
+
+    protected override void OnInitialized()
+    {
+        SimulationState.Changed += HandleSimulationChanged;
+        try { _showRunPopups = !bool.TryParse(LearningStore.GetItem(PopupSettingStorageKey), out var saved) || saved; } catch { _showRunPopups = true; }
+        _practiceProgress = PracticeProgress.Load(ModuleKey, null, PracticeTasks.Select(t => t.Id));
+        _completedTaskIds = _practiceProgress.CompletedTaskIds;
+        ApplyInputs();
+    }
+
+    private void ToggleAdvancedSettings() { if (!IsBusy) _showAdvancedSettings = !_showAdvancedSettings; }
+    private void SetCriterion(DecisionTreeCriterion criterion) { if (IsBusy) return; _criterion = criterion; ClearPresetSelection(); ApplyInputs(); }
+    private void SetPrediction(int feature) { if (IsBusy) return; _prediction = feature; _predictionAnswered = false; _predictionCorrect = false; }
+    private void DatasetChanged(ChangeEventArgs args) { _datasetText = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ApplyInputs(); }
+    private void MaxDepthChanged(ChangeEventArgs args) { if (int.TryParse(args.Value?.ToString(), out var value)) _maxDepth = Math.Clamp(value,1,6); ClearPresetSelection(); ApplyInputs(); }
+
+    private void ApplyInputs()
+    {
+        if (!TryParseDataset(_datasetText, out var features, out var labels, out var error)) { _inputError = error; return; }
+        _features = features; _labels = labels; _inputError = null;
+        try { DecisionTreeLab.Configure(new DecisionTreeConfiguration(_features,_labels,_criterion,_maxDepth)); }
+        catch (ArgumentException ex) { _inputError = ex.Message; return; }
+        ClearReview(); StateHasChanged();
+    }
+
+    private async Task RunAsync()
+    {
+        ApplyInputs(); if (!string.IsNullOrWhiteSpace(_inputError)) return;
+        _frames.Clear(); _frameIndex=-1; _lastCapturedStep=null; _lastRunPopupOpen=false;
+        var token = SimulationState.Start("Starting Decision Tree build."); Capture();
+        try
+        {
+            var result = await DecisionTreeLab.ExecuteAsync(token); if (!IsCurrent(token)) return;
+            _lastResult=result; SimulationState.Complete(result.Summary); Capture(); EvaluatePrediction(result); RecordPracticeResult(result); if (_showRunPopups) OpenLastRunPopup();
+        }
+        catch (OperationCanceledException) { }
+        finally { await InvokeAsync(StateHasChanged); }
+    }
+
+    private void Capture(){var step=SimulationState.CurrentStepText;if(step==_lastCapturedStep)return;var follow=_frameIndex<0||_frameIndex==_frames.Count-1;_frames.Add(new RunFrame(step,DecisionTreeLab.CreateSnapshot()));_lastCapturedStep=step;if(follow)_frameIndex=_frames.Count-1;}
+    private void HandleSimulationChanged(){if(SimulationState.IsRunning)Capture();_=InvokeAsync(StateHasChanged);} private bool IsCurrent(CancellationToken token)=>!token.IsCancellationRequested&&SimulationState.SimulationCancellationToken==token;
+    private void ClearReview(){SimulationState.Reset();_frames.Clear();_frameIndex=-1;_lastCapturedStep=null;_lastRunPopupOpen=false;_lastResult=null;_predictionAnswered=false;}
+    private Task PlayTimelineAsync(){if(_frames.Count>0)_frameIndex=_frames.Count-1;SimulationState.Resume();return InvokeAsync(StateHasChanged);} private Task PauseTimelineAsync(){SimulationState.Pause();return Task.CompletedTask;} private Task StepBackAsync(){if(SimulationState.IsRunning&&!SimulationState.IsPaused)SimulationState.Pause();if(_frameIndex>0)_frameIndex--;return InvokeAsync(StateHasChanged);} private Task StepForwardAsync(){if(_frameIndex>=0&&_frameIndex<_frames.Count-1){_frameIndex++;return InvokeAsync(StateHasChanged);}if(SimulationState.IsRunning)SimulationState.Step();return Task.CompletedTask;} private Task ResetPlaybackAsync(){SimulationState.Reset();_frames.Clear();_frameIndex=-1;_lastCapturedStep=null;return InvokeAsync(StateHasChanged);}
+
+    private void EvaluatePrediction(DecisionTreeRunResult result){_predictionAnswered=_prediction.HasValue;if(_predictionAnswered)_predictionCorrect=_prediction==result.RootFeature;}
+    private void LoadPreset(Preset preset,bool keepActiveTask=false)
+    {
+        if(IsBusy)return;_preset=preset;
+        switch(preset)
+        {
+            case Preset.CleanHorizontal:SetDataset([[1,1],[2,1.4],[3,1.8],[1.4,4],[2.4,4.6],[3.4,5.2]],[0,0,0,1,1,1]);break;
+            case Preset.TwoLevel:SetDataset([[1,1],[1.2,4.6],[2.1,1.4],[2.4,4.2],[4.5,1.2],[4.8,4.8],[5.4,1.8],[5.6,4.1]],[0,1,0,1,1,0,1,0]);break;
+            case Preset.Mixed:SetDataset([[1,1],[1.5,2],[2,1.4],[3.5,3.5],[4,4.2],[4,4.2],[5,4.8],[5.4,2.8]],[0,0,1,1,1,0,1,0]);break;
+            case Preset.AlreadyPure:SetDataset([[1,1],[2,1.5],[3,2],[4,2.5],[5,3]],[0,0,0,0,0]);break;
+            default:SetDataset(CleanVerticalFeatures(),[0,0,0,1,1,1]);break;
+        }
+        _criterion=DecisionTreeCriterion.Gini;_maxDepth=3;_prediction=null;_predictionAnswered=false;ApplyInputs();if(!keepActiveTask)_activeTaskId=null;
+    }
+    private void SetDataset(double[][] features,int[] labels){_features=features;_labels=labels;_datasetText=FormatDataset(features,labels);}
+    private void ClearPresetSelection()=>_preset=null;
+    private string PresetClass(Preset preset)=>_preset==preset?"active":string.Empty; private string CriterionClass(DecisionTreeCriterion c)=>_criterion==c?"active":string.Empty; private string PredictionClass(int value)=>_prediction==value?"active":string.Empty; private string DatasetChipClass(int index)=>$"dataset-chip class-{_labels[index]}";
+
+    private void StartTask(int taskId){if(IsBusy)return;var task=PracticeTasks.First(t=>t.Id==taskId);_activeTaskId=taskId;LoadPreset(task.Preset,true);}
+    private void RecordPracticeResult(DecisionTreeRunResult result){if(_activeTaskId is not int id)return;var task=PracticeTasks.First(t=>t.Id==id);if(!TaskSatisfied(task,result))return;CompletePracticeTask(task,result);}
+    private static bool TaskSatisfied(PracticeTaskDefinition task,DecisionTreeRunResult r)=>task.Id switch{1=>r.RootFeature==0&&r.TrainingAccuracy>=.99,2=>r.RootFeature==1&&r.TrainingAccuracy>=.99,3=>r.TreeDepth>=2&&r.LeafCount>=3,4=>r.RootFeature<0&&r.LeafCount==1,5=>r.LeafCount>=2&&r.TrainingAccuracy<1d&&r.TrainingAccuracy>=.5d,_=>false};
+    private void CompletePracticeTask(PracticeTaskDefinition task,DecisionTreeRunResult r){var evidence=new PracticeCompletionEvidence(task.Id,task.Title,r.Summary,RunActionExplanation(r),"Training vectors stay fixed. Each custom node stores example indexes, class counts, impurity, split metadata, child IDs, and a leaf prediction.",RunWhyExplanation(r),[new("Root",RootRule(r)),new("Depth",r.TreeDepth.ToString(CultureInfo.InvariantCulture)),new("Leaves",r.LeafCount.ToString(CultureInfo.InvariantCulture)),new("Training accuracy",Percent(r.TrainingAccuracy))],$"root={RootRule(r)} · depth={r.TreeDepth} · leaves={r.LeafCount}");_completedTaskIds.Add(task.Id);PracticeProgress.Complete(ModuleKey,_practiceProgress,task.Id,evidence);_activeTaskId=null;}
+    private PracticeCompletionEvidence? GetTaskEvidence(int id)=>PracticeProgress.GetEvidence(_practiceProgress,id); private void OpenTaskEvidence(int id)=>_practiceEvidencePopup=GetTaskEvidence(id); private void CloseTaskEvidence()=>_practiceEvidencePopup=null;
+    private void ToggleRunPopups(ChangeEventArgs args){_showRunPopups=args.Value is bool b?b:bool.TryParse(args.Value?.ToString(),out var parsed)&&parsed;try{LearningStore.SetItem(PopupSettingStorageKey,_showRunPopups.ToString());}catch{}}
+    private void OpenLastRunPopup(){if(_lastResult is not null)_lastRunPopupOpen=true;} private void CloseLastRunPopup()=>_lastRunPopupOpen=false;
+
+    private static string PhaseText(DecisionTreePhase p)=>p switch{DecisionTreePhase.InspectingNode=>"inspect node",DecisionTreePhase.EvaluatingSplit=>"score candidate",DecisionTreePhase.Splitting=>"commit split",DecisionTreePhase.Complete=>"complete",_=>"ready"};
+    private static string NodeRule(DecisionTreeNodeSnapshot n)=>n.IsLeaf?$"leaf → class {n.Prediction}":n.SplitFeature>=0?$"f{n.SplitFeature+1} ≤ {Format(n.SplitThreshold)}": "not split yet";
+    private static string RunHeadline(DecisionTreeRunResult r)=>r.RootFeature<0?"The root was already a leaf.":$"Root question: f{r.RootFeature+1} ≤ {Format(r.RootThreshold)}.";
+    private static string RunActionExplanation(DecisionTreeRunResult r)=>r.RootFeature<0?$"All root examples could stop together, so the tree made one leaf predicting the majority class.":$"The builder scanned candidate thresholds, chose the root split with gain {Format(r.RootGain)}, then recursively repeated the same rule only on mixed child groups.";
+    private static string RunMemoryExplanation(DecisionTreeRunResult r)=>$"The {r.Count} feature vectors stayed fixed. The run created {r.Nodes.Length} custom node records and {r.LeafCount} leaves; prediction now reads only one root-to-leaf path.";
+    private static string RunWhyExplanation(DecisionTreeRunResult r)=>r.TrainingAccuracy>=.999?"This teaching dataset can be separated by the learned threshold questions within the selected depth budget.":"The tree improved purity but did not memorize every training label; the stopping depth and available thresholds limit the fit.";
+    private static string RootRule(DecisionTreeRunResult r)=>r.RootFeature<0?"leaf":$"f{r.RootFeature+1}≤{Format(r.RootThreshold)}";
+    private static string Percent(double v)=>(v*100d).ToString("0.#",CultureInfo.InvariantCulture)+"%"; private static string FormatMetric(double v)=>Math.Abs(v)<1e-12d?"—":Format(v); private static string Format(double v)=>Math.Abs(v)<1e-12d?"0":v.ToString("0.###",CultureInfo.InvariantCulture);
+
+    private static bool TryParseDataset(string text,out double[][] features,out int[] labels,out string error)
+    {
+        var groups=text.Split(';',StringSplitOptions.RemoveEmptyEntries|StringSplitOptions.TrimEntries);if(groups.Length is <4 or >20){features=[];labels=[];error="Use between 4 and 20 examples separated with semicolons.";return false;}
+        features=new double[groups.Length][];labels=new int[groups.Length];
+        for(var i=0;i<groups.Length;i++){var parts=groups[i].Split(',',StringSplitOptions.TrimEntries);if(parts.Length!=3||!TryParseDouble(parts[0],out var x)||!TryParseDouble(parts[1],out var y)||!int.TryParse(parts[2],NumberStyles.Integer,CultureInfo.InvariantCulture,out var label)||label is not(0 or 1)||!double.IsFinite(x)||!double.IsFinite(y)){features=[];labels=[];error=$"Example {i+1} must use x,y,label with label 0 or 1.";return false;}features[i]=[x,y];labels[i]=label;}
+        error=string.Empty;return true;
+    }
+    private static bool TryParseDouble(string? s,out double v)=>double.TryParse(s,NumberStyles.Float,CultureInfo.InvariantCulture,out v)||double.TryParse(s,NumberStyles.Float,CultureInfo.CurrentCulture,out v);
+    private static string FormatDataset(IReadOnlyList<double[]> f,IReadOnlyList<int> l)=>string.Join("; ",f.Select((p,i)=>$"{Format(p[0])},{Format(p[1])},{l[i]}"));
+    private static double[][] CleanVerticalFeatures()=>[[1,1],[1.4,2],[2,1.3],[4,3.8],[4.6,4.2],[5.2,3.4]];
+    public void Dispose()=>SimulationState.Changed-=HandleSimulationChanged;
+    private sealed record RunFrame(string StepText,DecisionTreeSnapshot Snapshot); private sealed record PracticeTaskDefinition(int Id,string Title,string Goal,string Suggested,Preset Preset); private enum Preset{CleanVertical,CleanHorizontal,TwoLevel,Mixed,AlreadyPure} private enum StateView{Visual,Memory}
+}

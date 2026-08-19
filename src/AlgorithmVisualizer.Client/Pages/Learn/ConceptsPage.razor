@@ -1020,12 +1020,14 @@
     </section>
 
     <section id="decision-tree" class='@SectionClass("decision-tree")'>
-        <div class="section-heading"><span>ML8</span><div><h2>Decision Tree: planned supervised splitting</h2><p>A decision tree repeatedly asks a simple feature-threshold question, sends examples left or right, and stops at leaves that make predictions.</p></div></div>
+        <div class="section-heading"><span>ML8</span><div><h2>Decision Tree: split labeled examples with explicit questions</h2><p>A decision tree repeatedly tests feature thresholds, keeps the split that reduces impurity most, and stops at leaves that make interpretable class predictions.</p></div></div>
         <div class="concept-grid two">
-            <article class="concept-card"><span class="term">SPLIT</span><h3>Choose a feature and threshold that improves the child groups</h3><p>The upcoming lab will compare candidate splits with an impurity measure rather than hiding tree construction inside an ML package.</p></article>
-            <article class="concept-card"><span class="term queue">PATH</span><h3>Prediction follows one interpretable root-to-leaf path</h3><p>Each internal node asks one condition; the reached leaf stores the prediction for examples that satisfy that path.</p></article>
+            <article class="concept-card"><span class="term">IMPURITY</span><h3>Gini and entropy measure how mixed a node is</h3><p>A pure binary node has impurity 0. Candidate gain is parent impurity minus the weighted impurity of the two real child groups.</p></article>
+            <article class="concept-card"><span class="term queue">SPLIT</span><h3>Each threshold sends every example to exactly one child</h3><p>The live lab explicitly sorts example indexes by a feature, tests thresholds between distinct values, partitions indexes, and keeps the largest gain.</p></article>
+            <article class="concept-card"><span class="term">LEAF</span><h3>Pure nodes and stopping rules become predictions</h3><p>A leaf stores the majority class of the examples that reached it. Maximum depth prevents the teaching tree from growing forever on noisy data.</p></article>
+            <article class="concept-card"><span class="term queue">MEMORY</span><h3>Examples stay fixed while node records store indexes and rules</h3><p>Each custom node stores example indexes, class counts, impurity, split feature, threshold, gain, child IDs, and the leaf prediction when it stops.</p></article>
         </div>
-        <div class="concept-lesson-links"><a href="/ml-foundations/decision-tree">Preview Decision Tree lesson →</a><a href="/ml-foundations/k-means">Review K-Means →</a></div>
+        <div class="concept-lesson-links"><a href="/ml-foundations/decision-tree">Open Decision Tree lab →</a><a href="/ml-foundations/logistic-regression">Compare Logistic Regression →</a><a href="/ml-foundations/k-means">Review K-Means →</a></div>
     </section>
 
     <section id="pca" class='@SectionClass("pca")'>
@@ -1040,7 +1042,7 @@
     <section class="concept-section implementation-note">
         <div class="section-heading">
             <span>✓</span>
-            <div><h2>Implemented from scratch</h2><p>The learning structures and algorithms do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, Matrix, Vector, Graph, sorting, Linear Search, Binary Search, BFS, DFS, Dijkstra, Topological Sort, Minimum Spanning Tree, Linear Regression, Logistic Regression, K-Nearest Neighbors, KD-Tree, or balancing behavior to ready-made framework collections/search helpers.</p></div>
+            <div><h2>Implemented from scratch</h2><p>The learning structures and algorithms do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, Matrix, Vector, Graph, sorting, Linear Search, Binary Search, BFS, DFS, Dijkstra, Topological Sort, Minimum Spanning Tree, Linear Regression, Logistic Regression, K-Nearest Neighbors, KD-Tree, Decision Tree, or balancing behavior to ready-made framework collections/search helpers.</p></div>
         </div>
         <div class="plain-note">
             <strong>What our code does itself</strong>

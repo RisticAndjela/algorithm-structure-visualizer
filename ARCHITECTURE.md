@@ -275,7 +275,7 @@ The live Client route `/ml-foundations/kd-tree` intentionally renders 2D geometr
 
 `MachineLearning/Unsupervised/KMeans/KMeansSimulation` owns Phase 1 step 7. Feature points and centroids are project-owned `ManualVector` values, while Euclidean point-to-centroid distance is reused through `VectorSimulation`. K-Means owns the explicit nearest-centroid scan, assignment and distance arrays, per-cluster sum/count mean update, centroid movement, empty-cluster behavior, inertia, and convergence checks.
 
-The live `/ml-foundations/k-means` Client intentionally renders 2D geometry but Core remains dimension-independent. The page follows the common Build → Predict → Watch → Visual/Memory → decision-guide → Practice contract, persists practice evidence through the existing C# state path, and uses the shared Last Run modal overlay. Decision Tree remains the next planned Phase 1 step 8.
+The live `/ml-foundations/k-means` Client intentionally renders 2D geometry but Core remains dimension-independent. The page follows the common Build → Predict → Watch → Visual/Memory → decision-guide → Practice contract, persists practice evidence through the existing C# state path, and uses the shared Last Run modal overlay. Decision Tree is the live Phase 1 step 8; PCA is the next planned step 9.
 
 
 ## Curriculum classification boundary
@@ -285,3 +285,9 @@ The UI does not expose a separate graph-algorithm curriculum track. `Topological
 ## Shared routed learning chrome
 
 Concept navigation always uses explicit `/learn/concepts/{topic}` routes. Bare fragment-only anchors are forbidden because the root Blazor `<base href="/">` can resolve them to `/#topic`. Generic Last Run overlay/chrome lives in `wwwroot/css/learning-modules.css`; module-scoped CSS may style content inside the dialog but must not be required for the dialog to behave as a modal.
+
+## Decision Tree Phase 1 step 8
+
+`AlgorithmVisualizer.Core.MachineLearning.Supervised.DecisionTree` adds a project-owned binary classification tree. Training features are copied into `ManualVector` objects; labels remain a compact `int[]`. Tree nodes are custom records/classes, not framework tree nodes. For every active node the simulation explicitly insertion-sorts example indexes by each feature, generates thresholds between distinct adjacent values, partitions indexes into left/right arrays, scores Gini or entropy impurity reduction, commits the best gain, and recursively grows child nodes until a pure node or a stopping rule is reached. Prediction traverses the resulting child IDs in `O(depth)`. The nested source files are explicitly listed in `AlgorithmVisualizer.Core.csproj` to avoid incremental-patch namespace evaluation issues seen in earlier ML modules.
+
+The `/ml-foundations/decision-tree` Client follows the shared approved lesson shell and keeps advanced criterion/depth/raw-data controls behind progressive disclosure. Its Visual State combines a 2D labeled feature-space view with the current candidate/committed split and a custom tree hierarchy; Memory State exposes node example indexes, counts, impurity, split metadata, children, and leaf prediction. Playback captures Core snapshots through the existing `SimulationState` runtime. Practice and Last Run evidence use the existing C#/SQLite learning-state path; no authored JavaScript is introduced.

@@ -10,7 +10,8 @@ Live Machine Learning modules currently include:
 4. `Supervised/Knn` — project-owned ManualVector feature/query storage, reused VectorSimulation distance primitives, explicit full scan, ordered top-k maintenance, and majority vote.
 5. `Supervised/KdTree` — project-owned spatial nodes over ManualVector points, explicit alternating-axis median build, nearest-first descent, backtracking, and split-plane pruning.
 6. `Unsupervised/KMeans` — ManualVector points/centroids, reused VectorSimulation Euclidean distance, explicit nearest-centroid assignment, sum/count mean updates, empty-cluster handling, inertia, and convergence checks.
+7. `Supervised/DecisionTree` — ManualVector feature storage, explicit candidate-threshold insertion sort, Gini/entropy impurity, recursive split construction, custom node records, stopping rules, and root-to-leaf prediction.
 
 `DataStructures/Vector` is intentionally taught in the Data Structures track, not duplicated here. It remains the reusable numerical foundation for ML modules. No ML, statistics, numerical-vector, or optimizer library may replace the algorithmic behavior being taught.
 
-K-Means is now live as Phase 1 step 7. The next planned modules are Decision Tree (step 8) and PCA (step 9). KD-Tree remains the spatial acceleration companion to KNN; it changes neighbor lookup organization, not KNN vote semantics.
+K-Means is live as Phase 1 step 7 and Decision Tree is live as step 8. PCA is the next planned Phase 1 step 9. KD-Tree remains the spatial acceleration companion to KNN; it changes neighbor lookup organization, not KNN vote semantics.
