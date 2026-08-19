@@ -1,19 +1,509 @@
 @page "/ml-foundations/k-means"
+@using System.Globalization
+@using AlgorithmVisualizer.Core.MachineLearning.Unsupervised.KMeans
+@implements IDisposable
+@inject SimulationState SimulationState
+@inject KMeansSimulation KMeansLab
+@inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
 
 <PageTitle>K-Means — Machine Learning — Algorithm Visualizer</PageTitle>
 
-<LearningPlaceholder
-    Eyebrow="MACHINE LEARNING · PHASE 1 STEP 7"
-    Title="K-Means"
-    Description="The next lesson will turn unlabeled points into clusters by alternating nearest-centroid assignment and centroid updates."
-    Complexity="O(i·k·n·d)"
-    ComplexityNote="planned iterative clustering; i iterations, k centroids, n points, d features"
-    Concepts="centroid · assignment · cluster mean · inertia · convergence · initialization"
-    LearnTitle="KD-Tree organized points for search. K-Means will move representatives until groups emerge."
-    LearnSummary="Start with centroids, assign every point to the nearest one, move each centroid to the mean of its assigned points, and repeat."
-    LearnCards="ASSIGN|Choose the nearest centroid|Distance creates temporary cluster membership.;;UPDATE|Move centroids to cluster means|The representative changes after every assignment pass.;;REPEAT|Alternate assignment and update|Each round responds to the previous one.;;STOP|Detect stable clustering|Finish when assignments or centroid movement stop changing enough."
-    ConceptHref="/learn/concepts/k-means"
-    TipTitle="K-Means is unsupervised."
-    TipText="There are no class labels to vote on; the algorithm creates cluster membership from geometry."
-    FocusText="Reuse ManualVector distance primitives and implement centroid assignment/update loops explicitly."
-    PromptText="What should happen if one centroid receives no points?" />
+<div class="kmeans-page learning-module-page learning-module-shell">
+    <section class="learn-launchpad" aria-labelledby="kmeans-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="kmeans-learn-title">K-Means repeats two ideas: assign points, then move centroids.</h2>
+            <p>There are no class labels. Start with <strong>k</strong> centroids, attach every point to the nearest one, move each centroid to the mean of its group, and repeat until the grouping stops changing.</p>
+            <ConceptLink class="learn-launchpad-link" Href="/learn/concepts/k-means">Open K-Means concepts &amp; memory →</ConceptLink>
+        </div>
+        <div class="learn-grid">
+            <article class="learn-card purple"><span>1 · SEED</span><strong>Start with k centroids.</strong><small>Initialization matters because different seeds can lead to different final clusters.</small></article>
+            <article class="learn-card blue"><span>2 · ASSIGN</span><strong>Choose the nearest centroid.</strong><small>Every point temporarily belongs to exactly one cluster.</small></article>
+            <article class="learn-card mint"><span>3 · MOVE</span><strong>Replace each centroid with its cluster mean.</strong><small>The representative moves toward the points that currently belong to it.</small></article>
+            <article class="learn-card gold"><span>4 · REPEAT</span><strong>Stop when the grouping stabilizes.</strong><small>Stable assignments or tiny centroid movement end this teaching run.</small></article>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow"><span>MACHINE LEARNING · PHASE 1 STEP 7</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <h1>K-Means</h1>
+            <p>Cluster unlabeled points by alternating nearest-centroid assignment and centroid updates, with every distance and mean update visible.</p>
+        </div>
+        <div class="complexity-summary" aria-label="K-Means complexity">
+            <div><span>One round</span><strong>O(n·k·d)</strong><small>n points, k centroids, d features</small></div>
+            <div><span>Full run</span><strong>O(i·n·k·d)</strong><small>i clustering rounds</small></div>
+            <div><span>Extra state</span><strong>O(n + k·d)</strong><small>assignments + centroids</small></div>
+        </div>
+    </header>
+
+    <section class="smart-tip" aria-label="K-Means learning tip">
+        <span class="tip-icon">✦</span>
+        <div><strong>K-Means does not discover “the true labels.”</strong><p>It optimizes geometric groups around centroids. Cluster numbers 1, 2, 3 are only local IDs, not semantic class names.</p></div>
+        <ConceptLink Href="/learn/concepts/k-means">Why can initialization matter? →</ConceptLink>
+    </section>
+
+    <section class="builder-section" aria-labelledby="kmeans-build-title">
+        <div class="section-heading-row">
+            <div class="heading-with-step"><span class="step-number">1</span><div><span class="section-kicker">BUILD THE CLUSTERING PROBLEM</span><h2 id="kmeans-build-title">Choose points and how many clusters to start with.</h2><p>Begin with a preset. The selected points become the initial centroids, so you can see the algorithm move them.</p></div></div>
+            <ConceptLink Href="/structures/vector">Review Vector distance →</ConceptLink>
+        </div>
+
+        <div class="preset-row kmeans-preset-row" aria-label="K-Means examples">
+            <span>START WITH</span>
+            <button type="button" class="@PresetClass(Preset.ThreeGroups)" @onclick="() => LoadPreset(Preset.ThreeGroups)" disabled="@IsBusy">Three clear groups</button>
+            <button type="button" class="@PresetClass(Preset.TwoGroups)" @onclick="() => LoadPreset(Preset.TwoGroups)" disabled="@IsBusy">Two clear groups</button>
+            <button type="button" class="@PresetClass(Preset.PoorSeeds)" @onclick="() => LoadPreset(Preset.PoorSeeds)" disabled="@IsBusy">Poor starting centroids</button>
+        </div>
+
+        <details class="more-examples">
+            <summary>More clustering cases</summary>
+            <div class="preset-row">
+                <button type="button" class="@PresetClass(Preset.EmptyCluster)" @onclick="() => LoadPreset(Preset.EmptyCluster)" disabled="@IsBusy">Empty cluster</button>
+                <button type="button" class="@PresetClass(Preset.FourGroups)" @onclick="() => LoadPreset(Preset.FourGroups)" disabled="@IsBusy">Four groups</button>
+            </div>
+            <p>Use these after the basic assign → move loop makes sense. They expose an empty-cluster edge case and a larger k.</p>
+        </details>
+
+        <div class="kmeans-builder">
+            <section class="dataset-preview-card" aria-label="K-Means dataset">
+                <div class="dataset-heading"><div><span>UNLABELED POINTS</span><strong>@_features.Length points in 2D</strong></div><small>The plot uses two features so the movement stays visible.</small></div>
+                <div class="dataset-chip-grid">
+                    @for (var index = 0; index < _features.Length; index++)
+                    {
+                        <span class="dataset-chip @(_seedIndexes.Contains(index) ? "seed" : string.Empty)"><small>point @index</small><strong>[@Format(_features[index][0]), @Format(_features[index][1])]</strong><em>@(_seedIndexes.Contains(index) ? "starting centroid" : "data point")</em></span>
+                    }
+                </div>
+            </section>
+
+            <section class="cluster-control-card" aria-label="K-Means cluster controls">
+                <div class="control-copy"><span>NUMBER OF CLUSTERS</span><strong>Choose k before the run.</strong><p>Changing k also picks evenly spaced starting points. Advanced settings let you choose the seeds yourself.</p></div>
+                <div class="prediction-actions cluster-count-actions" aria-label="Cluster count">
+                    @for (var k = 2; k <= Math.Min(4, _features.Length); k++)
+                    {
+                        var clusterCount = k;
+                        <button type="button" class="@(_clusterCount == clusterCount ? "active" : string.Empty)" @onclick="() => SetClusterCount(clusterCount)" disabled="@IsBusy">k = @clusterCount</button>
+                    }
+                </div>
+                <div class="seed-summary"><span>Starting centroids</span><strong>@SeedSummary</strong><span>Stop rule</span><strong>stable assignment or tiny movement</strong></div>
+                <div class="builder-actions">
+                    <button class="secondary-action" type="button" @onclick="ToggleAdvancedSettings" disabled="@IsBusy">@(_showAdvancedSettings ? "Hide custom setup" : "Customize points / seeds")</button>
+                </div>
+            </section>
+        </div>
+
+        @if (_showAdvancedSettings)
+        {
+            <section class="kmeans-advanced-panel">
+                <label class="dataset-editor"><span>CUSTOM POINTS · x,y; x,y; ...</span><textarea value="@_datasetText" @oninput="DatasetChanged" disabled="@IsBusy" rows="4"></textarea><small>Use 4–20 two-dimensional points. The next run validates and uses the current editor values automatically.</small></label>
+                <label class="seed-editor"><span>STARTING POINT INDEXES</span><input value="@_seedIndexesText" @oninput="SeedIndexesChanged" disabled="@IsBusy" /><small>Example for k = 3: <code>0,3,6</code>. Indexes must be distinct.</small></label>
+            </section>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_inputError))
+        {
+            <div class="input-error" role="alert"><strong>Check the K-Means setup.</strong><span>@_inputError</span></div>
+        }
+    </section>
+
+    <section class="predict-section" aria-labelledby="kmeans-predict-title">
+        <div class="prediction-card">
+            <div class="prediction-copy"><span class="step-number">2</span><div><span class="section-kicker">PREDICT BEFORE PLAYBACK</span><h2 id="kmeans-predict-title">Will the first assignment already be the final grouping?</h2><p>Good seeds may stabilize immediately. Poor seeds often make points switch clusters after the centroids move.</p></div></div>
+            <div class="prediction-actions">
+                <button type="button" class="@PredictionClass(false)" @onclick="() => SetPrediction(false)" disabled="@IsBusy">First grouping stays</button>
+                <button type="button" class="@PredictionClass(true)" @onclick="() => SetPrediction(true)" disabled="@IsBusy">Some points switch later</button>
+            </div>
+            @if (_predictionAnswered) { <p class="prediction-feedback @(_predictionCorrect ? "correct" : "incorrect")">@PredictionFeedback</p> }
+        </div>
+    </section>
+
+    <section class="lab-section" aria-labelledby="kmeans-lab-title">
+        <div class="lab-heading">
+            <div class="heading-with-step"><span class="step-number">3</span><div><span class="section-kicker">WATCH THE CLUSTERS FORM</span><h2 id="kmeans-lab-title">Assign points → move centroids → repeat.</h2></div></div>
+            <div class="lab-actions">
+                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Open explanation after run</span></label>
+                @if (_lastResult is not null) { <button class="secondary-action" type="button" @onclick="OpenLastRunPopup">Last explanation</button> }
+                <button class="sort-button" type="button" @onclick="RunAsync" disabled="@IsBusy"><span>▶</span> Run K-Means</button>
+            </div>
+        </div>
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist" aria-label="K-Means state view">
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual state</button>
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory state</button>
+            </div>
+            <p>@ViewExplanation</p>
+        </div>
+
+        <div class="lesson-reference-links" aria-label="K-Means concept links">
+            <ConceptLink Href="/learn/concepts/k-means">K-Means concepts →</ConceptLink>
+            <ConceptLink Href="/structures/vector">Distance &amp; vector storage →</ConceptLink>
+            <ConceptLink Href="/ml-foundations/kd-tree">How KD-Tree uses distance differently →</ConceptLink>
+        </div>
+
+        <div class="state-surface">
+            @if (_view == StateView.Visual)
+            {
+                <KMeansPlot Snapshot="@DisplayedSnapshot" />
+            }
+            else
+            {
+                <section class="kmeans-memory" aria-label="K-Means memory state">
+                    <div class="memory-intro"><span>MEMORY STATE</span><strong>Points stay fixed; assignment indexes and centroid vectors change.</strong><p>K-Means never moves the stored examples in memory. It updates <code>assignment[i]</code>, distance slots, cluster counts, and the k centroid vectors.</p></div>
+                    <div class="memory-summary-strip">
+                        <span><small>POINTS</small><strong>@DisplayedSnapshot.Count</strong></span>
+                        <span><small>CLUSTERS</small><strong>@DisplayedSnapshot.ClusterCount</strong></span>
+                        <span><small>ROUND</small><strong>@DisplayedSnapshot.Iteration</strong></span>
+                        <span><small>CHANGED</small><strong>@DisplayedSnapshot.ChangedAssignments</strong></span>
+                    </div>
+                    <div class="memory-columns">
+                        <div class="table-scroll"><table><thead><tr><th>Point</th><th>ManualVector</th><th>Cluster</th><th>Distance</th></tr></thead><tbody>
+                        @for (var index = 0; index < DisplayedSnapshot.Features.Length; index++)
+                        {
+                            <tr><td>@index</td><td>[@Format(DisplayedSnapshot.Features[index][0]), @Format(DisplayedSnapshot.Features[index][1])]</td><td>@ClusterText(DisplayedSnapshot.Assignments[index])</td><td>@FormatDistance(DisplayedSnapshot.AssignedDistances[index])</td></tr>
+                        }
+                        </tbody></table></div>
+                        <div class="centroid-memory-list">
+                            @for (var cluster = 0; cluster < DisplayedSnapshot.Centroids.Length; cluster++)
+                            {
+                                <article><span>CENTROID @(cluster + 1)</span><strong>[@Format(DisplayedSnapshot.Centroids[cluster][0]), @Format(DisplayedSnapshot.Centroids[cluster][1])]</strong><small>@SafeClusterCount(cluster) assigned points</small></article>
+                            }
+                        </div>
+                    </div>
+                    <div class="memory-note"><strong>No clustering library is hidden behind this view.</strong><span>Nearest-centroid scanning, sum/count means, assignment changes, empty-cluster handling, and convergence checks are explicit C# loops. Euclidean distance is reused from the existing Vector module.</span></div>
+                </section>
+            }
+        </div>
+
+        <div class="run-dashboard kmeans-run-dashboard" aria-label="K-Means live metrics">
+            <article><span>Phase</span><strong>@PhaseText(DisplayedSnapshot.Phase)</strong><small>Current action.</small></article>
+            <article><span>Round</span><strong>@DisplayedSnapshot.Iteration</strong><small>Assignment + centroid update.</small></article>
+            <article><span>Inertia</span><strong>@FormatMetric(DisplayedSnapshot.Inertia)</strong><small>Squared distance within clusters.</small></article>
+            <article><span>Max move</span><strong>@FormatMetric(DisplayedSnapshot.MaxCentroidMovement)</strong><small>Largest centroid movement this round.</small></article>
+        </div>
+    </section>
+
+    <section class="fit-section" aria-labelledby="kmeans-fit-title">
+        <div class="section-heading-row"><div><span class="section-kicker">WHEN SHOULD I USE IT?</span><h2 id="kmeans-fit-title">Use K-Means when numeric points form compact groups and you can choose a useful k.</h2><p>Use these cards as a decision guide. K-Means is a geometric clustering tool, not a universal way to discover every possible group shape.</p></div></div>
+        <div class="fit-grid">
+            <article class="fit-card good"><span>GOOD FIT</span><strong>Compact numeric clusters where distance is meaningful</strong><p>Customer feature vectors, simple spatial groups, and exploratory segmentation can work well when groups are roughly centroid-shaped.</p></article>
+            <article class="fit-card avoid"><span>AVOID FOR</span><strong>Curved clusters, strong outliers, or categories with no numeric distance</strong><p>K-Means is sensitive to scale, seeds, and extreme points. It can split one natural non-spherical group or merge nearby groups incorrectly.</p></article>
+            <article class="fit-card better"><span>BETTER NEXT CHOICE</span><strong>Use supervised models when the target labels are already known</strong><p>If examples already have classes, KNN, Logistic Regression, or the upcoming Decision Tree solve a different problem: prediction, not unsupervised grouping.</p><div class="fit-links"><a href="/ml-foundations/knn">KNN →</a><a href="/ml-foundations/logistic-regression">Logistic Regression →</a></div></article>
+        </div>
+    </section>
+
+    <section class="practice-section" aria-labelledby="kmeans-practice-title">
+        <div class="practice-heading"><div><span class="section-kicker">GUIDED PRACTICE</span><h2 id="kmeans-practice-title">Test stable groups, poor seeds, and an empty cluster.</h2><p>Tasks complete from actual assignments, centroid movement, convergence, and cluster counts.</p></div><strong>@_completedTaskIds.Count / @PracticeTasks.Length complete</strong></div>
+        <div class="practice-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                <PracticeTaskCard TaskId="@task.Id" Title="@task.Title" Description="@task.Goal" InputText="@task.Suggested" HelpHref="/learn/concepts/k-means" Completed="@_completedTaskIds.Contains(task.Id)" Active="@(_activeTaskId == task.Id)" Busy="@IsBusy" HasEvidence="@(GetTaskEvidence(task.Id) is not null)" Start="@(() => StartTask(task.Id))" OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
+            }
+        </div>
+    </section>
+
+    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="08 · Planned" Title="Decision Tree" Description="Switch from unlabeled clustering to supervised split decisions: choose a feature and threshold that make child groups purer." Href="/ml-foundations/decision-tree" LinkLabel="Preview Decision Tree" />
+</div>
+
+@if (_lastRunPopupOpen && _lastResult is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRunPopup">
+        <section class="run-popup" role="dialog" aria-modal="true" aria-labelledby="kmeans-run-popup-title" @onclick:stopPropagation="true">
+            <header><div><span class="section-kicker">LAST RUN</span><h2 id="kmeans-run-popup-title">@RunHeadline(_lastResult)</h2></div><button type="button" class="popup-close" @onclick="CloseLastRunPopup" aria-label="Close result explanation">×</button></header>
+            <div class="popup-body">
+                <p>@RunActionExplanation(_lastResult)</p>
+                <div class="popup-metrics"><div><span>ROUNDS</span><strong>@_lastResult.Iterations</strong></div><div><span>INERTIA</span><strong>@Format(_lastResult.Inertia)</strong></div><div><span>CLUSTERS</span><strong>@ClusterCountSummary(_lastResult)</strong></div><div><span>CONVERGED</span><strong>@(_lastResult.Converged ? "Yes" : "No")</strong></div></div>
+                <p class="popup-memory">@RunMemoryExplanation(_lastResult)</p>
+            </div>
+        </section>
+    </div>
+}
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
+
+@code {
+    private const string ModuleKey = "k-means";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.k-means.show-run-popup.v1";
+
+    private readonly List<RunFrame> _frames = [];
+    private PracticeModuleProgress _practiceProgress = new();
+    private HashSet<int> _completedTaskIds = [];
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
+    private KMeansRunResult? _lastResult;
+    private string? _lastCapturedStep;
+    private string? _inputError;
+    private double[][] _features = DefaultThreeGroupFeatures();
+    private string _datasetText = FormatDataset(DefaultThreeGroupFeatures());
+    private int _clusterCount = 3;
+    private int[] _seedIndexes = [0, 3, 6];
+    private string _seedIndexesText = "0,3,6";
+    private Preset? _preset = Preset.ThreeGroups;
+    private bool _showAdvancedSettings;
+    private bool _showRunPopups = true;
+    private bool _lastRunPopupOpen;
+    private bool? _prediction;
+    private bool _predictionAnswered;
+    private bool _predictionCorrect;
+    private int _frameIndex = -1;
+    private int? _activeTaskId;
+    private StateView _view = StateView.Visual;
+
+    private static readonly PracticeTaskDefinition[] PracticeTasks =
+    [
+        new(1, "Recover three clear groups", "Cluster the three separated point groups into three balanced clusters.", "Three clear groups · k = 3", Preset.ThreeGroups),
+        new(2, "Recover two clear groups", "Use k = 2 and finish with three points in each cluster.", "Two clear groups · k = 2", Preset.TwoGroups),
+        new(3, "Watch poor seeds correct themselves", "Start from deliberately poor centroids and make at least one point switch cluster after the first assignment.", "Poor starting centroids", Preset.PoorSeeds),
+        new(4, "Handle an empty cluster", "Run a case where one centroid receives no points and verify the algorithm keeps that centroid instead of failing.", "Empty cluster", Preset.EmptyCluster),
+        new(5, "Cluster four groups", "Use k = 4 and finish with four non-empty clusters.", "Four groups", Preset.FourGroups)
+    ];
+
+    private KMeansSnapshot Current => KMeansLab.CreateSnapshot();
+    private KMeansSnapshot DisplayedSnapshot => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].Snapshot : Current;
+    private string DisplayedStepText => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].StepText : SimulationState.CurrentStepText;
+    private int TimelineCount => _frames.Count;
+    private int TimelinePosition => _frameIndex < 0 ? 0 : _frameIndex + 1;
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_frameIndex >= 0 && _frameIndex < _frames.Count - 1) || SimulationState.IsRunning;
+    private bool IsBusy => SimulationState.IsRunning;
+    private string ViewExplanation => _view == StateView.Visual ? "See points connect to their current centroid, then watch those centroids move to the cluster means." : "See fixed ManualVector points beside the mutable assignment[], distance[], cluster-count, and centroid state.";
+    private string SeedSummary => string.Join(", ", _seedIndexes.Select(index => $"point {index}"));
+    private string PredictionFeedback => _lastResult is null ? string.Empty : _predictionCorrect ? "Correct — your prediction matched how the assignments evolved after the first centroid update." : $"Not quite. {_lastResult.Iterations} rounds showed that {(AssignmentsChangedAfterFirstRound(_lastResult) ? "some points changed cluster after round 1" : "the first grouping already matched the final assignments")}.";
+
+    protected override void OnInitialized()
+    {
+        SimulationState.Changed += HandleSimulationChanged;
+        try { _showRunPopups = !bool.TryParse(LearningStore.GetItem(PopupSettingStorageKey), out var saved) || saved; } catch { _showRunPopups = true; }
+        _practiceProgress = PracticeProgress.Load(ModuleKey, null, PracticeTasks.Select(task => task.Id));
+        _completedTaskIds = _practiceProgress.CompletedTaskIds;
+        ApplyInputs();
+    }
+
+    private void DatasetChanged(ChangeEventArgs args) { _datasetText = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
+    private void SeedIndexesChanged(ChangeEventArgs args) { _seedIndexesText = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
+    private void ToggleAdvancedSettings() { if (!IsBusy) _showAdvancedSettings = !_showAdvancedSettings; }
+    private void SetPrediction(bool assignmentsWillChange) { if (IsBusy) return; _prediction = assignmentsWillChange; _predictionAnswered = false; _predictionCorrect = false; }
+
+    private void SetClusterCount(int clusterCount)
+    {
+        if (IsBusy || clusterCount < 2 || clusterCount > Math.Min(4, _features.Length)) return;
+        _clusterCount = clusterCount;
+        _seedIndexes = EvenSeedIndexes(_features.Length, clusterCount);
+        _seedIndexesText = string.Join(",", _seedIndexes);
+        ClearPresetSelection();
+        _prediction = null;
+        ApplyInputs();
+    }
+
+    private void ApplyInputs()
+    {
+        if (!TryParseDataset(_datasetText, out var features, out var datasetError)) { _inputError = datasetError; return; }
+        if (!TryParseSeedIndexes(_seedIndexesText, _clusterCount, features.Length, out var seeds, out var seedError)) { _inputError = seedError; return; }
+        _features = features;
+        _seedIndexes = seeds;
+        _inputError = null;
+        try { KMeansLab.Configure(new KMeansConfiguration(_features, _clusterCount, _seedIndexes)); }
+        catch (ArgumentException ex) { _inputError = ex.Message; return; }
+        ClearReview();
+        StateHasChanged();
+    }
+
+    private async Task RunAsync()
+    {
+        ApplyInputs();
+        if (!string.IsNullOrWhiteSpace(_inputError)) return;
+        _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; _lastRunPopupOpen = false;
+        var token = SimulationState.Start("Starting K-Means clustering.");
+        Capture();
+        try
+        {
+            var result = await KMeansLab.ExecuteAsync(token);
+            if (!IsCurrent(token)) return;
+            _lastResult = result;
+            SimulationState.Complete(result.Summary);
+            Capture();
+            EvaluatePrediction(result);
+            RecordPracticeResult(result);
+            if (_showRunPopups) OpenLastRunPopup();
+        }
+        catch (OperationCanceledException) { }
+        finally { await InvokeAsync(StateHasChanged); }
+    }
+
+    private void Capture()
+    {
+        var step = SimulationState.CurrentStepText;
+        if (step == _lastCapturedStep) return;
+        var followTail = _frameIndex < 0 || _frameIndex == _frames.Count - 1;
+        _frames.Add(new RunFrame(step, KMeansLab.CreateSnapshot()));
+        _lastCapturedStep = step;
+        if (followTail) _frameIndex = _frames.Count - 1;
+    }
+
+    private void HandleSimulationChanged() { if (SimulationState.IsRunning) Capture(); _ = InvokeAsync(StateHasChanged); }
+    private bool IsCurrent(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;
+    private void ClearReview() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; _lastRunPopupOpen = false; _lastResult = null; _predictionAnswered = false; }
+    private Task PlayTimelineAsync() { if (_frames.Count > 0) _frameIndex = _frames.Count - 1; SimulationState.Resume(); return InvokeAsync(StateHasChanged); }
+    private Task PauseTimelineAsync() { SimulationState.Pause(); return Task.CompletedTask; }
+    private Task StepBackAsync() { if (SimulationState.IsRunning && !SimulationState.IsPaused) SimulationState.Pause(); if (_frameIndex > 0) _frameIndex--; return InvokeAsync(StateHasChanged); }
+    private Task StepForwardAsync() { if (_frameIndex >= 0 && _frameIndex < _frames.Count - 1) { _frameIndex++; return InvokeAsync(StateHasChanged); } if (SimulationState.IsRunning) SimulationState.Step(); return Task.CompletedTask; }
+    private Task ResetPlaybackAsync() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; return InvokeAsync(StateHasChanged); }
+
+    private void EvaluatePrediction(KMeansRunResult result)
+    {
+        _predictionAnswered = _prediction.HasValue;
+        if (_predictionAnswered) _predictionCorrect = _prediction == AssignmentsChangedAfterFirstRound(result);
+    }
+
+    private void LoadPreset(Preset preset, bool keepActiveTask = false)
+    {
+        if (IsBusy) return;
+        _preset = preset;
+        switch (preset)
+        {
+            case Preset.TwoGroups:
+                SetDataset([[-5d,-1d],[-4d,0d],[-3d,1d],[3d,-1d],[4d,0d],[5d,1d]], 2, [0,3]);
+                break;
+            case Preset.PoorSeeds:
+                SetDataset([[-5d,-1d],[-4d,0d],[-3d,1d],[0d,4d],[1d,5d],[2d,4d],[4d,-1d],[5d,0d],[6d,1d]], 3, [0,1,2]);
+                break;
+            case Preset.EmptyCluster:
+                SetDataset([[0d,0d],[0d,0d],[10d,10d],[10d,11d],[11d,10d]], 3, [0,1,2]);
+                break;
+            case Preset.FourGroups:
+                SetDataset([[-5d,-4d],[-4d,-5d],[-4d,-3d],[-1d,4d],[0d,5d],[1d,4d],[4d,4d],[5d,5d],[5d,3d],[4d,-4d],[5d,-5d],[6d,-4d]], 4, [0,3,6,9]);
+                break;
+            default:
+                SetDataset(DefaultThreeGroupFeatures(), 3, [0,3,6]);
+                break;
+        }
+        _prediction = null; _predictionAnswered = false;
+        ApplyInputs();
+        if (!keepActiveTask) _activeTaskId = null;
+    }
+
+    private void SetDataset(double[][] features, int clusterCount, int[] seeds)
+    {
+        _features = features;
+        _clusterCount = clusterCount;
+        _seedIndexes = seeds;
+        _datasetText = FormatDataset(features);
+        _seedIndexesText = string.Join(",", seeds);
+    }
+
+    private void StartTask(int taskId)
+    {
+        if (IsBusy) return;
+        var task = PracticeTasks.First(item => item.Id == taskId);
+        _activeTaskId = taskId;
+        LoadPreset(task.Preset, keepActiveTask: true);
+    }
+
+    private void RecordPracticeResult(KMeansRunResult result)
+    {
+        if (_activeTaskId is not int taskId) return;
+        var task = PracticeTasks.First(item => item.Id == taskId);
+        if (!TaskSatisfied(task, result)) return;
+        CompletePracticeTask(task, result);
+    }
+
+    private static bool TaskSatisfied(PracticeTaskDefinition task, KMeansRunResult result) => task.Id switch
+    {
+        1 => result.Converged && result.ClusterCount == 3 && result.ClusterCounts.All(count => count == 3),
+        2 => result.Converged && result.ClusterCount == 2 && result.ClusterCounts.All(count => count == 3),
+        3 => AssignmentsChangedAfterFirstRound(result),
+        4 => result.ClusterCount == 3 && result.ClusterCounts.Any(count => count == 0),
+        5 => result.Converged && result.ClusterCount == 4 && result.ClusterCounts.All(count => count > 0),
+        _ => false
+    };
+
+    private void CompletePracticeTask(PracticeTaskDefinition task, KMeansRunResult result)
+    {
+        var evidence = new PracticeCompletionEvidence(task.Id, task.Title, result.Summary, RunActionExplanation(result), "ManualVector point objects stay fixed. K-Means changes assignment indexes and k centroid vectors; each centroid update is an explicit sum/count mean.", RunWhyExplanation(result), [new("Rounds", result.Iterations.ToString(CultureInfo.InvariantCulture)), new("Inertia", Format(result.Inertia)), new("Clusters", ClusterCountSummary(result)), new("Changed after round 1", AssignmentsChangedAfterFirstRound(result) ? "Yes" : "No")], $"k={result.ClusterCount} · rounds={result.Iterations} · counts={ClusterCountSummary(result)}");
+        _completedTaskIds.Add(task.Id);
+        PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
+        _activeTaskId = null;
+    }
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
+    private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
+    private void CloseTaskEvidence() => _practiceEvidencePopup = null;
+    private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed; try { LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); } catch { } }
+    private void OpenLastRunPopup() { if (_lastResult is not null) _lastRunPopupOpen = true; }
+    private void CloseLastRunPopup() => _lastRunPopupOpen = false;
+    private string PresetClass(Preset preset) => _preset == preset ? "active" : string.Empty;
+    private void ClearPresetSelection() => _preset = null;
+    private string PredictionClass(bool value) => _prediction == value ? "active" : string.Empty;
+
+    private int SafeClusterCount(int cluster) => cluster >= 0 && cluster < DisplayedSnapshot.ClusterCounts.Length ? DisplayedSnapshot.ClusterCounts[cluster] : 0;
+    private static string ClusterText(int cluster) => cluster < 0 ? "—" : $"cluster {cluster + 1}";
+    private static string PhaseText(KMeansPhase phase) => phase switch { KMeansPhase.Initializing => "initialize", KMeansPhase.Assigning => "assign", KMeansPhase.Updating => "move centroids", KMeansPhase.Complete => "complete", _ => "ready" };
+    private static string RunHeadline(KMeansRunResult result) => result.Converged ? $"K-Means stabilized after {result.Iterations} rounds." : $"K-Means stopped after {result.Iterations} rounds.";
+    private static string RunActionExplanation(KMeansRunResult result) => $"The run alternated nearest-centroid assignment and mean updates until {(result.Converged ? "the grouping stabilized" : "the iteration budget ended")}. Final cluster sizes: {ClusterCountSummary(result)}.";
+    private static string RunMemoryExplanation(KMeansRunResult result) => $"The {result.Count} stored point vectors never moved. The run updated assignment[] plus {result.ClusterCount} centroid vectors. Final inertia was {Format(result.Inertia)}.";
+    private static string RunWhyExplanation(KMeansRunResult result) => AssignmentsChangedAfterFirstRound(result) ? "The first grouping was not final: moving the centroids changed which representative was nearest for at least one point." : "The first grouping already matched the final assignments; later work only verified stability and moved centroids to their means.";
+    private static string ClusterCountSummary(KMeansRunResult result) => string.Join(" · ", result.ClusterCounts.Select((count, index) => $"C{index + 1}:{count}"));
+
+    private static bool AssignmentsChangedAfterFirstRound(KMeansRunResult result)
+    {
+        if (result.FirstRoundAssignments.Length != result.Assignments.Length) return false;
+        for (var index = 0; index < result.Assignments.Length; index++) if (result.FirstRoundAssignments[index] != result.Assignments[index]) return true;
+        return false;
+    }
+
+    private static bool TryParseDataset(string text, out double[][] features, out string error)
+    {
+        var groups = text.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (groups.Length is < 4 or > 20) { features = []; error = "Use between 4 and 20 points separated with semicolons."; return false; }
+        features = new double[groups.Length][];
+        for (var index = 0; index < groups.Length; index++)
+        {
+            var parts = groups[index].Split(',', StringSplitOptions.TrimEntries);
+            if (parts.Length != 2 || !TryParseDouble(parts[0], out var x) || !TryParseDouble(parts[1], out var y) || !double.IsFinite(x) || !double.IsFinite(y)) { features = []; error = $"Point {index + 1} must use x,y with finite numbers."; return false; }
+            features[index] = [x, y];
+        }
+        error = string.Empty;
+        return true;
+    }
+
+    private static bool TryParseSeedIndexes(string text, int clusterCount, int pointCount, out int[] seeds, out string error)
+    {
+        var parts = text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length != clusterCount) { seeds = []; error = $"Choose exactly {clusterCount} starting point indexes for k = {clusterCount}."; return false; }
+        seeds = new int[clusterCount];
+        var used = new bool[pointCount];
+        for (var index = 0; index < parts.Length; index++)
+        {
+            if (!int.TryParse(parts[index], NumberStyles.Integer, CultureInfo.InvariantCulture, out var seed) || seed < 0 || seed >= pointCount) { seeds = []; error = $"Seed {index + 1} must be a point index from 0 to {pointCount - 1}."; return false; }
+            if (used[seed]) { seeds = []; error = "Starting centroid indexes must be distinct."; return false; }
+            used[seed] = true;
+            seeds[index] = seed;
+        }
+        error = string.Empty;
+        return true;
+    }
+
+    private static int[] EvenSeedIndexes(int pointCount, int clusterCount)
+    {
+        var result = new int[clusterCount];
+        if (clusterCount == 1) { result[0] = 0; return result; }
+        for (var cluster = 0; cluster < clusterCount; cluster++) result[cluster] = (int)Math.Round(cluster * (pointCount - 1d) / (clusterCount - 1d));
+        return result;
+    }
+
+    private static double[][] DefaultThreeGroupFeatures() => [[-4d,-2d],[-3.4d,-1d],[-2.6d,-2.4d],[.3d,3.2d],[1.1d,2.2d],[1.8d,3.5d],[3.6d,-1.7d],[4.4d,-.5d],[5d,-2.2d]];
+    private static string FormatDataset(IReadOnlyList<double[]> features) => string.Join("; ", features.Select(point => $"{Format(point[0])},{Format(point[1])}"));
+    private static bool TryParseDouble(string? text, out double value) => double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value) || double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out value);
+    private static string FormatDistance(double value) => double.IsFinite(value) ? Format(value) : "—";
+    private static string FormatMetric(double value) => double.IsFinite(value) && value > 0d ? Format(value) : "—";
+    private static string Format(double value) => double.IsFinite(value) ? (Math.Abs(value) < 1e-12d ? "0" : value.ToString("0.###", CultureInfo.InvariantCulture)) : "—";
+
+    public void Dispose() => SimulationState.Changed -= HandleSimulationChanged;
+
+    private sealed record RunFrame(string StepText, KMeansSnapshot Snapshot);
+    private sealed record PracticeTaskDefinition(int Id, string Title, string Goal, string Suggested, Preset Preset);
+    private enum Preset { ThreeGroups, TwoGroups, PoorSeeds, EmptyCluster, FourGroups }
+    private enum StateView { Visual, Memory }
+}

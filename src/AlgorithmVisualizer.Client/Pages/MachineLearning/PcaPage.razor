@@ -1,0 +1,19 @@
+@page "/ml-foundations/pca"
+
+<PageTitle>PCA — Planned — Algorithm Visualizer</PageTitle>
+
+<LearningPlaceholder
+    Title="PCA"
+    Eyebrow="MACHINE LEARNING · PHASE 1 STEP 9"
+    Description="Reduce dimensionality by finding directions that capture the most variance, then project examples onto those principal components."
+    Complexity="Planned"
+    ComplexityNote="The final teaching implementation will expose centering, covariance, eigen-directions, and projection explicitly."
+    Concepts="Centering · Covariance · Eigenvector · Eigenvalue · Principal component · Projection · Explained variance"
+    LearnTitle="PCA rotates the coordinate system toward the directions that vary most."
+    LearnSummary="Center the data, find important directions, then keep only the directions that preserve the most variation."
+    ConceptHref="/learn/concepts/pca"
+    LearnCards="1 · CENTER|Move the dataset around zero.|Subtract the mean from every feature.;;2 · MEASURE|Build covariance.|Covariance shows which feature directions vary together.;;3 · DIRECTIONS|Find principal axes.|Eigenvectors define directions; eigenvalues rank how much variance they carry.;;4 · PROJECT|Keep fewer coordinates.|Project points onto the most informative principal directions."
+    TipTitle="PCA changes coordinates, not labels."
+    TipText="It is dimensionality reduction: the goal is to preserve useful variance with fewer axes, not to classify examples."
+    FocusText="Centering, covariance, direction ranking, and projection must stay visible instead of being delegated to a numerical package."
+    PromptText="Which direction preserves the most variation in the centered data?" />

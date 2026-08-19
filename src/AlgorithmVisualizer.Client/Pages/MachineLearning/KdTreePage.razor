@@ -46,18 +46,24 @@
 
     <section class="builder-section" aria-labelledby="kd-build-title">
         <div class="section-heading-row">
-            <div class="heading-with-step"><span class="step-number">1</span><div><span class="section-kicker">BUILD THE SPATIAL DATA</span><h2 id="kd-build-title">Choose points, then place the query.</h2><p>The first run only needs a preset and two query coordinates.</p></div></div>
+            <div class="heading-with-step"><span class="step-number">1</span><div><span class="section-kicker">BUILD THE QUERY</span><h2 id="kd-build-title">Pick an example, then place one query point.</h2><p>That is all you need for the first run. The tree is built automatically from the stored points.</p></div></div>
             <ConceptLink Href="/structures/vector">Review Vector distance →</ConceptLink>
         </div>
 
-        <div class="preset-row" aria-label="KD-Tree examples">
-            <span>TRY AN EXAMPLE</span>
-            <button type="button" class="@PresetClass(Preset.RightSide)" @onclick="() => LoadPreset(Preset.RightSide)" disabled="@IsBusy">Right cluster</button>
-            <button type="button" class="@PresetClass(Preset.LeftSide)" @onclick="() => LoadPreset(Preset.LeftSide)" disabled="@IsBusy">Left cluster</button>
+        <div class="preset-row kd-preset-row" aria-label="KD-Tree examples">
+            <span>START WITH</span>
+            <button type="button" class="@PresetClass(Preset.RightSide)" @onclick="() => LoadPreset(Preset.RightSide)" disabled="@IsBusy">Right-side query</button>
+            <button type="button" class="@PresetClass(Preset.LeftSide)" @onclick="() => LoadPreset(Preset.LeftSide)" disabled="@IsBusy">Left-side query</button>
             <button type="button" class="@PresetClass(Preset.ExactMatch)" @onclick="() => LoadPreset(Preset.ExactMatch)" disabled="@IsBusy">Exact match</button>
-            <button type="button" class="@PresetClass(Preset.Pruning)" @onclick="() => LoadPreset(Preset.Pruning)" disabled="@IsBusy">Strong pruning</button>
-            <button type="button" class="@PresetClass(Preset.SplitPlane)" @onclick="() => LoadPreset(Preset.SplitPlane)" disabled="@IsBusy">Near split plane</button>
         </div>
+        <details class="more-examples">
+            <summary>More search cases</summary>
+            <div class="preset-row" aria-label="KD-Tree edge-case examples">
+                <button type="button" class="@PresetClass(Preset.Pruning)" @onclick="() => LoadPreset(Preset.Pruning)" disabled="@IsBusy">Clear pruning case</button>
+                <button type="button" class="@PresetClass(Preset.SplitPlane)" @onclick="() => LoadPreset(Preset.SplitPlane)" disabled="@IsBusy">Near a split boundary</button>
+            </div>
+            <p>Use these after the basic search path makes sense: one should prune aggressively, while the other forces more backtracking.</p>
+        </details>
 
         <div class="kd-builder">
             <div class="dataset-preview-card">
@@ -70,42 +76,43 @@
                 </div>
             </div>
             <div class="query-card">
-                <div class="query-copy"><span>NEW QUERY</span><strong>Where should the tree search?</strong></div>
+                <div class="query-copy"><span>QUERY POINT</span><strong>Where is the new point?</strong><p>The search will find the closest stored point to these coordinates.</p></div>
                 <div class="query-input-grid">
                     <label><span>QUERY X</span><input value="@_queryXText" @oninput="QueryXChanged" disabled="@IsBusy" inputmode="decimal" /></label>
                     <label><span>QUERY Y</span><input value="@_queryYText" @oninput="QueryYChanged" disabled="@IsBusy" inputmode="decimal" /></label>
                 </div>
-                <div class="query-summary"><span>Root split</span><strong>feature 1 · x</strong><span>Next depth</span><strong>feature 2 · y</strong></div>
+                <div class="query-summary"><span>Search rule</span><strong>x split → y split → repeat</strong><span>Run behavior</span><strong>near side first → backtrack only if needed</strong></div>
                 <div class="builder-actions">
-                    <button class="secondary-action" type="button" @onclick="ToggleAdvancedSettings" disabled="@IsBusy">@(_showAdvancedSettings ? "Hide custom data" : "Edit custom data")</button>
-                    <button class="primary-action" type="button" @onclick="ApplyInputs" disabled="@IsBusy">Use this setup</button>
+                    <button class="secondary-action" type="button" @onclick="ToggleAdvancedSettings" disabled="@IsBusy">@(_showAdvancedSettings ? "Hide custom points" : "Customize stored points")</button>
                 </div>
             </div>
         </div>
 
         @if (_showAdvancedSettings)
         {
-            <div class="kd-advanced-panel"><label class="dataset-editor"><span>CUSTOM DATA · x,y,label; x,y,label; ...</span><textarea value="@_datasetText" @oninput="DatasetChanged" disabled="@IsBusy" rows="4"></textarea><small>Use 3–16 two-dimensional points. Labels are shown only to connect the nearest point back to KNN.</small></label></div>
+            <div class="kd-advanced-panel"><label class="dataset-editor"><span>CUSTOM DATA · x,y,label; x,y,label; ...</span><textarea value="@_datasetText" @oninput="DatasetChanged" disabled="@IsBusy" rows="4"></textarea><small>Use 3–16 two-dimensional points. You do not need a separate Apply action — the next run validates and uses these values automatically.</small></label></div>
         }
         @if (!string.IsNullOrWhiteSpace(_inputError)) { <p class="input-error" role="alert">@_inputError</p> }
     </section>
 
-    <section class="prediction-section" aria-labelledby="kd-predict-title">
-        <div class="section-heading-row"><div class="heading-with-step"><span class="step-number">2</span><div><span class="section-kicker">PREDICT</span><h2 id="kd-predict-title">Which class will the nearest stored point have?</h2><p>This is only a prediction prompt. KD-Tree itself returns the nearest point; KNN decides how multiple neighbors vote.</p></div></div></div>
-        <div class="prediction-actions">
-            <button type="button" class="@PredictionClass(0)" @onclick="() => SetPrediction(0)" disabled="@IsBusy">Nearest is class 0</button>
-            <button type="button" class="@PredictionClass(1)" @onclick="() => SetPrediction(1)" disabled="@IsBusy">Nearest is class 1</button>
+    <section class="predict-section" aria-labelledby="kd-predict-title">
+        <div class="prediction-card">
+            <div class="prediction-copy"><span class="step-number">2</span><div><span class="section-kicker">PREDICT BEFORE PLAYBACK</span><h2 id="kd-predict-title">Which class do you expect the nearest point to have?</h2><p>This is only your prediction; it does not change the tree. Run the search to check it.</p></div></div>
+            <div class="prediction-actions">
+                <button type="button" class="@PredictionClass(0)" @onclick="() => SetPrediction(0)" disabled="@IsBusy">Class 0</button>
+                <button type="button" class="@PredictionClass(1)" @onclick="() => SetPrediction(1)" disabled="@IsBusy">Class 1</button>
+            </div>
+            @if (_predictionAnswered) { <p class="prediction-feedback @(_predictionCorrect ? "correct" : "incorrect")">@PredictionFeedback</p> }
         </div>
-        @if (_predictionAnswered) { <p class="prediction-feedback @(_predictionCorrect ? "correct" : "incorrect")">@PredictionFeedback</p> }
     </section>
 
     <section class="lab-section" aria-labelledby="kd-lab-title">
-        <div class="lab-heading-row">
-            <div class="heading-with-step"><span class="step-number">3</span><div><span class="section-kicker">WATCH THE SEARCH</span><h2 id="kd-lab-title">Build → descend → backtrack → prune.</h2></div></div>
+        <div class="lab-heading">
+            <div class="heading-with-step"><span class="step-number">3</span><div><span class="section-kicker">WATCH THE SEARCH</span><h2 id="kd-lab-title">Build the tree → follow one side → backtrack only when needed.</h2></div></div>
             <div class="lab-actions">
                 <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Open explanation after run</span></label>
                 @if (_lastResult is not null) { <button class="secondary-action" type="button" @onclick="OpenLastRunPopup">Last explanation</button> }
-                <button class="sort-button" type="button" @onclick="RunAsync" disabled="@IsBusy"><span>▶</span> Search nearest point</button>
+                <button class="sort-button" type="button" @onclick="RunAsync" disabled="@IsBusy"><span>▶</span> Run nearest search</button>
             </div>
         </div>
 
@@ -152,22 +159,20 @@
             }
         </div>
 
-        <div class="kd-run-dashboard" aria-label="KD-Tree live metrics">
-            <article><span>Phase</span><strong>@PhaseText(DisplayedSnapshot.Phase)</strong><small>Build or current search action.</small></article>
-            <article><span>Visited</span><strong>@DisplayedSnapshot.VisitedNodes / @DisplayedSnapshot.Count</strong><small>Nodes whose point distance was measured.</small></article>
-            <article><span>Pruned</span><strong>@DisplayedSnapshot.PrunedNodes</strong><small>Nodes skipped because their region cannot win.</small></article>
-            <article><span>Plane distance</span><strong>@FormatDistance(DisplayedSnapshot.SplitPlaneDistance)</strong><small>Compared with best-so-far while backtracking.</small></article>
-            <article><span>Best distance</span><strong>@FormatDistance(DisplayedSnapshot.BestDistance)</strong><small>Radius the opposite side must beat.</small></article>
+        <div class="run-dashboard kd-run-dashboard" aria-label="KD-Tree live metrics">
+            <article><span>Current phase</span><strong>@PhaseText(DisplayedSnapshot.Phase)</strong><small>Where the search is now.</small></article>
+            <article><span>Visited</span><strong>@DisplayedSnapshot.VisitedNodes / @DisplayedSnapshot.Count</strong><small>Points actually measured.</small></article>
+            <article><span>Pruned</span><strong>@DisplayedSnapshot.PrunedNodes</strong><small>Points skipped with geometric proof.</small></article>
+            <article><span>Best distance</span><strong>@FormatDistance(DisplayedSnapshot.BestDistance)</strong><small>The radius another region must beat.</small></article>
         </div>
     </section>
 
     <section class="fit-section" aria-labelledby="kd-fit-title">
-        <div class="section-heading-row"><div><span class="section-kicker">WHEN IT FITS</span><h2 id="kd-fit-title">KD-Tree helps when geometry is low-dimensional and many nearest-neighbor queries reuse the same points.</h2></div></div>
+        <div class="section-heading-row"><div><span class="section-kicker">WHEN SHOULD I USE IT?</span><h2 id="kd-fit-title">Choose KD-Tree for repeated nearest-point queries on stable, low-dimensional data.</h2><p>Use these cards as a decision guide. The tree is worth its extra structure only when pruning saves enough repeated distance checks.</p></div></div>
         <div class="fit-grid">
-            <article class="fit-card"><span>GOOD FIT</span><strong>Repeated spatial queries</strong><p>Build once, then use split planes to avoid rescanning every point for every query.</p></article>
-            <article class="fit-card"><span>GOOD FIT</span><strong>Low-dimensional features</strong><p>Axis-aligned regions remain useful enough for pruning.</p></article>
-            <article class="fit-card"><span>AVOID FOR</span><strong>Very high dimensions</strong><p>Many regions remain plausible, so search can approach the same O(n) scan KNN already used.</p></article>
-            <article class="fit-card"><span>NEXT CONNECTION</span><strong>K-Means</strong><p>Next, distances are used differently: points repeatedly move toward learned centroids instead of a fixed search tree.</p></article>
+            <article class="fit-card good"><span>GOOD FIT</span><strong>Many nearest-point queries over mostly unchanged 2D/3D-style data</strong><p>Spatial coordinates and small feature vectors are the clearest fit: build the index once, then reuse it while pruning skips entire regions.</p></article>
+            <article class="fit-card avoid"><span>AVOID FOR</span><strong>High-dimensional features or constantly changing points</strong><p>As dimensions grow, the split planes prune less effectively. Frequent mutations also reduce the value of a tree that costs extra work to build.</p></article>
+            <article class="fit-card better"><span>BETTER ALTERNATIVE</span><strong>Use the plain KNN scan when the dataset is small</strong><p>A full scan is simpler, predictable, and has no index-building cost. Add KD-Tree only when repeated low-dimensional searches make pruning useful.</p><div class="fit-links"><a href="/ml-foundations/knn">Compare with KNN →</a></div></article>
         </div>
     </section>
 
@@ -181,7 +186,7 @@
         </div>
     </section>
 
-    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="07 · Planned" Title="K-Means" Description="Replace labeled neighbors with learned centroids: assign points, move centroids, repeat until cluster membership stabilizes." Href="/ml-foundations/k-means" LinkLabel="Preview K-Means" />
+    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="07 · Interactive" Title="K-Means" Description="Replace labeled neighbors with learned centroids: assign points, move centroids, repeat until cluster membership stabilizes." Href="/ml-foundations/k-means" LinkLabel="Open K-Means" />
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)

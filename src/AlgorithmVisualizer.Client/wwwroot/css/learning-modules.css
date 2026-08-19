@@ -361,6 +361,253 @@ body .learning-module-page.learning-module-shell {
     background: #f5f3ff;
 }
 
+/* Shared step/prediction grammar from the approved Search/Sort/Graph lessons. */
+.learning-module-page.learning-module-shell .heading-with-step,
+.learning-module-page.learning-module-shell .prediction-copy {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+}
+
+.learning-module-page.learning-module-shell .step-number {
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    border-radius: .65rem;
+    color: #fff;
+    background: var(--color-primary);
+    font-size: .78rem;
+    font-weight: 900;
+}
+
+.learning-module-page.learning-module-shell .prediction-card {
+    max-width: 52rem;
+    display: grid;
+    gap: .8rem;
+    padding: .95rem;
+    border: 1px solid #e1ddff;
+    border-radius: .9rem;
+    background: #faf9ff;
+}
+
+.learning-module-page.learning-module-shell .prediction-copy h2 {
+    margin: .28rem 0 0;
+}
+
+.learning-module-page.learning-module-shell .prediction-copy p {
+    margin: .35rem 0 0;
+    color: var(--color-text-soft);
+    font-size: .9rem;
+    line-height: 1.5;
+}
+
+/* Shared action spacing: keep Build / Predict / Watch controls aligned across every lesson. */
+.learning-module-page.learning-module-shell .builder-actions,
+.learning-module-page.learning-module-shell .lab-actions,
+.learning-module-page.learning-module-shell .prediction-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .65rem;
+}
+
+.learning-module-page.learning-module-shell .builder-actions,
+.learning-module-page.learning-module-shell .lab-actions {
+    justify-content: flex-end;
+}
+
+.learning-module-page.learning-module-shell .popup-toggle {
+    min-height: 2.45rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .5rem .68rem;
+    border: 1px solid var(--color-border);
+    border-radius: .65rem;
+    color: var(--color-text-soft);
+    background: #fff;
+    font-size: .8rem;
+    font-weight: 700;
+}
+
+.learning-module-page.learning-module-shell .popup-toggle input {
+    margin: 0;
+}
+
+/* Canonical When it fits layout: one recommendation, one warning, one next/better choice. */
+.learning-module-page.learning-module-shell .fit-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.learning-module-page.learning-module-shell .fit-card {
+    display: grid;
+    align-content: start;
+    gap: .45rem;
+    padding: 1rem;
+}
+
+.learning-module-page.learning-module-shell .fit-card.good { border-top: 3px solid #57a99d; }
+.learning-module-page.learning-module-shell .fit-card.avoid { border-top: 3px solid #d69a56; }
+.learning-module-page.learning-module-shell .fit-card.better { border-top: 3px solid var(--color-primary); }
+
+.learning-module-page.learning-module-shell .fit-card > span {
+    color: var(--color-text-muted);
+    font-size: .7rem;
+    font-weight: 850;
+    letter-spacing: .06em;
+}
+
+.learning-module-page.learning-module-shell .fit-card strong {
+    font-size: .96rem;
+    line-height: 1.35;
+}
+
+.learning-module-page.learning-module-shell .fit-card p {
+    margin: 0;
+    color: var(--color-text-soft);
+    font-size: .9rem;
+    line-height: 1.5;
+}
+
+.learning-module-page.learning-module-shell .fit-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .55rem;
+    margin-top: .2rem;
+}
+
+.learning-module-page.learning-module-shell .fit-links a {
+    color: var(--color-primary-strong);
+    text-decoration: none;
+    font-size: .84rem;
+    font-weight: 800;
+}
+
+/* Shared last-run modal chrome. Scoped pages may add content-specific tabs/metrics, but the modal itself must always open as an overlay. */
+.run-popup-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: rgba(25, 28, 38, .46);
+}
+
+.run-popup {
+    width: min(48rem, 100%);
+    max-height: min(86vh, 46rem);
+    overflow: auto;
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    background: #fff;
+    box-shadow: 0 24px 70px rgba(20, 25, 45, .24);
+}
+
+.run-popup > header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.05rem;
+    border-bottom: 1px solid var(--color-border);
+    background: rgba(255, 255, 255, .98);
+}
+
+.run-popup h2 {
+    margin: .25rem 0 0;
+    font-size: 1.15rem;
+    line-height: 1.35;
+}
+
+.popup-close {
+    flex: 0 0 auto;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--color-border);
+    border-radius: .6rem;
+    color: var(--color-text-soft);
+    background: #fff;
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.popup-body {
+    display: grid;
+    gap: .85rem;
+    padding: 1rem 1.05rem 1.1rem;
+}
+
+.popup-body > p {
+    margin: 0;
+    color: var(--color-text-soft);
+    font-size: .92rem;
+    line-height: 1.6;
+}
+
+.popup-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .55rem;
+}
+
+.popup-metrics > div {
+    min-width: 0;
+    display: grid;
+    gap: .15rem;
+    padding: .7rem;
+    border: 1px solid var(--color-border);
+    border-radius: .7rem;
+    background: var(--color-surface-subtle);
+}
+
+.popup-metrics span {
+    color: var(--color-text-muted);
+    font-size: .68rem;
+    font-weight: 850;
+}
+
+.popup-metrics strong {
+    overflow-wrap: anywhere;
+    font-size: .88rem;
+}
+
+.popup-memory {
+    padding: .75rem;
+    border-radius: .7rem;
+    background: var(--color-surface-accent);
+}
+
+.popup-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    padding: .7rem 1.05rem 0;
+}
+
+.popup-tabs button {
+    min-height: 2.2rem;
+    padding: .45rem .65rem;
+    border: 1px solid var(--color-border);
+    border-radius: .6rem;
+    color: var(--color-text-soft);
+    background: #fff;
+    cursor: pointer;
+    font-weight: 760;
+}
+
+.popup-tabs button.active {
+    border-color: #cfc7ff;
+    color: #4d3db9;
+    background: #f5f3ff;
+}
+
 .learning-module-page.learning-module-shell button:disabled {
     cursor: not-allowed;
     opacity: .5;
@@ -699,7 +946,35 @@ body .learning-module-page.learning-module-shell {
     }
 }
 
+@media (max-width: 820px) {
+    .learning-module-page.learning-module-shell .fit-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .popup-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 @media (max-width: 720px) {
+    .learning-module-page.learning-module-shell .builder-actions,
+    .learning-module-page.learning-module-shell .lab-actions,
+    .learning-module-page.learning-module-shell .prediction-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .learning-module-page.learning-module-shell .builder-actions > *,
+    .learning-module-page.learning-module-shell .lab-actions > *,
+    .learning-module-page.learning-module-shell .prediction-actions > * {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .popup-metrics {
+        grid-template-columns: 1fr;
+    }
+
     .learning-module-page.learning-module-shell .state-tabs-row {
         align-items: stretch;
         flex-direction: column;

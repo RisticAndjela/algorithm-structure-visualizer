@@ -4,7 +4,7 @@
   </PropertyGroup>
 
   <!--
-    KNN and KD-Tree were introduced as nested source folders. Keep these compile items
+    KNN, KD-Tree, and K-Means were introduced as nested source folders. Keep these compile items
     explicit so IDE/MSBuild project evaluation cannot leave the new namespace out
     when this repository is updated through incremental patch ZIPs. Remove first
     because SDK projects already include **/*.cs by default; re-include once here.
@@ -18,5 +18,9 @@
     <Compile Remove="MachineLearning/Supervised/KdTree/KdTreeSimulation.cs" />
     <Compile Include="MachineLearning/Supervised/KdTree/KdTreeModels.cs" />
     <Compile Include="MachineLearning/Supervised/KdTree/KdTreeSimulation.cs" />
+    <Compile Remove="MachineLearning/Unsupervised/KMeans/KMeansModels.cs" />
+    <Compile Remove="MachineLearning/Unsupervised/KMeans/KMeansSimulation.cs" />
+    <Compile Include="MachineLearning/Unsupervised/KMeans/KMeansModels.cs" />
+    <Compile Include="MachineLearning/Unsupervised/KMeans/KMeansSimulation.cs" />
   </ItemGroup>
 </Project>

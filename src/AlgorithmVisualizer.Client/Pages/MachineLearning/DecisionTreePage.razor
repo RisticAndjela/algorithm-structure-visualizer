@@ -1,0 +1,25 @@
+@page "/ml-foundations/decision-tree"
+
+<PageTitle>Decision Tree — Planned — Algorithm Visualizer</PageTitle>
+
+<LearningPlaceholder
+    Title="Decision Tree"
+    Eyebrow="MACHINE LEARNING · PHASE 1 STEP 8"
+    Description="Build an interpretable classifier by choosing feature-threshold splits that make child groups purer, then predict by following one root-to-leaf path."
+    Complexity="O(n·f·s) teaching scan"
+    ComplexityNote="Candidate split work depends on examples, features, and thresholds considered."
+    Concepts="Feature split · Threshold · Gini / entropy · Information gain · Leaf prediction · Overfitting"
+    LearnTitle="A decision tree is a sequence of simple questions."
+    LearnSummary="At each node, choose a feature and threshold, send examples left or right, then repeat until a leaf can make a useful prediction."
+    ConceptHref="/learn/concepts/decision-tree"
+    LearnCards="1 · ASK|Choose one feature threshold.|A split turns one mixed group into two smaller groups.;;2 · SCORE|Measure how pure the children became.|A useful split reduces class mixing.;;3 · REPEAT|Split a child only when it still needs work.|The tree grows recursively.;;4 · PREDICT|Follow one path to a leaf.|The reached leaf makes the final class prediction."
+    TipTitle="The tree should explain its own prediction."
+    TipText="Every prediction can be traced through the exact feature-threshold decisions that were taken."
+    FocusText="After a split, every example must belong to exactly one child and the chosen score must be computed from those real child groups."
+    PromptText="Which candidate split reduces impurity the most without making the tree unnecessarily complex?"
+    NextLessonEyebrow="NEXT MACHINE-LEARNING LESSON"
+    NextLessonTitle="PCA"
+    NextLessonDescription="Move from supervised splits to dimensionality reduction by finding directions that preserve the most variance."
+    NextLessonHref="/ml-foundations/pca"
+    NextLessonLevel="09 · Planned"
+    NextLessonLinkLabel="Preview PCA" />

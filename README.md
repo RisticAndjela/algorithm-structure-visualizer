@@ -11,7 +11,7 @@ The project is built with **Blazor WebAssembly and C#**. Its goal is not only to
 - what the time complexity means for the current run;
 - how the visual representation differs from the way the data is stored in memory.
 
-The application now has twenty-seven fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **Binary Heap (Min/Max)**, **Heap (generalized d-ary)**, **AVL Tree**, **Vector**, **Matrix**, **Graph**, **Red-Black Tree**, **Bubble Sort**, **Selection Sort**, **Insertion Sort**, **Merge Sort**, **Quick Sort**, **Heap Sort**, **Topological Sort**, **Linear Search**, **Binary Search**, **Breadth-First Search (BFS)**, **Depth-First Search (DFS)**, **Dijkstra**, **Minimum Spanning Tree (Prim/Kruskal)**, **Gradient Descent**, **Linear Regression**, **Logistic Regression**, **K-Nearest Neighbors (KNN)**, and **KD-Tree**. Vector is taught in Data Structures and then reused as a numerical dependency by Machine Learning. The Home page, sidebar, Concepts & Memory navigation, and Next Lesson flow expose these modules one-to-one in the same curriculum order instead of grouping several finished lessons behind one card. Every live lab deep-links to the exact Concepts & Memory topic through dedicated Blazor routes such as `/learn/concepts/linear-search`; the shared C# `ConceptLink` component performs normal Blazor navigation without authored JavaScript or cross-page fragment timing.
+The application now has twenty-eight fully implemented learning modules: **Queue & Stack**, **Binary Search Tree (BST)**, **Binary Heap (Min/Max)**, **Heap (generalized d-ary)**, **AVL Tree**, **Vector**, **Matrix**, **Graph**, **Red-Black Tree**, **Bubble Sort**, **Selection Sort**, **Insertion Sort**, **Merge Sort**, **Quick Sort**, **Heap Sort**, **Topological Sort**, **Linear Search**, **Binary Search**, **Breadth-First Search (BFS)**, **Depth-First Search (DFS)**, **Dijkstra**, **Minimum Spanning Tree (Prim/Kruskal)**, **Gradient Descent**, **Linear Regression**, **Logistic Regression**, **K-Nearest Neighbors (KNN)**, **KD-Tree**, and **K-Means**. Vector is taught in Data Structures and then reused as a numerical dependency by Machine Learning. The Home page, sidebar, Concepts & Memory navigation, and Next Lesson flow expose these modules one-to-one in the same curriculum order instead of grouping several finished lessons behind one card. Every live lab deep-links to the exact Concepts & Memory topic through dedicated Blazor routes such as `/learn/concepts/linear-search`; the shared C# `ConceptLink` component performs normal Blazor navigation without authored JavaScript or cross-page fragment timing.
 
 ---
 
@@ -46,6 +46,8 @@ The application now has twenty-seven fully implemented learning modules: **Queue
 - Linear Regression (Machine Learning supervised model)
 - Logistic Regression (Machine Learning binary classifier)
 - K-Nearest Neighbors (Machine Learning neighbor-based classifier)
+- KD-Tree (Machine Learning spatial nearest-neighbor index)
+- K-Means (Machine Learning unsupervised clustering)
 - shared simulation runtime;
 - play, pause and adjustable simulation speed;
 - manual step forward;
@@ -60,10 +62,11 @@ The application now has twenty-seven fully implemented learning modules: **Queue
 - guided practice tasks with automatic completion;
 - learning progress and popup preferences persisted through a C# ASP.NET Core API into SQLite;
 - optional result explanation popups;
+- generic Last Run modal overlay/chrome shared by learning modules so pages cannot silently render result content inline when local popup CSS is absent;
 - Concepts & Memory learning page;
 - shared learner-facing module chrome in `wwwroot/css/learning-modules.css`, using the mature Queue & Stack / BST / Matrix / Graph visual language for sorting Learn First panels, module headers, tips, reference links, and lesson progression;
 - one application-wide curriculum hierarchy: Learn → Data Structures → Sorting → Search & Traversal → Machine Learning; advanced live lessons use a red difficulty dot, while planned lessons keep the neutral planned marker; Graph algorithms are classified inside those algorithm tracks rather than forming a separate navigation section: Topological Sort is Sorting; Dijkstra and MST are Search & Traversal;
-- difficulty-ordered curriculum navigation with reusable `NextLessonCard` links: Queue & Stack → BST → Binary Heap → d-ary Heap → AVL → Vector → Matrix → Graph → Red-Black Tree, then Bubble → Selection → Insertion → Merge → Quick → Heap Sort → Topological Sort (Advanced), then Linear Search → Binary Search → BFS → DFS → Dijkstra (Advanced) → Minimum Spanning Tree (Advanced), then Machine Learning continues Gradient Descent → Linear Regression → Logistic Regression → KNN → KD-Tree → K-Means (planned);
+- difficulty-ordered curriculum navigation with reusable `NextLessonCard` links: Queue & Stack → BST → Binary Heap → d-ary Heap → AVL → Vector → Matrix → Graph → Red-Black Tree, then Bubble → Selection → Insertion → Merge → Quick → Heap Sort → Topological Sort (Advanced), then Linear Search → Binary Search → BFS → DFS → Dijkstra (Advanced) → Minimum Spanning Tree (Advanced), then Machine Learning continues Gradient Descent → Linear Regression → Logistic Regression → KNN → KD-Tree → K-Means → Decision Tree (planned);
 - exact route-based links from every live lab to the relevant Concepts & Memory topic, plus reverse links from the concept sections back to the matching lesson;
 - BST insert, search, delete, explicit DSW balance, and reset;
 - BST leaf / one-child / two-child deletion simulation;
@@ -140,7 +143,7 @@ The application now has twenty-seven fully implemented learning modules: **Queue
 
 All sorting pages now use the same learner-facing design language as the mature data-structure modules instead of a separate sorting-specific landing-page style. Live sorting labs opt into `learning-module-page learning-module-shell`; their **LEARN FIRST** area uses the shared explanation + 2×2 concept-card pattern, followed by the same compact module-header, smart-tip, bordered lab panels, compact Visual/Memory switch with an adjacent explanation, Guided Practice styling, exact Concepts & Memory links, and reusable Next Lesson navigation. Quick Sort and Heap Sort are both live labs using the shared learning shell. `LearningPlaceholder` remains the required shell for future not-yet-implemented lessons so a future implementation replaces only the TODO workspace rather than inventing another design.
 
-The sidebar and Concepts & Memory page use explicit easy → hard ordering. Concepts & Memory starts with shared foundations (Visual vs Memory, memory, identity, Big-O), then presents data-structure lessons in curriculum order, sorting lessons from Bubble through Heap Sort and advanced Topological Sort, then the search/traversal track progressing from Linear Search to Binary Search, BFS, DFS, advanced Dijkstra, and advanced Minimum Spanning Tree. Dedicated topic routes such as `/learn/concepts/bst`, `/learn/concepts/matrix`, `/learn/concepts/heap-sort`, and `/learn/concepts/linear-search` let each module land on the exact explanation it needs without cross-page fragment scrolling. Every lesson page exposes a `NextLessonCard`, and the concept sections link back to the corresponding lab.
+The sidebar and Concepts & Memory page use explicit easy → hard ordering. Concepts & Memory starts with shared foundations (Visual vs Memory, memory, identity, Big-O), then presents data-structure lessons in curriculum order, sorting lessons from Bubble through Heap Sort and advanced Topological Sort, then the search/traversal track progressing from Linear Search to Binary Search, BFS, DFS, advanced Dijkstra, and advanced Minimum Spanning Tree. Dedicated topic routes such as `/learn/concepts/bst`, `/learn/concepts/matrix`, `/learn/concepts/heap-sort`, and `/learn/concepts/linear-search` let each module land on the exact explanation it needs without cross-page fragment scrolling. Bare fragment-only links are not used, including in the Concepts jump menu, because the application root `<base href="/">` can otherwise resolve them as `/#topic`. Every lesson page exposes a `NextLessonCard`, and the concept sections link back to the corresponding lab.
 
 ### Bubble Sort module details
 
@@ -208,7 +211,7 @@ The Client contains no project-owned JavaScript and no `IJSRuntime` calls. Learn
 
 ### Planned
 
-The following modules currently have UI placeholders and are intentionally marked as TODO until their algorithms are implemented:
+The following curriculum modules are still intentionally marked as TODO until their algorithms are implemented:
 
 #### Data structures
 
@@ -219,6 +222,8 @@ All currently planned base data-structure modules in the specification are now r
 All seven sorting lessons in the current curriculum are live: Bubble, Selection, Insertion, Merge, Quick, Heap Sort, and advanced Topological Sort.
 
 Linear Search, Binary Search, BFS, DFS, advanced Dijkstra, and advanced Minimum Spanning Tree are live in Search & Traversal. Topological Sort is live as the advanced final Sorting lesson. BFS/DFS reuse the existing Graph representation and manual Queue/Stack foundations; Dijkstra reuses the same Graph and adds manual linear-minimum and binary-min-heap priority selection over non-negative weighted edges; Topological Sort reuses the same directed Graph with Kahn indegree/FIFO and DFS reverse-postorder variants.
+
+Decision Tree is the next planned Machine Learning lesson (Phase 1 step 8), followed by PCA. K-Means is now live.
 
 ---
 
@@ -1416,7 +1421,7 @@ The structure foundation includes our custom Queue, Stack, BST, AVL, Red-Black, 
 
 **Matrix: implemented as the pre-Graph row-major module with direct cell editing, bulk custom-value input with automatic dimension detection, arithmetic, multiplication, transpose, powers, determinant, minors/cofactors, elementary row operations, REF/RREF/rank, inverse, equation solving, graph-adjacency presets, Visual/Memory views, a row-list-first memory explanation with expandable real `double[]` backing storage, continuously auto-tracked guided practice with optional Start/Restart setup and active progress, and automatic three-view Last Run explanations.**
 
-The project now has reusable manual linear structures, three reusable manual tree foundations, two reusable heap views of the same family, a reusable Matrix foundation, a live reusable Graph structure, complete BFS/DFS traversal labs, a complete Dijkstra weighted-shortest-path lab, a complete Topological Sort dependency-order lab, a complete Prim/Kruskal MST lab, a live Vector data-structure lab plus live Gradient Descent, Linear Regression, Logistic Regression, KNN, and KD-Tree Machine Learning foundations, and seven complete Sorting lessons: Bubble Sort, Selection Sort, Insertion Sort, Merge Sort, Quick Sort, Heap Sort, and advanced Topological Sort.
+The project now has reusable manual linear structures, three reusable manual tree foundations, two reusable heap views of the same family, a reusable Matrix foundation, a live reusable Graph structure, complete BFS/DFS traversal labs, a complete Dijkstra weighted-shortest-path lab, a complete Topological Sort dependency-order lab, a complete Prim/Kruskal MST lab, a live Vector data-structure lab plus live Gradient Descent, Linear Regression, Logistic Regression, KNN, KD-Tree, and K-Means Machine Learning foundations, and seven complete Sorting lessons: Bubble Sort, Selection Sort, Insertion Sort, Merge Sort, Quick Sort, Heap Sort, and advanced Topological Sort.
 
 ### Matrix memory visualization
 
@@ -1573,4 +1578,14 @@ KD-Tree is the fifth live Machine Learning lesson and Phase 1 roadmap step 6. It
 
 Nearest-neighbor search descends toward the query side first, measures true Euclidean point distance through the existing `VectorSimulation`, tracks the best candidate, backtracks, and compares absolute split-plane distance with best-so-far before deciding whether the opposite subtree must be searched. Balanced low-dimensional queries can approach `O(log n)` average behavior, while the worst case remains `O(n)` and high dimensions reduce pruning effectiveness. No framework tree, sort helper, spatial index, nearest-neighbor package, or ML library performs the taught behavior.
 
-The Client follows the shared learning shell with minimal default controls: dataset preset plus query x/y, class prediction, playback, compact Visual/Memory switch, fit guidance, and behavior-based Guided Practice. Custom points are progressively disclosed. Visual State combines true bounded spatial partitions with visited/best/pruned point states and a compact tree-by-depth view. Memory State exposes pointIndex, split axis, depth, left/right child IDs, query/current/best state, and pruning counters. K-Means is the next planned Phase 1 step 7.
+The Client follows the shared learning shell with minimal default controls: dataset preset plus query x/y, class prediction, playback, compact Visual/Memory switch, fit guidance, and behavior-based Guided Practice. Custom points are progressively disclosed. Visual State combines true bounded spatial partitions with visited/best/pruned point states and a compact tree-by-depth view. Memory State exposes pointIndex, split axis, depth, left/right child IDs, query/current/best state, and pruning counters. K-Means is the next live Phase 1 step 7.
+
+
+## Machine Learning — K-Means
+
+K-Means is the sixth live Machine Learning lesson and Phase 1 roadmap step 7. The learner-facing plot is intentionally two-dimensional so assignments and centroid movement stay visible, while Core accepts any shared feature dimension. Stored examples and centroids use project-owned `ManualVector`; Euclidean distance reuses the existing `VectorSimulation`.
+
+The clustering layer itself is explicit project code: every point scans all `k` centroids, stores its nearest assignment and distance, cluster means are recomputed with visible sum/count loops, empty clusters keep their previous centroid, and the run stops when assignments stabilize or centroid movement falls under tolerance. No clustering/ML library, framework grouping helper, or hidden numerical optimizer performs the taught behavior.
+
+The Client keeps the first interaction small: choose a preset and `k`, predict whether the first grouping will change, then watch **Assign → Move centroids → Repeat**. Custom points and seed indexes are progressively disclosed. Visual State shows cluster membership and centroid movement; Memory State shows fixed point vectors beside assignments, distances, cluster counts, and mutable centroid vectors. Guided Practice covers clear 2/3/4-cluster cases, poor starting centroids, and a real empty-cluster edge case. Decision Tree is the next planned Phase 1 step 8.
+

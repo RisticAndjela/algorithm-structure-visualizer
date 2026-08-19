@@ -1,0 +1,153 @@
+@using System.Globalization
+@using AlgorithmVisualizer.Core.MachineLearning.Unsupervised.KMeans
+
+<div class="kmeans-visual" aria-label="K-Means visual state">
+    <div class="kmeans-metric-strip">
+        <article><span>Round</span><strong>@RoundText</strong><small>assignment + centroid update</small></article>
+        <article><span>Phase</span><strong>@PhaseText(Snapshot.Phase)</strong><small>current algorithm action</small></article>
+        <article><span>Inertia</span><strong>@FormatMetric(Snapshot.Inertia)</strong><small>sum of squared assigned distances</small></article>
+        <article><span>Changed</span><strong>@Snapshot.ChangedAssignments</strong><small>assignments changed this round</small></article>
+    </div>
+
+    <div class="kmeans-workspace">
+        <section class="cluster-plot-card">
+            <header>
+                <div><span>FEATURE SPACE</span><strong>Points move between clusters; centroids move through space.</strong></div>
+                <small>@Snapshot.Count points · @Snapshot.ClusterCount clusters</small>
+            </header>
+            <div class="cluster-plot">
+                <svg viewBox="0 0 760 420" role="img" aria-label="Two-dimensional K-Means clustering plot" preserveAspectRatio="xMidYMid meet">
+                    @foreach (var line in GridLines)
+                    {
+                        <line x1="@line.X1" y1="@line.Y1" x2="@line.X2" y2="@line.Y2" class="plot-grid-line" />
+                    }
+                    @for (var pointIndex = 0; pointIndex < Snapshot.Features.Length; pointIndex++)
+                    {
+                        var cluster = Snapshot.Assignments[pointIndex];
+                        if (cluster >= 0 && cluster < Snapshot.Centroids.Length)
+                        {
+                            <line x1="@X(Snapshot.Features[pointIndex][0])" y1="@Y(Snapshot.Features[pointIndex][1])"
+                                  x2="@X(Snapshot.Centroids[cluster][0])" y2="@Y(Snapshot.Centroids[cluster][1])"
+                                  class="assignment-link @ClusterClass(cluster)" />
+                        }
+                    }
+                    @for (var pointIndex = 0; pointIndex < Snapshot.Features.Length; pointIndex++)
+                    {
+                        var cluster = Snapshot.Assignments[pointIndex];
+                        <circle cx="@X(Snapshot.Features[pointIndex][0])" cy="@Y(Snapshot.Features[pointIndex][1])" r="@(pointIndex == Snapshot.CurrentPointIndex ? 10 : 7)"
+                                class="data-point @ClusterClass(cluster) @PointStateClass(Snapshot.PointStates[pointIndex])" />
+                    }
+                    @for (var cluster = 0; cluster < Snapshot.Centroids.Length; cluster++)
+                    {
+                        var cx = X(Snapshot.Centroids[cluster][0]);
+                        var cy = Y(Snapshot.Centroids[cluster][1]);
+                        <circle cx="@cx" cy="@cy" r="16" class="centroid-halo @ClusterClass(cluster) @CentroidStateClass(Snapshot.CentroidStates[cluster])" />
+                        <line x1="@(cx - 7)" y1="@cy" x2="@(cx + 7)" y2="@cy" class="centroid-cross @ClusterClass(cluster)" />
+                        <line x1="@cx" y1="@(cy - 7)" x2="@cx" y2="@(cy + 7)" class="centroid-cross @ClusterClass(cluster)" />
+                    }
+                </svg>
+                <span class="axis-note y-note">feature 2</span>
+                <span class="axis-note x-note">feature 1</span>
+            </div>
+            <div class="kmeans-legend">
+                @for (var cluster = 0; cluster < Snapshot.Centroids.Length; cluster++)
+                {
+                    <span><i class="legend-dot @ClusterClass(cluster)"></i>cluster @(cluster + 1)</span>
+                }
+                <span><i class="legend-centroid"></i>centroid</span>
+                <span><i class="legend-link"></i>assigned to</span>
+            </div>
+        </section>
+
+        <aside class="cluster-story-card">
+            <div class="story-heading"><span>THIS ROUND</span><strong>@StoryTitle</strong><p>@Snapshot.FocusText</p></div>
+            <div class="cluster-list">
+                @for (var cluster = 0; cluster < Snapshot.Centroids.Length; cluster++)
+                {
+                    <article class="cluster-summary @ClusterClass(cluster) @(cluster == Snapshot.CurrentCentroidIndex ? "active" : string.Empty)">
+                        <div><i></i><span>Cluster @(cluster + 1)</span><strong>@SafeCount(cluster) points</strong></div>
+                        <small>centroid [@Format(Snapshot.Centroids[cluster][0]), @Format(Snapshot.Centroids[cluster][1])]</small>
+                    </article>
+                }
+            </div>
+            <div class="round-rule"><span>STOP RULE</span><strong>@StopRuleText</strong><small>Stable assignments or tiny centroid movement ends the run.</small></div>
+        </aside>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public KMeansSnapshot Snapshot { get; set; } = default!;
+
+    private const double Left = 54d;
+    private const double Right = 726d;
+    private const double Top = 34d;
+    private const double Bottom = 378d;
+
+    private double MinX => Bound(0, true);
+    private double MaxX => Bound(0, false);
+    private double MinY => Bound(1, true);
+    private double MaxY => Bound(1, false);
+    private string RoundText => Snapshot.Iteration == 0 ? "ready" : Snapshot.Iteration.ToString(CultureInfo.InvariantCulture);
+    private string StoryTitle => Snapshot.Phase switch
+    {
+        KMeansPhase.Initializing => "Start from visible seeds.",
+        KMeansPhase.Assigning => "Find the nearest centroid.",
+        KMeansPhase.Updating => "Move each centroid to its mean.",
+        KMeansPhase.Complete => Snapshot.Converged ? "Clusters stabilized." : "Iteration budget reached.",
+        _ => "Ready to cluster."
+    };
+    private string StopRuleText => Snapshot.Converged ? "converged" : Snapshot.MaxCentroidMovement > 0d ? $"max move {Format(Snapshot.MaxCentroidMovement)}" : "not checked yet";
+
+    private double X(double value) => Scale(value, MinX, MaxX, Left, Right);
+    private double Y(double value) => Scale(value, MinY, MaxY, Bottom, Top);
+
+    private double Bound(int axis, bool minimum)
+    {
+        var min = double.PositiveInfinity;
+        var max = double.NegativeInfinity;
+        for (var point = 0; point < Snapshot.Features.Length; point++)
+        {
+            min = Math.Min(min, Snapshot.Features[point][axis]);
+            max = Math.Max(max, Snapshot.Features[point][axis]);
+        }
+        for (var cluster = 0; cluster < Snapshot.Centroids.Length; cluster++)
+        {
+            min = Math.Min(min, Snapshot.Centroids[cluster][axis]);
+            max = Math.Max(max, Snapshot.Centroids[cluster][axis]);
+        }
+
+        if (!double.IsFinite(min) || !double.IsFinite(max)) return minimum ? -1d : 1d;
+        var range = Math.Max(1d, max - min);
+        var padding = Math.Max(.8d, range * .14d);
+        return minimum ? min - padding : max + padding;
+    }
+
+    private static double Scale(double value, double min, double max, double outMin, double outMax)
+    {
+        if (Math.Abs(max - min) < 1e-12d) return (outMin + outMax) / 2d;
+        return outMin + ((value - min) / (max - min)) * (outMax - outMin);
+    }
+
+    private IEnumerable<GridLine> GridLines
+    {
+        get
+        {
+            for (var step = 1; step <= 4; step++)
+            {
+                var x = Left + ((Right - Left) * step / 5d);
+                var y = Top + ((Bottom - Top) * step / 5d);
+                yield return new GridLine(x, Top, x, Bottom);
+                yield return new GridLine(Left, y, Right, y);
+            }
+        }
+    }
+
+    private int SafeCount(int cluster) => cluster >= 0 && cluster < Snapshot.ClusterCounts.Length ? Snapshot.ClusterCounts[cluster] : 0;
+    private static string ClusterClass(int cluster) => cluster switch { 0 => "cluster-zero", 1 => "cluster-one", 2 => "cluster-two", 3 => "cluster-three", 4 => "cluster-four", _ => "cluster-none" };
+    private static string PointStateClass(KMeansPointState state) => state.ToString().ToLowerInvariant();
+    private static string CentroidStateClass(KMeansCentroidState state) => state.ToString().ToLowerInvariant();
+    private static string PhaseText(KMeansPhase phase) => phase switch { KMeansPhase.Initializing => "initialize", KMeansPhase.Assigning => "assign", KMeansPhase.Updating => "move centroids", KMeansPhase.Complete => "complete", _ => "ready" };
+    private static string FormatMetric(double value) => value <= 0d ? "—" : Format(value);
+    private static string Format(double value) => double.IsFinite(value) ? (Math.Abs(value) < 1e-12d ? "0" : value.ToString("0.##", CultureInfo.InvariantCulture)) : "—";
+    private sealed record GridLine(double X1, double Y1, double X2, double Y2);
+}

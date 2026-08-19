@@ -238,7 +238,7 @@ This preserves the architectural rule: Core teaches algorithms, Client visualize
 
 `DataStructures/Vector/ManualVector` is a reusable numerical data structure stored in a contiguous project-owned `double[]`. The learner-facing route is `/structures/vector` and its live Client page lives under `Pages/DataStructures/VectorPage.razor`; Machine Learning consumes it as a dependency rather than presenting Vector as a separate ML lesson. `VectorSimulation` owns renderer-neutral state for aligned component reads, result writes and scalar reductions. The Client owns text parsing, operation selection, Visual/Memory presentation, prediction, playback review, practice state and SQLite evidence.
 
-The Vector module must remain dependency-light: no numerical package, `System.Numerics.Vector<T>`, or framework search/aggregation helper may replace the explicit loops being taught. Gradient Descent reuses this Core for L2 norm, scalar multiplication and subtraction. Linear Regression reuses `ManualVector` for aligned training X/Y, prediction and residual storage. Logistic Regression also reuses `ManualVector` for aligned X/label/score/probability/error storage. KNN now follows the same composition rule by storing each feature point/query as ManualVector and reusing VectorSimulation for distance. Later K-Means and PCA modules should continue it.
+The Vector module must remain dependency-light: no numerical package, `System.Numerics.Vector<T>`, or framework search/aggregation helper may replace the explicit loops being taught. Gradient Descent reuses this Core for L2 norm, scalar multiplication and subtraction. Linear Regression reuses `ManualVector` for aligned training X/Y, prediction and residual storage. Logistic Regression also reuses `ManualVector` for aligned X/label/score/probability/error storage. KNN now follows the same composition rule by storing each feature point/query as ManualVector and reusing VectorSimulation for distance. K-Means now follows the same rule; PCA should continue it.
 
 
 ## Gradient Descent / Machine Learning optimization boundary
@@ -269,9 +269,19 @@ The live route `/ml-foundations/knn` owns presets/custom parsing, query + odd-k 
 
 `MachineLearning/Supervised/KdTree/KdTreeSimulation` owns Phase 1 step 6. Feature points and the query remain project-owned `ManualVector` values and Euclidean point distance is reused through `VectorSimulation`. KD-Tree owns explicit node records, alternating split axes, median-range ordering, child links, nearest-side descent, backtracking, split-plane comparison and subtree pruning. The current teaching build manually merge-sorts each recursive active range, so its documented build complexity is `O(n log² n)` rather than silently claiming a stronger construction algorithm.
 
-The live Client route `/ml-foundations/kd-tree` intentionally renders 2D geometry so split regions are visible, but Core cycles axes for arbitrary shared dimensions and has non-2D tests. Visual State renders region-bounded split lines plus query/current-best/visited/pruned states and a compact tree-by-depth story. Memory State exposes the real node links and search working set. K-Means at `/ml-foundations/k-means` is the next planned `LearningPlaceholder`.
+The live Client route `/ml-foundations/kd-tree` intentionally renders 2D geometry so split regions are visible, but Core cycles axes for arbitrary shared dimensions and has non-2D tests. Visual State renders region-bounded split lines plus query/current-best/visited/pruned states and a compact tree-by-depth story. Memory State exposes the real node links and search working set. The beginner command path is preset → query x/y → Predict → Run; custom points are progressive disclosure and there is no extra Apply command.
+
+## K-Means / unsupervised-clustering boundary
+
+`MachineLearning/Unsupervised/KMeans/KMeansSimulation` owns Phase 1 step 7. Feature points and centroids are project-owned `ManualVector` values, while Euclidean point-to-centroid distance is reused through `VectorSimulation`. K-Means owns the explicit nearest-centroid scan, assignment and distance arrays, per-cluster sum/count mean update, centroid movement, empty-cluster behavior, inertia, and convergence checks.
+
+The live `/ml-foundations/k-means` Client intentionally renders 2D geometry but Core remains dimension-independent. The page follows the common Build → Predict → Watch → Visual/Memory → decision-guide → Practice contract, persists practice evidence through the existing C# state path, and uses the shared Last Run modal overlay. Decision Tree remains the next planned Phase 1 step 8.
 
 
 ## Curriculum classification boundary
 
 The UI does not expose a separate graph-algorithm curriculum track. `Topological Sort` is classified under **Sorting**, while `Dijkstra` and `Minimum Spanning Tree` are classified under **Search & Traversal**. Their existing graph-algorithm routes and reusable Graph-based Core implementations remain unchanged; the red Advanced status marker communicates difficulty without duplicating navigation categories.
+
+## Shared routed learning chrome
+
+Concept navigation always uses explicit `/learn/concepts/{topic}` routes. Bare fragment-only anchors are forbidden because the root Blazor `<base href="/">` can resolve them to `/#topic`. Generic Last Run overlay/chrome lives in `wwwroot/css/learning-modules.css`; module-scoped CSS may style content inside the dialog but must not be required for the dialog to behave as a modal.
