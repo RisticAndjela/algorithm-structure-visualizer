@@ -33,7 +33,7 @@
         </div>
         <div class="complexity-summary" aria-label="Decision Tree complexity">
             <div><span>Teaching build</span><strong>O(n·f·s)</strong><small>examples × features × candidate splits</small></div>
-            <div><span>Prediction</span><strong>O(depth)</strong><small>one question per visited level</small></div>
+            <div><span>Prediction</span><strong>O(depth)</strong><small>one threshold per internal node on the prediction path</small></div>
             <div><span>Tree state</span><strong>O(nodes)</strong><small>split metadata + example indexes</small></div>
         </div>
     </header>
@@ -54,7 +54,7 @@
             <span>START WITH</span>
             <button type="button" class="@PresetClass(Preset.CleanVertical)" @onclick="() => LoadPreset(Preset.CleanVertical)" disabled="@IsBusy">Clean feature 1 split</button>
             <button type="button" class="@PresetClass(Preset.CleanHorizontal)" @onclick="() => LoadPreset(Preset.CleanHorizontal)" disabled="@IsBusy">Clean feature 2 split</button>
-            <button type="button" class="@PresetClass(Preset.TwoLevel)" @onclick="() => LoadPreset(Preset.TwoLevel)" disabled="@IsBusy">Needs two levels</button>
+            <button type="button" class="@PresetClass(Preset.TwoLevel)" @onclick="() => LoadPreset(Preset.TwoLevel)" disabled="@IsBusy">Needs two questions</button>
         </div>
         <details class="more-examples">
             <summary>More examples</summary>
@@ -174,7 +174,7 @@
     <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRunPopup">
         <section class="run-popup" role="dialog" aria-modal="true" aria-labelledby="dt-run-popup-title" @onclick:stopPropagation="true">
             <header><div><span class="section-kicker">LAST RUN</span><h2 id="dt-run-popup-title">@RunHeadline(_lastResult)</h2></div><button type="button" class="popup-close" @onclick="CloseLastRunPopup" aria-label="Close result explanation">×</button></header>
-            <div class="popup-body"><p>@RunActionExplanation(_lastResult)</p><div class="popup-metrics"><div><span>ROOT</span><strong>@RootRule(_lastResult)</strong></div><div><span>DEPTH</span><strong>@_lastResult.TreeDepth</strong></div><div><span>LEAVES</span><strong>@_lastResult.LeafCount</strong></div><div><span>TRAIN ACCURACY</span><strong>@Percent(_lastResult.TrainingAccuracy)</strong></div></div><p class="popup-memory">@RunMemoryExplanation(_lastResult)</p></div>
+            <div class="popup-body"><p>@RunActionExplanation(_lastResult)</p><div class="popup-metrics"><div><span>ROOT</span><strong>@RootRule(_lastResult)</strong></div><div><span>MAX DEPTH</span><strong>@_lastResult.TreeDepth</strong></div><div><span>LEAVES</span><strong>@_lastResult.LeafCount</strong></div><div><span>TRAIN ACCURACY</span><strong>@Percent(_lastResult.TrainingAccuracy)</strong></div></div><p class="popup-memory">@RunMemoryExplanation(_lastResult)</p></div>
         </section>
     </div>
 }
@@ -211,7 +211,7 @@
     [
         new(1,"Find a feature 1 root split","Build the clean vertical dataset and verify feature 1 is the root question.","Clean feature 1 split",Preset.CleanVertical),
         new(2,"Find a feature 2 root split","Build the horizontal dataset and verify feature 2 is the root question.","Clean feature 2 split",Preset.CleanHorizontal),
-        new(3,"Grow beyond the root","Build the two-level example and produce a tree deeper than one split.","Needs two levels",Preset.TwoLevel),
+        new(3,"Ask a second question","Use a dataset where the root split is not enough. The longest path should ask exactly two threshold questions before reaching a leaf.","Needs two questions",Preset.TwoLevel),
         new(4,"Stop immediately on a pure node","Use an all-class-0 dataset and verify the root becomes a leaf without a split.","Already pure",Preset.AlreadyPure),
         new(5,"Handle imperfect training data","Build the mixed example without requiring 100% training accuracy.","Mixed / imperfect",Preset.Mixed)
     ];
@@ -280,7 +280,7 @@
         switch(preset)
         {
             case Preset.CleanHorizontal:SetDataset([[1,1],[2,1.4],[3,1.8],[1.4,4],[2.4,4.6],[3.4,5.2]],[0,0,0,1,1,1]);break;
-            case Preset.TwoLevel:SetDataset([[1,1],[1.2,4.6],[2.1,1.4],[2.4,4.2],[4.5,1.2],[4.8,4.8],[5.4,1.8],[5.6,4.1]],[0,1,0,1,1,0,1,0]);break;
+            case Preset.TwoLevel:SetDataset([[1,1],[1,4],[2,2],[2,5],[4,1],[4,4],[5,2],[5,5]],[0,0,0,0,0,1,0,1]);break;
             case Preset.Mixed:SetDataset([[1,1],[1.5,2],[2,1.4],[3.5,3.5],[4,4.2],[4,4.2],[5,4.8],[5.4,2.8]],[0,0,1,1,1,0,1,0]);break;
             case Preset.AlreadyPure:SetDataset([[1,1],[2,1.5],[3,2],[4,2.5],[5,3]],[0,0,0,0,0]);break;
             default:SetDataset(CleanVerticalFeatures(),[0,0,0,1,1,1]);break;
@@ -293,8 +293,8 @@
 
     private void StartTask(int taskId){if(IsBusy)return;var task=PracticeTasks.First(t=>t.Id==taskId);_activeTaskId=taskId;LoadPreset(task.Preset,true);}
     private void RecordPracticeResult(DecisionTreeRunResult result){if(_activeTaskId is not int id)return;var task=PracticeTasks.First(t=>t.Id==id);if(!TaskSatisfied(task,result))return;CompletePracticeTask(task,result);}
-    private static bool TaskSatisfied(PracticeTaskDefinition task,DecisionTreeRunResult r)=>task.Id switch{1=>r.RootFeature==0&&r.TrainingAccuracy>=.99,2=>r.RootFeature==1&&r.TrainingAccuracy>=.99,3=>r.TreeDepth>=2&&r.LeafCount>=3,4=>r.RootFeature<0&&r.LeafCount==1,5=>r.LeafCount>=2&&r.TrainingAccuracy<1d&&r.TrainingAccuracy>=.5d,_=>false};
-    private void CompletePracticeTask(PracticeTaskDefinition task,DecisionTreeRunResult r){var evidence=new PracticeCompletionEvidence(task.Id,task.Title,r.Summary,RunActionExplanation(r),"Training vectors stay fixed. Each custom node stores example indexes, class counts, impurity, split metadata, child IDs, and a leaf prediction.",RunWhyExplanation(r),[new("Root",RootRule(r)),new("Depth",r.TreeDepth.ToString(CultureInfo.InvariantCulture)),new("Leaves",r.LeafCount.ToString(CultureInfo.InvariantCulture)),new("Training accuracy",Percent(r.TrainingAccuracy))],$"root={RootRule(r)} · depth={r.TreeDepth} · leaves={r.LeafCount}");_completedTaskIds.Add(task.Id);PracticeProgress.Complete(ModuleKey,_practiceProgress,task.Id,evidence);_activeTaskId=null;}
+    private static bool TaskSatisfied(PracticeTaskDefinition task,DecisionTreeRunResult r)=>task.Id switch{1=>r.RootFeature==0&&r.TrainingAccuracy>=.99,2=>r.RootFeature==1&&r.TrainingAccuracy>=.99,3=>r.TreeDepth==2&&r.LeafCount==3&&r.TrainingAccuracy>=.99,4=>r.RootFeature<0&&r.LeafCount==1,5=>r.LeafCount>=2&&r.TrainingAccuracy<1d&&r.TrainingAccuracy>=.5d,_=>false};
+    private void CompletePracticeTask(PracticeTaskDefinition task,DecisionTreeRunResult r){var evidence=new PracticeCompletionEvidence(task.Id,task.Title,r.Summary,RunActionExplanation(r),"Training vectors stay fixed. Each custom node stores example indexes, class counts, impurity, split metadata, child IDs, and a leaf prediction.",RunWhyExplanation(r),[new("Root",RootRule(r)),new("Max depth",r.TreeDepth.ToString(CultureInfo.InvariantCulture)),new("Leaves",r.LeafCount.ToString(CultureInfo.InvariantCulture)),new("Training accuracy",Percent(r.TrainingAccuracy))],$"root={RootRule(r)} · depth={r.TreeDepth} · leaves={r.LeafCount}");_completedTaskIds.Add(task.Id);PracticeProgress.Complete(ModuleKey,_practiceProgress,task.Id,evidence);_activeTaskId=null;}
     private PracticeCompletionEvidence? GetTaskEvidence(int id)=>PracticeProgress.GetEvidence(_practiceProgress,id); private void OpenTaskEvidence(int id)=>_practiceEvidencePopup=GetTaskEvidence(id); private void CloseTaskEvidence()=>_practiceEvidencePopup=null;
     private void ToggleRunPopups(ChangeEventArgs args){_showRunPopups=args.Value is bool b?b:bool.TryParse(args.Value?.ToString(),out var parsed)&&parsed;try{LearningStore.SetItem(PopupSettingStorageKey,_showRunPopups.ToString());}catch{}}
     private void OpenLastRunPopup(){if(_lastResult is not null)_lastRunPopupOpen=true;} private void CloseLastRunPopup()=>_lastRunPopupOpen=false;

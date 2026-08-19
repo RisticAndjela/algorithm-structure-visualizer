@@ -535,12 +535,17 @@ body .learning-module-page.learning-module-shell {
 
 
 /* Machine-learning visual and memory states are bounded learning canvases.
-   Large coordinate plots/tables scroll inside the lesson instead of stretching the whole page. */
+   They must remain inspectable without pushing the rest of the lesson off-screen.
+   Coordinate plots should auto-fit their rendered data first; scrolling is the fallback
+   for genuinely large/wide visual or memory content, not a substitute for correct bounds. */
 .learning-module-page.learning-module-shell.ml-module-page .ml-state-surface {
-    max-height: min(68vh, 42rem);
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    max-height: min(62vh, 34rem);
     overflow: auto;
     overscroll-behavior: contain;
-    scrollbar-gutter: stable;
+    scrollbar-gutter: stable both-edges;
     box-sizing: border-box;
 }
 

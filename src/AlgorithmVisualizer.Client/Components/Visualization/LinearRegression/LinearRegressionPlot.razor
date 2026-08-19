@@ -47,32 +47,43 @@
 
     private double XMin => Min(Snapshot.X) - XPadding;
     private double XMax => Max(Snapshot.X) + XPadding;
-    private double YMin
-    {
-        get
-        {
-            var min = Min(Snapshot.Y);
-            var predictionMin = Min(Snapshot.Predictions);
-            if (predictionMin < min) min = predictionMin;
-            return min - YPadding;
-        }
-    }
-    private double YMax
-    {
-        get
-        {
-            var max = Max(Snapshot.Y);
-            var predictionMax = Max(Snapshot.Predictions);
-            if (predictionMax > max) max = predictionMax;
-            return max + YPadding;
-        }
-    }
+    private double YMin => RawYMin - YPadding;
+    private double YMax => RawYMax + YPadding;
     private double XPadding => Math.Max(0.5d, (Max(Snapshot.X) - Min(Snapshot.X)) * 0.12d);
-    private double YPadding => Math.Max(1d, (Max(Snapshot.Y) - Min(Snapshot.Y)) * 0.18d);
+    private double RawYMin
+    {
+        get
+        {
+            var min = Math.Min(Min(Snapshot.Y), Min(Snapshot.Predictions));
+            min = Math.Min(min, Predict(XMin));
+            min = Math.Min(min, Predict(XMax));
+            return min;
+        }
+    }
+    private double RawYMax
+    {
+        get
+        {
+            var max = Math.Max(Max(Snapshot.Y), Max(Snapshot.Predictions));
+            max = Math.Max(max, Predict(XMin));
+            max = Math.Max(max, Predict(XMax));
+            return max;
+        }
+    }
+    private double YPadding => Math.Max(1d, (RawYMax - RawYMin) * 0.16d);
 
     private double Predict(double x) => (Snapshot.Weight * x) + Snapshot.Bias;
-    private double MapX(double x) => 54d + (((x - XMin) / Math.Max(1e-9, XMax - XMin)) * 670d);
-    private double MapY(double y) => 334d - (((y - YMin) / Math.Max(1e-9, YMax - YMin)) * 310d);
+    private double MapX(double x)
+    {
+        var mapped = 54d + (((x - XMin) / Math.Max(1e-9d, XMax - XMin)) * 670d);
+        return Math.Clamp(mapped, 54d, 724d);
+    }
+
+    private double MapY(double y)
+    {
+        var mapped = 334d - (((y - YMin) / Math.Max(1e-9d, YMax - YMin)) * 310d);
+        return Math.Clamp(mapped, 24d, 334d);
+    }
 
     private static double Min(IReadOnlyList<double> values)
     {

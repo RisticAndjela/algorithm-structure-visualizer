@@ -109,12 +109,24 @@
     private double XMax => Bound(0, false);
     private double YMin => Bound(1, true);
     private double YMax => Bound(1, false);
-    private double X(double value) => Scale(value, XMin, XMax, Left, Right);
-    private double Y(double value) => Scale(value, YMin, YMax, Bottom, Top);
+    private double X(double value) => Math.Clamp(Scale(value, XMin, XMax, Left, Right), Left, Right);
+    private double Y(double value) => Math.Clamp(Scale(value, YMin, YMax, Bottom, Top), Top, Bottom);
 
     private PlotPoint AxisStart => PrincipalAxisPoint(-AxisExtent);
     private PlotPoint AxisEnd => PrincipalAxisPoint(AxisExtent);
-    private double AxisExtent => Math.Max(XMax - XMin, YMax - YMin) * .75d;
+    private double AxisExtent
+    {
+        get
+        {
+            if (Snapshot.PrincipalComponent.Length < 2) return 0d;
+            var px = Math.Abs(Snapshot.PrincipalComponent[0]);
+            var py = Math.Abs(Snapshot.PrincipalComponent[1]);
+            var xLimit = px <= 1e-12d ? double.PositiveInfinity : ((XMax - XMin) * .44d) / px;
+            var yLimit = py <= 1e-12d ? double.PositiveInfinity : ((YMax - YMin) * .44d) / py;
+            var extent = Math.Min(xLimit, yLimit);
+            return double.IsFinite(extent) ? Math.Max(0d, extent) : 0d;
+        }
+    }
 
     private PlotPoint PrincipalAxisPoint(double amount)
     {

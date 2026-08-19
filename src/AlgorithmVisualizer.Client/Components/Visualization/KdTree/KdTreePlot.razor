@@ -193,8 +193,17 @@
     private double Padding(int component) => Math.Max(.8d, (RawMax(component) - RawMin(component)) * .12d);
     private double RawMin(int component) { var min = Snapshot.Query[component]; for (var i = 0; i < Snapshot.Count; i++) if (Snapshot.Features[i][component] < min) min = Snapshot.Features[i][component]; return min; }
     private double RawMax(int component) { var max = Snapshot.Query[component]; for (var i = 0; i < Snapshot.Count; i++) if (Snapshot.Features[i][component] > max) max = Snapshot.Features[i][component]; return max; }
-    private double MapX(double value) => 48d + (((value - XMin) / Math.Max(1e-9d, XMax - XMin)) * 664d);
-    private double MapY(double value) => 408d - (((value - YMin) / Math.Max(1e-9d, YMax - YMin)) * 380d);
+    private double MapX(double value)
+    {
+        var mapped = 48d + (((value - XMin) / Math.Max(1e-9d, XMax - XMin)) * 664d);
+        return Math.Clamp(mapped, 48d, 712d);
+    }
+
+    private double MapY(double value)
+    {
+        var mapped = 408d - (((value - YMin) / Math.Max(1e-9d, YMax - YMin)) * 380d);
+        return Math.Clamp(mapped, 28d, 408d);
+    }
 
     private string QueryDiamond
     {

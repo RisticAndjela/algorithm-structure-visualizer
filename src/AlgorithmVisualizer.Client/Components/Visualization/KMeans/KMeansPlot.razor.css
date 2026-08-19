@@ -1,4 +1,4 @@
-.kmeans-visual { min-width: 52rem; display: grid; gap: .72rem; }
+.kmeans-visual { min-width: 0; display: grid; gap: .72rem; }
 .kmeans-workspace { display: grid; grid-template-columns: 1fr; gap: .72rem; }
 .cluster-plot-card, .cluster-story-card { border: 1px solid var(--color-border); border-radius: .9rem; background: #fff; padding: .9rem; }
 .cluster-plot-card { min-width: 0; }
@@ -7,8 +7,8 @@
 .cluster-plot-card > header span, .story-heading > span, .round-rule > span { color: var(--color-text-muted); font-size: .68rem; font-weight: 900; letter-spacing: .06em; }
 .cluster-plot-card > header strong { font-size: 1rem; }
 .cluster-plot-card > header small { color: var(--color-text-muted); font-size: .82rem; font-weight: 750; }
-.cluster-plot { position: relative; min-height: 27rem; border: 1px solid var(--color-border-strong); border-radius: .82rem; background: #fff; }
-.cluster-plot svg { width: 100%; min-width: 48rem; height: 27rem; display: block; }
+.cluster-plot { position: relative; max-width: 100%; overflow: auto; overscroll-behavior: contain; border: 1px solid var(--color-border-strong); border-radius: .82rem; background: #fff; }
+.cluster-plot svg { width: 100%; min-width: 40rem; height: 24rem; display: block; }
 .plot-bg { fill: var(--color-surface-subtle); stroke: var(--color-border-strong); stroke-width: 1.4; }
 .plot-grid-line { stroke: var(--color-border); stroke-width: 1; opacity: .95; }
 .axis-line { stroke: var(--color-text-muted); stroke-width: 1.4; opacity: .65; }

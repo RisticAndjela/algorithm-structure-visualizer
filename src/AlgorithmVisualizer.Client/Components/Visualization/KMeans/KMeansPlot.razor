@@ -102,8 +102,8 @@
     };
     private string StopRuleText => Snapshot.Converged ? "converged" : Snapshot.MaxCentroidMovement > 0d ? $"max move {Format(Snapshot.MaxCentroidMovement)}" : "not checked yet";
 
-    private double X(double value) => Scale(value, MinX, MaxX, Left, Right);
-    private double Y(double value) => Scale(value, MinY, MaxY, Bottom, Top);
+    private double X(double value) => Math.Clamp(Scale(value, MinX, MaxX, Left, Right), Left, Right);
+    private double Y(double value) => Math.Clamp(Scale(value, MinY, MaxY, Bottom, Top), Top, Bottom);
 
     private double Bound(int axis, bool minimum)
     {

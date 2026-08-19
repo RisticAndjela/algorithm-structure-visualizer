@@ -39,8 +39,8 @@
             <circle class="minimum-point" cx="@CenterX" cy="@CenterY" r="2.3" />
             <circle class="current-point" cx="@CurrentX" cy="@CurrentY" r="2.7" />
         </svg>
-        <div class="landscape-label minimum-label" style="left:@Percent(CenterX);top:@Percent(CenterY);">minimum</div>
-        <div class="landscape-label current-label" style="left:@Percent(CurrentX);top:@Percent(CurrentY);">θ</div>
+        <div class="landscape-label minimum-label" style="left:@Percent(LabelX(CenterX));top:@Percent(LabelY(CenterY));">minimum</div>
+        <div class="landscape-label current-label" style="left:@Percent(LabelX(CurrentX));top:@Percent(LabelY(CurrentY));">θ</div>
     </div>
 
     <div class="gradient-legend" aria-label="Gradient Descent visual legend">
@@ -60,6 +60,10 @@
     private double CurrentY => Snapshot.Parameters.Length > 1 ? MapY(Snapshot.Parameters[1]) : 50d;
     private double CandidateX => Snapshot.NextParameters.Length > 0 ? MapX(Snapshot.NextParameters[0]) : CurrentX;
     private double CandidateY => Snapshot.NextParameters.Length > 1 ? MapY(Snapshot.NextParameters[1]) : CurrentY;
+    private double XMin => AxisBound(0, true);
+    private double XMax => AxisBound(0, false);
+    private double YMin => AxisBound(1, true);
+    private double YMax => AxisBound(1, false);
     private bool HasCandidate => Snapshot.Phase == GradientDescentPhase.UpdatingParameters;
     private string PhaseLabel => Snapshot.Phase switch
     {
@@ -93,19 +97,58 @@
     private string ContourRx(double basis)
     {
         var curvature = Snapshot.Curvature.Length > 0 ? Snapshot.Curvature[0] : 1d;
-        return FormatCoordinate(Math.Clamp(basis / Math.Sqrt(Math.Max(0.05d, curvature)), 6d, 43d));
+        var requested = Math.Clamp(basis / Math.Sqrt(Math.Max(0.05d, curvature)), 5d, 34d);
+        var available = Math.Max(4d, Math.Min(CenterX - 4d, 96d - CenterX));
+        return FormatCoordinate(Math.Min(requested, available));
     }
 
     private string ContourRy(double basis)
     {
         var curvature = Snapshot.Curvature.Length > 1 ? Snapshot.Curvature[1] : 1d;
-        return FormatCoordinate(Math.Clamp(basis / Math.Sqrt(Math.Max(0.05d, curvature)), 6d, 43d));
+        var requested = Math.Clamp(basis / Math.Sqrt(Math.Max(0.05d, curvature)), 5d, 34d);
+        var available = Math.Max(4d, Math.Min(CenterY - 4d, 96d - CenterY));
+        return FormatCoordinate(Math.Min(requested, available));
     }
 
-    private static double MapX(double value) => Math.Clamp((value + 8d) / 16d * 100d, 2d, 98d);
-    private static double MapY(double value) => Math.Clamp((8d - value) / 16d * 100d, 2d, 98d);
-    private static string CoordinateX(double value) => FormatCoordinate(MapX(value));
-    private static string CoordinateY(double value) => FormatCoordinate(MapY(value));
+    private double AxisBound(int axis, bool minimum)
+    {
+        var min = double.PositiveInfinity;
+        var max = double.NegativeInfinity;
+
+        void Include(IReadOnlyList<double> values)
+        {
+            if (values.Count <= axis || !double.IsFinite(values[axis])) return;
+            min = Math.Min(min, values[axis]);
+            max = Math.Max(max, values[axis]);
+        }
+
+        Include(Snapshot.Target);
+        Include(Snapshot.Parameters);
+        Include(Snapshot.NextParameters);
+        for (var index = 0; index < Snapshot.History.Length; index++) Include(Snapshot.History[index].Parameters);
+
+        if (!double.IsFinite(min) || !double.IsFinite(max)) return minimum ? -1d : 1d;
+        var range = Math.Max(1d, max - min);
+        var padding = Math.Max(.75d, range * .16d);
+        return minimum ? min - padding : max + padding;
+    }
+
+    private double MapX(double value)
+    {
+        var mapped = 7d + (((value - XMin) / Math.Max(1e-9d, XMax - XMin)) * 86d);
+        return Math.Clamp(mapped, 7d, 93d);
+    }
+
+    private double MapY(double value)
+    {
+        var mapped = 93d - (((value - YMin) / Math.Max(1e-9d, YMax - YMin)) * 86d);
+        return Math.Clamp(mapped, 7d, 93d);
+    }
+
+    private string CoordinateX(double value) => FormatCoordinate(MapX(value));
+    private string CoordinateY(double value) => FormatCoordinate(MapY(value));
+    private static double LabelX(double value) => Math.Clamp(value, 8d, 88d);
+    private static double LabelY(double value) => Math.Clamp(value, 8d, 88d);
     private static string FormatCoordinate(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
     private static string FormatValue(double value) => Math.Abs(value) < 1e-12 ? "0" : value.ToString("0.####", CultureInfo.InvariantCulture);
     private static string Percent(double value) => $"{FormatCoordinate(value)}%";

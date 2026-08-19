@@ -35,6 +35,21 @@ public sealed class DecisionTreeSimulationTests
     }
 
     [Fact]
+    public async Task Two_question_dataset_stops_at_exactly_depth_two()
+    {
+        var simulation = NewSimulation();
+        simulation.Configure(new DecisionTreeConfiguration(
+            [[1d,1d],[1d,4d],[2d,2d],[2d,5d],[4d,1d],[4d,4d],[5d,2d],[5d,5d]],
+            [0,0,0,0,0,1,0,1]));
+
+        var result = await simulation.ExecuteAsync();
+
+        Assert.Equal(2, result.TreeDepth);
+        Assert.Equal(3, result.LeafCount);
+        Assert.Equal(1d, result.TrainingAccuracy, 8);
+    }
+
+    [Fact]
     public async Task Pure_dataset_stops_at_root_leaf()
     {
         var simulation = NewSimulation();

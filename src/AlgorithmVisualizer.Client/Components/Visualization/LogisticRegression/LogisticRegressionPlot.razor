@@ -38,8 +38,8 @@
                 var bx = MapX(boundary);
                 <g class="decision-boundary">
                     <line x1="@F(bx)" y1="30" x2="@F(bx)" y2="350" class="boundary-line" />
-                    <rect x="@F(bx - 37d)" y="42" width="74" height="25" rx="12.5" class="boundary-badge-bg" />
-                    <text x="@F(bx)" y="59" class="boundary-badge" text-anchor="middle">x = @Format(boundary)</text>
+                    <rect x="@F(BoundaryBadgeX(bx) - 37d)" y="42" width="74" height="25" rx="12.5" class="boundary-badge-bg" />
+                    <text x="@F(BoundaryBadgeX(bx))" y="59" class="boundary-badge" text-anchor="middle">x = @Format(boundary)</text>
                 </g>
             }
 
@@ -142,8 +142,16 @@
         return bestIndex;
     }
 
-    private double MapX(double x) => 62d + (((x - XMin) / Math.Max(1e-9, XMax - XMin)) * 710d);
-    private static double MapProbability(double probability) => 350d - (Math.Clamp(probability, 0d, 1d) * 320d);
+    private double MapX(double x)
+    {
+        var mapped = 62d + (((x - XMin) / Math.Max(1e-9d, XMax - XMin)) * 710d);
+        return Math.Clamp(mapped, 62d, 772d);
+    }
+
+    // Keep probability markers fully inside the plotted rectangle. Labels at y=0/1 used
+    // to sit directly on the border, so their circles appeared outside the visual space.
+    private static double MapProbability(double probability) => 336d - (Math.Clamp(probability, 0d, 1d) * 292d);
+    private static double BoundaryBadgeX(double lineX) => Math.Clamp(lineX, 104d, 730d);
 
     private static double Sigmoid(double score)
     {
