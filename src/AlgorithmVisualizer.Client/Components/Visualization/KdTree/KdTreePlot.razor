@@ -1,0 +1,235 @@
+@using System.Globalization
+@using AlgorithmVisualizer.Core.MachineLearning.Supervised.KdTree
+
+<section class="kd-visual" aria-label="KD-Tree visual state">
+    <div class="kd-metric-strip">
+        <div><span>QUERY</span><strong>[@Format(Snapshot.Query[0]), @Format(Snapshot.Query[1])]</strong></div>
+        <div><span>BEST</span><strong>@BestText</strong></div>
+        <div><span>VISITED</span><strong>@Snapshot.VisitedNodes / @Snapshot.Count</strong></div>
+        <div><span>PRUNED</span><strong>@Snapshot.PrunedNodes</strong></div>
+    </div>
+
+    <div class="kd-workspace">
+        <div class="space-card">
+            <div class="visual-card-heading"><div><span>FEATURE SPACE</span><strong>Alternating x/y partitions</strong></div><small>@PhaseText</small></div>
+            <div class="kd-plot-shell">
+                <svg class="kd-coordinate-plot" viewBox="0 0 760 470" role="img" aria-label="KD-Tree spatial partitions, query point, visited points, best point, and pruned regions">
+                    <rect x="48" y="28" width="664" height="380" rx="18" class="plot-bg" />
+                    @for (var tick = 1; tick < 6; tick++)
+                    {
+                        var x = 48d + (tick * (664d / 6d));
+                        var y = 28d + (tick * (380d / 6d));
+                        <line x1="@F(x)" y1="28" x2="@F(x)" y2="408" class="grid-line" />
+                        <line x1="48" y1="@F(y)" x2="712" y2="@F(y)" class="grid-line" />
+                    }
+
+                    @foreach (var region in Regions)
+                    {
+                        var node = Snapshot.Nodes[region.NodeId];
+                        if (node.Axis == 0)
+                        {
+                            <line x1="@F(MapX(node.Point[0]))" y1="@F(MapY(region.MaxY))" x2="@F(MapX(node.Point[0]))" y2="@F(MapY(region.MinY))" class="@SplitClass(node)" />
+                        }
+                        else
+                        {
+                            <line x1="@F(MapX(region.MinX))" y1="@F(MapY(node.Point[1]))" x2="@F(MapX(region.MaxX))" y2="@F(MapY(node.Point[1]))" class="@SplitClass(node)" />
+                        }
+                    }
+
+                    @if (Snapshot.CurrentNodeId >= 0 && Snapshot.CurrentNodeId < Snapshot.Nodes.Length)
+                    {
+                        var active = Snapshot.Nodes[Snapshot.CurrentNodeId];
+                        <line x1="@F(MapX(Snapshot.Query[0]))" y1="@F(MapY(Snapshot.Query[1]))" x2="@F(MapX(active.Point[0]))" y2="@F(MapY(active.Point[1]))" class="current-distance-line" />
+                    }
+                    @if (Snapshot.BestNodeId >= 0 && Snapshot.BestNodeId < Snapshot.Nodes.Length)
+                    {
+                        var best = Snapshot.Nodes[Snapshot.BestNodeId];
+                        <line x1="@F(MapX(Snapshot.Query[0]))" y1="@F(MapY(Snapshot.Query[1]))" x2="@F(MapX(best.Point[0]))" y2="@F(MapY(best.Point[1]))" class="best-distance-line" />
+                    }
+
+                    @for (var index = 0; index < Snapshot.Count; index++)
+                    {
+                        var point = Snapshot.Features[index];
+                        var nodeState = StateForPoint(index);
+                        var labelClass = Snapshot.Labels[index] == 0 ? "class-zero" : "class-one";
+                        <circle cx="@F(MapX(point[0]))" cy="@F(MapY(point[1]))" r="@PointRadius(nodeState)" class="training-point @labelClass @StateClass(nodeState)">
+                            <title>Example @index · [@Format(point[0]), @Format(point[1])] · class @Snapshot.Labels[index] · @StateName(nodeState)</title>
+                        </circle>
+                    }
+
+                    <polygon points="@QueryDiamond" class="query-point"><title>Query [@Format(Snapshot.Query[0]), @Format(Snapshot.Query[1])]</title></polygon>
+                </svg>
+                <span class="axis-note y-note">feature 2 ↑</span>
+                <span class="axis-note x-note">feature 1 →</span>
+            </div>
+            <div class="kd-legend">
+                <span><i class="legend-dot zero"></i>Class 0</span>
+                <span><i class="legend-dot one"></i>Class 1</span>
+                <span><i class="legend-diamond"></i>Query</span>
+                <span><i class="legend-line x-split"></i>x split</span>
+                <span><i class="legend-line y-split"></i>y split</span>
+                <span><i class="legend-ring best"></i>Best so far</span>
+                <span><i class="legend-ring pruned"></i>Pruned</span>
+            </div>
+        </div>
+
+        <aside class="tree-card">
+            <div class="visual-card-heading"><div><span>TREE VIEW</span><strong>Point + split axis</strong></div><small>@Snapshot.Nodes.Length nodes built</small></div>
+            <div class="tree-levels">
+                @foreach (var depth in Depths)
+                {
+                    <div class="tree-level">
+                        <span class="depth-label">depth @depth</span>
+                        <div class="tree-level-nodes">
+                            @foreach (var node in NodesAtDepth(depth))
+                            {
+                                <article class="tree-node @StateClass(node.State)">
+                                    <small>node @node.NodeId · example @node.PointIndex</small>
+                                    <strong>[@Format(node.Point[0]), @Format(node.Point[1])]</strong>
+                                    <span>split @(node.Axis == 0 ? "x" : "y")</span>
+                                </article>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="tree-story"><span>CURRENT STEP</span><strong>@StoryHeadline</strong><p>@Snapshot.FocusText</p></div>
+        </aside>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public KdTreeSnapshot Snapshot { get; set; } = default!;
+
+    private readonly List<Region> _regions = [];
+    private readonly List<int> _depths = [];
+    private KdTreeSnapshot? _regionSnapshot;
+
+    private IReadOnlyList<Region> Regions
+    {
+        get
+        {
+            EnsureLayout();
+            return _regions;
+        }
+    }
+
+    private IReadOnlyList<int> Depths
+    {
+        get
+        {
+            EnsureLayout();
+            return _depths;
+        }
+    }
+
+    private string BestText => Snapshot.BestNodeId >= 0 && Snapshot.BestNodeId < Snapshot.Nodes.Length
+        ? $"example {Snapshot.Nodes[Snapshot.BestNodeId].PointIndex} · d={Format(Snapshot.BestDistance)}"
+        : "not set yet";
+
+    private string PhaseText => Snapshot.Phase switch
+    {
+        KdTreePhase.Building => "building median splits",
+        KdTreePhase.Measuring => "measuring candidate",
+        KdTreePhase.Descending => "following query side",
+        KdTreePhase.Backtracking => "checking split plane",
+        KdTreePhase.Pruning => "skipping impossible region",
+        KdTreePhase.Complete => "nearest point found",
+        _ => "ready"
+    };
+
+    private string StoryHeadline => Snapshot.Phase switch
+    {
+        KdTreePhase.Building => "Create the next median split.",
+        KdTreePhase.Measuring => "Compare this node with the query.",
+        KdTreePhase.Descending => "Follow the query side first.",
+        KdTreePhase.Backtracking => "Can the other side still win?",
+        KdTreePhase.Pruning => "Skip a region that cannot beat best.",
+        KdTreePhase.Complete => "Nearest neighbor found.",
+        _ => "Build, descend, backtrack, prune."
+    };
+
+    private void EnsureLayout()
+    {
+        if (ReferenceEquals(_regionSnapshot, Snapshot)) return;
+        _regionSnapshot = Snapshot;
+        _regions.Clear();
+        _depths.Clear();
+        if (Snapshot.Nodes.Length == 0 || Snapshot.RootNodeId < 0) return;
+        BuildRegion(Snapshot.RootNodeId, XMin, XMax, YMin, YMax);
+        var maxDepth = 0;
+        for (var index = 0; index < Snapshot.Nodes.Length; index++) if (Snapshot.Nodes[index].Depth > maxDepth) maxDepth = Snapshot.Nodes[index].Depth;
+        for (var depth = 0; depth <= maxDepth; depth++) _depths.Add(depth);
+    }
+
+    private void BuildRegion(int nodeId, double minX, double maxX, double minY, double maxY)
+    {
+        if (nodeId < 0 || nodeId >= Snapshot.Nodes.Length) return;
+        var node = Snapshot.Nodes[nodeId];
+        _regions.Add(new Region(nodeId, minX, maxX, minY, maxY));
+        if (node.Axis == 0)
+        {
+            BuildRegion(node.LeftNodeId, minX, node.Point[0], minY, maxY);
+            BuildRegion(node.RightNodeId, node.Point[0], maxX, minY, maxY);
+        }
+        else
+        {
+            BuildRegion(node.LeftNodeId, minX, maxX, minY, node.Point[1]);
+            BuildRegion(node.RightNodeId, minX, maxX, node.Point[1], maxY);
+        }
+    }
+
+    private IEnumerable<KdTreeNodeSnapshot> NodesAtDepth(int depth)
+    {
+        for (var index = 0; index < Snapshot.Nodes.Length; index++) if (Snapshot.Nodes[index].Depth == depth) yield return Snapshot.Nodes[index];
+    }
+
+    private KdTreeNodeState StateForPoint(int pointIndex)
+    {
+        for (var nodeId = 0; nodeId < Snapshot.Nodes.Length; nodeId++) if (Snapshot.Nodes[nodeId].PointIndex == pointIndex) return Snapshot.Nodes[nodeId].State;
+        return KdTreeNodeState.Stored;
+    }
+
+    private string SplitClass(KdTreeNodeSnapshot node)
+    {
+        var axis = node.Axis == 0 ? "x-split" : "y-split";
+        var state = node.NodeId == Snapshot.CurrentNodeId ? "active" : node.State == KdTreeNodeState.Pruned ? "pruned" : string.Empty;
+        return $"split-line {axis} {state}";
+    }
+
+    private double XMin => RawMin(0) - Padding(0);
+    private double XMax => RawMax(0) + Padding(0);
+    private double YMin => RawMin(1) - Padding(1);
+    private double YMax => RawMax(1) + Padding(1);
+    private double Padding(int component) => Math.Max(.8d, (RawMax(component) - RawMin(component)) * .12d);
+    private double RawMin(int component) { var min = Snapshot.Query[component]; for (var i = 0; i < Snapshot.Count; i++) if (Snapshot.Features[i][component] < min) min = Snapshot.Features[i][component]; return min; }
+    private double RawMax(int component) { var max = Snapshot.Query[component]; for (var i = 0; i < Snapshot.Count; i++) if (Snapshot.Features[i][component] > max) max = Snapshot.Features[i][component]; return max; }
+    private double MapX(double value) => 48d + (((value - XMin) / Math.Max(1e-9d, XMax - XMin)) * 664d);
+    private double MapY(double value) => 408d - (((value - YMin) / Math.Max(1e-9d, YMax - YMin)) * 380d);
+
+    private string QueryDiamond
+    {
+        get
+        {
+            var x = MapX(Snapshot.Query[0]);
+            var y = MapY(Snapshot.Query[1]);
+            const double r = 12d;
+            return $"{F(x)},{F(y - r)} {F(x + r)},{F(y)} {F(x)},{F(y + r)} {F(x - r)},{F(y)}";
+        }
+    }
+
+    private static string StateClass(KdTreeNodeState state) => state switch
+    {
+        KdTreeNodeState.Building => "building",
+        KdTreeNodeState.Active => "active",
+        KdTreeNodeState.Visited => "visited",
+        KdTreeNodeState.Best => "best",
+        KdTreeNodeState.Pruned => "pruned",
+        _ => "stored"
+    };
+    private static string StateName(KdTreeNodeState state) => state.ToString().ToLowerInvariant();
+    private static string PointRadius(KdTreeNodeState state) => state is KdTreeNodeState.Active or KdTreeNodeState.Best ? "11" : "8";
+    private static string Format(double value) => double.IsFinite(value) ? (Math.Abs(value) < 1e-12d ? "0" : value.ToString("0.###", CultureInfo.InvariantCulture)) : "—";
+    private static string F(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
+    private sealed record Region(int NodeId, double MinX, double MaxX, double MinY, double MaxY);
+}

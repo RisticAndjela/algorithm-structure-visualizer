@@ -1,0 +1,64 @@
+.kd-visual { display: grid; gap: .8rem; }
+.kd-metric-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; }
+.kd-metric-strip > div { display: grid; gap: .12rem; min-width: 0; padding: .68rem .72rem; border: 1px solid var(--color-border); border-radius: .72rem; background: var(--color-surface-subtle); }
+.kd-metric-strip span, .visual-card-heading span, .tree-story span { color: var(--color-text-muted); font-size: .65rem; font-weight: 900; letter-spacing: .06em; }
+.kd-metric-strip strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .9rem; }
+.kd-workspace { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(17rem, .72fr); gap: .75rem; align-items: stretch; }
+.space-card, .tree-card { min-width: 0; border: 1px solid var(--color-border); border-radius: .9rem; background: #fff; padding: .78rem; }
+.visual-card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: .8rem; margin-bottom: .55rem; }
+.visual-card-heading > div { display: grid; gap: .12rem; }
+.visual-card-heading strong { font-size: .92rem; }
+.visual-card-heading small { color: var(--color-text-muted); font-size: .72rem; }
+.kd-plot-shell { position: relative; border: 1px solid var(--color-border); border-radius: .82rem; background: var(--color-surface-subtle); overflow: hidden; }
+.kd-coordinate-plot { width: 100%; min-height: 25rem; display: block; }
+.plot-bg { fill: var(--color-surface-subtle); stroke: var(--color-border); stroke-width: 1.3; }
+.grid-line { stroke: var(--color-border); stroke-width: 1; opacity: .7; }
+.split-line { stroke-width: 2; opacity: .34; }
+.split-line.x-split { stroke: var(--color-secondary); }
+.split-line.y-split { stroke: var(--color-warning); stroke-dasharray: 7 5; }
+.split-line.active { stroke-width: 4; opacity: .95; }
+.split-line.pruned { opacity: .12; }
+.current-distance-line { stroke: var(--color-warning); stroke-width: 2.4; stroke-dasharray: 8 7; opacity: .92; }
+.best-distance-line { stroke: var(--color-primary); stroke-width: 3; opacity: .65; }
+.training-point { stroke-width: 2.4; }
+.training-point.class-zero { fill: var(--color-danger-soft); stroke: var(--color-danger); }
+.training-point.class-one { fill: var(--color-secondary-soft); stroke: var(--color-secondary); }
+.training-point.stored { opacity: .78; }
+.training-point.building { stroke: var(--color-warning); stroke-width: 4; opacity: 1; }
+.training-point.active { stroke: var(--color-warning); stroke-width: 4.5; opacity: 1; }
+.training-point.visited { opacity: .58; }
+.training-point.best { stroke: var(--color-primary); stroke-width: 5; opacity: 1; filter: drop-shadow(0 4px 8px rgba(103,87,229,.2)); }
+.training-point.pruned { opacity: .2; stroke-dasharray: 3 3; }
+.query-point { fill: #fff; stroke: var(--color-text); stroke-width: 4; filter: drop-shadow(0 5px 8px rgba(35,39,52,.18)); }
+.axis-note { position: absolute; z-index: 2; padding: .22rem .38rem; border-radius: .42rem; color: var(--color-text-muted); background: rgba(255,255,255,.88); font-size: .68rem; font-weight: 850; pointer-events: none; }
+.y-note { top: .55rem; left: .65rem; }
+.x-note { right: .8rem; bottom: .45rem; }
+.kd-legend { display: flex; flex-wrap: wrap; gap: .45rem .9rem; align-items: center; padding-top: .6rem; color: var(--color-text-muted); font-size: .72rem; font-weight: 750; }
+.kd-legend span { display: inline-flex; align-items: center; gap: .34rem; }
+.legend-dot { width: .65rem; height: .65rem; border-radius: 50%; border: 2px solid; }
+.legend-dot.zero { background: var(--color-danger-soft); border-color: var(--color-danger); }
+.legend-dot.one { background: var(--color-secondary-soft); border-color: var(--color-secondary); }
+.legend-diamond { width: .66rem; height: .66rem; transform: rotate(45deg); background: #fff; border: 2px solid var(--color-text); }
+.legend-line { width: 1.4rem; border-top: 2px solid; }
+.legend-line.x-split { border-color: var(--color-secondary); }
+.legend-line.y-split { border-color: var(--color-warning); border-top-style: dashed; }
+.legend-ring { width: .7rem; height: .7rem; border-radius: 50%; border: 3px solid; }
+.legend-ring.best { border-color: var(--color-primary); }
+.legend-ring.pruned { border-color: var(--color-border-strong); opacity: .35; }
+.tree-card { display: flex; flex-direction: column; gap: .65rem; }
+.tree-levels { display: grid; gap: .5rem; max-height: 22rem; overflow: auto; padding-right: .15rem; }
+.tree-level { display: grid; gap: .3rem; }
+.depth-label { color: var(--color-text-muted); font-size: .62rem; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+.tree-level-nodes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .35rem; }
+.tree-node { min-width: 0; display: grid; gap: .12rem; padding: .5rem .55rem; border: 1px solid var(--color-border); border-radius: .65rem; background: var(--color-surface-subtle); }
+.tree-node small { color: var(--color-text-muted); font-size: .63rem; }
+.tree-node strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .78rem; }
+.tree-node span { color: var(--color-text-muted); font-size: .68rem; font-weight: 750; }
+.tree-node.active, .tree-node.building { border-color: var(--color-warning); box-shadow: inset 0 0 0 1px var(--color-warning); }
+.tree-node.best { border-color: var(--color-primary); box-shadow: inset 0 0 0 1px var(--color-primary); background: var(--color-primary-soft); }
+.tree-node.pruned { opacity: .38; }
+.tree-story { margin-top: auto; display: grid; gap: .22rem; padding: .72rem; border-radius: .72rem; background: var(--color-surface-subtle); border: 1px solid var(--color-border); }
+.tree-story strong { font-size: .88rem; }
+.tree-story p { margin: 0; color: var(--color-text-muted); font-size: .76rem; line-height: 1.5; }
+@media (max-width: 1050px) { .kd-workspace { grid-template-columns: 1fr; } .tree-level-nodes { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 720px) { .kd-metric-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); } .tree-level-nodes { grid-template-columns: repeat(2, minmax(0, 1fr)); } .kd-coordinate-plot { min-height: 20rem; } }

@@ -1,0 +1,19 @@
+@page "/ml-foundations/k-means"
+
+<PageTitle>K-Means — Machine Learning — Algorithm Visualizer</PageTitle>
+
+<LearningPlaceholder
+    Eyebrow="MACHINE LEARNING · PHASE 1 STEP 7"
+    Title="K-Means"
+    Description="The next lesson will turn unlabeled points into clusters by alternating nearest-centroid assignment and centroid updates."
+    Complexity="O(i·k·n·d)"
+    ComplexityNote="planned iterative clustering; i iterations, k centroids, n points, d features"
+    Concepts="centroid · assignment · cluster mean · inertia · convergence · initialization"
+    LearnTitle="KD-Tree organized points for search. K-Means will move representatives until groups emerge."
+    LearnSummary="Start with centroids, assign every point to the nearest one, move each centroid to the mean of its assigned points, and repeat."
+    LearnCards="ASSIGN|Choose the nearest centroid|Distance creates temporary cluster membership.;;UPDATE|Move centroids to cluster means|The representative changes after every assignment pass.;;REPEAT|Alternate assignment and update|Each round responds to the previous one.;;STOP|Detect stable clustering|Finish when assignments or centroid movement stop changing enough."
+    ConceptHref="/learn/concepts/k-means"
+    TipTitle="K-Means is unsupervised."
+    TipText="There are no class labels to vote on; the algorithm creates cluster membership from geometry."
+    FocusText="Reuse ManualVector distance primitives and implement centroid assignment/update loops explicitly."
+    PromptText="What should happen if one centroid receives no points?" />

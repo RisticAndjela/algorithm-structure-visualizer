@@ -273,10 +273,10 @@
     <section class="learning-section ai-home-section">
         <div class="section-heading">
             <div>
-                <span class="section-kicker">MACHINE LEARNING · PHASE 1 · 02–06</span>
+                <span class="section-kicker">MACHINE LEARNING · PHASE 1 · 02–07</span>
                 <h2>Optimize first, train simple models, then reason from nearby examples.</h2>
             </div>
-            <p>Vector now lives with Data Structures. The ML track starts with optimization, trains two regression models, then switches to local neighbor-based classification with KNN before introducing KD-Tree acceleration.</p>
+            <p>Vector now lives with Data Structures. The ML track starts with optimization, trains two regression models, then moves from brute-force KNN to KD-Tree spatial acceleration before introducing clustering with K-Means.</p>
         </div>
 
         <div class="path-grid module-grid">
@@ -304,11 +304,17 @@
                 <h3>K-Nearest Neighbors</h3><p>Place a query in 2D, measure every distance, keep the k closest examples, and watch their labels vote.</p>
                 <div class="concept-row"><span>Distance</span><span>Top-k</span><span>Vote</span></div><span class="card-link">Open lesson <b>→</b></span>
             </a>
-            <a class="path-card module-card planned-card" href="/ml-foundations/kd-tree">
-                <div class="card-topline"><span class="path-index">06 · SPATIAL SEARCH</span><span class="status-pill planned">Planned</span></div>
+            <a class="path-card available module-card" href="/ml-foundations/kd-tree">
+                <div class="card-topline"><span class="path-index">06 · SPATIAL SEARCH</span><span class="status-pill live"><i></i> Ready</span></div>
                 <div class="path-icon sort-icon"><i></i><i></i><i></i><i></i><i></i></div>
-                <h3>KD-Tree</h3><p>Partition feature space so nearest-neighbor search can prune regions instead of scanning every stored point.</p>
-                <div class="concept-row"><span>Split axis</span><span>Median</span><span>Pruning</span></div><span class="card-link">Preview lesson <b>→</b></span>
+                <h3>KD-Tree</h3><p>Partition feature space, descend toward the query, backtrack, and prune regions that cannot beat the current nearest point.</p>
+                <div class="concept-row"><span>Split axis</span><span>Median</span><span>Pruning</span></div><span class="card-link">Open lesson <b>→</b></span>
+            </a>
+            <a class="path-card module-card planned-card" href="/ml-foundations/k-means">
+                <div class="card-topline"><span class="path-index">07 · CLUSTERING</span><span class="status-pill planned">Planned</span></div>
+                <div class="path-icon sort-icon"><i></i><i></i><i></i><i></i><i></i></div>
+                <h3>K-Means</h3><p>Assign points to the closest centroid, move each centroid to its cluster mean, and repeat until assignments stabilize.</p>
+                <div class="concept-row"><span>Centroid</span><span>Assignment</span><span>Convergence</span></div><span class="card-link">Preview lesson <b>→</b></span>
             </a>
         </div>
     </section>

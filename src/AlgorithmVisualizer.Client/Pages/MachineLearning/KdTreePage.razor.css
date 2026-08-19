@@ -1,0 +1,59 @@
+.kd-page { display: grid; gap: 1rem; }
+.kd-builder { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(18rem, .65fr); gap: .75rem; margin-top: .75rem; }
+.dataset-preview-card, .query-card, .kd-advanced-panel { border: 1px solid var(--color-border); border-radius: .9rem; background: #fff; padding: .85rem; }
+.dataset-heading { display: flex; justify-content: space-between; gap: .7rem; align-items: flex-start; margin-bottom: .65rem; }
+.dataset-heading > div:first-child, .query-copy { display: grid; gap: .12rem; }
+.dataset-heading span, .query-copy span, .control-label, .dataset-editor > span { color: var(--color-text-muted); font-size: .66rem; font-weight: 900; letter-spacing: .06em; }
+.dataset-heading strong, .query-copy strong { font-size: .9rem; }
+.class-key { display: flex; gap: .5rem; color: var(--color-text-muted); font-size: .7rem; font-weight: 800; }
+.class-key span { display: inline-flex; align-items: center; gap: .25rem; }
+.class-key i { width: .62rem; height: .62rem; border-radius: 50%; border: 2px solid; }
+.class-key .zero { background: var(--color-danger-soft); border-color: var(--color-danger); }
+.class-key .one { background: var(--color-secondary-soft); border-color: var(--color-secondary); }
+.dataset-chip-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .42rem; }
+.dataset-chip { min-width: 0; display: grid; gap: .08rem; padding: .48rem .54rem; border: 1px solid var(--color-border); border-radius: .65rem; background: var(--color-surface-subtle); }
+.dataset-chip small, .dataset-chip em { color: var(--color-text-muted); font-size: .62rem; font-style: normal; }
+.dataset-chip strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .75rem; }
+.dataset-chip.class-zero { border-left: 3px solid var(--color-danger); }
+.dataset-chip.class-one { border-left: 3px solid var(--color-secondary); }
+.query-card { display: flex; flex-direction: column; gap: .7rem; }
+.query-input-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+.query-input-grid label { display: grid; gap: .3rem; }
+.query-input-grid label > span { color: var(--color-text-muted); font-size: .64rem; font-weight: 900; letter-spacing: .05em; }
+.query-input-grid input, .dataset-editor textarea { width: 100%; box-sizing: border-box; border: 1px solid var(--color-border); border-radius: .62rem; background: #fff; color: var(--color-text); font: inherit; }
+.query-input-grid input { padding: .58rem .62rem; }
+.dataset-editor textarea { min-height: 6rem; padding: .65rem; resize: vertical; }
+.query-summary { display: grid; grid-template-columns: auto 1fr; gap: .25rem .5rem; padding: .58rem .62rem; border-radius: .65rem; background: var(--color-surface-subtle); font-size: .72rem; }
+.query-summary span { color: var(--color-text-muted); }
+.query-summary strong { text-align: right; }
+.builder-actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: .45rem; justify-content: flex-end; }
+.kd-advanced-panel { margin-top: .65rem; }
+.dataset-editor { display: grid; gap: .35rem; }
+.dataset-editor small { color: var(--color-text-muted); font-size: .7rem; line-height: 1.45; }
+.input-error { margin: .55rem 0 0; color: var(--color-danger); font-size: .78rem; font-weight: 750; }
+.prediction-feedback { margin: .55rem 0 0; padding: .58rem .68rem; border-radius: .65rem; font-size: .78rem; font-weight: 750; }
+.prediction-feedback.correct { background: var(--color-secondary-soft); color: var(--color-secondary); }
+.prediction-feedback.incorrect { background: var(--color-danger-soft); color: var(--color-danger); }
+.kd-memory { display: grid; gap: .72rem; }
+.memory-intro { display: grid; gap: .18rem; }
+.memory-intro span { color: var(--color-text-muted); font-size: .66rem; font-weight: 900; letter-spacing: .06em; }
+.memory-intro strong { font-size: .94rem; }
+.memory-intro p { margin: 0; color: var(--color-text-muted); font-size: .77rem; line-height: 1.5; }
+.memory-summary-strip { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .42rem; }
+.memory-summary-strip > span { display: grid; gap: .12rem; padding: .52rem .58rem; border: 1px solid var(--color-border); border-radius: .65rem; background: var(--color-surface-subtle); }
+.memory-summary-strip small { color: var(--color-text-muted); font-size: .58rem; font-weight: 900; letter-spacing: .05em; }
+.memory-summary-strip strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .76rem; }
+.table-scroll { overflow-x: auto; }
+.table-scroll table { width: 100%; border-collapse: collapse; font-size: .75rem; }
+.table-scroll th, .table-scroll td { padding: .48rem .5rem; border-bottom: 1px solid var(--color-border); text-align: left; white-space: nowrap; }
+.table-scroll th { color: var(--color-text-muted); font-size: .62rem; letter-spacing: .04em; text-transform: uppercase; }
+.memory-note { display: grid; gap: .15rem; padding: .62rem .68rem; border: 1px solid var(--color-border); border-radius: .65rem; background: var(--color-surface-subtle); }
+.memory-note strong { font-size: .78rem; }
+.memory-note span { color: var(--color-text-muted); font-size: .72rem; line-height: 1.45; }
+.kd-run-dashboard { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .48rem; margin-top: .65rem; }
+.kd-run-dashboard article { display: grid; gap: .12rem; min-width: 0; padding: .62rem .66rem; border: 1px solid var(--color-border); border-radius: .68rem; background: #fff; }
+.kd-run-dashboard span { color: var(--color-text-muted); font-size: .62rem; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; }
+.kd-run-dashboard strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .82rem; }
+.kd-run-dashboard small { color: var(--color-text-muted); font-size: .65rem; line-height: 1.4; }
+@media (max-width: 980px) { .kd-builder { grid-template-columns: 1fr; } .memory-summary-strip, .kd-run-dashboard { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 680px) { .dataset-chip-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .query-input-grid, .memory-summary-strip, .kd-run-dashboard { grid-template-columns: 1fr; } }

@@ -173,3 +173,7 @@ The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctnes
 ### KNN coverage
 
 `MachineLearning/Supervised/KnnSimulationTests.cs` checks clear class-0/class-1 neighborhoods, k sensitivity around an outlier, exact-match distance zero, Euclidean-vs-Manhattan nearest-neighbor differences, dimension-independent Core behavior, odd-k validation, and dimension mismatch rejection.
+### KD-Tree coverage
+
+`MachineLearning/Supervised/KdTreeSimulationTests.cs` verifies nearest lookup on both sides of the spatial tree, exact-match distance zero, observable pruning, broader backtracking near a split plane, dimension-independent Core behavior with axis cycling beyond 2D, and dimension-mismatch rejection.
+

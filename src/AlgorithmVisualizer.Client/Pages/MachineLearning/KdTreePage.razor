@@ -1,19 +1,395 @@
 @page "/ml-foundations/kd-tree"
+@using System.Globalization
+@using AlgorithmVisualizer.Core.MachineLearning.Supervised.KdTree
+@implements IDisposable
+@inject SimulationState SimulationState
+@inject KdTreeSimulation KdTreeLab
+@inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
 
 <PageTitle>KD-Tree — Machine Learning — Algorithm Visualizer</PageTitle>
 
-<LearningPlaceholder
-    Eyebrow="MACHINE LEARNING · PHASE 1 STEP 6"
-    Title="KD-Tree"
-    Description="The next lesson will organize points by alternating coordinate splits so nearest-neighbor queries can skip spatial regions that cannot contain a better candidate."
-    Complexity="O(log n) avg. query"
-    ComplexityNote="planned balanced spatial search; worst case can still degrade to O(n)"
-    Concepts="axis split · median · bounding region · nearest-neighbor pruning · backtracking"
-    LearnTitle="KNN checked every point. KD-Tree will teach when an entire region can be ignored."
-    LearnSummary="Build a binary spatial partition, descend toward the query, then backtrack only when the opposite region might still contain a closer point."
-    LearnCards="SPLIT|Choose one coordinate axis|Alternating axes divide space into smaller regions.;;MEDIAN|Place a point at the split|A balanced build keeps the tree from becoming unnecessarily tall.;;DESCEND|Follow the query side first|Search the region that is most likely to contain the nearest point.;;PRUNE|Skip impossible regions|If the split plane is farther than the current best distance, the other side cannot win."
-    ConceptHref="/learn/concepts/kd-tree"
-    TipTitle="KD-Tree changes search organization, not the KNN vote."
-    TipText="KNN still decides from nearby labels. KD-Tree is an acceleration structure for finding those nearby points."
-    FocusText="Reuse the project-owned BST/tree ideas and Vector distance math, but implement spatial splitting and pruning explicitly."
-    PromptText="When is it safe to skip the opposite side of a split?" />
+<div class="kd-page learning-module-page learning-module-shell">
+    <section class="learn-launchpad" aria-labelledby="kd-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="kd-learn-title">KNN checked every point. KD-Tree asks which parts of space can be skipped.</h2>
+            <p>Build a binary spatial tree with alternating coordinate splits. During search, visit the query side first and inspect the opposite side only when its split plane is close enough to beat the current best point.</p>
+            <ConceptLink class="learn-launchpad-link" Href="/learn/concepts/kd-tree">Open KD-Tree concepts &amp; memory →</ConceptLink>
+        </div>
+        <div class="learn-grid">
+            <article class="learn-card purple"><span>1 · SPLIT</span><strong>Alternate x and y.</strong><small>Each depth chooses one coordinate axis.</small></article>
+            <article class="learn-card blue"><span>2 · MEDIAN</span><strong>Put the middle point at the node.</strong><small>Median splits keep this teaching tree reasonably balanced.</small></article>
+            <article class="learn-card mint"><span>3 · DESCEND</span><strong>Search the query side first.</strong><small>The split tells us which child is more promising.</small></article>
+            <article class="learn-card gold"><span>4 · PRUNE</span><strong>Skip a region that cannot win.</strong><small>If the split plane is farther than best-so-far, the opposite subtree is unnecessary.</small></article>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow"><span>MACHINE LEARNING · PHASE 1 STEP 6</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <h1>KD-Tree</h1>
+            <p>Build a spatial binary tree, then trace nearest-neighbor search as it descends, backtracks, and prunes whole regions.</p>
+        </div>
+        <div class="complexity-summary" aria-label="KD-Tree complexity">
+            <div><span>Average query</span><strong>O(log n)</strong><small>balanced, low-dimensional case</small></div>
+            <div><span>Worst query</span><strong>O(n)</strong><small>pruning can fail</small></div>
+            <div><span>This build</span><strong>O(n log² n)</strong><small>manual median-range sorting</small></div>
+        </div>
+    </header>
+
+    <section class="smart-tip" aria-label="KD-Tree learning tip">
+        <span class="tip-icon">✦</span>
+        <div><strong>The pruning test is the heart of this lesson.</strong><p>Compare distance to the split plane with the best Euclidean distance found so far. Only then is it safe to ignore the opposite region.</p></div>
+        <ConceptLink Href="/ml-foundations/knn">Why did KNN need this? →</ConceptLink>
+    </section>
+
+    <section class="builder-section" aria-labelledby="kd-build-title">
+        <div class="section-heading-row">
+            <div class="heading-with-step"><span class="step-number">1</span><div><span class="section-kicker">BUILD THE SPATIAL DATA</span><h2 id="kd-build-title">Choose points, then place the query.</h2><p>The first run only needs a preset and two query coordinates.</p></div></div>
+            <ConceptLink Href="/structures/vector">Review Vector distance →</ConceptLink>
+        </div>
+
+        <div class="preset-row" aria-label="KD-Tree examples">
+            <span>TRY AN EXAMPLE</span>
+            <button type="button" class="@PresetClass(Preset.RightSide)" @onclick="() => LoadPreset(Preset.RightSide)" disabled="@IsBusy">Right cluster</button>
+            <button type="button" class="@PresetClass(Preset.LeftSide)" @onclick="() => LoadPreset(Preset.LeftSide)" disabled="@IsBusy">Left cluster</button>
+            <button type="button" class="@PresetClass(Preset.ExactMatch)" @onclick="() => LoadPreset(Preset.ExactMatch)" disabled="@IsBusy">Exact match</button>
+            <button type="button" class="@PresetClass(Preset.Pruning)" @onclick="() => LoadPreset(Preset.Pruning)" disabled="@IsBusy">Strong pruning</button>
+            <button type="button" class="@PresetClass(Preset.SplitPlane)" @onclick="() => LoadPreset(Preset.SplitPlane)" disabled="@IsBusy">Near split plane</button>
+        </div>
+
+        <div class="kd-builder">
+            <div class="dataset-preview-card">
+                <div class="dataset-heading"><div><span>STORED POINTS</span><strong>@_features.Length examples · alternating x/y splits</strong></div><div class="class-key"><span><i class="zero"></i>0</span><span><i class="one"></i>1</span></div></div>
+                <div class="dataset-chip-grid">
+                    @for (var index = 0; index < _features.Length; index++)
+                    {
+                        <span class="dataset-chip @(_labels[index] == 0 ? "class-zero" : "class-one")"><small>example @index</small><strong>[@Format(_features[index][0]), @Format(_features[index][1])]</strong><em>class @_labels[index]</em></span>
+                    }
+                </div>
+            </div>
+            <div class="query-card">
+                <div class="query-copy"><span>NEW QUERY</span><strong>Where should the tree search?</strong></div>
+                <div class="query-input-grid">
+                    <label><span>QUERY X</span><input value="@_queryXText" @oninput="QueryXChanged" disabled="@IsBusy" inputmode="decimal" /></label>
+                    <label><span>QUERY Y</span><input value="@_queryYText" @oninput="QueryYChanged" disabled="@IsBusy" inputmode="decimal" /></label>
+                </div>
+                <div class="query-summary"><span>Root split</span><strong>feature 1 · x</strong><span>Next depth</span><strong>feature 2 · y</strong></div>
+                <div class="builder-actions">
+                    <button class="secondary-action" type="button" @onclick="ToggleAdvancedSettings" disabled="@IsBusy">@(_showAdvancedSettings ? "Hide custom data" : "Edit custom data")</button>
+                    <button class="primary-action" type="button" @onclick="ApplyInputs" disabled="@IsBusy">Use this setup</button>
+                </div>
+            </div>
+        </div>
+
+        @if (_showAdvancedSettings)
+        {
+            <div class="kd-advanced-panel"><label class="dataset-editor"><span>CUSTOM DATA · x,y,label; x,y,label; ...</span><textarea value="@_datasetText" @oninput="DatasetChanged" disabled="@IsBusy" rows="4"></textarea><small>Use 3–16 two-dimensional points. Labels are shown only to connect the nearest point back to KNN.</small></label></div>
+        }
+        @if (!string.IsNullOrWhiteSpace(_inputError)) { <p class="input-error" role="alert">@_inputError</p> }
+    </section>
+
+    <section class="prediction-section" aria-labelledby="kd-predict-title">
+        <div class="section-heading-row"><div class="heading-with-step"><span class="step-number">2</span><div><span class="section-kicker">PREDICT</span><h2 id="kd-predict-title">Which class will the nearest stored point have?</h2><p>This is only a prediction prompt. KD-Tree itself returns the nearest point; KNN decides how multiple neighbors vote.</p></div></div></div>
+        <div class="prediction-actions">
+            <button type="button" class="@PredictionClass(0)" @onclick="() => SetPrediction(0)" disabled="@IsBusy">Nearest is class 0</button>
+            <button type="button" class="@PredictionClass(1)" @onclick="() => SetPrediction(1)" disabled="@IsBusy">Nearest is class 1</button>
+        </div>
+        @if (_predictionAnswered) { <p class="prediction-feedback @(_predictionCorrect ? "correct" : "incorrect")">@PredictionFeedback</p> }
+    </section>
+
+    <section class="lab-section" aria-labelledby="kd-lab-title">
+        <div class="lab-heading-row">
+            <div class="heading-with-step"><span class="step-number">3</span><div><span class="section-kicker">WATCH THE SEARCH</span><h2 id="kd-lab-title">Build → descend → backtrack → prune.</h2></div></div>
+            <div class="lab-actions">
+                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Open explanation after run</span></label>
+                @if (_lastResult is not null) { <button class="secondary-action" type="button" @onclick="OpenLastRunPopup">Last explanation</button> }
+                <button class="sort-button" type="button" @onclick="RunAsync" disabled="@IsBusy"><span>▶</span> Search nearest point</button>
+            </div>
+        </div>
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist" aria-label="KD-Tree state view">
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual state</button>
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory state</button>
+            </div>
+            <p>@ViewExplanation</p>
+        </div>
+
+        <div class="lesson-reference-links" aria-label="KD-Tree concept links">
+            <ConceptLink Href="/learn/concepts/kd-tree">KD-Tree concepts →</ConceptLink>
+            <ConceptLink Href="/ml-foundations/knn">Compare with brute-force KNN →</ConceptLink>
+            <ConceptLink Href="/structures/bst">Binary-tree refresher →</ConceptLink>
+        </div>
+
+        <div class="state-surface">
+            @if (_view == StateView.Visual)
+            {
+                <KdTreePlot Snapshot="@DisplayedSnapshot" />
+            }
+            else
+            {
+                <section class="kd-memory" aria-label="KD-Tree memory state">
+                    <div class="memory-intro"><span>MEMORY STATE</span><strong>ManualVector points + explicit KD nodes + child links</strong><p>Each node stores a point index, split axis, depth, and left/right node IDs. Search state keeps only the query, current node, best node, distances, and recursion path.</p></div>
+                    <div class="memory-summary-strip">
+                        <span><small>ROOT</small><strong>@NodeText(DisplayedSnapshot.RootNodeId)</strong></span>
+                        <span><small>CURRENT</small><strong>@NodeText(DisplayedSnapshot.CurrentNodeId)</strong></span>
+                        <span><small>BEST</small><strong>@NodeText(DisplayedSnapshot.BestNodeId)</strong></span>
+                        <span><small>BEST DISTANCE</small><strong>@FormatDistance(DisplayedSnapshot.BestDistance)</strong></span>
+                        <span><small>PRUNED</small><strong>@DisplayedSnapshot.PrunedNodes</strong></span>
+                    </div>
+                    <div class="table-scroll"><table><thead><tr><th>Node</th><th>Point</th><th>ManualVector</th><th>Axis</th><th>Left</th><th>Right</th><th>State</th></tr></thead><tbody>
+                    @foreach (var node in DisplayedSnapshot.Nodes)
+                    {
+                        <tr><td>@node.NodeId</td><td>example @node.PointIndex</td><td>[@Format(node.Point[0]), @Format(node.Point[1])]</td><td>@AxisText(node.Axis)</td><td>@ChildText(node.LeftNodeId)</td><td>@ChildText(node.RightNodeId)</td><td>@StateText(node.State)</td></tr>
+                    }
+                    </tbody></table></div>
+                    <div class="memory-note"><strong>No framework KD-Tree or hidden nearest-neighbor index.</strong><span>Median ordering, node links, branch decisions, backtracking, and pruning are explicit project code. Euclidean distance is reused from VectorSimulation.</span></div>
+                </section>
+            }
+        </div>
+
+        <div class="kd-run-dashboard" aria-label="KD-Tree live metrics">
+            <article><span>Phase</span><strong>@PhaseText(DisplayedSnapshot.Phase)</strong><small>Build or current search action.</small></article>
+            <article><span>Visited</span><strong>@DisplayedSnapshot.VisitedNodes / @DisplayedSnapshot.Count</strong><small>Nodes whose point distance was measured.</small></article>
+            <article><span>Pruned</span><strong>@DisplayedSnapshot.PrunedNodes</strong><small>Nodes skipped because their region cannot win.</small></article>
+            <article><span>Plane distance</span><strong>@FormatDistance(DisplayedSnapshot.SplitPlaneDistance)</strong><small>Compared with best-so-far while backtracking.</small></article>
+            <article><span>Best distance</span><strong>@FormatDistance(DisplayedSnapshot.BestDistance)</strong><small>Radius the opposite side must beat.</small></article>
+        </div>
+    </section>
+
+    <section class="fit-section" aria-labelledby="kd-fit-title">
+        <div class="section-heading-row"><div><span class="section-kicker">WHEN IT FITS</span><h2 id="kd-fit-title">KD-Tree helps when geometry is low-dimensional and many nearest-neighbor queries reuse the same points.</h2></div></div>
+        <div class="fit-grid">
+            <article class="fit-card"><span>GOOD FIT</span><strong>Repeated spatial queries</strong><p>Build once, then use split planes to avoid rescanning every point for every query.</p></article>
+            <article class="fit-card"><span>GOOD FIT</span><strong>Low-dimensional features</strong><p>Axis-aligned regions remain useful enough for pruning.</p></article>
+            <article class="fit-card"><span>AVOID FOR</span><strong>Very high dimensions</strong><p>Many regions remain plausible, so search can approach the same O(n) scan KNN already used.</p></article>
+            <article class="fit-card"><span>NEXT CONNECTION</span><strong>K-Means</strong><p>Next, distances are used differently: points repeatedly move toward learned centroids instead of a fixed search tree.</p></article>
+        </div>
+    </section>
+
+    <section class="practice-section" aria-labelledby="kd-practice-title">
+        <div class="practice-heading"><div><span class="section-kicker">GUIDED PRACTICE</span><h2 id="kd-practice-title">Prove that build order and pruning change the amount of search work.</h2><p>Tasks complete from the real nearest result and search counters, not from button clicks.</p></div><strong>@_completedTaskIds.Count / @PracticeTasks.Length complete</strong></div>
+        <div class="practice-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                <PracticeTaskCard TaskId="@task.Id" Title="@task.Title" Description="@task.Goal" InputText="@task.Suggested" HelpHref="/learn/concepts/kd-tree" Completed="@_completedTaskIds.Contains(task.Id)" Active="@(_activeTaskId == task.Id)" Busy="@IsBusy" HasEvidence="@(GetTaskEvidence(task.Id) is not null)" Start="@(() => StartTask(task.Id))" OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
+            }
+        </div>
+    </section>
+
+    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="07 · Planned" Title="K-Means" Description="Replace labeled neighbors with learned centroids: assign points, move centroids, repeat until cluster membership stabilizes." Href="/ml-foundations/k-means" LinkLabel="Preview K-Means" />
+</div>
+
+@if (_lastRunPopupOpen && _lastResult is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRunPopup">
+        <section class="run-popup" role="dialog" aria-modal="true" @onclick:stopPropagation="true">
+            <header><div><span class="section-kicker">LAST RUN</span><h2>Nearest example @_lastResult.NearestPointIndex found after visiting @_lastResult.VisitedNodes / @_lastResult.Features.Length nodes.</h2></div><button type="button" class="popup-close" @onclick="CloseLastRunPopup" aria-label="Close result explanation">×</button></header>
+            <div class="popup-body">
+                <p>@RunActionExplanation(_lastResult)</p>
+                <div class="popup-metrics"><div><span>NEAREST</span><strong>example @_lastResult.NearestPointIndex</strong></div><div><span>CLASS</span><strong>@_lastResult.NearestLabel</strong></div><div><span>DISTANCE</span><strong>@Format(_lastResult.NearestDistance)</strong></div><div><span>PRUNED</span><strong>@_lastResult.PrunedNodes</strong></div></div>
+                <p class="popup-memory">@RunMlExplanation(_lastResult)</p>
+            </div>
+        </section>
+    </div>
+}
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
+
+@code {
+    private const string ModuleKey = "kd-tree";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.kd-tree.show-run-popup.v1";
+    private readonly List<RunFrame> _frames = [];
+    private PracticeModuleProgress _practiceProgress = new();
+    private HashSet<int> _completedTaskIds = [];
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
+    private KdTreeRunResult? _lastResult;
+    private string? _lastCapturedStep;
+    private double[][] _features = [[-4d,-1d],[-3d,2d],[-2d,-3d],[-1d,1d],[1d,-2d],[2d,2d],[3d,-1d],[4d,3d],[5d,0d]];
+    private int[] _labels = [0,0,0,0,1,1,1,1,1];
+    private string _datasetText = "-4,-1,0; -3,2,0; -2,-3,0; -1,1,0; 1,-2,1; 2,2,1; 3,-1,1; 4,3,1; 5,0,1";
+    private string _queryXText = "2.4";
+    private string _queryYText = "1.5";
+    private string? _inputError;
+    private Preset? _preset = Preset.RightSide;
+    private bool _showAdvancedSettings;
+    private bool _showRunPopups = true;
+    private bool _lastRunPopupOpen;
+    private int? _prediction;
+    private bool _predictionAnswered;
+    private bool _predictionCorrect;
+    private int _frameIndex = -1;
+    private int? _activeTaskId;
+    private StateView _view = StateView.Visual;
+
+    private static readonly PracticeTaskDefinition[] PracticeTasks =
+    [
+        new(1, "Find a right-side neighbor", "Confirm a class-1 nearest point while skipping at least one node.", "Try Right cluster", Preset.RightSide, 1, true, false),
+        new(2, "Find a left-side neighbor", "Move to the opposite side and find a class-0 nearest point.", "Try Left cluster", Preset.LeftSide, 0, false, false),
+        new(3, "Hit an exact point", "An identical query should finish with nearest distance 0.", "Try Exact match", Preset.ExactMatch, 1, false, true),
+        new(4, "Prune a whole region", "Use the edge query and prove that the tree skipped multiple nodes.", "Try Strong pruning", Preset.Pruning, 1, true, false),
+        new(5, "Backtrack near a split", "Place the query near a split plane so search must inspect more than the first descent path.", "Try Near split plane", Preset.SplitPlane, 0, false, false)
+    ];
+
+    private KdTreeSnapshot Current => KdTreeLab.CreateSnapshot();
+    private KdTreeSnapshot DisplayedSnapshot => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].Snapshot : Current;
+    private string DisplayedStepText => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].StepText : SimulationState.CurrentStepText;
+    private int TimelineCount => _frames.Count;
+    private int TimelinePosition => _frameIndex < 0 ? 0 : _frameIndex + 1;
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_frameIndex >= 0 && _frameIndex < _frames.Count - 1) || SimulationState.IsRunning;
+    private bool IsBusy => SimulationState.IsRunning;
+    private string ViewExplanation => _view == StateView.Visual ? "See the spatial partitions, query path, current best candidate, backtracking, and regions that are pruned." : "See the explicit KD nodes, split axis, child links, ManualVector point storage, and nearest-search working state.";
+    private string PredictionFeedback => _lastResult is null ? string.Empty : _predictionCorrect ? $"Correct — nearest example {_lastResult.NearestPointIndex} has class {_lastResult.NearestLabel}." : $"Not quite. The nearest stored point has class {_lastResult.NearestLabel}.";
+
+    protected override void OnInitialized()
+    {
+        SimulationState.Changed += HandleSimulationChanged;
+        try { _showRunPopups = !bool.TryParse(LearningStore.GetItem(PopupSettingStorageKey), out var saved) || saved; } catch { _showRunPopups = true; }
+        _practiceProgress = PracticeProgress.Load(ModuleKey, null, PracticeTasks.Select(task => task.Id));
+        _completedTaskIds = _practiceProgress.CompletedTaskIds;
+        ApplyInputs();
+    }
+
+    private void QueryXChanged(ChangeEventArgs args) { _queryXText = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
+    private void QueryYChanged(ChangeEventArgs args) { _queryYText = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
+    private void DatasetChanged(ChangeEventArgs args) { _datasetText = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
+    private void ToggleAdvancedSettings() { if (!IsBusy) _showAdvancedSettings = !_showAdvancedSettings; }
+    private void SetPrediction(int predictedClass) { if (IsBusy) return; _prediction = predictedClass; _predictionAnswered = false; _predictionCorrect = false; }
+
+    private void ApplyInputs()
+    {
+        if (!TryParseDouble(_queryXText, out var queryX) || !TryParseDouble(_queryYText, out var queryY) || !double.IsFinite(queryX) || !double.IsFinite(queryY)) { _inputError = "Query x and y must be finite real numbers."; return; }
+        if (!TryParseDataset(_datasetText, out var features, out var labels, out var datasetError)) { _inputError = datasetError; return; }
+        _features = features; _labels = labels; _inputError = null;
+        try { KdTreeLab.Configure(new KdTreeConfiguration(_features, _labels, [queryX, queryY])); }
+        catch (ArgumentException ex) { _inputError = ex.Message; return; }
+        ClearReview();
+        StateHasChanged();
+    }
+
+    private async Task RunAsync()
+    {
+        ApplyInputs();
+        if (!string.IsNullOrWhiteSpace(_inputError)) return;
+        _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; _lastRunPopupOpen = false;
+        var token = SimulationState.Start("Building KD-Tree.");
+        Capture();
+        try
+        {
+            var result = await KdTreeLab.ExecuteAsync(token);
+            if (!IsCurrent(token)) return;
+            _lastResult = result;
+            SimulationState.Complete(result.Summary);
+            Capture();
+            EvaluatePrediction(result);
+            RecordPracticeResult(result);
+            if (_showRunPopups) OpenLastRunPopup();
+        }
+        catch (OperationCanceledException) { }
+        finally { await InvokeAsync(StateHasChanged); }
+    }
+
+    private void Capture()
+    {
+        var step = SimulationState.CurrentStepText;
+        if (step == _lastCapturedStep) return;
+        var followTail = _frameIndex < 0 || _frameIndex == _frames.Count - 1;
+        _frames.Add(new RunFrame(step, KdTreeLab.CreateSnapshot()));
+        _lastCapturedStep = step;
+        if (followTail) _frameIndex = _frames.Count - 1;
+    }
+
+    private void HandleSimulationChanged() { if (SimulationState.IsRunning) Capture(); _ = InvokeAsync(StateHasChanged); }
+    private bool IsCurrent(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;
+    private void ClearReview() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; _lastRunPopupOpen = false; _lastResult = null; _predictionAnswered = false; }
+    private Task PlayTimelineAsync() { if (_frames.Count > 0) _frameIndex = _frames.Count - 1; SimulationState.Resume(); return InvokeAsync(StateHasChanged); }
+    private Task PauseTimelineAsync() { SimulationState.Pause(); return Task.CompletedTask; }
+    private Task StepBackAsync() { if (SimulationState.IsRunning && !SimulationState.IsPaused) SimulationState.Pause(); if (_frameIndex > 0) _frameIndex--; return InvokeAsync(StateHasChanged); }
+    private Task StepForwardAsync() { if (_frameIndex >= 0 && _frameIndex < _frames.Count - 1) { _frameIndex++; return InvokeAsync(StateHasChanged); } if (SimulationState.IsRunning) SimulationState.Step(); return Task.CompletedTask; }
+    private Task ResetPlaybackAsync() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; return InvokeAsync(StateHasChanged); }
+
+    private void EvaluatePrediction(KdTreeRunResult result) { _predictionAnswered = _prediction.HasValue; if (_predictionAnswered) _predictionCorrect = _prediction == result.NearestLabel; }
+
+    private void LoadPreset(Preset preset, bool keepActiveTask = false)
+    {
+        if (IsBusy) return;
+        _preset = preset;
+        switch (preset)
+        {
+            case Preset.LeftSide: SetDataset(DefaultFeatures(), DefaultLabels(), [-3.2d, 1.6d]); break;
+            case Preset.ExactMatch: SetDataset(DefaultFeatures(), DefaultLabels(), [2d, 2d]); break;
+            case Preset.Pruning: SetDataset(DefaultFeatures(), DefaultLabels(), [5.4d, .2d]); break;
+            case Preset.SplitPlane: SetDataset(DefaultFeatures(), DefaultLabels(), [.1d, .8d]); break;
+            default: SetDataset(DefaultFeatures(), DefaultLabels(), [2.4d, 1.5d]); break;
+        }
+        _prediction = null; _predictionAnswered = false; ApplyInputs(); if (!keepActiveTask) _activeTaskId = null;
+    }
+
+    private void SetDataset(double[][] features, int[] labels, double[] query) { _features = features; _labels = labels; _datasetText = FormatDataset(features, labels); _queryXText = Format(query[0]); _queryYText = Format(query[1]); }
+    private static double[][] DefaultFeatures() => [[-4d,-1d],[-3d,2d],[-2d,-3d],[-1d,1d],[1d,-2d],[2d,2d],[3d,-1d],[4d,3d],[5d,0d]];
+    private static int[] DefaultLabels() => [0,0,0,0,1,1,1,1,1];
+
+    private void StartTask(int taskId) { if (IsBusy) return; var task = PracticeTasks.First(item => item.Id == taskId); _activeTaskId = taskId; LoadPreset(task.Preset, keepActiveTask: true); }
+    private void RecordPracticeResult(KdTreeRunResult result) { if (_activeTaskId is not int taskId) return; var task = PracticeTasks.First(item => item.Id == taskId); if (!TaskSatisfied(task, result)) return; CompletePracticeTask(task, result); }
+    private static bool TaskSatisfied(PracticeTaskDefinition task, KdTreeRunResult result)
+    {
+        if (result.NearestLabel != task.ExpectedLabel) return false;
+        if (task.RequireExact && Math.Abs(result.NearestDistance) > 1e-12d) return false;
+        if (task.RequirePruning && result.PrunedNodes < 2) return false;
+        return task.Id != 5 || result.VisitedNodes >= 4;
+    }
+
+    private void CompletePracticeTask(PracticeTaskDefinition task, KdTreeRunResult result)
+    {
+        var evidence = new PracticeCompletionEvidence(task.Id, task.Title, result.Summary, RunActionExplanation(result), "Points are ManualVector values. KD nodes store pointIndex, axis, depth, leftNodeId and rightNodeId; search keeps query/current/best distances plus recursion state.", RunMlExplanation(result), [new("Nearest", $"example {result.NearestPointIndex}"), new("Distance", Format(result.NearestDistance)), new("Visited", result.VisitedNodes.ToString(CultureInfo.InvariantCulture)), new("Pruned", result.PrunedNodes.ToString(CultureInfo.InvariantCulture)), new("Depth", result.MaxDepth.ToString(CultureInfo.InvariantCulture))], $"nearest={result.NearestPointIndex} · visited={result.VisitedNodes}/{result.Features.Length} · pruned={result.PrunedNodes}");
+        _completedTaskIds.Add(task.Id); PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence); _activeTaskId = null;
+    }
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
+    private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
+    private void CloseTaskEvidence() => _practiceEvidencePopup = null;
+    private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed; try { LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); } catch { } }
+    private void OpenLastRunPopup() { if (_lastResult is not null) _lastRunPopupOpen = true; }
+    private void CloseLastRunPopup() => _lastRunPopupOpen = false;
+    private string PresetClass(Preset preset) => _preset == preset ? "active" : string.Empty;
+    private void ClearPresetSelection() => _preset = null;
+    private string PredictionClass(int predictedClass) => _prediction == predictedClass ? "active" : string.Empty;
+
+    private static string RunActionExplanation(KdTreeRunResult result) => $"KD-Tree built {result.Nodes.Length} explicit nodes, visited {result.VisitedNodes}, pruned {result.PrunedNodes}, and returned example {result.NearestPointIndex} at Euclidean distance {Format(result.NearestDistance)}.";
+    private static string RunMlExplanation(KdTreeRunResult result) => result.PrunedNodes > 0 ? "Unlike brute-force KNN search, this query did not measure every stored point. Split-plane geometry proved that some opposite regions could not contain a better nearest candidate." : "This query did not gain much from pruning. KD-Tree has no guarantee that every query is logarithmic; difficult geometry can still force a broad search.";
+
+    private static bool TryParseDataset(string text, out double[][] features, out int[] labels, out string error)
+    {
+        var groups = text.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (groups.Length is < 3 or > 16) { features = []; labels = []; error = "Use between 3 and 16 examples, separated with semicolons."; return false; }
+        features = new double[groups.Length][]; labels = new int[groups.Length];
+        for (var index = 0; index < groups.Length; index++)
+        {
+            var parts = groups[index].Split(',', StringSplitOptions.TrimEntries);
+            if (parts.Length != 3 || !TryParseDouble(parts[0], out var x) || !TryParseDouble(parts[1], out var y) || !int.TryParse(parts[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out var label) || !double.IsFinite(x) || !double.IsFinite(y) || (label != 0 && label != 1)) { features = []; labels = []; error = $"Example {index + 1} must use x,y,label with finite coordinates and label 0 or 1."; return false; }
+            features[index] = [x, y]; labels[index] = label;
+        }
+        error = string.Empty; return true;
+    }
+
+    private static bool TryParseDouble(string? text, out double value) => double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value) || double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out value);
+    private static string FormatDataset(IReadOnlyList<double[]> features, IReadOnlyList<int> labels) { var parts = new string[features.Count]; for (var index = 0; index < features.Count; index++) parts[index] = $"{Format(features[index][0])},{Format(features[index][1])},{labels[index]}"; return string.Join("; ", parts); }
+    private static string Format(double value) => double.IsFinite(value) ? (Math.Abs(value) < 1e-12d ? "0" : value.ToString("0.###", CultureInfo.InvariantCulture)) : "—";
+    private static string FormatDistance(double value) => double.IsFinite(value) ? Format(value) : "—";
+    private static string AxisText(int axis) => axis == 0 ? "x / feature 1" : "y / feature 2";
+    private static string ChildText(int nodeId) => nodeId >= 0 ? $"node {nodeId}" : "—";
+    private static string StateText(KdTreeNodeState state) => state.ToString().ToLowerInvariant();
+    private string NodeText(int nodeId) => nodeId >= 0 && nodeId < DisplayedSnapshot.Nodes.Length ? $"node {nodeId} · ex {DisplayedSnapshot.Nodes[nodeId].PointIndex}" : "—";
+    private static string PhaseText(KdTreePhase phase) => phase switch { KdTreePhase.Building => "build", KdTreePhase.Measuring => "measure", KdTreePhase.Descending => "descend", KdTreePhase.Backtracking => "backtrack", KdTreePhase.Pruning => "prune", KdTreePhase.Complete => "complete", _ => "ready" };
+
+    public void Dispose() => SimulationState.Changed -= HandleSimulationChanged;
+    private sealed record RunFrame(string StepText, KdTreeSnapshot Snapshot);
+    private sealed record PracticeTaskDefinition(int Id, string Title, string Goal, string Suggested, Preset Preset, int ExpectedLabel, bool RequirePruning, bool RequireExact);
+    private enum StateView { Visual, Memory }
+    private enum Preset { RightSide, LeftSide, ExactMatch, Pruning, SplitPlane }
+}

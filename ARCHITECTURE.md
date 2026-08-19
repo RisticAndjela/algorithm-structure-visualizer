@@ -263,7 +263,13 @@ The live Client route `/ml-foundations/logistic-regression` owns beginner preset
 
 `MachineLearning/Supervised/Knn/KnnSimulation` owns the Phase 1 step 5 classifier. Training examples and the query are `ManualVector` values; Euclidean/Manhattan distance is delegated to the existing `VectorSimulation` through an immediate internal runtime, while KNN itself owns the explicit full scan, deterministic ordered top-k insertion, and majority vote. The Core accepts shared feature dimensions beyond 2D; the Client intentionally renders only two dimensions so spatial neighborhoods remain visually legible.
 
-The live route `/ml-foundations/knn` owns presets/custom parsing, query + odd-k controls, optional metric selection, class prediction, 2D neighbor visualization, Visual/Memory playback review, popup explanations, and persisted behavior-based practice evidence. KD-Tree at `/ml-foundations/kd-tree` is the next planned `LearningPlaceholder`; it must accelerate neighbor search without changing the KNN vote semantics.
+The live route `/ml-foundations/knn` owns presets/custom parsing, query + odd-k controls, optional metric selection, class prediction, 2D neighbor visualization, Visual/Memory playback review, popup explanations, and persisted behavior-based practice evidence. KD-Tree at `/ml-foundations/kd-tree` is now the separate live acceleration lesson; it changes spatial search organization without changing KNN vote semantics.
+
+## KD-Tree / spatial-search boundary
+
+`MachineLearning/Supervised/KdTree/KdTreeSimulation` owns Phase 1 step 6. Feature points and the query remain project-owned `ManualVector` values and Euclidean point distance is reused through `VectorSimulation`. KD-Tree owns explicit node records, alternating split axes, median-range ordering, child links, nearest-side descent, backtracking, split-plane comparison and subtree pruning. The current teaching build manually merge-sorts each recursive active range, so its documented build complexity is `O(n log² n)` rather than silently claiming a stronger construction algorithm.
+
+The live Client route `/ml-foundations/kd-tree` intentionally renders 2D geometry so split regions are visible, but Core cycles axes for arbitrary shared dimensions and has non-2D tests. Visual State renders region-bounded split lines plus query/current-best/visited/pruned states and a compact tree-by-depth story. Memory State exposes the real node links and search working set. K-Means at `/ml-foundations/k-means` is the next planned `LearningPlaceholder`.
 
 
 ## Curriculum classification boundary
