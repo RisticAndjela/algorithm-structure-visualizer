@@ -9,7 +9,7 @@
 
 <PageTitle>Logistic Regression — Machine Learning — Algorithm Visualizer</PageTitle>
 
-<div class="logistic-page learning-module-page learning-module-shell">
+<div class="logistic-page learning-module-page learning-module-shell ml-module-page">
     <section class="learn-launchpad" aria-labelledby="logistic-learn-title">
         <div class="learn-copy">
             <span class="section-kicker">LEARN FIRST</span>
@@ -152,7 +152,7 @@
             <ConceptLink Href="/structures/vector">Vector storage refresher →</ConceptLink>
         </div>
 
-        <div class="state-surface">
+        <div class="state-surface ml-state-surface" tabindex="0">
             @if (_view == StateView.Visual)
             {
                 <LogisticRegressionPlot Snapshot="@DisplayedSnapshot" />
@@ -201,12 +201,11 @@
     </section>
 
     <section class="fit-section" aria-labelledby="logistic-fit-title">
-        <div class="section-heading-row"><div><span class="section-kicker">WHEN IT FITS</span><h2 id="logistic-fit-title">Use Logistic Regression when two classes can be separated by a simple linear boundary and probabilities are useful.</h2></div></div>
+        <div class="section-heading-row"><div><span class="section-kicker">WHEN SHOULD I USE IT?</span><h2 id="logistic-fit-title">Use Logistic Regression when a linear decision boundary is reasonable and you want a binary probability.</h2><p>It is strongest when one weighted score captures the class separation clearly enough to remain interpretable.</p></div></div>
         <div class="fit-grid">
-            <article class="fit-card"><span>GOOD FIT</span><strong>Binary classification</strong><p>Predict class 0 vs class 1 while keeping a probability instead of only a hard label.</p></article>
-            <article class="fit-card"><span>GOOD FIT</span><strong>Readable influence</strong><p>The sign of weight tells you whether larger x pushes probability toward class 1 or class 0.</p></article>
-            <article class="fit-card"><span>AVOID FOR</span><strong>Strongly nonlinear boundaries</strong><p>A single weighted score cannot bend around complicated class shapes.</p></article>
-            <article class="fit-card"><span>NEXT CONNECTION</span><strong>KNN</strong><p>Instead of learning one boundary, KNN classifies from nearby stored examples.</p></article>
+            <article class="fit-card good"><span>GOOD FIT</span><strong>Binary classification with a readable linear boundary</strong><p>The sigmoid keeps a probability while the weight sign still shows how the feature pushes the prediction.</p></article>
+            <article class="fit-card avoid"><span>AVOID FOR</span><strong>Strongly nonlinear or highly local class structure</strong><p>A single weighted score cannot bend around disconnected neighborhoods or complicated boundaries.</p></article>
+            <article class="fit-card better"><span>BETTER ALTERNATIVE</span><strong>Use KNN when nearby stored examples describe the boundary better</strong><p>KNN does not learn one global line; it predicts from the labels of the closest examples.</p><div class="fit-links"><a href="/ml-foundations/knn">Open KNN →</a></div></article>
         </div>
     </section>
 

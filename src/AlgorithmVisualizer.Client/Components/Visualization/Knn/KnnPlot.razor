@@ -2,13 +2,6 @@
 @using AlgorithmVisualizer.Core.MachineLearning.Supervised.Knn
 
 <section class="knn-visual" aria-label="K-Nearest Neighbors visual state">
-    <div class="knn-metric-strip">
-        <div><span>QUERY</span><strong>[@Format(Snapshot.Query[0]), @Format(Snapshot.Query[1])]</strong></div>
-        <div><span>K</span><strong>@Snapshot.K neighbors</strong></div>
-        <div><span>DISTANCE</span><strong>@MetricName</strong></div>
-        <div><span>VOTE</span><strong>@VoteText</strong></div>
-    </div>
-
     <div class="knn-plot-shell">
         <div class="axis-note y-note">feature 2 ↑</div>
         <svg class="coordinate-plot" viewBox="0 0 760 470" role="img" aria-label="Training examples, query point, current comparison, and selected nearest neighbors">
@@ -93,12 +86,6 @@
 @code {
     [Parameter, EditorRequired] public KnnSnapshot Snapshot { get; set; } = default!;
 
-    private string MetricName => Snapshot.DistanceMetric == KnnDistanceMetric.Euclidean ? "Euclidean" : "Manhattan";
-    private string VoteText => Snapshot.PredictedClass is int prediction
-        ? $"{Snapshot.VoteClass0} : {Snapshot.VoteClass1} → class {prediction}"
-        : Snapshot.Phase == KnnPhase.Voting
-            ? $"{Snapshot.VoteClass0} : {Snapshot.VoteClass1}"
-            : "not voted yet";
     private string NeighborHeadline => Snapshot.PredictedClass is int prediction
         ? $"The neighbors voted for class {prediction}."
         : Snapshot.CurrentIndex >= 0

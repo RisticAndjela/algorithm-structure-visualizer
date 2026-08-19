@@ -72,7 +72,7 @@ public sealed class DecisionTreeSimulation : SimulationAlgorithmBase
         await NextStepAsync(_focusText, cancellationToken);
 
         var correct = 0;
-        for (var i = 0; i < _features.Length; i++) if (Predict(_features[i]) == _labels[i]) correct++;
+        for (var i = 0; i < _features.Length; i++) if (Predict(_features[i].CopyValues()) == _labels[i]) correct++;
         var root = _nodeCount == 0 ? null : _nodes[0];
         var leaves = 0;
         var depth = 0;

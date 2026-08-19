@@ -9,7 +9,7 @@
 
 <PageTitle>KD-Tree — Machine Learning — Algorithm Visualizer</PageTitle>
 
-<div class="kd-page learning-module-page learning-module-shell">
+<div class="kd-page learning-module-page learning-module-shell ml-module-page">
     <section class="learn-launchpad" aria-labelledby="kd-learn-title">
         <div class="learn-copy">
             <span class="section-kicker">LEARN FIRST</span>
@@ -132,7 +132,7 @@
             <ConceptLink Href="/structures/bst">Binary-tree refresher →</ConceptLink>
         </div>
 
-        <div class="state-surface">
+        <div class="state-surface ml-state-surface" tabindex="0">
             @if (_view == StateView.Visual)
             {
                 <KdTreePlot Snapshot="@DisplayedSnapshot" />
@@ -159,11 +159,11 @@
             }
         </div>
 
-        <div class="run-dashboard kd-run-dashboard" aria-label="KD-Tree live metrics">
-            <article><span>Current phase</span><strong>@PhaseText(DisplayedSnapshot.Phase)</strong><small>Where the search is now.</small></article>
-            <article><span>Visited</span><strong>@DisplayedSnapshot.VisitedNodes / @DisplayedSnapshot.Count</strong><small>Points actually measured.</small></article>
-            <article><span>Pruned</span><strong>@DisplayedSnapshot.PrunedNodes</strong><small>Points skipped with geometric proof.</small></article>
-            <article><span>Best distance</span><strong>@FormatDistance(DisplayedSnapshot.BestDistance)</strong><small>The radius another region must beat.</small></article>
+        <div class="run-dashboard compact-run-metrics kd-run-dashboard" aria-label="KD-Tree live metrics">
+            <div><span>PHASE</span><strong>@PhaseText(DisplayedSnapshot.Phase)</strong></div>
+            <div><span>VISITED</span><strong>@DisplayedSnapshot.VisitedNodes / @DisplayedSnapshot.Count</strong></div>
+            <div><span>PRUNED</span><strong>@DisplayedSnapshot.PrunedNodes</strong></div>
+            <div><span>BEST DIST.</span><strong>@FormatDistance(DisplayedSnapshot.BestDistance)</strong></div>
         </div>
     </section>
 

@@ -2,25 +2,22 @@
 @using AlgorithmVisualizer.Core.MachineLearning.Unsupervised.KMeans
 
 <div class="kmeans-visual" aria-label="K-Means visual state">
-    <div class="kmeans-metric-strip">
-        <article><span>Round</span><strong>@RoundText</strong><small>assignment + centroid update</small></article>
-        <article><span>Phase</span><strong>@PhaseText(Snapshot.Phase)</strong><small>current algorithm action</small></article>
-        <article><span>Inertia</span><strong>@FormatMetric(Snapshot.Inertia)</strong><small>sum of squared assigned distances</small></article>
-        <article><span>Changed</span><strong>@Snapshot.ChangedAssignments</strong><small>assignments changed this round</small></article>
-    </div>
-
     <div class="kmeans-workspace">
         <section class="cluster-plot-card">
             <header>
-                <div><span>FEATURE SPACE</span><strong>Points move between clusters; centroids move through space.</strong></div>
-                <small>@Snapshot.Count points · @Snapshot.ClusterCount clusters</small>
+                <div><span>FEATURE SPACE</span><strong>Every point is visible; centroids are the large cross markers.</strong></div>
+                <small>@Snapshot.Count points · @Snapshot.ClusterCount clusters · @PhaseText(Snapshot.Phase)</small>
             </header>
             <div class="cluster-plot">
-                <svg viewBox="0 0 760 420" role="img" aria-label="Two-dimensional K-Means clustering plot" preserveAspectRatio="xMidYMid meet">
+                <svg viewBox="0 0 780 440" role="img" aria-label="Two-dimensional K-Means clustering plot" preserveAspectRatio="xMidYMid meet">
+                    <rect x="@Left" y="@Top" width="@(Right - Left)" height="@(Bottom - Top)" rx="18" class="plot-bg" />
                     @foreach (var line in GridLines)
                     {
                         <line x1="@line.X1" y1="@line.Y1" x2="@line.X2" y2="@line.Y2" class="plot-grid-line" />
                     }
+                    <line x1="@Left" y1="@Bottom" x2="@Right" y2="@Bottom" class="axis-line" />
+                    <line x1="@Left" y1="@Top" x2="@Left" y2="@Bottom" class="axis-line" />
+
                     @for (var pointIndex = 0; pointIndex < Snapshot.Features.Length; pointIndex++)
                     {
                         var cluster = Snapshot.Assignments[pointIndex];
@@ -31,25 +28,32 @@
                                   class="assignment-link @ClusterClass(cluster)" />
                         }
                     }
+
                     @for (var pointIndex = 0; pointIndex < Snapshot.Features.Length; pointIndex++)
                     {
                         var cluster = Snapshot.Assignments[pointIndex];
-                        <circle cx="@X(Snapshot.Features[pointIndex][0])" cy="@Y(Snapshot.Features[pointIndex][1])" r="@(pointIndex == Snapshot.CurrentPointIndex ? 10 : 7)"
-                                class="data-point @ClusterClass(cluster) @PointStateClass(Snapshot.PointStates[pointIndex])" />
+                        <circle cx="@X(Snapshot.Features[pointIndex][0])" cy="@Y(Snapshot.Features[pointIndex][1])" r="@(pointIndex == Snapshot.CurrentPointIndex ? 11 : 8.5)"
+                                class="data-point @ClusterClass(cluster) @PointStateClass(Snapshot.PointStates[pointIndex])">
+                            <title>Point @pointIndex · [@Format(Snapshot.Features[pointIndex][0]), @Format(Snapshot.Features[pointIndex][1])] · @(cluster >= 0 ? $"cluster {cluster + 1}" : "not assigned yet")</title>
+                        </circle>
                     }
+
                     @for (var cluster = 0; cluster < Snapshot.Centroids.Length; cluster++)
                     {
                         var cx = X(Snapshot.Centroids[cluster][0]);
                         var cy = Y(Snapshot.Centroids[cluster][1]);
-                        <circle cx="@cx" cy="@cy" r="16" class="centroid-halo @ClusterClass(cluster) @CentroidStateClass(Snapshot.CentroidStates[cluster])" />
-                        <line x1="@(cx - 7)" y1="@cy" x2="@(cx + 7)" y2="@cy" class="centroid-cross @ClusterClass(cluster)" />
-                        <line x1="@cx" y1="@(cy - 7)" x2="@cx" y2="@(cy + 7)" class="centroid-cross @ClusterClass(cluster)" />
+                        <circle cx="@cx" cy="@cy" r="18" class="centroid-halo @ClusterClass(cluster) @CentroidStateClass(Snapshot.CentroidStates[cluster])">
+                            <title>Centroid @(cluster + 1) · [@Format(Snapshot.Centroids[cluster][0]), @Format(Snapshot.Centroids[cluster][1])]</title>
+                        </circle>
+                        <line x1="@(cx - 8)" y1="@cy" x2="@(cx + 8)" y2="@cy" class="centroid-cross @ClusterClass(cluster)" />
+                        <line x1="@cx" y1="@(cy - 8)" x2="@cx" y2="@(cy + 8)" class="centroid-cross @ClusterClass(cluster)" />
                     }
                 </svg>
-                <span class="axis-note y-note">feature 2</span>
-                <span class="axis-note x-note">feature 1</span>
+                <span class="axis-note y-note">feature 2 ↑</span>
+                <span class="axis-note x-note">feature 1 →</span>
             </div>
             <div class="kmeans-legend">
+                <span><i class="legend-dot unassigned"></i>unassigned point</span>
                 @for (var cluster = 0; cluster < Snapshot.Centroids.Length; cluster++)
                 {
                     <span><i class="legend-dot @ClusterClass(cluster)"></i>cluster @(cluster + 1)</span>
@@ -60,7 +64,7 @@
         </section>
 
         <aside class="cluster-story-card">
-            <div class="story-heading"><span>THIS ROUND</span><strong>@StoryTitle</strong><p>@Snapshot.FocusText</p></div>
+            <div class="story-heading"><span>CURRENT STEP</span><strong>@StoryTitle</strong><p>@Snapshot.FocusText</p></div>
             <div class="cluster-list">
                 @for (var cluster = 0; cluster < Snapshot.Centroids.Length; cluster++)
                 {

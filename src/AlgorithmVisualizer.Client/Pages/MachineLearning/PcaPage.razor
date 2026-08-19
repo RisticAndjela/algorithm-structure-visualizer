@@ -1,19 +1,434 @@
 @page "/ml-foundations/pca"
+@using System.Globalization
+@using AlgorithmVisualizer.Core.MachineLearning.Unsupervised.Pca
+@implements IDisposable
+@inject SimulationState SimulationState
+@inject PcaSimulation PcaLab
+@inject LearningSessionStore LearningStore
+@inject PracticeProgressStore PracticeProgress
 
-<PageTitle>PCA — Planned — Algorithm Visualizer</PageTitle>
+<PageTitle>PCA — Machine Learning — Algorithm Visualizer</PageTitle>
 
-<LearningPlaceholder
-    Title="PCA"
-    Eyebrow="MACHINE LEARNING · PHASE 1 STEP 9"
-    Description="Reduce dimensionality by finding directions that capture the most variance, then project examples onto those principal components."
-    Complexity="Planned"
-    ComplexityNote="The final teaching implementation will expose centering, covariance, eigen-directions, and projection explicitly."
-    Concepts="Centering · Covariance · Eigenvector · Eigenvalue · Principal component · Projection · Explained variance"
-    LearnTitle="PCA rotates the coordinate system toward the directions that vary most."
-    LearnSummary="Center the data, find important directions, then keep only the directions that preserve the most variation."
-    ConceptHref="/learn/concepts/pca"
-    LearnCards="1 · CENTER|Move the dataset around zero.|Subtract the mean from every feature.;;2 · MEASURE|Build covariance.|Covariance shows which feature directions vary together.;;3 · DIRECTIONS|Find principal axes.|Eigenvectors define directions; eigenvalues rank how much variance they carry.;;4 · PROJECT|Keep fewer coordinates.|Project points onto the most informative principal directions."
-    TipTitle="PCA changes coordinates, not labels."
-    TipText="It is dimensionality reduction: the goal is to preserve useful variance with fewer axes, not to classify examples."
-    FocusText="Centering, covariance, direction ranking, and projection must stay visible instead of being delegated to a numerical package."
-    PromptText="Which direction preserves the most variation in the centered data?" />
+<div class="pca-page learning-module-page learning-module-shell ml-module-page">
+    <section class="learn-launchpad" aria-labelledby="pca-learn-title">
+        <div class="learn-copy">
+            <span class="section-kicker">LEARN FIRST</span>
+            <h2 id="pca-learn-title">PCA keeps the direction that explains the strongest variation.</h2>
+            <p>Center the points, summarize their spread with covariance, find the dominant direction, then replace each 2D point with one coordinate along that direction.</p>
+            <ConceptLink class="learn-launchpad-link" Href="/learn/concepts/pca">Open PCA concepts &amp; memory →</ConceptLink>
+        </div>
+        <div class="learn-grid">
+            <article class="learn-card purple"><span>1 · CENTER</span><strong>Subtract the mean.</strong><small>Variance must be measured around the dataset center.</small></article>
+            <article class="learn-card blue"><span>2 · COVARIANCE</span><strong>Measure spread together.</strong><small>The matrix records feature variance and co-variation.</small></article>
+            <article class="learn-card mint"><span>3 · DIRECTION</span><strong>Find the strongest axis.</strong><small>Power iteration reveals the dominant covariance eigenvector.</small></article>
+            <article class="learn-card gold"><span>4 · PROJECT</span><strong>Keep one coordinate.</strong><small>Drop each centered point onto the principal direction.</small></article>
+        </div>
+    </section>
+
+    <header class="module-header">
+        <div class="header-copy">
+            <div class="module-eyebrow"><span>MACHINE LEARNING · PHASE 1 STEP 9</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <h1>PCA</h1>
+            <p>Reduce numeric dimensions by preserving the direction with the most variance, with centering, covariance, direction search, and projection exposed step by step.</p>
+        </div>
+        <div class="complexity-summary" aria-label="PCA teaching implementation complexity">
+            <div><span>Centering</span><strong>O(n·d)</strong><small>mean + centered points</small></div>
+            <div><span>Covariance</span><strong>O(n·d²)</strong><small>explicit covariance loops</small></div>
+            <div><span>Direction</span><strong>O(p·d²)</strong><small>p power-iteration passes</small></div>
+        </div>
+    </header>
+
+    <section class="smart-tip" aria-label="PCA learning tip">
+        <span class="tip-icon">✦</span>
+        <div><strong>The sign of a principal component is arbitrary.</strong><p>A direction v and −v describe the same PCA axis. What matters is the line through the data and how much variance that axis preserves.</p></div>
+        <ConceptLink Href="/structures/matrix">Why covariance is a matrix →</ConceptLink>
+    </section>
+
+    <section class="builder-section" aria-labelledby="pca-build-title">
+        <div class="section-heading-row">
+            <div class="heading-with-step"><span class="step-number">1</span><div><span class="section-kicker">BUILD THE DATASET</span><h2 id="pca-build-title">Choose a visible 2D spread.</h2><p>The Core algorithm works in more dimensions; the lesson uses two so the principal direction and projection stay visible.</p></div></div>
+            <ConceptLink Href="/structures/vector">Review Vector projection →</ConceptLink>
+        </div>
+
+        <div class="preset-row pca-preset-row" aria-label="PCA datasets">
+            <span>START WITH</span>
+            <button type="button" class="@PresetClass(Preset.Diagonal)" @onclick="() => LoadPreset(Preset.Diagonal)" disabled="@IsBusy">Diagonal spread</button>
+            <button type="button" class="@PresetClass(Preset.Horizontal)" @onclick="() => LoadPreset(Preset.Horizontal)" disabled="@IsBusy">Mostly horizontal</button>
+            <button type="button" class="@PresetClass(Preset.Vertical)" @onclick="() => LoadPreset(Preset.Vertical)" disabled="@IsBusy">Mostly vertical</button>
+        </div>
+        <details class="more-examples">
+            <summary>More variance cases</summary>
+            <div class="preset-row"><button type="button" class="@PresetClass(Preset.Mixed)" @onclick="() => LoadPreset(Preset.Mixed)" disabled="@IsBusy">No dominant single direction</button></div>
+            <p>Use this after the clear cases. PCA still returns a first component, but one axis preserves much less of the total variance.</p>
+        </details>
+
+        <div class="pca-builder">
+            <section class="dataset-preview-card" aria-label="PCA dataset preview">
+                <div class="dataset-heading"><div><span>NUMERIC POINTS</span><strong>@_features.Length points · 2 features</strong></div><small>No labels or clusters are used.</small></div>
+                <div class="dataset-chip-grid">
+                    @for (var index = 0; index < _features.Length; index++)
+                    {
+                        <span class="dataset-chip"><small>point @index</small><strong>[@Format(_features[index][0]), @Format(_features[index][1])]</strong></span>
+                    }
+                </div>
+            </section>
+            <section class="pca-control-card">
+                <div class="control-copy"><span>WHAT PCA WILL KEEP</span><strong>One principal coordinate per point.</strong><p>The first run keeps only PC1 so you can see exactly what dimensionality reduction means.</p></div>
+                <div class="pca-rule-strip"><span>INPUT</span><strong>2D</strong><span>OUTPUT</span><strong>1D</strong></div>
+                <div class="builder-actions"><button class="secondary-action" type="button" @onclick="ToggleAdvancedSettings" disabled="@IsBusy">@(_showAdvancedSettings ? "Hide custom points" : "Customize points")</button></div>
+            </section>
+        </div>
+
+        @if (_showAdvancedSettings)
+        {
+            <section class="pca-advanced-panel"><label class="dataset-editor"><span>CUSTOM POINTS · x,y; x,y; ...</span><textarea value="@_datasetText" @oninput="DatasetChanged" disabled="@IsBusy" rows="4"></textarea><small>Use 4–20 finite two-dimensional points. Run validates and consumes the current values directly; there is no separate Apply step.</small></label></section>
+        }
+        @if (!string.IsNullOrWhiteSpace(_inputError)) { <div class="input-error" role="alert"><strong>Check the PCA dataset.</strong><span>@_inputError</span></div> }
+    </section>
+
+    <section class="predict-section" aria-labelledby="pca-predict-title">
+        <div class="prediction-card">
+            <div class="prediction-copy"><span class="step-number">2</span><div><span class="section-kicker">PREDICT BEFORE PLAYBACK</span><h2 id="pca-predict-title">Which direction should PC1 follow?</h2><p>Look only at the shape of the point cloud. Choose the direction that seems to preserve the largest spread.</p></div></div>
+            <div class="prediction-actions">
+                <button type="button" class="@PredictionClass(DirectionPrediction.Horizontal)" @onclick="() => SetPrediction(DirectionPrediction.Horizontal)" disabled="@IsBusy">Mostly horizontal →</button>
+                <button type="button" class="@PredictionClass(DirectionPrediction.Vertical)" @onclick="() => SetPrediction(DirectionPrediction.Vertical)" disabled="@IsBusy">Mostly vertical ↑</button>
+                <button type="button" class="@PredictionClass(DirectionPrediction.Diagonal)" @onclick="() => SetPrediction(DirectionPrediction.Diagonal)" disabled="@IsBusy">Diagonal ↗</button>
+                <button type="button" class="@PredictionClass(DirectionPrediction.NoStrong)" @onclick="() => SetPrediction(DirectionPrediction.NoStrong)" disabled="@IsBusy">No strong single axis</button>
+            </div>
+            @if (_predictionAnswered) { <p class="prediction-feedback @(_predictionCorrect ? "correct" : "incorrect")">@PredictionFeedback</p> }
+        </div>
+    </section>
+
+    <section class="lab-section" aria-labelledby="pca-lab-title">
+        <div class="lab-heading">
+            <div class="heading-with-step"><span class="step-number">3</span><div><span class="section-kicker">WATCH DIMENSIONS COLLAPSE</span><h2 id="pca-lab-title">Center → covariance → principal direction → project.</h2></div></div>
+            <div class="lab-actions">
+                <label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Open explanation after run</span></label>
+                @if (_lastResult is not null) { <button class="secondary-action" type="button" @onclick="OpenLastRunPopup">Last explanation</button> }
+                <button class="sort-button" type="button" @onclick="RunAsync" disabled="@IsBusy"><span>▶</span> Run PCA</button>
+            </div>
+        </div>
+
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist" aria-label="PCA state view">
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual state</button>
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory state</button>
+            </div>
+            <p>@ViewExplanation</p>
+        </div>
+
+        <div class="lesson-reference-links" aria-label="PCA concept links">
+            <ConceptLink Href="/learn/concepts/pca">PCA concepts →</ConceptLink>
+            <ConceptLink Href="/structures/vector">Vector / dot product →</ConceptLink>
+            <ConceptLink Href="/structures/matrix">Matrix / covariance storage →</ConceptLink>
+        </div>
+
+        <div class="state-surface ml-state-surface" tabindex="0">
+            @if (_view == StateView.Visual)
+            {
+                <PcaPlot Snapshot="@DisplayedSnapshot" />
+            }
+            else
+            {
+                <section class="pca-memory" aria-label="PCA memory state">
+                    <div class="memory-intro"><span>MEMORY STATE</span><strong>Raw points stay fixed; PCA creates mean, centered vectors, covariance, PC1, and one projection scalar per point.</strong><p>The visual axis is derived from these arrays. It is not stored as screen coordinates.</p></div>
+                    <div class="memory-summary-strip">
+                        <span><small>POINTS</small><strong>@DisplayedSnapshot.Count</strong></span>
+                        <span><small>DIMENSION</small><strong>@DisplayedSnapshot.Dimension → 1</strong></span>
+                        <span><small>MEAN</small><strong>@VectorText(DisplayedSnapshot.Mean)</strong></span>
+                        <span><small>PC1</small><strong>@VectorText(DisplayedSnapshot.PrincipalComponent)</strong></span>
+                    </div>
+                    <div class="memory-columns">
+                        <div class="table-scroll"><table><thead><tr><th>Point</th><th>Original</th><th>Centered</th><th>PC1 coordinate</th></tr></thead><tbody>
+                        @for (var index = 0; index < DisplayedSnapshot.Count; index++)
+                        {
+                            <tr><td>@index</td><td>@VectorText(DisplayedSnapshot.Features[index])</td><td>@VectorText(DisplayedSnapshot.CenteredFeatures[index])</td><td>@FormatProjection(DisplayedSnapshot.Projections[index])</td></tr>
+                        }
+                        </tbody></table></div>
+                        <div class="covariance-card"><span>COVARIANCE MATRIX</span><strong>@CovarianceHeadline</strong><div class="covariance-grid"><code>@Cov(0,0)</code><code>@Cov(0,1)</code><code>@Cov(1,0)</code><code>@Cov(1,1)</code></div><small>Diagonal = variance of each feature. Off-diagonal = how the two centered features vary together.</small></div>
+                    </div>
+                    <div class="memory-note"><strong>No PCA/eigenvalue library is hidden here.</strong><span>Centering, covariance, matrix-vector multiplication, normalization, dominant-direction power iteration, eigenvalue estimate, and projection all use explicit C# loops over project-owned ManualVector storage.</span></div>
+                </section>
+            }
+        </div>
+
+        <div class="run-dashboard compact-run-metrics pca-run-dashboard" aria-label="PCA live metrics">
+            <div><span>PHASE</span><strong>@PhaseText(DisplayedSnapshot.Phase)</strong></div>
+            <div><span>PC1</span><strong>@DirectionText(DisplayedSnapshot.PrincipalComponent)</strong></div>
+            <div><span>EXPLAINED</span><strong>@PercentOrDash(DisplayedSnapshot.ExplainedVarianceRatio)</strong></div>
+            <div><span>POINT</span><strong>@CurrentPointText</strong></div>
+        </div>
+    </section>
+
+    <section class="fit-section" aria-labelledby="pca-fit-title">
+        <div class="section-heading-row"><div><span class="section-kicker">WHEN SHOULD I USE IT?</span><h2 id="pca-fit-title">Use PCA when numeric features are correlated and you want fewer dimensions without labels.</h2><p>PCA is strongest when a smaller linear coordinate system can preserve most of the dataset's variance.</p></div></div>
+        <div class="fit-grid">
+            <article class="fit-card good"><span>GOOD FIT</span><strong>Compression, visualization, and correlated numeric features</strong><p>PCA can replace several related measurements with fewer principal coordinates before exploration or another model.</p></article>
+            <article class="fit-card avoid"><span>AVOID FOR</span><strong>Nonlinear structure or features whose scale/meaning must stay directly interpretable</strong><p>Principal components are linear mixtures of the original features. They can hide feature-level meaning and miss curved manifolds.</p></article>
+            <article class="fit-card better"><span>BETTER ALTERNATIVE</span><strong>Use a supervised lesson when the goal is prediction, not compression</strong><p>If labels already define what matters, Logistic Regression or Decision Tree learns from that target instead of preserving unlabeled variance.</p><div class="fit-links"><a href="/ml-foundations/logistic-regression">Logistic Regression →</a><a href="/ml-foundations/decision-tree">Decision Tree →</a></div></article>
+        </div>
+    </section>
+
+    <section class="practice-section" aria-labelledby="pca-practice-title">
+        <div class="practice-heading"><div><span class="section-kicker">GUIDED PRACTICE</span><h2 id="pca-practice-title">Recognize strong axes and a case where one component is not enough.</h2><p>Tasks complete from the actual principal component and explained-variance ratio.</p></div><strong>@_completedTaskIds.Count / @PracticeTasks.Length complete</strong></div>
+        <div class="practice-grid">
+            @foreach (var task in PracticeTasks)
+            {
+                <PracticeTaskCard TaskId="@task.Id" Title="@task.Title" Description="@task.Goal" InputText="@task.Suggested" HelpHref="/learn/concepts/pca" Completed="@_completedTaskIds.Contains(task.Id)" Active="@(_activeTaskId == task.Id)" Busy="@IsBusy" HasEvidence="@(GetTaskEvidence(task.Id) is not null)" Start="@(() => StartTask(task.Id))" OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />
+            }
+        </div>
+    </section>
+
+    <NextLessonCard Eyebrow="NEXT TRACK · DEEP LEARNING" Level="10 · Planned" Title="Computational Graph" Description="Use nodes and edges to make forward values and later gradients explicit before building neurons, MLPs, and backpropagation." Href="/deep-learning/computational-graph" LinkLabel="Preview Computational Graph" />
+</div>
+
+@if (_lastRunPopupOpen && _lastResult is not null)
+{
+    <div class="run-popup-backdrop" role="presentation" @onclick="CloseLastRunPopup">
+        <section class="run-popup" role="dialog" aria-modal="true" aria-labelledby="pca-run-popup-title" @onclick:stopPropagation="true">
+            <header><div><span class="section-kicker">LAST RUN</span><h2 id="pca-run-popup-title">@RunHeadline(_lastResult)</h2></div><button type="button" class="popup-close" @onclick="CloseLastRunPopup" aria-label="Close result explanation">×</button></header>
+            <div class="popup-body"><p>@RunActionExplanation(_lastResult)</p><div class="popup-metrics"><div><span>PC1</span><strong>@VectorText(_lastResult.PrincipalComponent)</strong></div><div><span>EXPLAINED</span><strong>@Percent(_lastResult.ExplainedVarianceRatio)</strong></div><div><span>MEAN</span><strong>@VectorText(_lastResult.Mean)</strong></div><div><span>OUTPUT</span><strong>@_lastResult.Count scalar coordinates</strong></div></div><p class="popup-memory">@RunMemoryExplanation(_lastResult)</p></div>
+        </section>
+    </div>
+}
+
+<PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
+
+@code {
+    private const string ModuleKey = "pca";
+    private const string PopupSettingStorageKey = "algorithm-visualizer.pca.show-run-popup.v1";
+    private readonly List<RunFrame> _frames = [];
+    private PracticeModuleProgress _practiceProgress = new();
+    private HashSet<int> _completedTaskIds = [];
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
+    private PcaRunResult? _lastResult;
+    private string? _lastCapturedStep;
+    private string? _inputError;
+    private double[][] _features = DiagonalFeatures();
+    private string _datasetText = FormatDataset(DiagonalFeatures());
+    private Preset? _preset = Preset.Diagonal;
+    private bool _showAdvancedSettings;
+    private bool _showRunPopups = true;
+    private bool _lastRunPopupOpen;
+    private DirectionPrediction? _prediction;
+    private bool _predictionAnswered;
+    private bool _predictionCorrect;
+    private int _frameIndex = -1;
+    private int? _activeTaskId;
+    private StateView _view = StateView.Visual;
+
+    private static readonly PracticeTaskDefinition[] PracticeTasks =
+    [
+        new(1, "Find a diagonal PC1", "Run a diagonal cloud where both component magnitudes are substantial and one PC explains almost all variance.", "Diagonal spread", Preset.Diagonal),
+        new(2, "Find a horizontal PC1", "Run a horizontally stretched cloud and make feature 1 dominate PC1.", "Mostly horizontal", Preset.Horizontal),
+        new(3, "Find a vertical PC1", "Run a vertically stretched cloud and make feature 2 dominate PC1.", "Mostly vertical", Preset.Vertical),
+        new(4, "Verify centering", "Finish a run whose centered coordinates have approximately zero mean on both visible features.", "Any clear preset", Preset.Diagonal),
+        new(5, "See when one component is not enough", "Run a broad 2D cloud where PC1 preserves less than 70% of total variance.", "No dominant single direction", Preset.Mixed)
+    ];
+
+    private PcaSnapshot Current => PcaLab.CreateSnapshot();
+    private PcaSnapshot DisplayedSnapshot => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].Snapshot : Current;
+    private string DisplayedStepText => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].StepText : SimulationState.CurrentStepText;
+    private int TimelineCount => _frames.Count;
+    private int TimelinePosition => _frameIndex < 0 ? 0 : _frameIndex + 1;
+    private bool CanStepBack => _frameIndex > 0;
+    private bool CanStepForward => (_frameIndex >= 0 && _frameIndex < _frames.Count - 1) || SimulationState.IsRunning;
+    private bool IsBusy => SimulationState.IsRunning;
+    private string ViewExplanation => _view == StateView.Visual ? "See the point cloud, mean, PC1 axis, and the perpendicular drop from each original point onto its 1D PCA representation." : "See the original/centered vectors, covariance matrix, principal component vector, and one scalar projection per point.";
+    private string PredictionFeedback => _lastResult is null ? string.Empty : _predictionCorrect ? "Correct — the principal axis matched the shape you predicted." : $"Not quite. PC1 was {DirectionText(_lastResult.PrincipalComponent).ToLowerInvariant()} and preserved {Percent(_lastResult.ExplainedVarianceRatio)} of total variance.";
+    private string CovarianceHeadline => DisplayedSnapshot.Covariance.Length >= 2 ? $"2 × 2 · trace {Format(CovValue(0,0) + CovValue(1,1))}" : "not built yet";
+    private string CurrentPointText => DisplayedSnapshot.CurrentPointIndex >= 0 ? $"{DisplayedSnapshot.CurrentPointIndex} / {Math.Max(0, DisplayedSnapshot.Count - 1)}" : "—";
+
+    protected override void OnInitialized()
+    {
+        SimulationState.Changed += HandleSimulationChanged;
+        try { _showRunPopups = !bool.TryParse(LearningStore.GetItem(PopupSettingStorageKey), out var saved) || saved; } catch { _showRunPopups = true; }
+        _practiceProgress = PracticeProgress.Load(ModuleKey, null, PracticeTasks.Select(task => task.Id));
+        _completedTaskIds = _practiceProgress.CompletedTaskIds;
+        ApplyInputs();
+    }
+
+    private void DatasetChanged(ChangeEventArgs args) { _datasetText = args.Value?.ToString() ?? string.Empty; _preset = null; ClearReview(); }
+    private void ToggleAdvancedSettings() { if (!IsBusy) _showAdvancedSettings = !_showAdvancedSettings; }
+    private void SetPrediction(DirectionPrediction prediction) { if (IsBusy) return; _prediction = prediction; _predictionAnswered = false; _predictionCorrect = false; }
+
+    private void ApplyInputs()
+    {
+        if (!TryParseDataset(_datasetText, out var features, out var error)) { _inputError = error; return; }
+        _features = features;
+        _inputError = null;
+        try { PcaLab.Configure(new PcaConfiguration(_features)); }
+        catch (ArgumentException ex) { _inputError = ex.Message; return; }
+        ClearReview();
+        StateHasChanged();
+    }
+
+    private async Task RunAsync()
+    {
+        ApplyInputs();
+        if (!string.IsNullOrWhiteSpace(_inputError)) return;
+        _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; _lastRunPopupOpen = false;
+        var token = SimulationState.Start("Starting PCA.");
+        Capture();
+        try
+        {
+            var result = await PcaLab.ExecuteAsync(token);
+            if (!IsCurrent(token)) return;
+            _lastResult = result;
+            SimulationState.Complete(result.Summary);
+            Capture();
+            EvaluatePrediction(result);
+            RecordPracticeResult(result);
+            if (_showRunPopups) OpenLastRunPopup();
+        }
+        catch (OperationCanceledException) { }
+        finally { await InvokeAsync(StateHasChanged); }
+    }
+
+    private void Capture()
+    {
+        var step = SimulationState.CurrentStepText;
+        if (step == _lastCapturedStep) return;
+        var followTail = _frameIndex < 0 || _frameIndex == _frames.Count - 1;
+        _frames.Add(new RunFrame(step, PcaLab.CreateSnapshot()));
+        _lastCapturedStep = step;
+        if (followTail) _frameIndex = _frames.Count - 1;
+    }
+
+    private void HandleSimulationChanged() { if (SimulationState.IsRunning) Capture(); _ = InvokeAsync(StateHasChanged); }
+    private bool IsCurrent(CancellationToken token) => !token.IsCancellationRequested && SimulationState.SimulationCancellationToken == token;
+    private void ClearReview() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; _lastRunPopupOpen = false; _lastResult = null; _predictionAnswered = false; }
+    private Task PlayTimelineAsync() { if (_frames.Count > 0) _frameIndex = _frames.Count - 1; SimulationState.Resume(); return InvokeAsync(StateHasChanged); }
+    private Task PauseTimelineAsync() { SimulationState.Pause(); return Task.CompletedTask; }
+    private Task StepBackAsync() { if (SimulationState.IsRunning && !SimulationState.IsPaused) SimulationState.Pause(); if (_frameIndex > 0) _frameIndex--; return InvokeAsync(StateHasChanged); }
+    private Task StepForwardAsync() { if (_frameIndex >= 0 && _frameIndex < _frames.Count - 1) { _frameIndex++; return InvokeAsync(StateHasChanged); } if (SimulationState.IsRunning) SimulationState.Step(); return Task.CompletedTask; }
+    private Task ResetPlaybackAsync() { SimulationState.Reset(); _frames.Clear(); _frameIndex = -1; _lastCapturedStep = null; return InvokeAsync(StateHasChanged); }
+
+    private void EvaluatePrediction(PcaRunResult result)
+    {
+        _predictionAnswered = _prediction.HasValue;
+        if (_predictionAnswered) _predictionCorrect = _prediction == ClassifyDirection(result.PrincipalComponent, result.ExplainedVarianceRatio);
+    }
+
+    private void LoadPreset(Preset preset, bool keepActiveTask = false)
+    {
+        if (IsBusy) return;
+        _preset = preset;
+        _features = preset switch { Preset.Horizontal => HorizontalFeatures(), Preset.Vertical => VerticalFeatures(), Preset.Mixed => MixedFeatures(), _ => DiagonalFeatures() };
+        _datasetText = FormatDataset(_features);
+        _prediction = null; _predictionAnswered = false;
+        ApplyInputs();
+        if (!keepActiveTask) _activeTaskId = null;
+    }
+
+    private void StartTask(int taskId)
+    {
+        if (IsBusy) return;
+        var task = PracticeTasks.First(item => item.Id == taskId);
+        _activeTaskId = taskId;
+        LoadPreset(task.Preset, keepActiveTask: true);
+    }
+
+    private void RecordPracticeResult(PcaRunResult result)
+    {
+        if (_activeTaskId is not int taskId) return;
+        var task = PracticeTasks.First(item => item.Id == taskId);
+        if (!TaskSatisfied(task, result)) return;
+        CompletePracticeTask(task, result);
+    }
+
+    private static bool TaskSatisfied(PracticeTaskDefinition task, PcaRunResult result) => task.Id switch
+    {
+        1 => Math.Abs(result.PrincipalComponent[0]) > .55d && Math.Abs(result.PrincipalComponent[1]) > .55d && result.ExplainedVarianceRatio > .9d,
+        2 => Math.Abs(result.PrincipalComponent[0]) > .9d && Math.Abs(result.PrincipalComponent[1]) < .45d,
+        3 => Math.Abs(result.PrincipalComponent[1]) > .9d && Math.Abs(result.PrincipalComponent[0]) < .45d,
+        4 => CenteredMeansNearZero(result.CenteredFeatures),
+        5 => result.ExplainedVarianceRatio < .7d,
+        _ => false
+    };
+
+    private void CompletePracticeTask(PracticeTaskDefinition task, PcaRunResult result)
+    {
+        var evidence = new PracticeCompletionEvidence(task.Id, task.Title, result.Summary, RunActionExplanation(result), "Original ManualVector examples remain fixed. PCA allocates centered vectors, a covariance matrix, one principal-component vector, projected positions, and one scalar PC1 coordinate per example.", RunWhyExplanation(result), [new("PC1", VectorText(result.PrincipalComponent)), new("Explained", Percent(result.ExplainedVarianceRatio)), new("Mean", VectorText(result.Mean)), new("Direction passes", result.DirectionIterations.ToString(CultureInfo.InvariantCulture))], $"PC1={VectorText(result.PrincipalComponent)} · explained={Percent(result.ExplainedVarianceRatio)}");
+        _completedTaskIds.Add(task.Id);
+        PracticeProgress.Complete(ModuleKey, _practiceProgress, task.Id, evidence);
+        _activeTaskId = null;
+    }
+
+    private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
+    private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
+    private void CloseTaskEvidence() => _practiceEvidencePopup = null;
+    private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed; try { LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); } catch { } }
+    private void OpenLastRunPopup() { if (_lastResult is not null) _lastRunPopupOpen = true; }
+    private void CloseLastRunPopup() => _lastRunPopupOpen = false;
+    private string PresetClass(Preset preset) => _preset == preset ? "active" : string.Empty;
+    private string PredictionClass(DirectionPrediction value) => _prediction == value ? "active" : string.Empty;
+
+    private static DirectionPrediction ClassifyDirection(IReadOnlyList<double> component, double explained)
+    {
+        if (explained < .65d) return DirectionPrediction.NoStrong;
+        var x = Math.Abs(component[0]); var y = Math.Abs(component[1]);
+        if (x > .9d && y < .45d) return DirectionPrediction.Horizontal;
+        if (y > .9d && x < .45d) return DirectionPrediction.Vertical;
+        return DirectionPrediction.Diagonal;
+    }
+
+    private static bool CenteredMeansNearZero(IReadOnlyList<double[]> centered)
+    {
+        if (centered.Count == 0) return false;
+        for (var feature = 0; feature < centered[0].Length; feature++)
+        {
+            var sum = 0d;
+            for (var point = 0; point < centered.Count; point++) sum += centered[point][feature];
+            if (Math.Abs(sum / centered.Count) > 1e-9d) return false;
+        }
+        return true;
+    }
+
+    private static string RunHeadline(PcaRunResult result) => $"PC1 preserved {Percent(result.ExplainedVarianceRatio)} of total variance.";
+    private static string RunActionExplanation(PcaRunResult result) => $"The run centered {result.Count} points, built a {result.Dimension}×{result.Dimension} covariance matrix, found the dominant direction {VectorText(result.PrincipalComponent)}, and projected every point onto one coordinate.";
+    private static string RunMemoryExplanation(PcaRunResult result) => $"The original points did not move in storage. PCA created centered copies, covariance cells, one PC1 vector, {result.Count} scalar coordinates, and projected positions used only to visualize the 1D reconstruction.";
+    private static string RunWhyExplanation(PcaRunResult result) => result.ExplainedVarianceRatio >= .85d ? "One direction explains most of this dataset's spread, so reducing 2D to 1D loses relatively little variance." : "Variance is spread across more than one direction, so keeping only PC1 discards a noticeable part of the original spread.";
+    private static string DirectionText(IReadOnlyList<double> component) => component.Count < 2 || (Math.Abs(component[0]) < 1e-9d && Math.Abs(component[1]) < 1e-9d) ? "—" : ClassifyDirection(component, 1d) switch { DirectionPrediction.Horizontal => "horizontal", DirectionPrediction.Vertical => "vertical", _ => "diagonal" };
+    private static string PhaseText(PcaPhase phase) => phase switch { PcaPhase.Centering => "center", PcaPhase.Covariance => "covariance", PcaPhase.Direction => "direction", PcaPhase.Projection => "project", PcaPhase.Complete => "complete", _ => "ready" };
+
+    private double CovValue(int row, int column) => DisplayedSnapshot.Covariance.Length > row && DisplayedSnapshot.Covariance[row].Length > column ? DisplayedSnapshot.Covariance[row][column] : 0d;
+    private string Cov(int row, int column) => DisplayedSnapshot.Phase is PcaPhase.Ready or PcaPhase.Centering ? "—" : Format(CovValue(row, column));
+    private static string FormatProjection(double value) => Math.Abs(value) < 1e-12d ? "0" : Format(value);
+    private static string PercentOrDash(double value) => value <= 0d ? "—" : Percent(value);
+    private static string Percent(double value) => (value * 100d).ToString("0.#", CultureInfo.InvariantCulture) + "%";
+    private static string VectorText(IReadOnlyList<double> values) => values.Count == 0 ? "—" : "[" + string.Join(", ", values.Select(Format)) + "]";
+    private static string Format(double value) => double.IsFinite(value) ? (Math.Abs(value) < 1e-12d ? "0" : value.ToString("0.###", CultureInfo.InvariantCulture)) : "—";
+
+    private static bool TryParseDataset(string text, out double[][] features, out string error)
+    {
+        var groups = text.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (groups.Length is < 4 or > 20) { features = []; error = "Use between 4 and 20 points separated with semicolons."; return false; }
+        features = new double[groups.Length][];
+        for (var index = 0; index < groups.Length; index++)
+        {
+            var parts = groups[index].Split(',', StringSplitOptions.TrimEntries);
+            if (parts.Length != 2 || !TryParseDouble(parts[0], out var x) || !TryParseDouble(parts[1], out var y) || !double.IsFinite(x) || !double.IsFinite(y)) { features = []; error = $"Point {index + 1} must use finite x,y values."; return false; }
+            features[index] = [x, y];
+        }
+        error = string.Empty;
+        return true;
+    }
+
+    private static bool TryParseDouble(string? text, out double value) => double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value) || double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out value);
+    private static string FormatDataset(IReadOnlyList<double[]> features) => string.Join("; ", features.Select(point => $"{Format(point[0])},{Format(point[1])}"));
+    private static double[][] DiagonalFeatures() => [[-4d,-3.2d],[-3d,-2.1d],[-2d,-1.6d],[-1d,-.4d],[1d,.7d],[2d,1.8d],[3d,2.3d],[4d,3.4d]];
+    private static double[][] HorizontalFeatures() => [[-5d,.1d],[-3d,-.2d],[-1d,.2d],[1d,-.1d],[3d,.15d],[5d,-.05d]];
+    private static double[][] VerticalFeatures() => [[.1d,-5d],[-.2d,-3d],[.2d,-1d],[-.1d,1d],[.15d,3d],[-.05d,5d]];
+    private static double[][] MixedFeatures() => [[-3d,0d],[-2d,2.1d],[0d,3d],[2.1d,2d],[3d,0d],[2d,-2.1d],[0d,-3d],[-2.1d,-2d]];
+
+    public void Dispose() => SimulationState.Changed -= HandleSimulationChanged;
+
+    private sealed record RunFrame(string StepText, PcaSnapshot Snapshot);
+    private sealed record PracticeTaskDefinition(int Id, string Title, string Goal, string Suggested, Preset Preset);
+    private enum Preset { Diagonal, Horizontal, Vertical, Mixed }
+    private enum DirectionPrediction { Horizontal, Vertical, Diagonal, NoStrong }
+    private enum StateView { Visual, Memory }
+}

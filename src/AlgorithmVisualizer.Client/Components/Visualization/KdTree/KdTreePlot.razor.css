@@ -1,9 +1,5 @@
-.kd-visual { display: grid; gap: 1rem; }
-.kd-metric-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .6rem; }
-.kd-metric-strip > div { display: grid; gap: .16rem; min-width: 0; padding: .78rem .82rem; border: 1px solid var(--color-border); border-radius: .78rem; background: var(--color-surface-subtle); }
-.kd-metric-strip span, .visual-card-heading span, .tree-story span { color: var(--color-text-muted); font-size: .7rem; font-weight: 900; letter-spacing: .06em; }
-.kd-metric-strip strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .98rem; }
-.kd-workspace { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(20rem, .8fr); gap: 1rem; align-items: stretch; }
+.kd-visual { min-width: 52rem; display: grid; gap: .8rem; }
+.kd-workspace { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(20rem, .8fr); gap: .8rem; align-items: start; }
 .space-card, .tree-card { min-width: 0; border: 1px solid var(--color-border); border-radius: .95rem; background: #fff; padding: .95rem; }
 .visual-card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: .8rem; margin-bottom: .55rem; }
 .visual-card-heading > div { display: grid; gap: .12rem; }
@@ -57,11 +53,11 @@
 .tree-node.active, .tree-node.building { border-color: var(--color-warning); box-shadow: inset 0 0 0 1px var(--color-warning); }
 .tree-node.best { border-color: var(--color-primary); box-shadow: inset 0 0 0 1px var(--color-primary); background: var(--color-primary-soft); }
 .tree-node.pruned { opacity: .38; }
-.tree-story { margin-top: auto; display: grid; gap: .28rem; padding: .82rem; border-radius: .75rem; background: var(--color-surface-subtle); border: 1px solid var(--color-border); }
+.tree-story { display: grid; gap: .28rem; padding: .82rem; border-radius: .75rem; background: var(--color-surface-subtle); border: 1px solid var(--color-border); }
 .tree-story strong { font-size: .94rem; }
 .tree-story p { margin: 0; color: var(--color-text-muted); font-size: .82rem; line-height: 1.55; }
 @media (max-width: 1050px) { .kd-workspace { grid-template-columns: 1fr; } .tree-level-nodes { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 720px) { .kd-metric-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); } .tree-level-nodes { grid-template-columns: repeat(2, minmax(0, 1fr)); } .kd-coordinate-plot { min-height: 20rem; } }
+@media (max-width: 720px) { .tree-level-nodes { grid-template-columns: repeat(2, minmax(0, 1fr)); } .kd-coordinate-plot { min-height: 20rem; } }
 
 /* Keep the explanation/story readable; reserve small text for metadata only. */
 .visual-card-heading small,

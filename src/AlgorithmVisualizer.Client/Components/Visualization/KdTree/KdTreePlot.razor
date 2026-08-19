@@ -2,13 +2,6 @@
 @using AlgorithmVisualizer.Core.MachineLearning.Supervised.KdTree
 
 <section class="kd-visual" aria-label="KD-Tree visual state">
-    <div class="kd-metric-strip">
-        <div><span>QUERY</span><strong>[@Format(Snapshot.Query[0]), @Format(Snapshot.Query[1])]</strong></div>
-        <div><span>BEST</span><strong>@BestText</strong></div>
-        <div><span>VISITED</span><strong>@Snapshot.VisitedNodes / @Snapshot.Count</strong></div>
-        <div><span>PRUNED</span><strong>@Snapshot.PrunedNodes</strong></div>
-    </div>
-
     <div class="kd-workspace">
         <div class="space-card">
             <div class="visual-card-heading"><div><span>FEATURE SPACE</span><strong>Alternating x/y partitions</strong></div><small>@PhaseText</small></div>
@@ -122,10 +115,6 @@
             return _depths;
         }
     }
-
-    private string BestText => Snapshot.BestNodeId >= 0 && Snapshot.BestNodeId < Snapshot.Nodes.Length
-        ? $"example {Snapshot.Nodes[Snapshot.BestNodeId].PointIndex} · d={Format(Snapshot.BestDistance)}"
-        : "not set yet";
 
     private string PhaseText => Snapshot.Phase switch
     {

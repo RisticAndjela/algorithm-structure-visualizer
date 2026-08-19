@@ -274,6 +274,53 @@ body .learning-module-page.learning-module-shell {
     box-shadow: none;
 }
 
+/* Approved live metric strip: concise label + value only. Explanatory prose belongs in the
+   current-step explanation, visualization legend, or Last Run modal — not inside every metric. */
+.learning-module-page.learning-module-shell .compact-run-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .55rem;
+    padding: .65rem;
+    border: 1px solid var(--color-border);
+    background: #fbfbfd;
+}
+
+.learning-module-page.learning-module-shell .compact-run-metrics > div {
+    min-width: 0;
+    display: grid;
+    gap: .14rem;
+    padding: .68rem .72rem;
+    border: 1px solid var(--color-border);
+    border-radius: .75rem;
+    background: #fff;
+}
+
+.learning-module-page.learning-module-shell .compact-run-metrics span {
+    color: var(--color-text-muted);
+    font-size: .68rem;
+    font-weight: 850;
+    letter-spacing: .07em;
+}
+
+.learning-module-page.learning-module-shell .compact-run-metrics strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-size: .98rem;
+    line-height: 1.25;
+}
+
+@media (max-width: 760px) {
+    .learning-module-page.learning-module-shell .compact-run-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    .learning-module-page.learning-module-shell .compact-run-metrics {
+        grid-template-columns: 1fr;
+    }
+}
+
 .learning-module-page.learning-module-shell .variant-card {
     border: 1px solid var(--color-border);
     background: #fbfbfd;
@@ -436,7 +483,7 @@ body .learning-module-page.learning-module-shell {
     margin: 0;
 }
 
-/* Canonical When it fits layout: one recommendation, one warning, one next/better choice. */
+/* Canonical "When should I use it?" layout: one recommendation, one warning, one better/next choice. */
 .learning-module-page.learning-module-shell .fit-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -484,6 +531,22 @@ body .learning-module-page.learning-module-shell {
     text-decoration: none;
     font-size: .84rem;
     font-weight: 800;
+}
+
+
+/* Machine-learning visual and memory states are bounded learning canvases.
+   Large coordinate plots/tables scroll inside the lesson instead of stretching the whole page. */
+.learning-module-page.learning-module-shell.ml-module-page .ml-state-surface {
+    max-height: min(68vh, 42rem);
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    box-sizing: border-box;
+}
+
+.learning-module-page.learning-module-shell.ml-module-page .ml-state-surface:focus-within {
+    outline: 2px solid rgba(103, 87, 229, .12);
+    outline-offset: 2px;
 }
 
 /* Shared last-run modal chrome. Scoped pages may add content-specific tabs/metrics, but the modal itself must always open as an overlay. */

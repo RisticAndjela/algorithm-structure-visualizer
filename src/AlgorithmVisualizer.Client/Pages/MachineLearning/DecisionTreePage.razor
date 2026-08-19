@@ -9,7 +9,7 @@
 
 <PageTitle>Decision Tree — Machine Learning — Algorithm Visualizer</PageTitle>
 
-<div class="decision-tree-page learning-module-page learning-module-shell">
+<div class="decision-tree-page learning-module-page learning-module-shell ml-module-page">
     <section class="learn-launchpad" aria-labelledby="dt-learn-title">
         <div class="learn-copy">
             <span class="section-kicker">LEARN FIRST</span>
@@ -119,7 +119,7 @@
         <div class="state-tabs-row"><div class="state-tabs" role="tablist"><button type="button" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual state</button><button type="button" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory state</button></div><p>@ViewExplanation</p></div>
         <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/decision-tree">Decision Tree concepts →</ConceptLink><ConceptLink Href="/ml-foundations/k-means">Compare with K-Means →</ConceptLink><ConceptLink Href="/structures/vector">Feature vectors →</ConceptLink></div>
 
-        <div class="state-surface">
+        <div class="state-surface ml-state-surface" tabindex="0">
             @if (_view == StateView.Visual)
             {
                 <DecisionTreePlot Snapshot="@DisplayedSnapshot" />
@@ -139,7 +139,12 @@
                 </section>
             }
         </div>
-        <div class="run-dashboard dt-run-dashboard"><article><span>Phase</span><strong>@PhaseText(DisplayedSnapshot.Phase)</strong><small>Current tree-building action.</small></article><article><span>Candidate</span><strong>@CandidateText</strong><small>Feature threshold under review.</small></article><article><span>Gain</span><strong>@FormatMetric(DisplayedSnapshot.CandidateGain)</strong><small>Impurity reduction.</small></article><article><span>Children</span><strong>@ChildrenText</strong><small>Examples sent left / right.</small></article></div>
+        <div class="run-dashboard compact-run-metrics dt-run-dashboard" aria-label="Decision Tree live metrics">
+            <div><span>PHASE</span><strong>@PhaseText(DisplayedSnapshot.Phase)</strong></div>
+            <div><span>CANDIDATE</span><strong>@CandidateText</strong></div>
+            <div><span>GAIN</span><strong>@FormatMetric(DisplayedSnapshot.CandidateGain)</strong></div>
+            <div><span>LEFT / RIGHT</span><strong>@ChildrenText</strong></div>
+        </div>
     </section>
 
     <section class="fit-section" aria-labelledby="dt-fit-title">
@@ -161,7 +166,7 @@
         </div>
     </section>
 
-    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="09 · Planned" Title="PCA" Description="Move from supervised feature-threshold rules to dimensionality reduction by finding directions that preserve the most variance." Href="/ml-foundations/pca" LinkLabel="Preview PCA" />
+    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="09 · Interactive" Title="PCA" Description="Move from supervised feature-threshold rules to dimensionality reduction by finding directions that preserve the most variance." Href="/ml-foundations/pca" LinkLabel="Open PCA" />
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)

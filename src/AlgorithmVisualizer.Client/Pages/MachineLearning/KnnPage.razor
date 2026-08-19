@@ -9,7 +9,7 @@
 
 <PageTitle>K-Nearest Neighbors — Machine Learning — Algorithm Visualizer</PageTitle>
 
-<div class="knn-page learning-module-page learning-module-shell">
+<div class="knn-page learning-module-page learning-module-shell ml-module-page">
     <section class="learn-launchpad" aria-labelledby="knn-learn-title">
         <div class="learn-copy">
             <span class="section-kicker">LEARN FIRST</span>
@@ -161,7 +161,7 @@
             <ConceptLink Href="/ml-foundations/logistic-regression">Compare with Logistic Regression →</ConceptLink>
         </div>
 
-        <div class="state-surface">
+        <div class="state-surface ml-state-surface" tabindex="0">
             @if (_view == StateView.Visual)
             {
                 <KnnPlot Snapshot="@DisplayedSnapshot" />
@@ -192,22 +192,20 @@
             }
         </div>
 
-        <div class="knn-run-dashboard" aria-label="KNN live metrics">
-            <article><span>Scan</span><strong>@ScanText</strong><small>Which stored example is being compared now.</small></article>
-            <article><span>Current distance</span><strong>@FormatDistance(DisplayedSnapshot.CurrentDistance)</strong><small>@DistanceMetricName distance from query.</small></article>
-            <article><span>Neighbors filled</span><strong>@FilledNeighborCount / @DisplayedSnapshot.K</strong><small>The nearest slots stay ordered.</small></article>
-            <article><span>Vote</span><strong>@DisplayedSnapshot.VoteClass0 : @DisplayedSnapshot.VoteClass1</strong><small>Class 0 votes : class 1 votes.</small></article>
-            <article><span>Prediction</span><strong>@PredictionText(DisplayedSnapshot.PredictedClass)</strong><small>No prediction until the nearest labels vote.</small></article>
+        <div class="run-dashboard compact-run-metrics knn-run-dashboard" aria-label="KNN live metrics">
+            <div><span>SCAN</span><strong>@ScanText</strong></div>
+            <div><span>DISTANCE</span><strong>@FormatDistance(DisplayedSnapshot.CurrentDistance)</strong></div>
+            <div><span>TOP-K</span><strong>@FilledNeighborCount / @DisplayedSnapshot.K</strong></div>
+            <div><span>PREDICTION</span><strong>@PredictionText(DisplayedSnapshot.PredictedClass)</strong></div>
         </div>
     </section>
 
     <section class="fit-section" aria-labelledby="knn-fit-title">
-        <div class="section-heading-row"><div><span class="section-kicker">WHEN IT FITS</span><h2 id="knn-fit-title">KNN is useful when local similarity is meaningful and prediction-time search is affordable.</h2></div></div>
+        <div class="section-heading-row"><div><span class="section-kicker">WHEN SHOULD I USE IT?</span><h2 id="knn-fit-title">Use KNN when nearby examples are meaningful and scanning stored data at prediction time is affordable.</h2><p>KNN is a local, instance-based classifier: it is strongest when distance reflects real similarity.</p></div></div>
         <div class="fit-grid">
-            <article class="fit-card"><span>GOOD FIT</span><strong>Local patterns</strong><p>Nearby examples often share the same label even when one straight global boundary would be too simple.</p></article>
-            <article class="fit-card"><span>GOOD FIT</span><strong>Small or medium datasets</strong><p>There is almost no fitting phase, so experiments are easy while the stored dataset stays manageable.</p></article>
-            <article class="fit-card"><span>AVOID FOR</span><strong>Unscaled or very high-dimensional features</strong><p>Distance becomes misleading when feature scales differ wildly or neighborhoods become less informative.</p></article>
-            <article class="fit-card"><span>NEXT CONNECTION</span><strong>KD-Tree</strong><p>KNN currently checks every stored example. The next structure will organize space so many distant points can be skipped.</p></article>
+            <article class="fit-card good"><span>GOOD FIT</span><strong>Small or medium datasets with local class structure</strong><p>There is almost no training phase, and nearby examples can represent boundaries that are more flexible than one global line.</p></article>
+            <article class="fit-card avoid"><span>AVOID FOR</span><strong>Unscaled, very high-dimensional, or very large datasets</strong><p>Distance becomes less informative as dimensions grow, and a full scan becomes expensive when every query must compare many stored examples.</p></article>
+            <article class="fit-card better"><span>BETTER ALTERNATIVE</span><strong>Use KD-Tree when repeated low-dimensional nearest searches dominate the cost</strong><p>KD-Tree keeps the same geometric idea but organizes space so entire regions can be pruned instead of measured point by point.</p><div class="fit-links"><a href="/ml-foundations/kd-tree">Open KD-Tree →</a></div></article>
         </div>
     </section>
 

@@ -9,7 +9,7 @@
 
 <PageTitle>Linear Regression — Machine Learning — Algorithm Visualizer</PageTitle>
 
-<div class="lr-page learning-module-page learning-module-shell">
+<div class="lr-page learning-module-page learning-module-shell ml-module-page">
     <section class="learn-launchpad" aria-labelledby="lr-learn-title">
         <div class="learn-copy">
             <span class="section-kicker">LEARN FIRST</span>
@@ -144,7 +144,7 @@
             <ConceptLink Href="/structures/vector">Vector storage refresher →</ConceptLink>
         </div>
 
-        <div class="state-surface">
+        <div class="state-surface ml-state-surface" tabindex="0">
             @if (_view == StateView.Visual)
             {
                 <LinearRegressionPlot Snapshot="@DisplayedSnapshot" />
@@ -191,12 +191,11 @@
     </section>
 
     <section class="fit-section" aria-labelledby="lr-fit-title">
-        <div class="section-heading-row"><div><span class="section-kicker">WHEN IT FITS</span><h2 id="lr-fit-title">Linear Regression is useful when one straight trend is a reasonable model for a continuous value.</h2></div></div>
+        <div class="section-heading-row"><div><span class="section-kicker">WHEN SHOULD I USE IT?</span><h2 id="lr-fit-title">Use Linear Regression when a straight relationship is a useful approximation for a continuous target.</h2><p>The model is deliberately simple, which makes its prediction and parameter meaning easy to inspect.</p></div></div>
         <div class="fit-grid">
-            <article class="fit-card"><span>GOOD FIT</span><strong>Continuous prediction</strong><p>Predict a numeric target such as a measurement or score.</p></article>
-            <article class="fit-card"><span>GOOD FIT</span><strong>Readable relationship</strong><p>Weight tells you how much y changes when x increases by one.</p></article>
-            <article class="fit-card"><span>AVOID FOR</span><strong>Strongly curved patterns</strong><p>A single straight line cannot represent every relationship.</p></article>
-            <article class="fit-card"><span>NEXT CONNECTION</span><strong>Logistic Regression</strong><p>Keep the weighted sum, but convert it into a probability for classification.</p></article>
+            <article class="fit-card good"><span>GOOD FIT</span><strong>Continuous prediction with an approximately linear trend</strong><p>Weight and bias give a compact, readable relationship between the input and a numeric target.</p></article>
+            <article class="fit-card avoid"><span>AVOID FOR</span><strong>Strongly curved relationships or a categorical target</strong><p>One line cannot bend around nonlinear structure, and regression output is not a class probability.</p></article>
+            <article class="fit-card better"><span>BETTER ALTERNATIVE</span><strong>Use Logistic Regression when the target is class 0 versus class 1</strong><p>It keeps a linear score but turns it into a probability suitable for binary classification.</p><div class="fit-links"><a href="/ml-foundations/logistic-regression">Open Logistic Regression →</a></div></article>
         </div>
     </section>
 

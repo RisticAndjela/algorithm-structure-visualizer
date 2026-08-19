@@ -9,7 +9,7 @@
 
 <PageTitle>K-Means — Machine Learning — Algorithm Visualizer</PageTitle>
 
-<div class="kmeans-page learning-module-page learning-module-shell">
+<div class="kmeans-page learning-module-page learning-module-shell ml-module-page">
     <section class="learn-launchpad" aria-labelledby="kmeans-learn-title">
         <div class="learn-copy">
             <span class="section-kicker">LEARN FIRST</span>
@@ -144,7 +144,7 @@
             <ConceptLink Href="/ml-foundations/kd-tree">How KD-Tree uses distance differently →</ConceptLink>
         </div>
 
-        <div class="state-surface">
+        <div class="state-surface ml-state-surface" tabindex="0">
             @if (_view == StateView.Visual)
             {
                 <KMeansPlot Snapshot="@DisplayedSnapshot" />
@@ -178,11 +178,11 @@
             }
         </div>
 
-        <div class="run-dashboard kmeans-run-dashboard" aria-label="K-Means live metrics">
-            <article><span>Phase</span><strong>@PhaseText(DisplayedSnapshot.Phase)</strong><small>Current action.</small></article>
-            <article><span>Round</span><strong>@DisplayedSnapshot.Iteration</strong><small>Assignment + centroid update.</small></article>
-            <article><span>Inertia</span><strong>@FormatMetric(DisplayedSnapshot.Inertia)</strong><small>Squared distance within clusters.</small></article>
-            <article><span>Max move</span><strong>@FormatMetric(DisplayedSnapshot.MaxCentroidMovement)</strong><small>Largest centroid movement this round.</small></article>
+        <div class="run-dashboard compact-run-metrics kmeans-run-dashboard" aria-label="K-Means live metrics">
+            <div><span>PHASE</span><strong>@PhaseText(DisplayedSnapshot.Phase)</strong></div>
+            <div><span>ROUND</span><strong>@DisplayedSnapshot.Iteration</strong></div>
+            <div><span>INERTIA</span><strong>@FormatMetric(DisplayedSnapshot.Inertia)</strong></div>
+            <div><span>CENTROID MOVE</span><strong>@FormatMetric(DisplayedSnapshot.MaxCentroidMovement)</strong></div>
         </div>
     </section>
 
@@ -205,7 +205,7 @@
         </div>
     </section>
 
-    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="08 · Interactive" Title="Decision Tree" Description="Switch from unlabeled clustering to supervised split decisions: choose a feature and threshold that make child groups purer." Href="/ml-foundations/decision-tree" LinkLabel="Open Decision Tree" />
+    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="08 · Planned" Title="Decision Tree" Description="Switch from unlabeled clustering to supervised split decisions: choose a feature and threshold that make child groups purer." Href="/ml-foundations/decision-tree" LinkLabel="Preview Decision Tree" />
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)

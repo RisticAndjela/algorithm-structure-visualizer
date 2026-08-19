@@ -1,0 +1,184 @@
+@using System.Globalization
+@using AlgorithmVisualizer.Core.MachineLearning.Unsupervised.Pca
+
+<section class="pca-visual" aria-label="PCA visual state">
+    <div class="pca-plot-card">
+        <div class="pca-plot-heading">
+            <div><span>FEATURE SPACE</span><strong>@Heading</strong></div>
+            <small>@Snapshot.Count points · @PhaseText(Snapshot.Phase)</small>
+        </div>
+        <div class="pca-plot-shell">
+            <svg viewBox="0 0 780 450" role="img" aria-label="PCA points, mean, principal component, and projected positions" preserveAspectRatio="xMidYMid meet">
+                <rect x="@Left" y="@Top" width="@(Right - Left)" height="@(Bottom - Top)" rx="18" class="plot-bg" />
+                @foreach (var line in GridLines)
+                {
+                    <line x1="@line.X1" y1="@line.Y1" x2="@line.X2" y2="@line.Y2" class="grid-line" />
+                }
+
+                @if (HasPrincipalDirection)
+                {
+                    <line x1="@AxisStart.X" y1="@AxisStart.Y" x2="@AxisEnd.X" y2="@AxisEnd.Y" class="principal-axis" />
+                }
+
+                @if (Snapshot.Phase is PcaPhase.Projection or PcaPhase.Complete)
+                {
+                    @for (var index = 0; index < Snapshot.Count; index++)
+                    {
+                        <line x1="@X(Snapshot.Features[index][0])" y1="@Y(Snapshot.Features[index][1])"
+                              x2="@X(Snapshot.ProjectedFeatures[index][0])" y2="@Y(Snapshot.ProjectedFeatures[index][1])"
+                              class="projection-link @(index == Snapshot.CurrentPointIndex ? "active" : string.Empty)" />
+                    }
+                }
+
+                @for (var index = 0; index < Snapshot.Count; index++)
+                {
+                    var current = index == Snapshot.CurrentPointIndex;
+                    <circle cx="@X(Snapshot.Features[index][0])" cy="@Y(Snapshot.Features[index][1])" r="@(current ? 10.5 : 8)" class="original-point @(current ? "active" : string.Empty)">
+                        <title>Point @index · [@Format(Snapshot.Features[index][0]), @Format(Snapshot.Features[index][1])]</title>
+                    </circle>
+
+                    @if (Snapshot.Phase is PcaPhase.Projection or PcaPhase.Complete)
+                    {
+                        <circle cx="@X(Snapshot.ProjectedFeatures[index][0])" cy="@Y(Snapshot.ProjectedFeatures[index][1])" r="@(current ? 7.5 : 5.5)" class="projected-point @(current ? "active" : string.Empty)">
+                            <title>Projected point @index · coordinate @Format(Snapshot.Projections[index])</title>
+                        </circle>
+                    }
+                }
+
+                @if (HasMean)
+                {
+                    var mx = X(Snapshot.Mean[0]);
+                    var my = Y(Snapshot.Mean[1]);
+                    <circle cx="@mx" cy="@my" r="14" class="mean-halo"><title>Mean [@Format(Snapshot.Mean[0]), @Format(Snapshot.Mean[1])]</title></circle>
+                    <line x1="@(mx - 7)" y1="@my" x2="@(mx + 7)" y2="@my" class="mean-cross" />
+                    <line x1="@mx" y1="@(my - 7)" x2="@mx" y2="@(my + 7)" class="mean-cross" />
+                }
+            </svg>
+            <span class="axis-note y-note">feature 2 ↑</span>
+            <span class="axis-note x-note">feature 1 →</span>
+        </div>
+        <div class="pca-legend">
+            <span><i class="legend-dot original"></i>original point</span>
+            <span><i class="legend-cross"></i>mean</span>
+            <span><i class="legend-axis"></i>principal direction</span>
+            <span><i class="legend-dot projected"></i>1D projection</span>
+        </div>
+    </div>
+
+    <div class="pca-story">
+        <div><span>CURRENT STEP</span><strong>@StoryTitle</strong><p>@Snapshot.FocusText</p></div>
+        <div class="pca-flow" aria-label="PCA learning flow">
+            <span class="@FlowClass(PcaPhase.Centering)"><b>1</b> Center</span>
+            <span class="@FlowClass(PcaPhase.Covariance)"><b>2</b> Covariance</span>
+            <span class="@FlowClass(PcaPhase.Direction)"><b>3</b> Direction</span>
+            <span class="@FlowClass(PcaPhase.Projection)"><b>4</b> Project</span>
+        </div>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public PcaSnapshot Snapshot { get; set; } = default!;
+
+    private const double Left = 56d;
+    private const double Right = 724d;
+    private const double Top = 36d;
+    private const double Bottom = 390d;
+
+    private bool HasMean => Snapshot.Mean.Length >= 2 && (Snapshot.Phase != PcaPhase.Ready || Math.Abs(Snapshot.Mean[0]) > 1e-12d || Math.Abs(Snapshot.Mean[1]) > 1e-12d);
+    private bool HasPrincipalDirection => Snapshot.PrincipalComponent.Length >= 2 && (Math.Abs(Snapshot.PrincipalComponent[0]) > 1e-9d || Math.Abs(Snapshot.PrincipalComponent[1]) > 1e-9d);
+    private string Heading => Snapshot.Phase switch
+    {
+        PcaPhase.Centering => "Find the mean, then express each point relative to it.",
+        PcaPhase.Covariance => "Measure which feature directions vary together.",
+        PcaPhase.Direction => "Rotate toward the direction with the most variance.",
+        PcaPhase.Projection => "Drop each point onto the principal axis.",
+        PcaPhase.Complete => "One coordinate now preserves the strongest variation.",
+        _ => "Start with the original two-dimensional points."
+    };
+    private string StoryTitle => Snapshot.Phase switch
+    {
+        PcaPhase.Centering => "Move the coordinate origin to the data mean.",
+        PcaPhase.Covariance => "Summarize spread with a covariance matrix.",
+        PcaPhase.Direction => "Find the dominant covariance direction.",
+        PcaPhase.Projection => "Keep only the coordinate along that direction.",
+        PcaPhase.Complete => "The 2D data now has a 1D PCA representation.",
+        _ => "Center → covariance → direction → projection."
+    };
+
+    private double XMin => Bound(0, true);
+    private double XMax => Bound(0, false);
+    private double YMin => Bound(1, true);
+    private double YMax => Bound(1, false);
+    private double X(double value) => Scale(value, XMin, XMax, Left, Right);
+    private double Y(double value) => Scale(value, YMin, YMax, Bottom, Top);
+
+    private PlotPoint AxisStart => PrincipalAxisPoint(-AxisExtent);
+    private PlotPoint AxisEnd => PrincipalAxisPoint(AxisExtent);
+    private double AxisExtent => Math.Max(XMax - XMin, YMax - YMin) * .75d;
+
+    private PlotPoint PrincipalAxisPoint(double amount)
+    {
+        var meanX = Snapshot.Mean.Length > 0 ? Snapshot.Mean[0] : 0d;
+        var meanY = Snapshot.Mean.Length > 1 ? Snapshot.Mean[1] : 0d;
+        return new PlotPoint(
+            X(meanX + amount * Snapshot.PrincipalComponent[0]),
+            Y(meanY + amount * Snapshot.PrincipalComponent[1]));
+    }
+
+    private double Bound(int axis, bool minimum)
+    {
+        var min = double.PositiveInfinity;
+        var max = double.NegativeInfinity;
+        for (var point = 0; point < Snapshot.Features.Length; point++)
+        {
+            min = Math.Min(min, Snapshot.Features[point][axis]);
+            max = Math.Max(max, Snapshot.Features[point][axis]);
+            if (Snapshot.Phase is PcaPhase.Projection or PcaPhase.Complete && Snapshot.ProjectedFeatures.Length == Snapshot.Features.Length)
+            {
+                min = Math.Min(min, Snapshot.ProjectedFeatures[point][axis]);
+                max = Math.Max(max, Snapshot.ProjectedFeatures[point][axis]);
+            }
+        }
+        if (HasMean && Snapshot.Mean.Length > axis)
+        {
+            min = Math.Min(min, Snapshot.Mean[axis]);
+            max = Math.Max(max, Snapshot.Mean[axis]);
+        }
+        if (!double.IsFinite(min) || !double.IsFinite(max)) return minimum ? -1d : 1d;
+        var range = Math.Max(1d, max - min);
+        var padding = Math.Max(.8d, range * .16d);
+        return minimum ? min - padding : max + padding;
+    }
+
+    private static double Scale(double value, double min, double max, double outMin, double outMax)
+    {
+        if (Math.Abs(max - min) < 1e-12d) return (outMin + outMax) / 2d;
+        return outMin + ((value - min) / (max - min)) * (outMax - outMin);
+    }
+
+    private IEnumerable<GridLine> GridLines
+    {
+        get
+        {
+            for (var step = 1; step <= 4; step++)
+            {
+                var x = Left + ((Right - Left) * step / 5d);
+                var y = Top + ((Bottom - Top) * step / 5d);
+                yield return new GridLine(x, Top, x, Bottom);
+                yield return new GridLine(Left, y, Right, y);
+            }
+        }
+    }
+
+    private string FlowClass(PcaPhase phase)
+    {
+        if (Snapshot.Phase == PcaPhase.Complete) return "done";
+        if (Snapshot.Phase == phase) return "active";
+        return PhaseOrder(Snapshot.Phase) > PhaseOrder(phase) ? "done" : string.Empty;
+    }
+    private static int PhaseOrder(PcaPhase phase) => phase switch { PcaPhase.Centering => 1, PcaPhase.Covariance => 2, PcaPhase.Direction => 3, PcaPhase.Projection => 4, PcaPhase.Complete => 5, _ => 0 };
+    private static string PhaseText(PcaPhase phase) => phase switch { PcaPhase.Centering => "centering", PcaPhase.Covariance => "covariance", PcaPhase.Direction => "principal direction", PcaPhase.Projection => "projection", PcaPhase.Complete => "complete", _ => "ready" };
+    private static string Format(double value) => double.IsFinite(value) ? (Math.Abs(value) < 1e-12d ? "0" : value.ToString("0.###", CultureInfo.InvariantCulture)) : "—";
+    private sealed record GridLine(double X1, double Y1, double X2, double Y2);
+    private sealed record PlotPoint(double X, double Y);
+}

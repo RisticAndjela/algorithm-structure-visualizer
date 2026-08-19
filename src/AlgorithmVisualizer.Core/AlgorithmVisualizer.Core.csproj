@@ -4,7 +4,7 @@
   </PropertyGroup>
 
   <!--
-    KNN, KD-Tree, K-Means, and Decision Tree were introduced as nested source folders. Keep these compile items
+    KNN, KD-Tree, K-Means, Decision Tree, and PCA were introduced as nested source folders. Keep these compile items
     explicit so IDE/MSBuild project evaluation cannot leave the new namespace out
     when this repository is updated through incremental patch ZIPs. Remove first
     because SDK projects already include **/*.cs by default; re-include once here.
@@ -26,5 +26,9 @@
     <Compile Remove="MachineLearning/Supervised/DecisionTree/DecisionTreeSimulation.cs" />
     <Compile Include="MachineLearning/Supervised/DecisionTree/DecisionTreeModels.cs" />
     <Compile Include="MachineLearning/Supervised/DecisionTree/DecisionTreeSimulation.cs" />
+    <Compile Remove="MachineLearning/Unsupervised/Pca/PcaModels.cs" />
+    <Compile Remove="MachineLearning/Unsupervised/Pca/PcaSimulation.cs" />
+    <Compile Include="MachineLearning/Unsupervised/Pca/PcaModels.cs" />
+    <Compile Include="MachineLearning/Unsupervised/Pca/PcaSimulation.cs" />
   </ItemGroup>
 </Project>

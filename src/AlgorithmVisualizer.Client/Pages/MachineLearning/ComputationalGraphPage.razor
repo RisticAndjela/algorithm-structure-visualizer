@@ -1,0 +1,19 @@
+@page "/deep-learning/computational-graph"
+
+<PageTitle>Computational Graph — Planned — Algorithm Visualizer</PageTitle>
+
+<LearningPlaceholder
+    Title="Computational Graph"
+    Eyebrow="DEEP LEARNING · PHASE 2 STEP 10"
+    Description="Represent a calculation as explicit value nodes and operations so forward values and later gradients can be traced edge by edge."
+    Complexity="Planned"
+    ComplexityNote="The live lesson will expose graph construction, forward evaluation, stored intermediate values, and gradient-ready dependencies."
+    Concepts="Value node · Operation node · Dependency · Forward pass · Intermediate value · Gradient path"
+    LearnTitle="A neural network is easier to understand after every calculation is visible as a graph."
+    LearnSummary="Build small expressions first, evaluate them in dependency order, then reuse the same graph when backpropagation arrives."
+    ConceptHref="/learn/concepts/computational-graph"
+    LearnCards="1 · INPUTS|Start with stored values.|Inputs become source nodes.;;2 · OPERATIONS|Connect values through arithmetic.|Each operation produces a new value node.;;3 · FORWARD|Evaluate dependencies in order.|A node can run only after its inputs are ready.;;4 · PREPARE|Keep the graph for gradients.|Backpropagation will traverse these dependencies in reverse."
+    TipTitle="The graph stores dependency, not screen position."
+    TipText="Two nodes can be drawn next to each other without being directly connected. Edges are the actual computational dependency."
+    FocusText="This is Phase 2 preparation. PCA remains the final live Phase 1 lesson."
+    PromptText="Which operation must run before another node can use its value?" />
