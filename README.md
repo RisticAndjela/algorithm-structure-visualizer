@@ -229,7 +229,7 @@ All seven sorting lessons in the current curriculum are live: Bubble, Selection,
 
 Linear Search, Binary Search, BFS, DFS, advanced Dijkstra, and advanced Minimum Spanning Tree are live in Search & Traversal. Topological Sort is live as the advanced final Sorting lesson. BFS/DFS reuse the existing Graph representation and manual Queue/Stack foundations; Dijkstra reuses the same Graph and adds manual linear-minimum and binary-min-heap priority selection over non-negative weighted edges; Topological Sort reuses the same directed Graph with Kahn indegree/FIFO and DFS reverse-postorder variants.
 
-K-Means is live as Phase 1 step 7, Decision Tree as step 8, and PCA as Phase 1 step 9. Phase 1 is complete through PCA. Phase 2 is also complete: Neuron + Activation Functions is step 10, Neural Network / MLP step 11, Backpropagation step 12, and SGD / Momentum / Adam step 13. Sparse Matrix is the planned Phase 3 step 14.
+K-Means is live as Phase 1 step 7, Decision Tree as step 8, and PCA as Phase 1 step 9. Phase 1 is complete through PCA. Phase 2 is also complete: Neuron + Activation Functions is step 10, Neural Network / MLP step 11, Backpropagation step 12, and SGD / Momentum / Adam step 13. Phase 3 is complete: Sparse Matrix is step 14, PageRank step 15, Spectral Clustering step 16, and Message Passing / basic GNN step 17.
 
 ---
 
@@ -1615,4 +1615,13 @@ The learner-facing lesson stays 2D so the geometry is visible: original points, 
 
 Phase 2 intentionally starts with a concrete trainable unit instead of a standalone Computational Graph lesson. `/deep-learning/neuron-activations` computes each weighted contribution, bias, pre-activation `z`, and activation explicitly. `/deep-learning/mlp` connects those units into one hidden layer and one output neuron with project-owned `ManualVector`/`ManualMatrix` storage. `/deep-learning/backpropagation` reuses the same small network, stores forward values, applies the chain rule backward, exposes output/hidden deltas and every parameter gradient, then performs one visible learning update. `/deep-learning/optimizers` feeds the same deterministic cyclic sample stream to SGD, Momentum, and Adam so their different state and parameter paths can be compared directly.
 
-The learner UI keeps the approved shell and the board-only scroll contract: only the actual neuron/network/parameter-space drawing surface scrolls or pans; playback, Current Step, compact metrics, Memory State, decision guide, practice, and Last Run modal remain outside that board. Computational Graph is deliberately removed from the curriculum and codebase as a standalone module; dependency/value-flow concepts are taught inside these concrete Deep Learning lessons. Phase 3 begins with Sparse Matrix at roadmap step 14.
+The learner UI keeps the approved shell and the board-only scroll contract: only the actual neuron/network/parameter-space drawing surface scrolls or pans; playback, Current Step, compact metrics, Memory State, decision guide, practice, and Last Run modal remain outside that board. Computational Graph is deliberately removed from the curriculum and codebase as a standalone module; dependency/value-flow concepts are taught inside these concrete Deep Learning lessons. Phase 3 is also complete: Sparse Matrix (14) → PageRank (15) → Spectral Clustering (16) → Message Passing / basic GNN (17).
+
+
+### Graph ML — Phase 3 steps 14–17
+
+`/graph-ml/sparse-matrix` converts a small dense matrix into project-owned CSR storage (`values`, `columnIndexes`, `rowPointers`) and then performs sparse matrix-vector multiplication by visiting only stored entries. `/graph-ml/pagerank` reuses CSR as directed adjacency and explicitly shows teleportation, dangling-node mass, outgoing rank distribution, normalization, and iterative convergence while preserving total rank mass.
+
+`/graph-ml/spectral-clustering` builds the normalized Laplacian `I − D⁻¹ᐟ²AD⁻¹ᐟ²` with `ManualMatrix`, solves the small symmetric eigenproblem with project-owned Jacobi rotations, row-normalizes the smallest-eigenvector embedding, and reuses the existing manual K-Means implementation to produce graph communities. `/graph-ml/message-passing` implements a basic GNN-style layer over CSR neighborhoods: gather → mean/sum aggregate → `Wself·h + Wnbr·m + b` → ReLU → synchronous layer commit. Two feature buffers prevent node iteration order from leaking into the mathematics.
+
+All four Phase 3 lessons follow the approved shared shell and the board-only scroll/pan contract. Core does not call sparse-matrix, PageRank, eigensolver, spectral-clustering, graph-neural-network, tensor, or automatic-differentiation libraries. The final Message Passing lesson closes the current AI/ML roadmap at step 17.

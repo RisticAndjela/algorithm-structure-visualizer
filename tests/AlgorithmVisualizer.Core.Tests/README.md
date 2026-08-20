@@ -189,3 +189,14 @@ The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctnes
 `MachineLearning/DeepLearning/BackpropagationSimulationTests.cs` verifies finite output/hidden gradients, a full reverse chain, and that one learning update reduces or preserves the teaching loss for the tested cases.
 
 `MachineLearning/DeepLearning/OptimizerSimulationTests.cs` runs SGD, Momentum, and Adam over the same deterministic sample stream, checks finite parameter paths and MSE improvement, and validates dataset-shape rejection.
+
+
+## Graph ML Phase 3 coverage
+
+`MachineLearning/GraphMl/SparseMatrixSimulationTests.cs` verifies exact CSR value/column/row-pointer layout, sparse matrix-vector multiplication, direct `ManualCsrMatrix` access, and a case where sparse storage uses fewer slots than the dense grid.
+
+`MachineLearning/GraphMl/PageRankSimulationTests.cs` verifies uniform rank on a directed cycle, a clear incoming hub becoming top-ranked, dangling-node probability redistribution, finite positive ranks, and rank-mass preservation.
+
+`MachineLearning/GraphMl/SpectralClusteringSimulationTests.cs` verifies the project-owned Jacobi eigensolver on a known diagonal matrix, connectivity-based separation of two graph communities, sorted finite spectral state, and rejection of isolated nodes for the normalized teaching Laplacian.
+
+`MachineLearning/GraphMl/MessagePassingSimulationTests.cs` verifies synchronous one-layer mean aggregation with exact expected vectors, isolated-node zero-neighbor behavior, and two-hop propagation after two sum-aggregation layers.

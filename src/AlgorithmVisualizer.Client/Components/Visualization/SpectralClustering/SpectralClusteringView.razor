@@ -1,0 +1,49 @@
+@using AlgorithmVisualizer.Core.MachineLearning.GraphMl.SpectralClustering
+
+<div class="spectral-stage">
+    <section class="graph-half">
+        <div class="stage-heading"><span>ORIGINAL GRAPH</span><strong>Connectivity space</strong></div>
+        <svg class="graph-edges" width="520" height="430" viewBox="0 0 520 430" aria-hidden="true">
+            @for(var a=0;a<Snapshot.NodeCount;a++)
+            {
+                @for(var b=a+1;b<Snapshot.NodeCount;b++)
+                {
+                    if(HasEdge(a,b)){<line x1="@GX(a)" y1="@GY(a)" x2="@GX(b)" y2="@GY(b)" />}
+                }
+            }
+        </svg>
+        @for(var node=0;node<Snapshot.NodeCount;node++)
+        {
+            <div class="graph-node @ClusterClass(node)" style="left:@(GX(node)-25)px;top:@(GY(node)-25)px"><strong>@Label(node)</strong><small>d=@F(Snapshot.Degrees.Length>node?Snapshot.Degrees[node]:0d)</small></div>
+        }
+    </section>
+    <section class="embedding-half">
+        <div class="stage-heading"><span>SPECTRAL EMBEDDING</span><strong>@EmbeddingCaption</strong></div>
+        <div class="embedding-plane">
+            <div class="axis x"></div><div class="axis y"></div>
+            @if(Snapshot.Embedding.Length==Snapshot.NodeCount)
+            {
+                @for(var node=0;node<Snapshot.NodeCount;node++)
+                {
+                    <div class="embed-node @ClusterClass(node)" style="@EmbedStyle(node)"><strong>@Label(node)</strong></div>
+                }
+            }
+            else
+            {
+                <p class="embedding-empty">Run through the eigen step to place graph nodes in spectral coordinates.</p>
+            }
+        </div>
+    </section>
+</div>
+
+@code{
+    [Parameter,EditorRequired] public SpectralClusteringSnapshot Snapshot{get;set;}=default!;
+    private bool HasEdge(int a,int b)=>Snapshot.AdjacencyValues[(a*Snapshot.NodeCount)+b]>0d;
+    private double GX(int node){var angle=(-Math.PI/2)+(2*Math.PI*node/Snapshot.NodeCount);return 260+Math.Cos(angle)*160;}
+    private double GY(int node){var angle=(-Math.PI/2)+(2*Math.PI*node/Snapshot.NodeCount);return 230+Math.Sin(angle)*150;}
+    private string ClusterClass(int node)=>Snapshot.Assignments.Length>node&&Snapshot.Assignments[node]>=0?$"cluster-{Snapshot.Assignments[node]%3}":"unassigned";
+    private string EmbedStyle(int node){var row=Snapshot.Embedding[node];var x=row.Length>0?row[0]:0d;var y=row.Length>1?row[1]:0d;var left=250+x*180;var top=205-y*160;return $"left:{left-22:0.##}px;top:{top-22:0.##}px";}
+    private string EmbeddingCaption=>Snapshot.Eigenvalues.Length>=2?$"λ₀={F(Snapshot.Eigenvalues[0])} · λ₁={F(Snapshot.Eigenvalues[1])}":"waiting for eigenvectors";
+    private static string Label(int node)=>((char)('A'+node)).ToString();
+    private static string F(double value)=>Math.Abs(value)<1e-10?"0":value.ToString("0.###",System.Globalization.CultureInfo.InvariantCulture);
+}

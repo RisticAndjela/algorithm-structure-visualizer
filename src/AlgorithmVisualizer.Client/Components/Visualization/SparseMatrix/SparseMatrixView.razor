@@ -1,0 +1,39 @@
+@using AlgorithmVisualizer.Core.MachineLearning.GraphMl.SparseMatrix
+
+<div class="sparse-stage">
+    <section class="dense-side">
+        <div class="viz-title"><span>DENSE INPUT</span><strong>@Snapshot.Rows × @Snapshot.Columns · @Snapshot.DenseCellCount cells</strong></div>
+        <div class="dense-grid" style="@DenseGridStyle">
+            @for (var row = 0; row < Snapshot.Rows; row++)
+            {
+                @for (var column = 0; column < Snapshot.Columns; column++)
+                {
+                    var flat = (row * Snapshot.Columns) + column;
+                    <div class="dense-cell @DenseCellClass(row, column, Snapshot.DenseValues[flat])"><small>@row,@column</small><strong>@F(Snapshot.DenseValues[flat])</strong></div>
+                }
+            }
+        </div>
+    </section>
+
+    <div class="compress-arrow" aria-hidden="true">→</div>
+
+    <section class="csr-side">
+        <div class="viz-title"><span>CSR STORAGE</span><strong>@Snapshot.NonZeroCount non-zero values</strong></div>
+        <div class="array-block"><span>values</span><div class="array-row">@for(var i=0;i<Snapshot.Values.Length;i++){<b class="@(i==Snapshot.CurrentNonZeroIndex?"active":string.Empty)">@F(Snapshot.Values[i])</b>}@if(Snapshot.Values.Length==0){<em>empty</em>}</div></div>
+        <div class="array-block"><span>columnIndexes</span><div class="array-row">@for(var i=0;i<Snapshot.ColumnIndexes.Length;i++){<b class="@(i==Snapshot.CurrentNonZeroIndex?"active":string.Empty)">@Snapshot.ColumnIndexes[i]</b>}@if(Snapshot.ColumnIndexes.Length==0){<em>empty</em>}</div></div>
+        <div class="array-block"><span>rowPointers</span><div class="array-row">@for(var i=0;i<Snapshot.RowPointers.Length;i++){<b class="@(i==Snapshot.CurrentRow||i==Snapshot.CurrentRow+1?"active":string.Empty)">@Snapshot.RowPointers[i]</b>}</div></div>
+        <div class="slice-note"><strong>Current row</strong><span>@(Snapshot.CurrentRow >= 0 ? Snapshot.CurrentRow.ToString() : "—")</span><small>rowPointers mark the half-open slice of values that belongs to each row.</small></div>
+    </section>
+
+    <section class="spmv-strip">
+        <div><span>x</span><strong>@Vector(Snapshot.MultiplyVector)</strong></div><div class="mini-arrow">→</div><div><span>y = A·x</span><strong>@Vector(Snapshot.Product)</strong></div>
+    </section>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public SparseMatrixSnapshot Snapshot { get; set; } = default!;
+    private string DenseGridStyle => $"grid-template-columns:repeat({Snapshot.Columns},minmax(3.15rem,1fr));";
+    private string DenseCellClass(int row,int column,double value)=>$"{(Math.Abs(value)>1e-12?"stored":"zero")} {(row==Snapshot.CurrentRow&&column==Snapshot.CurrentColumn?"active":"")}";
+    private static string F(double value)=>Math.Abs(value)<1e-12?"0":value.ToString("0.###",System.Globalization.CultureInfo.InvariantCulture);
+    private static string Vector(IReadOnlyList<double> values)=>"["+string.Join(", ",values.Select(F))+"]";
+}

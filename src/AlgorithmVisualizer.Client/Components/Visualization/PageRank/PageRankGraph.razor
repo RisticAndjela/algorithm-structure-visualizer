@@ -1,0 +1,44 @@
+@using AlgorithmVisualizer.Core.MachineLearning.GraphMl.PageRank
+
+<div class="pagerank-stage" style="@StageStyle">
+    <svg class="edge-layer" width="@StageWidth" height="@StageHeight" viewBox="0 0 @StageWidth @StageHeight" aria-hidden="true">
+        <defs>
+            <marker id="pagerank-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z"></path>
+            </marker>
+        </defs>
+        @for(var source=0;source<Snapshot.NodeCount;source++)
+        {
+            @for(var destination=0;destination<Snapshot.NodeCount;destination++)
+            {
+                if(HasEdge(source,destination))
+                {
+                    <line x1="@X(source)" y1="@Y(source)" x2="@EdgeEndX(source,destination)" y2="@EdgeEndY(source,destination)" marker-end="url(#pagerank-arrow)" class="@(source==Snapshot.CurrentSource?"active-edge":"")" />
+                }
+            }
+        }
+    </svg>
+    @for(var node=0;node<Snapshot.NodeCount;node++)
+    {
+        <div class="rank-node @(node==Snapshot.CurrentSource?"source":"")" style="@NodeStyle(node)">
+            <span>@Label(node)</span><strong>@Percent(Snapshot.Ranks[node])</strong><small>out @Snapshot.OutDegrees[node]</small>
+            @if(Snapshot.CurrentContributions.Length>node&&Snapshot.CurrentContributions[node]>0){<i>+@Percent(Snapshot.CurrentContributions[node])</i>}
+        </div>
+    }
+    <div class="rank-legend"><span><i class="dot source"></i>distributing now</span><span><i class="dot rank"></i>node rank</span><span>directed edges follow source → destination</span></div>
+</div>
+
+@code {
+    [Parameter,EditorRequired] public PageRankSnapshot Snapshot{get;set;}=default!;
+    private const int StageWidth=920; private const int StageHeight=560;
+    private string StageStyle=>$"width:{StageWidth}px;height:{StageHeight}px;";
+    private bool HasEdge(int s,int d)=>Snapshot.AdjacencyValues[(s*Snapshot.NodeCount)+d]>0d;
+    private double X(int node){var angle=(-Math.PI/2d)+(2d*Math.PI*node/Snapshot.NodeCount);return StageWidth/2d+Math.Cos(angle)*220d;}
+    private double Y(int node){var angle=(-Math.PI/2d)+(2d*Math.PI*node/Snapshot.NodeCount);return StageHeight/2d+Math.Sin(angle)*190d;}
+    private double NodeSize(int node)=>70d+(Snapshot.Ranks[node]*90d);
+    private string NodeStyle(int node){var size=NodeSize(node);return $"left:{X(node)-size/2d:0.##}px;top:{Y(node)-size/2d:0.##}px;width:{size:0.##}px;height:{size:0.##}px;";}
+    private double EdgeEndX(int source,int destination){var dx=X(destination)-X(source);var dy=Y(destination)-Y(source);var length=Math.Sqrt((dx*dx)+(dy*dy));if(length<1e-9)return X(destination);return X(destination)-(dx/length*((NodeSize(destination)/2d)+5d));}
+    private double EdgeEndY(int source,int destination){var dx=X(destination)-X(source);var dy=Y(destination)-Y(source);var length=Math.Sqrt((dx*dx)+(dy*dy));if(length<1e-9)return Y(destination);return Y(destination)-(dy/length*((NodeSize(destination)/2d)+5d));}
+    private static string Label(int node)=>((char)('A'+node)).ToString();
+    private static string Percent(double value)=>(value*100d).ToString("0.0",System.Globalization.CultureInfo.InvariantCulture)+"%";
+}

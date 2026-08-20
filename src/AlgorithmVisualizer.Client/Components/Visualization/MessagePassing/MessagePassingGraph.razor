@@ -1,0 +1,40 @@
+@using AlgorithmVisualizer.Core.MachineLearning.GraphMl.MessagePassing
+
+<div class="gnn-stage">
+    <section class="graph-zone">
+        <svg class="gnn-edges" width="680" height="500" viewBox="0 0 680 500" aria-hidden="true">
+            @for(var a=0;a<Snapshot.NodeCount;a++)
+            {
+                @for(var b=a+1;b<Snapshot.NodeCount;b++)
+                {
+                    if(HasEdge(a,b)){<line x1="@X(a)" y1="@Y(a)" x2="@X(b)" y2="@Y(b)" class="@(a==Snapshot.CurrentNode||b==Snapshot.CurrentNode?"active":"")" />}
+                }
+            }
+        </svg>
+        @for(var node=0;node<Snapshot.NodeCount;node++)
+        {
+            <div class="gnn-node @(node==Snapshot.CurrentNode?"active":"")" style="left:@(X(node)-42)px;top:@(Y(node)-42)px">
+                <span>@Label(node)</span><strong>@Vector(Snapshot.Features[node])</strong><small>@Snapshot.NeighborCounts[node] nbr</small>
+            </div>
+        }
+    </section>
+    <aside class="message-tray">
+        <span class="tray-kicker">CURRENT MESSAGE</span>
+        <strong>@(Snapshot.CurrentNode>=0?$"Node {Label(Snapshot.CurrentNode)}":"Ready")</strong>
+        <div><span>aggregate</span><b>@Vector(Snapshot.Aggregate)</b></div>
+        <div><span>self path</span><b>@Vector(Snapshot.SelfContribution)</b></div>
+        <div><span>neighbor path</span><b>@Vector(Snapshot.NeighborContribution)</b></div>
+        <div><span>before ReLU</span><b>@Vector(Snapshot.PreActivation)</b></div>
+        @if(Snapshot.CurrentNode>=0&&Snapshot.NextFeatures.Length>Snapshot.CurrentNode){<div class="next"><span>staged next h</span><b>@Vector(Snapshot.NextFeatures[Snapshot.CurrentNode])</b></div>}
+        <small>All nodes read the previous committed layer. Staged results switch together only at layer commit.</small>
+    </aside>
+</div>
+
+@code{
+    [Parameter,EditorRequired] public MessagePassingSnapshot Snapshot{get;set;}=default!;
+    private bool HasEdge(int a,int b)=>Snapshot.AdjacencyValues[(a*Snapshot.NodeCount)+b]>0d||Snapshot.AdjacencyValues[(b*Snapshot.NodeCount)+a]>0d;
+    private double X(int node){var angle=(-Math.PI/2)+(2*Math.PI*node/Snapshot.NodeCount);return 340+Math.Cos(angle)*205;}
+    private double Y(int node){var angle=(-Math.PI/2)+(2*Math.PI*node/Snapshot.NodeCount);return 260+Math.Sin(angle)*170;}
+    private static string Label(int node)=>((char)('A'+node)).ToString();
+    private static string Vector(IReadOnlyList<double> v)=>"["+string.Join(", ",v.Select(x=>Math.Abs(x)<1e-10?"0":x.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture)))+"]";
+}

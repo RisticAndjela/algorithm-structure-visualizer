@@ -50,5 +50,25 @@
     <Compile Remove="MachineLearning/DeepLearning/Optimizers/OptimizerSimulation.cs" />
     <Compile Include="MachineLearning/DeepLearning/Optimizers/OptimizerModels.cs" />
     <Compile Include="MachineLearning/DeepLearning/Optimizers/OptimizerSimulation.cs" />
+    <Compile Remove="MachineLearning/GraphMl/Common/ManualCsrMatrix.cs" />
+    <Compile Remove="MachineLearning/GraphMl/Common/ManualSymmetricEigenSolver.cs" />
+    <Compile Include="MachineLearning/GraphMl/Common/ManualCsrMatrix.cs" />
+    <Compile Include="MachineLearning/GraphMl/Common/ManualSymmetricEigenSolver.cs" />
+    <Compile Remove="MachineLearning/GraphMl/SparseMatrix/SparseMatrixModels.cs" />
+    <Compile Remove="MachineLearning/GraphMl/SparseMatrix/SparseMatrixSimulation.cs" />
+    <Compile Include="MachineLearning/GraphMl/SparseMatrix/SparseMatrixModels.cs" />
+    <Compile Include="MachineLearning/GraphMl/SparseMatrix/SparseMatrixSimulation.cs" />
+    <Compile Remove="MachineLearning/GraphMl/PageRank/PageRankModels.cs" />
+    <Compile Remove="MachineLearning/GraphMl/PageRank/PageRankSimulation.cs" />
+    <Compile Include="MachineLearning/GraphMl/PageRank/PageRankModels.cs" />
+    <Compile Include="MachineLearning/GraphMl/PageRank/PageRankSimulation.cs" />
+    <Compile Remove="MachineLearning/GraphMl/SpectralClustering/SpectralClusteringModels.cs" />
+    <Compile Remove="MachineLearning/GraphMl/SpectralClustering/SpectralClusteringSimulation.cs" />
+    <Compile Include="MachineLearning/GraphMl/SpectralClustering/SpectralClusteringModels.cs" />
+    <Compile Include="MachineLearning/GraphMl/SpectralClustering/SpectralClusteringSimulation.cs" />
+    <Compile Remove="MachineLearning/GraphMl/MessagePassing/MessagePassingModels.cs" />
+    <Compile Remove="MachineLearning/GraphMl/MessagePassing/MessagePassingSimulation.cs" />
+    <Compile Include="MachineLearning/GraphMl/MessagePassing/MessagePassingModels.cs" />
+    <Compile Include="MachineLearning/GraphMl/MessagePassing/MessagePassingSimulation.cs" />
   </ItemGroup>
 </Project>

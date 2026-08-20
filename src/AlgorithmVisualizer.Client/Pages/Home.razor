@@ -14,7 +14,7 @@
             <div class="hero-actions">
                 <a class="primary-action" href="/structures/queue-stack">Start lesson 01 <span>→</span></a>
                 <ConceptLink class="secondary-action" Href="/learn/concepts/visual-vs-memory">Concepts &amp; Memory</ConceptLink>
-                <a class="secondary-action" href="/#learning-path">See all 28 live modules</a>
+                <a class="secondary-action" href="/#learning-path">See all 38 live modules</a>
             </div>
             <div class="hero-note">
                 <span class="note-icon">i</span>
@@ -53,17 +53,17 @@
     </section>
 
     <section class="quick-stats" aria-label="Implemented learning modules">
-        <div><strong>24</strong><span>interactive modules</span></div>
+        <div><strong>38</strong><span>interactive modules</span></div>
         <div><strong>9</strong><span>data-structure labs</span></div>
         <div><strong>13</strong><span>classical algorithm labs</span></div>
-        <div><strong>8</strong><span>live ML foundation labs</span></div>
+        <div><strong>16</strong><span>live AI/ML labs</span></div>
     </section>
 
     <section class="foundation-callout" aria-labelledby="foundation-title">
         <div class="foundation-copy">
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="foundation-title">Use Concepts &amp; Memory when a label is unclear.</h2>
-            <p>It is the shared reference for Visual vs Memory State, identity, Big-O, tree height, heap indexing, matrix storage, graph adjacency, every implemented sorting strategy, Linear/Binary Search, graph traversal with BFS/DFS, weighted shortest paths with Dijkstra, dependency order, minimum spanning trees with Prim/Kruskal, plus Vector fundamentals and the complete live Phase 1 ML track from Gradient Descent through PCA.</p>
+            <p>It is the shared reference for Visual vs Memory State, identity, Big-O, tree height, heap indexing, matrix storage, graph adjacency, every implemented sorting strategy, Linear/Binary Search, graph traversal with BFS/DFS, weighted shortest paths with Dijkstra, dependency order, minimum spanning trees with Prim/Kruskal, plus Vector fundamentals and the complete live AI/ML roadmap through Phase 3 Graph ML.</p>
         </div>
         <div class="foundation-links">
             <ConceptLink Href="/learn/concepts/visual-vs-memory"><strong>Visual vs memory</strong><span>What the picture shows vs what is stored →</span></ConceptLink>
@@ -273,10 +273,10 @@
     <section class="learning-section ai-home-section">
         <div class="section-heading">
             <div>
-                <span class="section-kicker">MACHINE LEARNING · PHASE 1–2 · 02–13</span>
-                <h2>Learn classical ML, then build and train a neural network.</h2>
+                <span class="section-kicker">MACHINE LEARNING · PHASE 1–3 · 02–17</span>
+                <h2>Learn classical ML, deep learning, then Graph ML.</h2>
             </div>
-            <p>Vector lives with Data Structures. Phase 1 runs from Gradient Descent through PCA. Phase 2 now continues directly with a neuron, a one-hidden-layer MLP, Backpropagation, and an optimizer comparison so every deep-learning lesson changes a real model state.</p>
+            <p>Vector lives with Data Structures. Phase 1 runs from Gradient Descent through PCA; Phase 2 builds a neuron, MLP, Backpropagation and optimizers; Phase 3 closes the roadmap with sparse graph storage, PageRank, spectral clustering and basic GNN message passing.</p>
         </div>
 
         <div class="path-grid module-grid">
@@ -351,6 +351,30 @@
                 <div class="path-icon graph-icon"><i></i><i></i><i></i><i></i></div>
                 <h3>SGD / Momentum / Adam</h3><p>Feed the same stochastic gradients into three update rules and compare parameter paths and optimizer memory.</p>
                 <div class="concept-row"><span>SGD</span><span>Momentum</span><span>Adam</span></div><span class="card-link">Open lesson <b>→</b></span>
+            </a>
+            <a class="path-card available module-card" href="/graph-ml/sparse-matrix">
+                <div class="card-topline"><span class="path-index">14 · GRAPH ML</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="path-icon graph-icon"><i></i><i></i><i></i><i></i></div>
+                <h3>Sparse Matrix</h3><p>Compress dense zeros into CSR values, column indexes, and row pointers, then multiply by visiting only stored entries.</p>
+                <div class="concept-row"><span>CSR</span><span>nnz</span><span>SpMV</span></div><span class="card-link">Open lesson <b>→</b></span>
+            </a>
+            <a class="path-card available module-card" href="/graph-ml/pagerank">
+                <div class="card-topline"><span class="path-index">15 · GRAPH ML</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="path-icon graph-icon"><i></i><i></i><i></i><i></i></div>
+                <h3>PageRank</h3><p>Move probability through directed sparse links with teleportation and dangling-node handling until importance stabilizes.</p>
+                <div class="concept-row"><span>Damping</span><span>Rank mass</span><span>Convergence</span></div><span class="card-link">Open lesson <b>→</b></span>
+            </a>
+            <a class="path-card available module-card" href="/graph-ml/spectral-clustering">
+                <div class="card-topline"><span class="path-index">16 · GRAPH ML</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="path-icon graph-icon"><i></i><i></i><i></i><i></i></div>
+                <h3>Spectral Clustering</h3><p>Build a normalized Laplacian, solve its smallest eigenvectors manually, then reuse K-Means in spectral space.</p>
+                <div class="concept-row"><span>Laplacian</span><span>Eigenvectors</span><span>Embedding</span></div><span class="card-link">Open lesson <b>→</b></span>
+            </a>
+            <a class="path-card available module-card" href="/graph-ml/message-passing">
+                <div class="card-topline"><span class="path-index">17 · GRAPH ML</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="path-icon graph-icon"><i></i><i></i><i></i><i></i></div>
+                <h3>Message Passing / basic GNN</h3><p>Gather neighbor features, aggregate them, combine self + neighborhood transforms, apply ReLU, and commit node embeddings synchronously.</p>
+                <div class="concept-row"><span>Messages</span><span>Aggregation</span><span>Embeddings</span></div><span class="card-link">Open lesson <b>→</b></span>
             </a>
         </div>
     </section>
