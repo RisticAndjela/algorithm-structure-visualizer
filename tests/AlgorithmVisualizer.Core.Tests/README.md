@@ -177,3 +177,15 @@ The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctnes
 
 `MachineLearning/Supervised/KdTreeSimulationTests.cs` verifies nearest lookup on both sides of the spatial tree, exact-match distance zero, observable pruning, broader backtracking near a split plane, dimension-independent Core behavior with axis cycling beyond 2D, and dimension-mismatch rejection.
 
+
+## Deep Learning Phase 2 coverage
+
+`MachineLearning/DeepLearning/ActivationMathTests.cs` verifies ReLU vs Leaky ReLU behavior, sigmoid midpoint/derivative, and stable finite sigmoid outputs for very large positive/negative scores.
+
+`MachineLearning/DeepLearning/NeuronSimulationTests.cs` verifies weighted contributions, bias/pre-activation separation, ReLU behavior, sigmoid-at-zero behavior, and shape validation.
+
+`MachineLearning/DeepLearning/MlpSimulationTests.cs` verifies a deterministic one-hidden-layer forward pass and hidden ReLU clamping.
+
+`MachineLearning/DeepLearning/BackpropagationSimulationTests.cs` verifies finite output/hidden gradients, a full reverse chain, and that one learning update reduces or preserves the teaching loss for the tested cases.
+
+`MachineLearning/DeepLearning/OptimizerSimulationTests.cs` runs SGD, Momentum, and Adam over the same deterministic sample stream, checks finite parameter paths and MSE improvement, and validates dataset-shape rejection.

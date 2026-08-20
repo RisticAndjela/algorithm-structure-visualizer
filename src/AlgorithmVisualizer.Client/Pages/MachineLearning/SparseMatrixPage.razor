@@ -1,0 +1,19 @@
+@page "/graph-ml/sparse-matrix"
+
+<PageTitle>Sparse Matrix — Graph ML — Planned — Algorithm Visualizer</PageTitle>
+
+<LearningPlaceholder
+    Title="Sparse Matrix"
+    Eyebrow="GRAPH ML · PHASE 3 STEP 14"
+    Description="Store mostly-zero graph and feature matrices without paying dense-memory cost for every absent value."
+    Complexity="Planned"
+    ComplexityNote="The live lesson will compare dense storage with project-owned sparse coordinate/row representations and explicit sparse matrix-vector multiplication."
+    Concepts="Sparsity · COO · CSR · Row pointers · Column indexes · SpMV"
+    LearnTitle="Sparse storage keeps the non-zero structure instead of reserving a slot for every possible cell."
+    LearnSummary="Graph ML often starts with adjacency or feature matrices where most entries are zero. Sparse Matrix will make the storage layout and memory savings visible before PageRank and message passing."
+    ConceptHref="/learn/concepts/sparse-matrix"
+    LearnCards="1 · SPARSITY|Count what is actually non-zero.|Dense shape and stored values are different ideas.;;2 · COO|Store row, column, value triples.|The simplest sparse representation makes each non-zero explicit.;;3 · CSR|Group values by row.|Row pointers make row scans and sparse matrix-vector multiplication efficient.;;4 · MEMORY|Compare bytes, not only formulas.|The benefit depends on how sparse the matrix really is."
+    TipTitle="Sparse does not automatically mean faster."
+    TipText="Sparse formats trade indexing metadata and irregular access for avoiding huge zero-filled storage. The live lesson will show where that trade pays off."
+    FocusText="Phase 2 Deep Learning is complete. Sparse Matrix starts Phase 3 Graph ML."
+    PromptText="When does storing row/column metadata cost less than storing all the zeros?" />

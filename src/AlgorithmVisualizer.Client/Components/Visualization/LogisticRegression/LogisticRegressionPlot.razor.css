@@ -6,8 +6,9 @@
 .model-strip strong { overflow: hidden; text-overflow: ellipsis; font-size: .94rem; white-space: nowrap; }
 .formula-cell strong { color: var(--color-primary-strong); }
 
-.plot-shell { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(15rem, .65fr); gap: .8rem; align-items: stretch; }
-svg { width: 100%; min-height: 26rem; border: 1px solid var(--color-border); border-radius: 1rem; background: #fff; }
+.plot-shell { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(15rem, .65fr); gap: .8rem; align-items: start; }
+.logistic-plot-board { border: 1px solid var(--color-border); border-radius: 1rem; background: #f7f8fb; }
+.logistic-plot-board svg { display: block; width: min(100%, 68rem); min-width: 48rem; height: auto; margin: 0 auto; background: #fff; }
 .plot-bg { fill: var(--color-surface-subtle); stroke: var(--color-border); }
 .grid-line { stroke: #e9eaf0; stroke-width: 1; }
 .axis-label { fill: var(--color-text-muted); font-size: 12px; font-weight: 700; }
@@ -58,7 +59,7 @@ svg { width: 100%; min-height: 26rem; border: 1px solid var(--color-border); bor
     .model-strip > div:nth-child(n+3) { border-top: 1px solid var(--color-border); }
     .formula-cell { grid-column: 1 / -1; }
     .model-strip > div:nth-child(2) { border-left: 0; border-top: 1px solid var(--color-border); }
-    svg { min-height: 20rem; }
+    .logistic-plot-board svg { min-width: 42rem; }
     .story-flow { grid-template-columns: 1fr; }
     .story-flow > b { transform: rotate(90deg); justify-self: center; }
 }

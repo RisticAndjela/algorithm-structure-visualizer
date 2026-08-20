@@ -4,7 +4,8 @@
 .lr-plot-header > div + div { border-left: 1px solid var(--color-border); }
 .lr-plot-header span { color: var(--color-text-muted); font-size: .68rem; font-weight: 850; letter-spacing: .07em; }
 .lr-plot-header strong { font-size: .94rem; }
-svg { width: 100%; min-height: 22rem; }
+.lr-plot-board { border: 1px solid var(--color-border); border-radius: .8rem; background: #f7f8fb; }
+.lr-plot-board svg { display: block; width: min(100%, 68rem); min-width: 46rem; height: auto; margin: 0 auto; }
 .plot-bg { fill: #fbfbfd; stroke: var(--color-border); }
 .grid-line { stroke: #ececf2; stroke-width: 1; }
 .axis-line { stroke: #b9bdc9; stroke-width: 1.4; }
@@ -19,4 +20,4 @@ svg { width: 100%; min-height: 22rem; }
 .lr-plot-legend .prediction { background: var(--color-primary); }
 .lr-plot-legend .residual { width: 1rem; height: 0; border-top: 2px dashed #d58b44; border-radius: 0; }
 .lr-plot-legend .line { width: 1rem; height: 0; border-top: 3px solid var(--color-primary); border-radius: 0; }
-@media (max-width: 760px) { .lr-plot-header { grid-template-columns: 1fr; } .lr-plot-header > div + div { border-left: 0; border-top: 1px solid var(--color-border); } svg { min-height: 17rem; } }
+@media (max-width: 760px) { .lr-plot-header { grid-template-columns: 1fr; } .lr-plot-header > div + div { border-left: 0; border-top: 1px solid var(--color-border); } .lr-plot-board svg { min-width: 40rem; } }

@@ -1,0 +1,30 @@
+@using AlgorithmVisualizer.Core.MachineLearning.DeepLearning.Backpropagation
+
+<div class="bp-stage" aria-label="Backpropagation forward and reverse flow">
+    <section class="bp-forward">
+        <div class="phase-tag">FORWARD →</div>
+        <article><span>INPUT</span><strong>@Vector(Snapshot.Inputs)</strong></article>
+        <b>→</b>
+        <article><span>HIDDEN ACTIVATIONS</span><strong>@Vector(Snapshot.HiddenActivations)</strong></article>
+        <b>→</b>
+        <article><span>PREDICTION</span><strong>@F(Snapshot.Output)</strong></article>
+        <b>→</b>
+        <article><span>LOSS</span><strong>@F(Snapshot.Loss)</strong></article>
+    </section>
+
+    <section class="bp-reverse">
+        <div class="phase-tag">← REVERSE</div>
+        <article class="gradient-card"><span>OUTPUT DELTA</span><strong>@F(Snapshot.OutputDelta)</strong><small>dL/dz output</small></article>
+        <b>←</b>
+        <article class="gradient-card @(Snapshot.Phase == BackpropagationPhase.HiddenGradient ? "active" : string.Empty)"><span>HIDDEN DELTAS</span><strong>@Vector(Snapshot.HiddenDeltas)</strong><small>upstream × weight × activation′</small></article>
+        <b>←</b>
+        <article class="gradient-card"><span>PARAMETER GRADIENTS</span><strong>@GradientSummary</strong><small>delta × incoming value</small></article>
+    </section>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public BackpropagationSnapshot Snapshot { get; set; } = default!;
+    private string GradientSummary => $"W₂ {Vector(Snapshot.OutputWeightGradients)} · W₁ {Vector(Snapshot.HiddenWeightGradients)}";
+    private static string Vector(IReadOnlyList<double> values) => "[" + string.Join(", ", values.Select(value => F(value))) + "]";
+    private static string F(double value) => Math.Abs(value) < 1e-10 ? "0" : value.ToString("0.###");
+}

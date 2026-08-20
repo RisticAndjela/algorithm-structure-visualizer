@@ -1,0 +1,53 @@
+@using AlgorithmVisualizer.Core.MachineLearning.DeepLearning.Common
+@using AlgorithmVisualizer.Core.MachineLearning.DeepLearning.Mlp
+
+<div class="mlp-stage" aria-label="MLP forward pass">
+    <section class="layer-column">
+        <span class="layer-label">INPUT LAYER</span>
+        @for (var input = 0; input < Snapshot.Inputs.Length; input++)
+        {
+            <article class="network-node"><span>x@(input + 1)</span><strong>@F(Snapshot.Inputs[input])</strong></article>
+        }
+    </section>
+
+    <section class="weight-panel">
+        <span>W₁ · INPUT → HIDDEN</span>
+        <div class="weight-grid" style="@($"--cols:{Snapshot.Inputs.Length}")">
+            @for (var hidden = 0; hidden < Snapshot.HiddenCount; hidden++)
+            {
+                @for (var input = 0; input < Snapshot.Inputs.Length; input++)
+                {
+                    <small>w@(hidden + 1),@(input + 1)<b>@F(Snapshot.HiddenWeights[(hidden * Snapshot.Inputs.Length) + input])</b></small>
+                }
+            }
+        </div>
+    </section>
+
+    <section class="layer-column hidden-layer">
+        <span class="layer-label">HIDDEN · @ActivationMath.DisplayName(Snapshot.HiddenActivation)</span>
+        @for (var hidden = 0; hidden < Snapshot.HiddenCount; hidden++)
+        {
+            <article class="network-node @(Snapshot.ActiveHiddenNeuron == hidden ? "active" : string.Empty)">
+                <span>h@(hidden + 1)</span><strong>@F(Snapshot.HiddenActivations[hidden])</strong><small>z=@F(Snapshot.HiddenPreActivations[hidden])</small>
+            </article>
+        }
+    </section>
+
+    <section class="weight-panel output-weights">
+        <span>W₂ · HIDDEN → OUTPUT</span>
+        @for (var hidden = 0; hidden < Snapshot.HiddenCount; hidden++)
+        {
+            <small>h@(hidden + 1) × <b>@F(Snapshot.OutputWeights[hidden])</b></small>
+        }
+    </section>
+
+    <section class="layer-column output-layer">
+        <span class="layer-label">OUTPUT · @ActivationMath.DisplayName(Snapshot.OutputActivation)</span>
+        <article class="network-node output @(Snapshot.Phase is MlpPhase.OutputNeuron or MlpPhase.Complete ? "active" : string.Empty)"><span>ŷ</span><strong>@F(Snapshot.Output)</strong><small>z=@F(Snapshot.OutputPreActivation)</small></article>
+    </section>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public MlpSnapshot Snapshot { get; set; } = default!;
+    private static string F(double value) => Math.Abs(value) < 1e-10 ? "0" : value.ToString("0.###");
+}

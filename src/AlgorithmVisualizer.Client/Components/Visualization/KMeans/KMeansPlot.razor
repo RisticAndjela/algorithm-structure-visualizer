@@ -8,7 +8,7 @@
                 <div><span>FEATURE SPACE</span><strong>Every point is visible; centroids are the large cross markers.</strong></div>
                 <small>@Snapshot.Count points · @Snapshot.ClusterCount clusters · @PhaseText(Snapshot.Phase)</small>
             </header>
-            <div class="cluster-plot">
+            <div class="cluster-plot ml-visual-board" tabindex="0">
                 <svg viewBox="0 0 780 440" role="img" aria-label="Two-dimensional K-Means clustering plot" preserveAspectRatio="xMidYMid meet">
                     <rect x="@Left" y="@Top" width="@(Right - Left)" height="@(Bottom - Top)" rx="18" class="plot-bg" />
                     @foreach (var line in GridLines)

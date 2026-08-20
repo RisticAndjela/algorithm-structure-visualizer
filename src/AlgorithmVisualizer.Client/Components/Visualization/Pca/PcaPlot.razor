@@ -7,7 +7,7 @@
             <div><span>FEATURE SPACE</span><strong>@Heading</strong></div>
             <small>@Snapshot.Count points · @PhaseText(Snapshot.Phase)</small>
         </div>
-        <div class="pca-plot-shell">
+        <div class="pca-plot-shell ml-visual-board" tabindex="0">
             <svg viewBox="0 0 780 450" role="img" aria-label="PCA points, mean, principal component, and projected positions" preserveAspectRatio="xMidYMid meet">
                 <rect x="@Left" y="@Top" width="@(Right - Left)" height="@(Bottom - Top)" rx="18" class="plot-bg" />
                 @foreach (var line in GridLines)

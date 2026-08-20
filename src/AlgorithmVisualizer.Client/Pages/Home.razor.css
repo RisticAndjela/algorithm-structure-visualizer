@@ -639,7 +639,19 @@
 }
 
 .search-home-section .module-grid {
-    grid-template-columns: minmax(16rem, 24rem);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 1180px) {
+    .search-home-section .module-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .search-home-section .module-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .ai-home-section .planned-card {

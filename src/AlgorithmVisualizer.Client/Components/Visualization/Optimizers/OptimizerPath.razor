@@ -1,0 +1,34 @@
+@using AlgorithmVisualizer.Core.MachineLearning.DeepLearning.Optimizers
+
+<div class="optimizer-stage" aria-label="Optimizer parameter path">
+    <div class="axis-label y">bias ↑</div>
+    <div class="parameter-plane">
+        <div class="target" style="@StyleAt(TargetWeight, TargetBias)"><span>target</span></div>
+        @for (var index = 0; index < Snapshot.WeightPath.Length; index++)
+        {
+            <div class="path-point @(index == Snapshot.WeightPath.Length - 1 ? "current" : string.Empty)" style="@StyleAt(Snapshot.WeightPath[index], Snapshot.BiasPath[index])"><span>@index</span></div>
+        }
+    </div>
+    <div class="axis-label x">weight →</div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public OptimizerSnapshot Snapshot { get; set; } = default!;
+    [Parameter] public double TargetWeight { get; set; } = 2d;
+    [Parameter] public double TargetBias { get; set; } = 1d;
+
+    private (double MinW,double MaxW,double MinB,double MaxB) Bounds
+    {
+        get
+        {
+            var minW = Math.Min(0d, TargetWeight); var maxW = Math.Max(0d, TargetWeight);
+            var minB = Math.Min(0d, TargetBias); var maxB = Math.Max(0d, TargetBias);
+            for (var i=0;i<Snapshot.WeightPath.Length;i++){minW=Math.Min(minW,Snapshot.WeightPath[i]);maxW=Math.Max(maxW,Snapshot.WeightPath[i]);minB=Math.Min(minB,Snapshot.BiasPath[i]);maxB=Math.Max(maxB,Snapshot.BiasPath[i]);}
+            var padW=Math.Max(.5d,(maxW-minW)*.18d);var padB=Math.Max(.5d,(maxB-minB)*.18d);
+            return (minW-padW,maxW+padW,minB-padB,maxB+padB);
+        }
+    }
+    private double PctX(double value){var b=Bounds;return 6d+88d*((value-b.MinW)/Math.Max(1e-9,b.MaxW-b.MinW));}
+    private double PctY(double value){var b=Bounds;return 94d-88d*((value-b.MinB)/Math.Max(1e-9,b.MaxB-b.MinB));}
+    private string StyleAt(double weight, double bias) => FormattableString.Invariant($"left:{PctX(weight):0.###}%;top:{PctY(bias):0.###}%");
+}

@@ -4,12 +4,14 @@
   </PropertyGroup>
 
   <!--
-    KNN, KD-Tree, K-Means, Decision Tree, and PCA were introduced as nested source folders. Keep these compile items
+    KNN, KD-Tree, K-Means, Decision Tree, PCA, and the deep-learning modules were introduced as nested source folders. Keep these compile items
     explicit so IDE/MSBuild project evaluation cannot leave the new namespace out
     when this repository is updated through incremental patch ZIPs. Remove first
     because SDK projects already include **/*.cs by default; re-include once here.
   -->
   <ItemGroup>
+    <!-- Computational Graph was intentionally removed from the curriculum. Keep this exclusion so an incremental patch copied over an older checkout cannot compile stale source files. -->
+    <Compile Remove="MachineLearning/DeepLearning/ComputationalGraph/**/*.cs" />
     <Compile Remove="MachineLearning/Supervised/Knn/KnnModels.cs" />
     <Compile Remove="MachineLearning/Supervised/Knn/KnnSimulation.cs" />
     <Compile Include="MachineLearning/Supervised/Knn/KnnModels.cs" />
@@ -30,5 +32,23 @@
     <Compile Remove="MachineLearning/Unsupervised/Pca/PcaSimulation.cs" />
     <Compile Include="MachineLearning/Unsupervised/Pca/PcaModels.cs" />
     <Compile Include="MachineLearning/Unsupervised/Pca/PcaSimulation.cs" />
+    <Compile Remove="MachineLearning/DeepLearning/Common/ActivationMath.cs" />
+    <Compile Include="MachineLearning/DeepLearning/Common/ActivationMath.cs" />
+    <Compile Remove="MachineLearning/DeepLearning/Neuron/NeuronModels.cs" />
+    <Compile Remove="MachineLearning/DeepLearning/Neuron/NeuronSimulation.cs" />
+    <Compile Include="MachineLearning/DeepLearning/Neuron/NeuronModels.cs" />
+    <Compile Include="MachineLearning/DeepLearning/Neuron/NeuronSimulation.cs" />
+    <Compile Remove="MachineLearning/DeepLearning/Mlp/MlpModels.cs" />
+    <Compile Remove="MachineLearning/DeepLearning/Mlp/MlpSimulation.cs" />
+    <Compile Include="MachineLearning/DeepLearning/Mlp/MlpModels.cs" />
+    <Compile Include="MachineLearning/DeepLearning/Mlp/MlpSimulation.cs" />
+    <Compile Remove="MachineLearning/DeepLearning/Backpropagation/BackpropagationModels.cs" />
+    <Compile Remove="MachineLearning/DeepLearning/Backpropagation/BackpropagationSimulation.cs" />
+    <Compile Include="MachineLearning/DeepLearning/Backpropagation/BackpropagationModels.cs" />
+    <Compile Include="MachineLearning/DeepLearning/Backpropagation/BackpropagationSimulation.cs" />
+    <Compile Remove="MachineLearning/DeepLearning/Optimizers/OptimizerModels.cs" />
+    <Compile Remove="MachineLearning/DeepLearning/Optimizers/OptimizerSimulation.cs" />
+    <Compile Include="MachineLearning/DeepLearning/Optimizers/OptimizerModels.cs" />
+    <Compile Include="MachineLearning/DeepLearning/Optimizers/OptimizerSimulation.cs" />
   </ItemGroup>
 </Project>

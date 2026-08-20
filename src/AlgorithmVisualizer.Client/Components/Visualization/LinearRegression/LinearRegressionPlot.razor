@@ -8,7 +8,8 @@
         <div><span>UPDATE</span><strong>@Snapshot.Iteration</strong></div>
     </div>
 
-    <svg viewBox="0 0 760 390" role="img" aria-label="Training points, current regression line, predictions, and residuals">
+    <div class="lr-plot-board ml-visual-board" tabindex="0">
+        <svg viewBox="0 0 760 390" role="img" aria-label="Training points, current regression line, predictions, and residuals">
         <rect x="54" y="24" width="670" height="310" rx="16" class="plot-bg" />
         @for (var tick = 0; tick <= 4; tick++)
         {
@@ -32,7 +33,8 @@
             <circle cx="@F(cx)" cy="@F(predictedY)" r="5" class="prediction-point" />
             <circle cx="@F(cx)" cy="@F(actualY)" r="7" class="training-point" />
         }
-    </svg>
+        </svg>
+    </div>
 
     <div class="lr-plot-legend">
         <span><i class="actual"></i>Training point</span>

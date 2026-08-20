@@ -15,11 +15,12 @@
         <small>The path connects committed parameter vectors. The green point marks the minimum; purple marks the current θ.</small>
     </div>
 
-    <div class="landscape-canvas">
-        <svg viewBox="0 0 100 100" role="img" aria-label="Gradient descent path toward the loss minimum" preserveAspectRatio="none">
-            <ellipse class="loss-contour outer" cx="@CenterX" cy="@CenterY" rx="@ContourRx(31)" ry="@ContourRy(31)" />
-            <ellipse class="loss-contour middle" cx="@CenterX" cy="@CenterY" rx="@ContourRx(21)" ry="@ContourRy(21)" />
-            <ellipse class="loss-contour inner" cx="@CenterX" cy="@CenterY" rx="@ContourRx(11)" ry="@ContourRy(11)" />
+    <div class="landscape-canvas ml-visual-board" tabindex="0">
+        <div class="landscape-stage">
+        <svg viewBox="0 0 120 70" role="img" aria-label="Gradient descent path toward the loss minimum" preserveAspectRatio="xMidYMid meet">
+            <ellipse class="loss-contour outer" cx="@CenterX" cy="@CenterY" rx="@ContourRx(34)" ry="@ContourRy(20)" />
+            <ellipse class="loss-contour middle" cx="@CenterX" cy="@CenterY" rx="@ContourRx(24)" ry="@ContourRy(14)" />
+            <ellipse class="loss-contour inner" cx="@CenterX" cy="@CenterY" rx="@ContourRx(13)" ry="@ContourRy(8)" />
             @if (!string.IsNullOrWhiteSpace(PathPoints))
             {
                 <polyline class="trajectory-line" points="@PathPoints" />
@@ -39,8 +40,9 @@
             <circle class="minimum-point" cx="@CenterX" cy="@CenterY" r="2.3" />
             <circle class="current-point" cx="@CurrentX" cy="@CurrentY" r="2.7" />
         </svg>
-        <div class="landscape-label minimum-label" style="left:@Percent(LabelX(CenterX));top:@Percent(LabelY(CenterY));">minimum</div>
-        <div class="landscape-label current-label" style="left:@Percent(LabelX(CurrentX));top:@Percent(LabelY(CurrentY));">θ</div>
+        <div class="landscape-label minimum-label" style="left:@CssX(LabelX(CenterX));top:@CssY(LabelY(CenterY));">minimum</div>
+        <div class="landscape-label current-label" style="left:@CssX(LabelX(CurrentX));top:@CssY(LabelY(CurrentY));">θ</div>
+        </div>
     </div>
 
     <div class="gradient-legend" aria-label="Gradient Descent visual legend">
@@ -53,6 +55,13 @@
 
 @code {
     [Parameter, EditorRequired] public GradientDescentSnapshot Snapshot { get; set; } = default!;
+
+    private const double PlotWidth = 120d;
+    private const double PlotHeight = 70d;
+    private const double PlotLeft = 7d;
+    private const double PlotRight = 113d;
+    private const double PlotTop = 6d;
+    private const double PlotBottom = 64d;
 
     private double CenterX => Snapshot.Target.Length > 0 ? MapX(Snapshot.Target[0]) : 50d;
     private double CenterY => Snapshot.Target.Length > 1 ? MapY(Snapshot.Target[1]) : 50d;
@@ -98,7 +107,7 @@
     {
         var curvature = Snapshot.Curvature.Length > 0 ? Snapshot.Curvature[0] : 1d;
         var requested = Math.Clamp(basis / Math.Sqrt(Math.Max(0.05d, curvature)), 5d, 34d);
-        var available = Math.Max(4d, Math.Min(CenterX - 4d, 96d - CenterX));
+        var available = Math.Max(4d, Math.Min(CenterX - PlotLeft, PlotRight - CenterX));
         return FormatCoordinate(Math.Min(requested, available));
     }
 
@@ -106,7 +115,7 @@
     {
         var curvature = Snapshot.Curvature.Length > 1 ? Snapshot.Curvature[1] : 1d;
         var requested = Math.Clamp(basis / Math.Sqrt(Math.Max(0.05d, curvature)), 5d, 34d);
-        var available = Math.Max(4d, Math.Min(CenterY - 4d, 96d - CenterY));
+        var available = Math.Max(3d, Math.Min(CenterY - PlotTop, PlotBottom - CenterY));
         return FormatCoordinate(Math.Min(requested, available));
     }
 
@@ -135,20 +144,22 @@
 
     private double MapX(double value)
     {
-        var mapped = 7d + (((value - XMin) / Math.Max(1e-9d, XMax - XMin)) * 86d);
-        return Math.Clamp(mapped, 7d, 93d);
+        var mapped = PlotLeft + (((value - XMin) / Math.Max(1e-9d, XMax - XMin)) * (PlotRight - PlotLeft));
+        return Math.Clamp(mapped, PlotLeft, PlotRight);
     }
 
     private double MapY(double value)
     {
-        var mapped = 93d - (((value - YMin) / Math.Max(1e-9d, YMax - YMin)) * 86d);
-        return Math.Clamp(mapped, 7d, 93d);
+        var mapped = PlotBottom - (((value - YMin) / Math.Max(1e-9d, YMax - YMin)) * (PlotBottom - PlotTop));
+        return Math.Clamp(mapped, PlotTop, PlotBottom);
     }
 
     private string CoordinateX(double value) => FormatCoordinate(MapX(value));
     private string CoordinateY(double value) => FormatCoordinate(MapY(value));
-    private static double LabelX(double value) => Math.Clamp(value, 8d, 88d);
-    private static double LabelY(double value) => Math.Clamp(value, 8d, 88d);
+    private static double LabelX(double value) => Math.Clamp(value, PlotLeft + 1d, PlotRight - 8d);
+    private static double LabelY(double value) => Math.Clamp(value, PlotTop + 2d, PlotBottom - 2d);
+    private static string CssX(double value) => Percent((value / PlotWidth) * 100d);
+    private static string CssY(double value) => Percent((value / PlotHeight) * 100d);
     private static string FormatCoordinate(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
     private static string FormatValue(double value) => Math.Abs(value) < 1e-12 ? "0" : value.ToString("0.####", CultureInfo.InvariantCulture);
     private static string Percent(double value) => $"{FormatCoordinate(value)}%";

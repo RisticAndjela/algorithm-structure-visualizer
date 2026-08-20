@@ -5,8 +5,8 @@
 .visual-card-heading > div { display: grid; gap: .12rem; }
 .visual-card-heading strong { font-size: 1rem; }
 .visual-card-heading small { color: var(--color-text-muted); font-size: .78rem; }
-.kd-plot-shell { position: relative; max-width: 100%; overflow: auto; overscroll-behavior: contain; border: 1px solid var(--color-border); border-radius: .82rem; background: var(--color-surface-subtle); }
-.kd-coordinate-plot { width: 100%; min-width: 38rem; height: 24rem; display: block; }
+.kd-plot-shell { position: relative; max-width: 100%; border: 1px solid var(--color-border); border-radius: .82rem; background: #f7f8fb; }
+.kd-coordinate-plot { display: block; width: min(100%, 68rem); min-width: 46rem; height: auto; margin: 0 auto; background: var(--color-surface-subtle); }
 .plot-bg { fill: var(--color-surface-subtle); stroke: var(--color-border); stroke-width: 1.3; }
 .grid-line { stroke: var(--color-border); stroke-width: 1; opacity: .7; }
 .split-line { stroke-width: 2; opacity: .34; }
@@ -57,7 +57,7 @@
 .tree-story strong { font-size: .94rem; }
 .tree-story p { margin: 0; color: var(--color-text-muted); font-size: .82rem; line-height: 1.55; }
 @media (max-width: 1050px) { .kd-workspace { grid-template-columns: 1fr; } .tree-level-nodes { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 720px) { .tree-level-nodes { grid-template-columns: repeat(2, minmax(0, 1fr)); } .kd-coordinate-plot { min-width: 32rem; height: 20rem; } }
+@media (max-width: 720px) { .tree-level-nodes { grid-template-columns: repeat(2, minmax(0, 1fr)); } .kd-coordinate-plot { min-width: 40rem; } }
 
 /* Keep the explanation/story readable; reserve small text for metadata only. */
 .visual-card-heading small,

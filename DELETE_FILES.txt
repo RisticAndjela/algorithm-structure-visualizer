@@ -1,0 +1,8 @@
+src/AlgorithmVisualizer.Core/MachineLearning/DeepLearning/ComputationalGraph/ComputationalGraphModels.cs
+src/AlgorithmVisualizer.Core/MachineLearning/DeepLearning/ComputationalGraph/ComputationalGraphSimulation.cs
+src/AlgorithmVisualizer.Core/MachineLearning/DeepLearning/ComputationalGraph/README.md
+src/AlgorithmVisualizer.Client/Components/Visualization/ComputationalGraph/ComputationalGraphPlot.razor
+src/AlgorithmVisualizer.Client/Components/Visualization/ComputationalGraph/ComputationalGraphPlot.razor.css
+src/AlgorithmVisualizer.Client/Pages/MachineLearning/ComputationalGraphPage.razor
+src/AlgorithmVisualizer.Client/Pages/MachineLearning/ComputationalGraphPage.razor.css
+tests/AlgorithmVisualizer.Core.Tests/MachineLearning/DeepLearning/ComputationalGraphSimulationTests.cs

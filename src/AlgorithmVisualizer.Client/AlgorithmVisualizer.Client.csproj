@@ -11,4 +11,17 @@
   <ItemGroup>
     <ProjectReference Include="..\AlgorithmVisualizer.Core\AlgorithmVisualizer.Core.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- Compatibility guard for incremental patch extraction: the standalone Computational Graph lesson was removed. -->
+    <RazorComponent Remove="Pages/MachineLearning/ComputationalGraphPage.razor" />
+    <RazorComponent Remove="Components/Visualization/ComputationalGraph/**/*.razor" />
+    <Content Remove="Pages/MachineLearning/ComputationalGraphPage.razor" />
+    <Content Remove="Pages/MachineLearning/ComputationalGraphPage.razor.css" />
+    <Content Remove="Components/Visualization/ComputationalGraph/**/*.razor" />
+    <Content Remove="Components/Visualization/ComputationalGraph/**/*.razor.css" />
+    <None Remove="Pages/MachineLearning/ComputationalGraphPage.razor.css" />
+    <None Remove="Components/Visualization/ComputationalGraph/**/*.razor.css" />
+  </ItemGroup>
+
 </Project>

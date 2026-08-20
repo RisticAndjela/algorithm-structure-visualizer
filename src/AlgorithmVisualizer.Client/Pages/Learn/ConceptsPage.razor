@@ -84,7 +84,11 @@
                 <a href="/learn/concepts/k-means">K-Means</a>
                 <a href="/learn/concepts/decision-tree">Decision Tree</a>
                 <a href="/learn/concepts/pca">PCA</a>
-                <a href="/learn/concepts/computational-graph">Computational Graph</a>
+                <a href="/learn/concepts/neuron-activations">Neuron + Activations</a>
+                <a href="/learn/concepts/mlp">Neural Network / MLP</a>
+                <a href="/learn/concepts/backpropagation">Backpropagation</a>
+                <a href="/learn/concepts/optimizers">SGD / Momentum / Adam</a>
+                <a href="/learn/concepts/sparse-matrix">Sparse Matrix · planned</a>
             </div>
         </nav>
 
@@ -1042,23 +1046,61 @@
         <div class="concept-lesson-links"><a href="/ml-foundations/pca">Open PCA lesson →</a><a href="/structures/vector">Review Vector →</a><a href="/structures/matrix">Review Matrix →</a></div>
     </section>
 
-    <section id="computational-graph" class='@SectionClass("computational-graph")'>
-        <div class="section-heading"><span>DL10</span><div><h2>Computational Graph: planned Phase 2 bridge</h2><p>A computational graph stores values and operations as explicit dependencies. The first Deep Learning lesson will use it to make forward evaluation visible before gradients and backpropagation are introduced.</p></div></div>
+    <section id="neuron-activations" class='@SectionClass("neuron-activations")'>
+        <div class="section-heading"><span>DL10</span><div><h2>Neuron + Activation Functions: one trainable unit</h2><p>A neuron first computes a weighted sum and bias, then applies a nonlinear activation. Keeping those two stages separate makes later network and gradient behavior much easier to reason about.</p></div></div>
         <div class="concept-grid two">
-            <article class="concept-card"><span class="term">DEPENDENCY</span><h3>Edges mean “this value is needed here”</h3><p>Screen position does not define computation order. A node becomes ready only after the values it depends on have been produced.</p></article>
-            <article class="concept-card"><span class="term queue">FORWARD</span><h3>Evaluate inputs before the operations that consume them</h3><p>The same stored graph can later be traversed in reverse to explain gradient flow during backpropagation.</p></article>
+            <article class="concept-card"><span class="term">WEIGHTED SUM</span><h3>Compute z = w·x + b</h3><p>Every input contributes <code>xᵢwᵢ</code>. Add those contributions and the bias before any activation changes the value.</p></article>
+            <article class="concept-card"><span class="term queue">ACTIVATION</span><h3>Transform the same z in different ways</h3><p>ReLU, Leaky ReLU, sigmoid, tanh, and linear activations have different ranges and derivatives. The live lab compares them on the same neuron.</p></article>
         </div>
-        <div class="concept-lesson-links"><a href="/deep-learning/computational-graph">Preview Computational Graph →</a><a href="/ml-foundations/pca">Finish Phase 1 with PCA →</a></div>
+        <div class="concept-lesson-links"><a href="/deep-learning/neuron-activations">Open Neuron + Activations →</a><a href="/learn/concepts/vector-dot-product">Review dot product →</a></div>
+    </section>
+
+    <section id="mlp" class='@SectionClass("mlp")'>
+        <div class="section-heading"><span>DL11</span><div><h2>Neural Network / MLP: neurons become layers</h2><p>A multilayer perceptron connects an input vector to hidden neurons and then to an output neuron. The forward pass is explicit matrix/vector arithmetic, not a black-box framework call.</p></div></div>
+        <div class="concept-grid two">
+            <article class="concept-card"><span class="term">HIDDEN LAYER</span><h3>Each hidden neuron learns a different combination</h3><p>Every hidden unit owns its own weight row and bias, producing a hidden activation vector.</p></article>
+            <article class="concept-card"><span class="term queue">FORWARD PASS</span><h3>The next layer consumes the previous activations</h3><p>The output neuron uses the hidden activations as its inputs, so information moves layer by layer.</p></article>
+        </div>
+        <div class="concept-lesson-links"><a href="/deep-learning/mlp">Open MLP →</a><a href="/deep-learning/neuron-activations">Review one neuron →</a></div>
+    </section>
+
+    <section id="backpropagation" class='@SectionClass("backpropagation")'>
+        <div class="section-heading"><span>DL12</span><div><h2>Backpropagation: assign responsibility for loss</h2><p>Backpropagation reuses the forward-pass values, starts from the loss derivative, and applies the chain rule backward so every weight and bias receives its own gradient.</p></div></div>
+        <div class="concept-grid two">
+            <article class="concept-card"><span class="term">CHAIN RULE</span><h3>Local derivatives multiply along a path</h3><p>The output delta combines loss and activation derivatives; hidden deltas also include downstream weights.</p></article>
+            <article class="concept-card"><span class="term queue">PARAMETER GRADIENT</span><h3>Activation × downstream delta gives a weight gradient</h3><p>Once gradients exist, a small update can be applied and the live lab verifies whether the loss actually decreases.</p></article>
+        </div>
+        <div class="concept-lesson-links"><a href="/deep-learning/backpropagation">Open Backpropagation →</a><a href="/deep-learning/mlp">Review the forward pass →</a></div>
+    </section>
+
+    <section id="optimizers" class='@SectionClass("optimizers")'>
+        <div class="section-heading"><span>DL13</span><div><h2>SGD / Momentum / Adam: same gradients, different memory</h2><p>The optimizer does not create the gradient. It decides how the gradient changes model parameters and what historical state should influence the next update.</p></div></div>
+        <div class="concept-grid three">
+            <article class="concept-card"><span class="term">SGD</span><h3>Use the current stochastic gradient directly</h3><p>SGD keeps no running optimizer state, so each update follows the current sample gradient.</p></article>
+            <article class="concept-card"><span class="term stack">MOMENTUM</span><h3>Smooth recent directions into velocity</h3><p>A running first moment reduces zig-zagging and carries useful direction across steps.</p></article>
+            <article class="concept-card"><span class="term queue">ADAM</span><h3>Track both direction and gradient magnitude</h3><p>Adam keeps first and second moments, bias-corrects them, and scales each parameter update adaptively.</p></article>
+        </div>
+        <div class="concept-lesson-links"><a href="/deep-learning/optimizers">Open optimizer comparison →</a><a href="/deep-learning/backpropagation">Review gradient creation →</a></div>
+    </section>
+
+
+    <section id="sparse-matrix" class='@SectionClass("sparse-matrix")'>
+        <div class="section-heading"><span>GML14</span><div><h2>Sparse Matrix: Phase 3 starts with storage</h2><p>Graph and feature matrices are often mostly zero. Sparse representations store only non-zero structure plus indexing metadata instead of allocating every dense cell.</p></div></div>
+        <div class="concept-grid two">
+            <article class="concept-card"><span class="term">COO</span><h3>Coordinate form stores explicit non-zero triples</h3><p>Each stored value carries its row and column. It is simple to understand and useful as a construction format.</p></article>
+            <article class="concept-card"><span class="term queue">CSR</span><h3>Compressed rows trade metadata for faster row traversal</h3><p>Values and column indexes are grouped by row; row pointers tell where each row begins and ends.</p></article>
+        </div>
+        <div class="concept-lesson-links"><a href="/graph-ml/sparse-matrix">Preview Sparse Matrix →</a><a href="/structures/matrix">Review dense Matrix →</a></div>
     </section>
 
     <section class="concept-section implementation-note">
         <div class="section-heading">
             <span>✓</span>
-            <div><h2>Implemented from scratch</h2><p>The learning structures and algorithms do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, Matrix, Vector, Graph, sorting, Linear Search, Binary Search, BFS, DFS, Dijkstra, Topological Sort, Minimum Spanning Tree, Linear Regression, Logistic Regression, K-Nearest Neighbors, KD-Tree, K-Means, Decision Tree, PCA, or balancing behavior to ready-made framework collections/search helpers.</p></div>
+            <div><h2>Implemented from scratch</h2><p>The learning structures and algorithms do not delegate the taught Stack, Queue, BST, AVL, Red-Black Tree, Heap, Matrix, Vector, Graph, sorting, Linear Search, Binary Search, BFS, DFS, Dijkstra, Topological Sort, Minimum Spanning Tree, Linear Regression, Logistic Regression, K-Nearest Neighbors, KD-Tree, K-Means, Decision Tree, PCA, Neuron/activation, MLP, Backpropagation, optimizer, or balancing behavior to ready-made framework collections/search helpers.</p></div>
         </div>
         <div class="plain-note">
             <strong>What our code does itself</strong>
-            <p>Linear structures keep and grow their own raw array and move references with manual loops. BST, AVL, and Red-Black Tree keep explicit node links and perform their own comparisons, transplants, recoloring, and rotations. BST Balance uses our own Day-Stout-Warren vine/compression logic over those same node references. Heap uses its own growable raw array and manual index swaps for bubble-up/bubble-down instead of PriorityQueue or a library heap. Matrix uses its own row-major <code>double[]</code>, manual cell/index loops, row operations, multiplication and elimination instead of a numerical or linear-algebra library. Vector uses its own contiguous <code>double[]</code> and explicit loops for component operations, dot products, norms, normalization, distances and cosine similarity instead of a numerical-vector library. Gradient Descent computes its convex teaching loss and analytical gradient with explicit loops, then reuses Vector Core for L2 norm, scalar multiplication and subtraction instead of delegating to a numerical optimizer. Linear Regression stores x, y, prediction and residual vectors in ManualVector and performs prediction, MSE, derivative and parameter-update loops explicitly instead of calling an ML/statistics library. Logistic Regression stores x, labels, scores, probabilities and probability errors in ManualVector and explicitly computes stable sigmoid, 0.5 threshold classes, binary cross-entropy, derivatives and full-batch updates. KNN stores each feature point and query as ManualVector values, reuses VectorSimulation for Euclidean/Manhattan distance, then explicitly scans, maintains ordered top-k arrays, and counts the binary vote without a KNN library or framework sort. KD-Tree stores the same point vectors behind explicit spatial nodes, manually orders median ranges, follows child links, backtracks, and prunes by split-plane distance without a framework tree or spatial-index package. K-Means stores point/centroid vectors in ManualVector, reuses VectorSimulation for Euclidean distance, and explicitly performs nearest-centroid assignment, sum/count mean updates, empty-cluster handling, and convergence checks without a clustering package. PCA stores raw/centered/projected vectors with ManualVector and explicitly computes mean centering, sample covariance, covariance-vector multiplication, power-iteration normalization, explained variance, and scalar projection without a numerical eigen/PCA library. Graph keeps canonical vertex/edge objects, manual adjacency lists over our own dynamic-array storage, and reuses ManualMatrix for the synchronized adjacency table instead of a graph package or dictionary-backed graph. Linear Search uses its own explicit index loop and does not call LINQ First/Contains or a framework search helper. Binary Search uses its own iterative left/right/mid loop and does not call Array.BinarySearch or another framework binary-search helper. BFS uses the existing Graph adjacency snapshot plus the project's manual dynamic-array storage as a FIFO Queue; DFS uses recursive calls or the same manual storage as an explicit LIFO Stack. Neither delegates traversal to a graph library or framework Queue/Stack collection. Dijkstra reuses that same Graph snapshot, performs its own relaxation/minimum selection, and in Advanced mode uses a project-owned binary min-heap instead of <code>PriorityQueue&lt;TElement, TPriority&gt;</code>. Topological Sort also reuses the same Graph snapshot: Kahn mode maintains indegree[] and a head-index FIFO over the project manual array, while DFS mode uses white/gray/black recursion plus a manual postorder buffer; neither delegates ordering or cycle detection to a graph library. MST reuses the same undirected Graph snapshot: Prim uses the existing ManualHeapArray as a min-edge frontier, while Kruskal manually merge-sorts edge indexes and uses a hand-written DSU with path compression and union by rank. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the taught data-structure algorithms for us.</p>
+            <p>Linear structures keep and grow their own raw array and move references with manual loops. BST, AVL, and Red-Black Tree keep explicit node links and perform their own comparisons, transplants, recoloring, and rotations. BST Balance uses our own Day-Stout-Warren vine/compression logic over those same node references. Heap uses its own growable raw array and manual index swaps for bubble-up/bubble-down instead of PriorityQueue or a library heap. Matrix uses its own row-major <code>double[]</code>, manual cell/index loops, row operations, multiplication and elimination instead of a numerical or linear-algebra library. Vector uses its own contiguous <code>double[]</code> and explicit loops for component operations, dot products, norms, normalization, distances and cosine similarity instead of a numerical-vector library. Gradient Descent computes its convex teaching loss and analytical gradient with explicit loops, then reuses Vector Core for L2 norm, scalar multiplication and subtraction instead of delegating to a numerical optimizer. Linear Regression stores x, y, prediction and residual vectors in ManualVector and performs prediction, MSE, derivative and parameter-update loops explicitly instead of calling an ML/statistics library. Logistic Regression stores x, labels, scores, probabilities and probability errors in ManualVector and explicitly computes stable sigmoid, 0.5 threshold classes, binary cross-entropy, derivatives and full-batch updates. KNN stores each feature point and query as ManualVector values, reuses VectorSimulation for Euclidean/Manhattan distance, then explicitly scans, maintains ordered top-k arrays, and counts the binary vote without a KNN library or framework sort. KD-Tree stores the same point vectors behind explicit spatial nodes, manually orders median ranges, follows child links, backtracks, and prunes by split-plane distance without a framework tree or spatial-index package. K-Means stores point/centroid vectors in ManualVector, reuses VectorSimulation for Euclidean distance, and explicitly performs nearest-centroid assignment, sum/count mean updates, empty-cluster handling, and convergence checks without a clustering package. PCA stores raw/centered/projected vectors with ManualVector and explicitly computes mean centering, sample covariance, covariance-vector multiplication, power-iteration normalization, explained variance, and scalar projection without a numerical eigen/PCA library. The deep-learning modules build weighted sums, layer forward passes, chain-rule gradients, and SGD/Momentum/Adam state explicitly with ManualVector/ManualMatrix and scalar loops instead of a neural-network or automatic-differentiation framework. Graph keeps canonical vertex/edge objects, manual adjacency lists over our own dynamic-array storage, and reuses ManualMatrix for the synchronized adjacency table instead of a graph package or dictionary-backed graph. Linear Search uses its own explicit index loop and does not call LINQ First/Contains or a framework search helper. Binary Search uses its own iterative left/right/mid loop and does not call Array.BinarySearch or another framework binary-search helper. BFS uses the existing Graph adjacency snapshot plus the project's manual dynamic-array storage as a FIFO Queue; DFS uses recursive calls or the same manual storage as an explicit LIFO Stack. Neither delegates traversal to a graph library or framework Queue/Stack collection. Dijkstra reuses that same Graph snapshot, performs its own relaxation/minimum selection, and in Advanced mode uses a project-owned binary min-heap instead of <code>PriorityQueue&lt;TElement, TPriority&gt;</code>. Topological Sort also reuses the same Graph snapshot: Kahn mode maintains indegree[] and a head-index FIFO over the project manual array, while DFS mode uses white/gray/black recursion plus a manual postorder buffer; neither delegates ordering or cycle detection to a graph library. MST reuses the same undirected Graph snapshot: Prim uses the existing ManualHeapArray as a min-edge frontier, while Kruskal manually merge-sorts edge indexes and uses a hand-written DSU with path compression and union by rank. Standard .NET types are still used for infrastructure such as tasks, cancellation, GUID identifiers and the Blazor runtime; they do not implement the taught data-structure algorithms for us.</p>
         </div>
     </section>
 
@@ -1139,7 +1181,11 @@
         "k-means" => "K-Means clustering foundations",
         "decision-tree" => "Decision Tree foundations",
         "pca" => "PCA foundations",
-        "computational-graph" => "Computational Graph foundations",
+        "neuron-activations" => "Neuron + Activation Functions foundations",
+        "mlp" => "Neural Network / MLP foundations",
+        "backpropagation" => "Backpropagation foundations",
+        "optimizers" => "SGD / Momentum / Adam foundations",
+        "sparse-matrix" => "Sparse Matrix foundations",
         "graph" => "Graph: vertices, edges and adjacency",
         "red-black" => "Red-Black Tree invariants",
         "bubble-sort" => "Bubble Sort",
@@ -1199,7 +1245,11 @@
         "k-means" => "/ml-foundations/k-means",
         "decision-tree" => "/ml-foundations/decision-tree",
         "pca" => "/ml-foundations/pca",
-        "computational-graph" => "/deep-learning/computational-graph",
+        "neuron-activations" => "/deep-learning/neuron-activations",
+        "mlp" => "/deep-learning/mlp",
+        "backpropagation" => "/deep-learning/backpropagation",
+        "optimizers" => "/deep-learning/optimizers",
+        "sparse-matrix" => "/graph-ml/sparse-matrix",
         "graph" => "/structures/graph",
         "red-black" => "/structures/red-black",
         "bubble-sort" => "/sorting/bubble",
@@ -1252,7 +1302,7 @@
         "general-heap" or "avl-balance" or "matrix" or "matrix-compatibility" or
         "vector" or "vector-memory" or "vector-dot-product" or "vector-norms" or "vector-similarity" or "vector-ml" or
         "gradient-descent" or "gradient-descent-loss" or "gradient-descent-update" or "gradient-descent-learning-rate" or "gradient-descent-convergence" or
-        "linear-regression" or "linear-regression-prediction" or "linear-regression-residual" or "linear-regression-mse" or "linear-regression-gradient" or "logistic-regression" or "knn" or "kd-tree" or "k-means" or "decision-tree" or "pca" or "computational-graph" or
+        "linear-regression" or "linear-regression-prediction" or "linear-regression-residual" or "linear-regression-mse" or "linear-regression-gradient" or "logistic-regression" or "knn" or "kd-tree" or "k-means" or "decision-tree" or "pca" or "neuron-activations" or "mlp" or "backpropagation" or "optimizers" or "sparse-matrix" or
         "graph" or "red-black" or "bubble-sort" or "selection-sort" or
         "insertion-sort" or "merge-sort" or "quick-sort" or "heap-sort" or
         "linear-search" or "linear-search-complexity" or "linear-vs-binary-search" or

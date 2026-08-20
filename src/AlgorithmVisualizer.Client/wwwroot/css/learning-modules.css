@@ -534,24 +534,43 @@ body .learning-module-page.learning-module-shell {
 }
 
 
-/* Machine-learning visual and memory states are bounded learning canvases.
-   They must remain inspectable without pushing the rest of the lesson off-screen.
-   Coordinate plots should auto-fit their rendered data first; scrolling is the fallback
-   for genuinely large/wide visual or memory content, not a substitute for correct bounds. */
+/* Machine-learning state cards stay part of the normal lesson flow.
+   Only the actual drawing board scrolls; headers, legends, current-step copy,
+   metrics and Memory explanations must never be trapped inside one giant scroller. */
 .learning-module-page.learning-module-shell.ml-module-page .ml-state-surface {
     width: 100%;
     min-width: 0;
     max-width: 100%;
-    max-height: min(62vh, 34rem);
-    overflow: auto;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable both-edges;
+    overflow: visible;
     box-sizing: border-box;
 }
 
-.learning-module-page.learning-module-shell.ml-module-page .ml-state-surface:focus-within {
-    outline: 2px solid rgba(103, 87, 229, .12);
+.learning-module-page.learning-module-shell.ml-module-page .ml-visual-board {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    height: clamp(22rem, 48vh, 29rem);
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    touch-action: pan-x pan-y;
+    box-sizing: border-box;
+}
+
+.learning-module-page.learning-module-shell.ml-module-page .ml-visual-board:focus {
+    outline: 2px solid rgba(103, 87, 229, .18);
     outline-offset: 2px;
+}
+
+.learning-module-page.learning-module-shell.ml-module-page .ml-visual-board svg {
+    max-width: none;
+    max-height: none;
+}
+
+@media (max-width: 760px) {
+    .learning-module-page.learning-module-shell.ml-module-page .ml-visual-board {
+        height: 23rem;
+    }
 }
 
 /* Shared last-run modal chrome. Scoped pages may add content-specific tabs/metrics, but the modal itself must always open as an overlay. */
@@ -1065,4 +1084,114 @@ body .learning-module-page.learning-module-shell {
 .live-status.advanced-status i {
     background: #d95151;
     box-shadow: 0 0 0 3px rgba(217, 81, 81, .10);
+}
+
+/* Deep-learning lessons reuse the approved ML shell. These controls are shared so
+   Neuron, MLP, Backpropagation, and Optimizers cannot drift into separate dashboards. */
+.learning-module-page.learning-module-shell.ml-module-page .dl-builder-card {
+    display: grid;
+    gap: .85rem;
+    padding: .9rem;
+    border: 1px solid var(--color-border);
+    border-radius: .85rem;
+    background: #fbfbfd;
+}
+.learning-module-page.learning-module-shell.ml-module-page .dl-control-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .65rem;
+}
+.learning-module-page.learning-module-shell.ml-module-page .dl-control-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.learning-module-page.learning-module-shell.ml-module-page .dl-control-grid label,
+.learning-module-page.learning-module-shell.ml-module-page .dl-field {
+    display: grid;
+    gap: .38rem;
+}
+.learning-module-page.learning-module-shell.ml-module-page .dl-control-grid label > span,
+.learning-module-page.learning-module-shell.ml-module-page .dl-field > span {
+    color: var(--color-text-muted);
+    font-size: .7rem;
+    font-weight: 900;
+    letter-spacing: .07em;
+}
+.learning-module-page.learning-module-shell.ml-module-page .dl-control-grid input,
+.learning-module-page.learning-module-shell.ml-module-page .dl-field input,
+.learning-module-page.learning-module-shell.ml-module-page .dl-field textarea {
+    width: 100%;
+    min-height: 2.5rem;
+    padding: .55rem .65rem;
+    border: 1px solid var(--color-border);
+    border-radius: .62rem;
+    background: #fff;
+    color: var(--color-text);
+    font: inherit;
+    font-size: .9rem;
+    box-sizing: border-box;
+}
+.learning-module-page.learning-module-shell.ml-module-page .dl-field textarea { min-height: 5.2rem; resize: vertical; line-height: 1.45; }
+.learning-module-page.learning-module-shell.ml-module-page .dl-inline-actions,
+.learning-module-page.learning-module-shell.ml-module-page .dl-mode-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    align-items: center;
+}
+.learning-module-page.learning-module-shell.ml-module-page .dl-mode-row > span {
+    color: var(--color-text-muted);
+    font-size: .7rem;
+    font-weight: 900;
+    letter-spacing: .07em;
+    margin-right: .15rem;
+}
+.learning-module-page.learning-module-shell.ml-module-page .dl-mode-row button.active,
+.learning-module-page.learning-module-shell.ml-module-page .prediction-actions button.active {
+    border-color: #cfc7ff;
+    color: #4d3db9;
+    background: #f5f3ff;
+}
+.learning-module-page.learning-module-shell.ml-module-page .dl-advanced {
+    display: grid;
+    gap: .75rem;
+    padding-top: .8rem;
+    border-top: 1px solid var(--color-border);
+}
+.learning-module-page.learning-module-shell.ml-module-page .dl-memory-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .65rem;
+}
+.learning-module-page.learning-module-shell.ml-module-page .dl-memory-card {
+    display: grid;
+    gap: .28rem;
+    padding: .8rem;
+    border: 1px solid var(--color-border);
+    border-radius: .72rem;
+    background: #fbfbfd;
+}
+.learning-module-page.learning-module-shell.ml-module-page .dl-memory-card > span {
+    color: var(--color-text-muted);
+    font-size: .68rem;
+    font-weight: 900;
+    letter-spacing: .07em;
+}
+.learning-module-page.learning-module-shell.ml-module-page .dl-memory-card strong { font-size: .92rem; overflow-wrap: anywhere; }
+.learning-module-page.learning-module-shell.ml-module-page .dl-memory-card small { color: var(--color-text-soft); line-height: 1.45; }
+.learning-module-page.learning-module-shell.ml-module-page .dl-current-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+    margin-top: .75rem;
+}
+.learning-module-page.learning-module-shell.ml-module-page .dl-current-strip span {
+    padding: .38rem .55rem;
+    border: 1px solid var(--color-border);
+    border-radius: .5rem;
+    background: #fff;
+    font-size: .78rem;
+    font-weight: 760;
+}
+@media (max-width: 900px) {
+    .learning-module-page.learning-module-shell.ml-module-page .dl-control-grid,
+    .learning-module-page.learning-module-shell.ml-module-page .dl-control-grid.two,
+    .learning-module-page.learning-module-shell.ml-module-page .dl-memory-grid { grid-template-columns: 1fr; }
 }

@@ -11,7 +11,8 @@
     </div>
 
     <div class="plot-shell">
-        <svg viewBox="0 0 820 430" role="img" aria-label="Class labels, sigmoid probabilities, and the current decision boundary">
+        <div class="logistic-plot-board ml-visual-board" tabindex="0">
+            <svg viewBox="0 0 820 430" role="img" aria-label="Class labels, sigmoid probabilities, and the current decision boundary">
             <rect x="62" y="30" width="710" height="320" rx="18" class="plot-bg" />
 
             @for (var tick = 0; tick <= 4; tick++)
@@ -60,7 +61,8 @@
 
             <text x="417" y="390" class="axis-title" text-anchor="middle">feature x</text>
             <text x="20" y="190" class="axis-title vertical" text-anchor="middle" transform="rotate(-90 20 190)">probability</text>
-        </svg>
+            </svg>
+        </div>
 
         <div class="decision-story" aria-label="Closest-to-boundary example">
             <div class="story-eyebrow">CLOSEST TO THE DECISION</div>

@@ -4,7 +4,8 @@
 <div class="dt-visual-shell">
     <section class="dt-space-card" aria-label="Decision tree training examples and active split">
         <header><div><span>TRAINING SPACE</span><strong>@SpaceTitle</strong></div><small>feature 1 × feature 2</small></header>
-        <div class="dt-space">
+        <div class="dt-space ml-visual-board" tabindex="0">
+            <div class="dt-space-stage">
             @if (HasVisibleSplit)
             {
                 if (SplitFeature == 0)
@@ -23,6 +24,7 @@
                 </span>
             }
             <span class="axis-label x">feature 1</span><span class="axis-label y">feature 2</span>
+            </div>
         </div>
         <div class="dt-space-legend"><span><i class="zero"></i>class 0</span><span><i class="one"></i>class 1</span><span><i class="line"></i>current split</span></div>
     </section>

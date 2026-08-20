@@ -273,10 +273,10 @@
     <section class="learning-section ai-home-section">
         <div class="section-heading">
             <div>
-                <span class="section-kicker">MACHINE LEARNING · PHASE 1–2 · 02–10</span>
-                <h2>Optimize, train, search, cluster, split, then reduce dimensions.</h2>
+                <span class="section-kicker">MACHINE LEARNING · PHASE 1–2 · 02–13</span>
+                <h2>Learn classical ML, then build and train a neural network.</h2>
             </div>
-            <p>Vector lives with Data Structures. Phase 1 now runs from Gradient Descent through PCA: optimization, regression, classification, neighbor search, spatial indexing, clustering, decision rules, and dimensionality reduction. Computational Graph is the planned bridge into Phase 2 Deep Learning.</p>
+            <p>Vector lives with Data Structures. Phase 1 runs from Gradient Descent through PCA. Phase 2 now continues directly with a neuron, a one-hidden-layer MLP, Backpropagation, and an optimizer comparison so every deep-learning lesson changes a real model state.</p>
         </div>
 
         <div class="path-grid module-grid">
@@ -328,11 +328,29 @@
                 <h3>PCA</h3><p>Center numeric data, find principal directions, and project examples into fewer dimensions while preserving as much variance as possible.</p>
                 <div class="concept-row"><span>Covariance</span><span>Eigenvectors</span><span>Projection</span></div><span class="card-link">Open lesson <b>→</b></span>
             </a>
-            <a class="path-card module-card planned-card" href="/deep-learning/computational-graph">
-                <div class="card-topline"><span class="path-index">10 · DEEP LEARNING</span><span class="status-pill planned">Planned</span></div>
+            <a class="path-card available module-card" href="/deep-learning/neuron-activations">
+                <div class="card-topline"><span class="path-index">10 · DEEP LEARNING</span><span class="status-pill live"><i></i> Ready</span></div>
                 <div class="path-icon graph-icon"><i></i><i></i><i></i><i></i></div>
-                <h3>Computational Graph</h3><p>Represent values and operations as explicit dependencies so forward evaluation and later backpropagation can be traced edge by edge.</p>
-                <div class="concept-row"><span>Nodes</span><span>Dependencies</span><span>Forward pass</span></div><span class="card-link">Preview lesson <b>→</b></span>
+                <h3>Neuron + Activation Functions</h3><p>Compute z = w·x + b, then see how ReLU, sigmoid, tanh, and Leaky ReLU transform the same score.</p>
+                <div class="concept-row"><span>Weights</span><span>Bias</span><span>Activation</span></div><span class="card-link">Open lesson <b>→</b></span>
+            </a>
+            <a class="path-card available module-card" href="/deep-learning/mlp">
+                <div class="card-topline"><span class="path-index">11 · DEEP LEARNING</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="path-icon graph-icon"><i></i><i></i><i></i><i></i></div>
+                <h3>Neural Network / MLP</h3><p>Connect several neurons into a hidden layer and trace a full input → hidden → output forward pass.</p>
+                <div class="concept-row"><span>Layers</span><span>Hidden units</span><span>Forward pass</span></div><span class="card-link">Open lesson <b>→</b></span>
+            </a>
+            <a class="path-card available module-card" href="/deep-learning/backpropagation">
+                <div class="card-topline"><span class="path-index">12 · DEEP LEARNING</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="path-icon graph-icon"><i></i><i></i><i></i><i></i></div>
+                <h3>Backpropagation</h3><p>Start at loss, propagate derivatives backward, and assign a gradient to every trainable weight and bias.</p>
+                <div class="concept-row"><span>Chain rule</span><span>Deltas</span><span>Gradients</span></div><span class="card-link">Open lesson <b>→</b></span>
+            </a>
+            <a class="path-card available module-card" href="/deep-learning/optimizers">
+                <div class="card-topline"><span class="path-index">13 · DEEP LEARNING</span><span class="status-pill live"><i></i> Ready</span></div>
+                <div class="path-icon graph-icon"><i></i><i></i><i></i><i></i></div>
+                <h3>SGD / Momentum / Adam</h3><p>Feed the same stochastic gradients into three update rules and compare parameter paths and optimizer memory.</p>
+                <div class="concept-row"><span>SGD</span><span>Momentum</span><span>Adam</span></div><span class="card-link">Open lesson <b>→</b></span>
             </a>
         </div>
     </section>

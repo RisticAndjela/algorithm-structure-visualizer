@@ -1,0 +1,39 @@
+@using AlgorithmVisualizer.Core.MachineLearning.DeepLearning.Common
+@using AlgorithmVisualizer.Core.MachineLearning.DeepLearning.Neuron
+
+<div class="neuron-stage" aria-label="Neuron forward flow">
+    <section class="neuron-inputs">
+        <span class="viz-kicker">INPUT × WEIGHT</span>
+        @for (var index = 0; index < Snapshot.Inputs.Length; index++)
+        {
+            var active = Snapshot.ActiveInputIndex == index;
+            <article class="branch-card @(active ? "active" : string.Empty)">
+                <span>x@(index + 1)</span>
+                <strong>@F(Snapshot.Inputs[index])</strong>
+                <small>× w@(index + 1) = @F(Snapshot.Weights[index])</small>
+                <b>@F(Snapshot.Contributions[index])</b>
+            </article>
+        }
+    </section>
+
+    <div class="flow-arrow" aria-hidden="true">→</div>
+
+    <article class="hub-card @(Snapshot.Phase is NeuronPhase.Summing ? "active" : string.Empty)">
+        <span>PRE-ACTIVATION</span>
+        <strong>z = @F(Snapshot.PreActivation)</strong>
+        <small>Σ weighted inputs + bias @F(Snapshot.Bias)</small>
+    </article>
+
+    <div class="flow-arrow" aria-hidden="true">→</div>
+
+    <article class="hub-card activation @(Snapshot.Phase is NeuronPhase.Activating or NeuronPhase.Complete ? "active" : string.Empty)">
+        <span>@ActivationMath.DisplayName(Snapshot.Activation).ToUpperInvariant()</span>
+        <strong>a = @F(Snapshot.Output)</strong>
+        <small>nonlinear transform of z</small>
+    </article>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public NeuronSnapshot Snapshot { get; set; } = default!;
+    private static string F(double value) => Math.Abs(value) < 1e-10 ? "0" : value.ToString("0.###");
+}

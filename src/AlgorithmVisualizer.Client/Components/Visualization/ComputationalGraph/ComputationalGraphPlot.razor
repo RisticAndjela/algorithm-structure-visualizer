@@ -1,0 +1,173 @@
+@using AlgorithmVisualizer.Core.MachineLearning.DeepLearning.ComputationalGraph
+
+@{
+    var layout = BuildLayout();
+    var edges = BuildEdges(layout);
+    var canvasWidth = CanvasWidth(layout);
+    var canvasHeight = CanvasHeight(layout);
+}
+
+<section class="cg-visual" aria-label="Computational graph visual state">
+    <div class="cg-legend" aria-label="Computational graph legend">
+        <span><i class="input-dot"></i>input value</span>
+        <span><i class="ready-dot"></i>ready operation</span>
+        <span><i class="active-dot"></i>current operation</span>
+        <span><i class="done-dot"></i>computed value</span>
+    </div>
+
+    <div class="cg-plot-scroll ml-visual-board" tabindex="0" aria-label="Scrollable computational graph canvas">
+        <div class="cg-stage" style="width:@(canvasWidth)px;height:@(canvasHeight)px;">
+            <svg class="cg-edge-layer" viewBox="0 0 @canvasWidth @canvasHeight" aria-hidden="true" preserveAspectRatio="none">
+                <defs>
+                    <marker id="cg-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z"></path>
+                    </marker>
+                </defs>
+                @foreach (var edge in edges)
+                {
+                    <line x1="@edge.X1" y1="@edge.Y1" x2="@edge.X2" y2="@edge.Y2" class="@EdgeClass(edge.ToNodeId)" marker-end="url(#cg-arrow)"></line>
+                }
+            </svg>
+
+            @foreach (var item in layout)
+            {
+                var node = Snapshot.Nodes[item.NodeId];
+                <article class="@NodeClass(node)" style="left:@(item.X)px;top:@(item.Y)px;" aria-label="@NodeAria(node)">
+                    <div class="cg-node-topline">
+                        <span>@NodeKindLabel(node)</span>
+                        @if (node.Id == Snapshot.OutputNodeId) { <strong>OUTPUT</strong> }
+                    </div>
+                    <div class="cg-node-main">
+                        <b>@node.Label</b>
+                        <em>@OperationSymbol(node.Operation)</em>
+                    </div>
+                    <div class="cg-node-value">@(node.HasValue ? Format(node.Value) : "?")</div>
+                    <div class="cg-node-status">@NodeStatus(node)</div>
+                </article>
+            }
+        </div>
+    </div>
+
+    <div class="cg-current-step">
+        <span>CURRENT STEP</span>
+        <strong>@Snapshot.FocusText</strong>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public ComputationalGraphSnapshot Snapshot { get; set; } = default!;
+
+    private LayoutNode[] BuildLayout()
+    {
+        var count = Snapshot.Nodes.Length;
+        var depth = new int[count];
+        for (var index = 0; index < count; index++) depth[index] = Snapshot.Nodes[index].Kind == ComputationalGraphNodeKind.Input ? 0 : -1;
+
+        for (var pass = 0; pass < count; pass++)
+        {
+            var changed = false;
+            for (var nodeId = 0; nodeId < count; nodeId++)
+            {
+                var node = Snapshot.Nodes[nodeId];
+                if (node.Kind == ComputationalGraphNodeKind.Input) continue;
+                var maxParentDepth = -1;
+                var ready = true;
+                for (var input = 0; input < node.InputNodeIds.Length; input++)
+                {
+                    var parentDepth = depth[node.InputNodeIds[input]];
+                    if (parentDepth < 0) { ready = false; break; }
+                    if (parentDepth > maxParentDepth) maxParentDepth = parentDepth;
+                }
+                if (!ready || depth[nodeId] == maxParentDepth + 1) continue;
+                depth[nodeId] = maxParentDepth + 1;
+                changed = true;
+            }
+            if (!changed) break;
+        }
+
+        var maxDepth = 0;
+        for (var index = 0; index < count; index++) if (depth[index] > maxDepth) maxDepth = depth[index];
+        var perDepth = new int[maxDepth + 1];
+        for (var index = 0; index < count; index++)
+        {
+            var d = Math.Max(0, depth[index]);
+            perDepth[d]++;
+        }
+        var slots = new int[perDepth.Length];
+        var maxRows = 1;
+        for (var d = 0; d < perDepth.Length; d++) if (perDepth[d] > maxRows) maxRows = perDepth[d];
+        var height = Math.Max(360, 120 + maxRows * 118);
+        var result = new LayoutNode[count];
+        for (var nodeId = 0; nodeId < count; nodeId++)
+        {
+            var d = Math.Max(0, depth[nodeId]);
+            var slot = slots[d]++;
+            var x = 52 + d * 215;
+            var usableHeight = height - 110;
+            var yCenter = 55 + (int)Math.Round((slot + 1d) * usableHeight / (perDepth[d] + 1d));
+            result[nodeId] = new LayoutNode(nodeId, x, yCenter - 47, d);
+        }
+        return result;
+    }
+
+    private EdgeLine[] BuildEdges(IReadOnlyList<LayoutNode> layout)
+    {
+        var total = 0;
+        for (var nodeId = 0; nodeId < Snapshot.Nodes.Length; nodeId++) total += Snapshot.Nodes[nodeId].InputNodeIds.Length;
+        var edges = new EdgeLine[total];
+        var edgeIndex = 0;
+        for (var toId = 0; toId < Snapshot.Nodes.Length; toId++)
+        {
+            var to = layout[toId];
+            var inputs = Snapshot.Nodes[toId].InputNodeIds;
+            for (var input = 0; input < inputs.Length; input++)
+            {
+                var from = layout[inputs[input]];
+                edges[edgeIndex++] = new EdgeLine(from.X + 154, from.Y + 47, to.X - 8, to.Y + 47, toId);
+            }
+        }
+        return edges;
+    }
+
+    private static int CanvasWidth(IReadOnlyList<LayoutNode> layout)
+    {
+        var max = 720;
+        for (var index = 0; index < layout.Count; index++) max = Math.Max(max, layout[index].X + 220);
+        return max;
+    }
+
+    private static int CanvasHeight(IReadOnlyList<LayoutNode> layout)
+    {
+        var max = 360;
+        for (var index = 0; index < layout.Count; index++) max = Math.Max(max, layout[index].Y + 145);
+        return max;
+    }
+
+    private string EdgeClass(int toNodeId)
+    {
+        var node = Snapshot.Nodes[toNodeId];
+        if (node.IsActive) return "active";
+        if (node.HasValue) return "computed";
+        if (node.IsReady) return "ready";
+        return string.Empty;
+    }
+
+    private string NodeClass(ComputationalGraphNodeSnapshot node)
+    {
+        var classes = "cg-node " + (node.Kind == ComputationalGraphNodeKind.Input ? "input" : "operation");
+        if (node.HasValue) classes += " computed";
+        if (node.IsReady) classes += " ready";
+        if (node.IsActive) classes += " active";
+        if (node.Id == Snapshot.OutputNodeId) classes += " output";
+        return classes;
+    }
+
+    private static string NodeKindLabel(ComputationalGraphNodeSnapshot node) => node.Kind == ComputationalGraphNodeKind.Input ? "VALUE" : "OPERATION";
+    private static string NodeStatus(ComputationalGraphNodeSnapshot node) => node.IsActive ? "evaluating now" : node.IsReady ? "ready to run" : node.HasValue ? (node.Kind == ComputationalGraphNodeKind.Input ? "available input" : $"computed · step {node.EvaluationOrder}") : "waiting for inputs";
+    private static string OperationSymbol(ComputationalGraphOperation operation) => operation switch { ComputationalGraphOperation.Add => "+", ComputationalGraphOperation.Subtract => "−", ComputationalGraphOperation.Multiply => "×", ComputationalGraphOperation.Square => "x²", _ => "value" };
+    private static string NodeAria(ComputationalGraphNodeSnapshot node) => $"{node.Label}, {NodeStatus(node)}, value {(node.HasValue ? Format(node.Value) : "not computed")}";
+    private static string Format(double value) => Math.Abs(value) < 1e-12d ? "0" : value.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+
+    private sealed record LayoutNode(int NodeId, int X, int Y, int Depth);
+    private sealed record EdgeLine(int X1, int Y1, int X2, int Y2, int ToNodeId);
+}
