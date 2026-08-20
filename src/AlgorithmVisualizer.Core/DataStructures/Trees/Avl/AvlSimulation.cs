@@ -183,6 +183,64 @@ public sealed class AvlSimulation : SimulationAlgorithmBase
                 initialCount, heightBefore, AvlDeleteCase.None);
         }, cancellationToken);
 
+    public Task<AvlOperationResult> SearchByIdAsync(string normalizedId, CancellationToken cancellationToken = default) =>
+        ExecuteExclusiveAsync(async () =>
+        {
+            var initialCount = _count;
+            var heightBefore = Height;
+            var state = new IdSearchState();
+            var stats = new RebalanceStats();
+
+            if (_root is null)
+            {
+                await NextStepAsync("The AVL tree is empty, so no node ID can be present.", cancellationToken);
+                return BuildResult(
+                    AvlOperationKind.Search, 0, succeeded: false, duplicateRejected: false, null,
+                    comparisons: 0, successorChecks: 0, stats,
+                    initialCount, heightBefore, AvlDeleteCase.None, normalizedId);
+            }
+
+            var found = await SearchByIdDepthFirstAsync(_root, normalizedId, state, cancellationToken);
+            if (found is null)
+            {
+                await NextStepAsync(
+                    $"ID #{normalizedId} was not found after checking all {state.Comparisons} node object(s). AVL balancing keeps value search logarithmic, but it does not order generated IDs, so ID search is O(n) in the worst case.",
+                    cancellationToken);
+            }
+
+            return BuildResult(
+                AvlOperationKind.Search, found?.Value ?? 0, found is not null, duplicateRejected: false, found?.Id,
+                state.Comparisons, successorChecks: 0, stats,
+                initialCount, heightBefore, AvlDeleteCase.None, normalizedId);
+        }, cancellationToken);
+
+    private async Task<AvlNode?> SearchByIdDepthFirstAsync(
+        AvlNode? node,
+        string normalizedId,
+        IdSearchState state,
+        CancellationToken cancellationToken)
+    {
+        if (node is null) return null;
+
+        cancellationToken.ThrowIfCancellationRequested();
+        state.Comparisons++;
+        var match = node.Id.ToString("N").StartsWith(normalizedId, StringComparison.OrdinalIgnoreCase);
+        node.VisualState = match ? AvlNodeVisualState.Matched : AvlNodeVisualState.Checking;
+        NotifyChanged();
+
+        await NextStepAsync(
+            match
+                ? $"Check node {node.Value} (#{node.DisplayId}): ID matches #{normalizedId}."
+                : $"Check node {node.Value} (#{node.DisplayId}): ID does not match. Height balance helps numeric-key search, but it gives no direction for a generated ID, so both subtrees may still contain the target.",
+            cancellationToken);
+
+        if (match) return node;
+        node.VisualState = AvlNodeVisualState.Visited;
+        var leftMatch = await SearchByIdDepthFirstAsync(node.Left, normalizedId, state, cancellationToken);
+        if (leftMatch is not null) return leftMatch;
+        return await SearchByIdDepthFirstAsync(node.Right, normalizedId, state, cancellationToken);
+    }
+
     public Task<AvlOperationResult> DeleteAsync(int value, CancellationToken cancellationToken = default) =>
         ExecuteExclusiveAsync(async () =>
         {
@@ -640,6 +698,11 @@ public sealed class AvlSimulation : SimulationAlgorithmBase
         }
     }
 
+    private sealed class IdSearchState
+    {
+        public int Comparisons { get; set; }
+    }
+
     private AvlOperationResult BuildResult(
         AvlOperationKind operation,
         int requestedValue,
@@ -651,7 +714,8 @@ public sealed class AvlSimulation : SimulationAlgorithmBase
         RebalanceStats stats,
         int initialCount,
         int heightBefore,
-        AvlDeleteCase deleteCase) =>
+        AvlDeleteCase deleteCase,
+        string? requestedDisplayId = null) =>
         new(
             operation,
             requestedValue,
@@ -667,7 +731,8 @@ public sealed class AvlSimulation : SimulationAlgorithmBase
             _count,
             heightBefore,
             Height,
-            deleteCase);
+            deleteCase,
+            requestedDisplayId);
 
     private async Task<TResult> ExecuteExclusiveAsync<TResult>(
         Func<Task<TResult>> operation,

@@ -80,7 +80,7 @@ Examples:
 - BST uses explicit `BstNode` parent/left/right references and manual comparison/transplant logic rather than a sorted collection or library tree. Its optional `Balance BST` action runs manual Day-Stout-Warren rotations over those same nodes; ordinary BST mutations remain non-self-balancing.
 - AVL uses explicit `AvlNode` references, manually maintained cached heights, balance-factor checks, and explicit left/right rotations rather than a library balancing structure.
 - Red-Black Tree uses explicit `RedBlackNode` references and a color field, treats null children as conceptual black NIL leaves, and implements recoloring plus insertion/deletion fix-up with manual rotations rather than a library balanced tree.
-- Heap family modules use a shared custom raw-array-backed `ManualHeapArray<HeapElement>`, explicit index arithmetic, and manual swaps rather than `PriorityQueue`, `List`, sorting, or another library heap. `HeapSimulation` is the Binary Heap (`d=2`) specialization; `DaryHeapSimulation` generalizes relationships to configurable `d`.
+- Heap uses one custom raw-array-backed `ManualHeapArray<HeapElement>` and one `DaryHeapSimulation`, with explicit index arithmetic and manual swaps rather than `PriorityQueue`, `List`, sorting, or another library heap. Binary Heap is the `d = 2` mode of this same engine.
 - BFS consumes the existing Graph snapshot and implements FIFO scheduling over the project's manual dynamic-array storage with a head cursor rather than framework `Queue<T>`; dequeue advances the cursor instead of shifting the array. `GraphNeighborSnapshot.VertexIndex` gives BFS/DFS direct access to the adjacent vertex in the immutable snapshot, preserving the taught `O(V + E)` traversal rather than hiding an `O(V)` lookup inside each edge inspection. DFS consumes the same Graph; recursive mode exposes real call-stack/backtracking behavior and iterative mode uses the same manual storage as an explicit LIFO frontier rather than framework `Stack<T>`.
 - Dijkstra consumes the same Graph snapshot. Basic mode selects the next finite unsettled minimum with an explicit linear scan. Advanced mode uses a Dijkstra-specific binary min-heap frontier built on the existing `ManualHeapArray<T>` storage, with lazy duplicate entries instead of framework `PriorityQueue<TElement,TPriority>`. Both variants share the same explicit relaxation logic and reject negative edge weights before traversal.
 
@@ -170,21 +170,6 @@ The broader Heap learning module makes the heap-family distinction concrete with
 - Visual and Memory views that compare directly with Binary Heap;
 - arity changes only while empty.
 
-### Binary Heap
-
-The dedicated Binary Heap specialization adds:
-
-- Min Heap and Max Heap semantics;
-- complete-tree shape encoded by array indexes;
-- custom manual array growth;
-- stable `HeapElement` identity across index swaps;
-- insert through append + bubble-up;
-- extract-root through last-element replacement + bubble-down;
-- truthful O(n) arbitrary search;
-- delete-by-value with linear locate plus upward/downward repair;
-- Visual state with tree + array synchronization;
-- Memory state with used/reserved slots and capacity;
-- heap-specific guided practice and persistent progress.
 
 ### Graph
 

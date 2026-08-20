@@ -45,17 +45,11 @@
         <div class="object-grid">
             @foreach (var node in FlatNodes)
             {
-                <article class="node-object @GetStateClass(node.VisualState)" @key="node.Id">
-                    <div class="object-heading">
-                        <span>MEM-#@node.DisplayId</span>
-                        <strong>value = @node.Value</strong>
-                    </div>
-                    <dl>
-                        <div><dt>parent</dt><dd>@FormatReference(node.ParentDisplayId)</dd></div>
-                        <div><dt>left</dt><dd>@FormatReference(node.Left?.DisplayId)</dd></div>
-                        <div><dt>right</dt><dd>@FormatReference(node.Right?.DisplayId)</dd></div>
-                    </dl>
-                </article>
+                <MemoryStateCard Label="@($"MEM-#{node.DisplayId}")" Status="NODE" Value="@($"value = {node.Value}")" Identity="@($"#{node.DisplayId}")" StateClass="@GetStateClass(node.VisualState)" @key="node.Id">
+                    <MemoryStateDetailRow Label="parent" Value="@FormatReference(node.ParentDisplayId)" />
+                    <MemoryStateDetailRow Label="left" Value="@FormatReference(node.Left?.DisplayId)" />
+                    <MemoryStateDetailRow Label="right" Value="@FormatReference(node.Right?.DisplayId)" />
+                </MemoryStateCard>
             }
         </div>
     }
@@ -98,16 +92,16 @@
     }
 
     private static string FormatReference(string? displayId) =>
-        string.IsNullOrWhiteSpace(displayId) ? "null" : $"ref → #{displayId}";
+        string.IsNullOrWhiteSpace(displayId) ? "null" : $"ref → MEM-#{displayId}";
 
     private static string GetStateClass(BstNodeVisualState state) => state switch
     {
-        BstNodeVisualState.Checking => "is-checking",
-        BstNodeVisualState.Matched => "is-matched",
-        BstNodeVisualState.Adding => "is-adding",
-        BstNodeVisualState.Removing => "is-removing",
-        BstNodeVisualState.Replacement => "is-replacement",
-        BstNodeVisualState.PointerTarget => "is-pointer",
+        BstNodeVisualState.Checking => "checking",
+        BstNodeVisualState.Matched => "matched",
+        BstNodeVisualState.Adding => "added",
+        BstNodeVisualState.Removing => "removing",
+        BstNodeVisualState.Replacement => "replacement",
+        BstNodeVisualState.PointerTarget => "pointer",
         _ => string.Empty
     };
 }

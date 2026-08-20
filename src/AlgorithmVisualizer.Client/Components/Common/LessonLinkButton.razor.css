@@ -1,0 +1,33 @@
+.lesson-link-button {
+    width: fit-content;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .42rem;
+    min-height: 2.55rem;
+    box-sizing: border-box;
+    padding: .58rem .78rem;
+    border: 1px solid rgba(103, 87, 229, .2);
+    border-radius: .72rem;
+    color: #4e3fc0;
+    background: #fff;
+    box-shadow: 0 5px 16px rgba(76, 62, 177, .06);
+    font-size: .84rem;
+    font-weight: 820;
+    line-height: 1.25;
+    text-decoration: none;
+    transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+
+.lesson-link-button:hover {
+    border-color: rgba(103, 87, 229, .42);
+    background: #faf9ff;
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+
+.lesson-link-button.compact {
+    min-height: 2.25rem;
+    padding: .45rem .64rem;
+    font-size: .8rem;
+}

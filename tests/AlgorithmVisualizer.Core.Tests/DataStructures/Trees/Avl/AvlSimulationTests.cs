@@ -73,6 +73,23 @@ public sealed class AvlSimulationTests
     }
 
     [Fact]
+    public async Task SearchByIdAsync_UsesIdentityScanAndKeepsTreeBalanced()
+    {
+        var tree = await CreateClassicTreeAsync();
+        var snapshot = Assert.IsType<AvlNodeSnapshot>(tree.CreateSnapshot());
+        var target = Assert.IsType<AvlNodeSnapshot>(snapshot.Right);
+
+        var result = await tree.SearchByIdAsync(target.DisplayId);
+
+        Assert.True(result.Succeeded);
+        Assert.True(result.IsIdLookup);
+        Assert.Equal(target.Id, result.AffectedNodeId);
+        Assert.Equal("O(n)", result.WorstCaseComplexity);
+        Assert.Equal(0, result.RotationCount);
+        AssertAvlInvariant(Assert.IsType<AvlNodeSnapshot>(tree.CreateSnapshot()));
+    }
+
+    [Fact]
     public async Task DeleteAsync_LeafRemovesOnlyThatLink()
     {
         var tree = CreateTree();

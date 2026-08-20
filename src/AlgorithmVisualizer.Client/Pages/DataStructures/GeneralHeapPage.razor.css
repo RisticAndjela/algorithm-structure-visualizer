@@ -811,3 +811,126 @@
 .heap-page button,
 .heap-page input,
 .heap-page select { font-size: .9rem; }
+
+
+@media (min-width: 1050px) {
+    .task-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* Compact heap configuration + BST-style operation row. */
+.heap-config-strip {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: max-content max-content minmax(12rem, 1fr);
+    align-items: center;
+    gap: .7rem 1rem;
+    padding: .68rem .78rem;
+    border: 1px solid #e4e6ed;
+    border-radius: .85rem;
+    background: #fbfbfd;
+}
+
+.heap-config-group {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: .48rem;
+}
+
+.heap-config-buttons {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .3rem;
+}
+
+.heap-config-buttons button {
+    min-height: 2.1rem;
+    padding: .38rem .58rem;
+    border: 1px solid #dfe1e7;
+    border-radius: .58rem;
+    color: #5e6370;
+    background: #fff;
+    cursor: pointer;
+    font-size: .7rem !important;
+    font-weight: 780;
+}
+
+.heap-config-buttons button.active {
+    border-color: var(--color-primary);
+    color: #fff;
+    background: var(--color-primary);
+}
+
+.heap-config-buttons button:disabled {
+    cursor: not-allowed;
+    opacity: .5;
+}
+
+.heap-config-note {
+    min-width: 0;
+    color: var(--color-text-muted);
+    font-size: .68rem !important;
+    line-height: 1.4;
+}
+
+.operation-panel {
+    grid-template-columns: minmax(12rem, 1.15fr) repeat(5, minmax(9rem, .82fr)) !important;
+    gap: .62rem;
+}
+
+.value-card {
+    align-content: start;
+    gap: .48rem;
+    padding: .76rem;
+    border-radius: .84rem;
+}
+
+.value-card input {
+    min-height: 2.4rem;
+    padding: .48rem .62rem;
+    font-size: .82rem;
+}
+
+.heap-page .operation-panel .value-card small {
+    font-size: .68rem;
+    line-height: 1.4;
+}
+
+.heap-page .operation-panel button {
+    font-size: .72rem;
+}
+
+@media (max-width: 1180px) {
+    .heap-config-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .heap-config-note {
+        grid-column: 1 / -1;
+    }
+
+    .operation-panel {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+
+    .value-card {
+        grid-column: auto !important;
+    }
+}
+
+@media (max-width: 760px) {
+    .heap-config-strip,
+    .operation-panel {
+        grid-template-columns: 1fr !important;
+    }
+
+    .heap-config-group {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .heap-config-note {
+        grid-column: auto;
+    }
+}

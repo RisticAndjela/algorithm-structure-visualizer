@@ -182,6 +182,66 @@ public sealed class BstSimulation : SimulationAlgorithmBase
                 initialCount, _count, heightBefore, Height, BstDeleteCase.None);
         }, cancellationToken);
 
+    public Task<BstOperationResult> SearchByIdAsync(string normalizedId, CancellationToken cancellationToken = default) =>
+        ExecuteExclusiveAsync(async () =>
+        {
+            var initialCount = _count;
+            var heightBefore = Height;
+            var state = new IdSearchState();
+
+            if (_root is null)
+            {
+                await NextStepAsync("The tree is empty, so no node ID can be present.", cancellationToken);
+                return new BstOperationResult(
+                    BstOperationKind.Search, 0, false, false, null,
+                    Comparisons: 0, SuccessorChecks: 0,
+                    initialCount, _count, heightBefore, Height, BstDeleteCase.None,
+                    RequestedDisplayId: normalizedId);
+            }
+
+            var found = await SearchByIdDepthFirstAsync(_root, normalizedId, state, cancellationToken);
+            if (found is null)
+            {
+                await NextStepAsync(
+                    $"ID #{normalizedId} was not found after checking all {state.Comparisons} node object(s). BST ordering is based on value, not generated ID, so ID search cannot discard a whole branch and is O(n) in the worst case.",
+                    cancellationToken);
+            }
+
+            return new BstOperationResult(
+                BstOperationKind.Search, found?.Value ?? 0, found is not null, false, found?.Id,
+                state.Comparisons, SuccessorChecks: 0,
+                initialCount, _count, heightBefore, Height, BstDeleteCase.None,
+                RequestedDisplayId: normalizedId);
+        }, cancellationToken);
+
+    private async Task<BstNode?> SearchByIdDepthFirstAsync(
+        BstNode? node,
+        string normalizedId,
+        IdSearchState state,
+        CancellationToken cancellationToken)
+    {
+        if (node is null) return null;
+
+        cancellationToken.ThrowIfCancellationRequested();
+        state.Comparisons++;
+        var match = node.Id.ToString("N").StartsWith(normalizedId, StringComparison.OrdinalIgnoreCase);
+        node.VisualState = match ? BstNodeVisualState.Matched : BstNodeVisualState.Checking;
+        NotifyChanged();
+
+        await NextStepAsync(
+            match
+                ? $"Check node {node.Value} (#{node.DisplayId}): ID matches #{normalizedId}. Search stops after {state.Comparisons} node check(s)."
+                : $"Check node {node.Value} (#{node.DisplayId}): ID does not match #{normalizedId}. Unlike the numeric key, this ID has no BST ordering rule, so neither subtree can be eliminated safely.",
+            cancellationToken);
+
+        if (match) return node;
+        node.VisualState = BstNodeVisualState.Visited;
+
+        var leftMatch = await SearchByIdDepthFirstAsync(node.Left, normalizedId, state, cancellationToken);
+        if (leftMatch is not null) return leftMatch;
+        return await SearchByIdDepthFirstAsync(node.Right, normalizedId, state, cancellationToken);
+    }
+
     public Task<BstOperationResult> DeleteAsync(int value, CancellationToken cancellationToken = default) =>
         ExecuteExclusiveAsync(async () =>
         {
@@ -530,6 +590,11 @@ public sealed class BstSimulation : SimulationAlgorithmBase
             heightBefore,
             Height,
             deleteCase);
+
+    private sealed class IdSearchState
+    {
+        public int Comparisons { get; set; }
+    }
 
     private async Task<TResult> ExecuteExclusiveAsync<TResult>(
         Func<Task<TResult>> operation,

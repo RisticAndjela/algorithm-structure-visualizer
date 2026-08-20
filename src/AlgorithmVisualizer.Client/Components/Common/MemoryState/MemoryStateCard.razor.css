@@ -1,0 +1,78 @@
+.memory-state-card {
+    min-width: 0;
+    display: grid;
+    align-content: start;
+    gap: .72rem;
+    padding: .82rem;
+    border: 2px solid #dfe1e7;
+    border-radius: .92rem;
+    background: #fff;
+    transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+}
+
+.memory-state-card > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .6rem;
+    color: #898d99;
+    font-size: .72rem;
+    font-weight: 850;
+    letter-spacing: .06em;
+}
+
+.memory-state-card > header strong {
+    color: #5f6470;
+    font-size: .7rem;
+}
+
+.memory-card-value {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .65rem;
+}
+
+.memory-card-value strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: #303540;
+    font-size: 1.16rem;
+}
+
+.memory-card-value span {
+    color: #777c89;
+    font-size: .78rem;
+    font-weight: 720;
+}
+
+.memory-card-details {
+    display: grid;
+    gap: .36rem;
+    padding-top: .58rem;
+    border-top: 1px solid #ececf1;
+    color: #707684;
+    font-size: .78rem;
+    line-height: 1.42;
+}
+
+.memory-state-card.reserved {
+    border-style: dashed;
+    border-width: 1px;
+    background: #fafafd;
+}
+
+.memory-state-card.checking { background:#fff7e8; border-color:#d49b3d; }
+.memory-state-card.candidate { background:#eef5ff; border-color:#4d78c7; }
+.memory-state-card.swapping,
+.memory-state-card.rotating { background:#f0edff; border-color:#6757e5; transform: translateY(-1px); }
+.memory-state-card.added,
+.memory-state-card.matched,
+.memory-state-card.fixed { background:#eaf9f5; border-color:#1b9989; }
+.memory-state-card.removing,
+.memory-state-card.violation { background:#fff0f1; border-color:#d85d69; }
+.memory-state-card.repairing,
+.memory-state-card.recolored { background:#f7f0ff; border-color:#9b64d6; }
+.memory-state-card.replacement,
+.memory-state-card.relative { background:#f4f8ff; border-color:#7d9fd1; }
+.memory-state-card.pointer { border-style:dashed; border-color:#a99ef0; }

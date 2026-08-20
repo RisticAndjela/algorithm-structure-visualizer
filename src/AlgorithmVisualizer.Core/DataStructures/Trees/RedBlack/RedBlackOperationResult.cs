@@ -52,10 +52,12 @@ public sealed record RedBlackOperationResult(
     int HeightAfter,
     int BlackHeightBefore,
     int BlackHeightAfter,
-    RedBlackDeleteCase DeleteCase)
+    RedBlackDeleteCase DeleteCase,
+    string? RequestedDisplayId = null)
 {
     public int TotalChecks => Comparisons + SuccessorChecks + FixupChecks;
-    public string WorstCaseComplexity => "O(log n)";
+    public bool IsIdLookup => Operation == RedBlackOperationKind.Search && !string.IsNullOrWhiteSpace(RequestedDisplayId);
+    public string WorstCaseComplexity => IsIdLookup ? "O(n)" : "O(log n)";
     public string CurrentRunComplexity => TotalChecks <= 1 && RotationCount == 0 ? "Θ(1)" : "Θ(k)";
 
     public string? AffectedDisplayId => AffectedNodeId.HasValue

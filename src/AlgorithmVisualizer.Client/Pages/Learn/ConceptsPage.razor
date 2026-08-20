@@ -47,7 +47,7 @@
                 <span>DATA STRUCTURES · EASY → HARD</span>
                 <a href="/learn/concepts/queue-stack">Queue &amp; Stack</a>
                 <a href="/learn/concepts/bst">BST</a>
-                <a href="/learn/concepts/binary-heap">Binary Heap</a>
+                <a href="/learn/concepts/general-heap">Heap (binary + d-ary)</a>
                 <a href="/learn/concepts/general-heap">d-ary Heap</a>
                 <a href="/learn/concepts/avl-balance">AVL</a>
                 <a href="/learn/concepts/vector">Vector</a>
@@ -345,7 +345,7 @@
 
     <section id="heap" class='@SectionClass("heap")'>
         <div class="section-heading">
-            <span>S3–4</span>
+            <span>S3</span>
             <div><h2>Heap vs Binary Heap: family versus one concrete implementation</h2><p>The word <strong>heap</strong> describes a family of priority-ordered data structures. <strong>Binary Heap</strong> is one specific heap whose complete tree allows at most two children per parent.</p></div>
         </div>
         <div class="concept-grid two">
@@ -355,17 +355,11 @@
                 <p>In a Min Heap, each parent has priority over its children; in a Max Heap, the rule is reversed. The family can be implemented with different branching factors and specialized structures.</p>
                 <div class="example"><strong>Min rule:</strong> parent ≤ every child. <strong>Max rule:</strong> parent ≥ every child.</div>
             </article>
-            <article id="binary-heap" class='@CardClass("binary-heap", "concept-card anchor-card")'>
-                <span class="term queue">BINARY HEAP</span>
-                <h3>d = 2: at most two children</h3>
-                <p>The classic Binary Heap is a complete binary tree stored compactly in an array. Its index formulas are <code>parent=(i-1)/2</code>, <code>left=2i+1</code>, and <code>right=2i+2</code>.</p>
-                <a href="/structures/binary-heap">Open Binary Heap lab →</a>
-            </article>
             <article id="general-heap" class='@CardClass("general-heap", "concept-card anchor-card")'>
                 <span class="term">D-ARY HEAP</span>
-                <h3>Generalize the same idea to d children</h3>
+                <h3>One implementation: d = 2 is Binary Heap</h3>
                 <p>For a complete d-ary heap, <code>parent=(i-1)/d</code> and a node's possible children occupy <code>di+1</code> through <code>di+d</code>. Binary Heap is exactly the d=2 case.</p>
-                <a href="/structures/heap">Open generalized Heap lab →</a>
+                <a href="/structures/heap">Open the unified Heap lab →</a>
             </article>
             <article class="concept-card">
                 <span class="term queue">WHY USE IT?</span>
@@ -376,7 +370,7 @@
         </div>
         <div class="plain-note">
             <strong>Why “ordinary Heap” is not a second structure beside Binary Heap</strong>
-            <p>“Heap” is the umbrella concept, so implementing a second lab called ordinary Heap without choosing a concrete representation would be misleading. This project therefore makes the distinction executable with a generalized <strong>d-ary heap</strong>, while keeping the existing Binary Heap as the familiar <strong>d = 2</strong> specialization.</p>
+            <p>“Heap” is the umbrella concept, so implementing a second lab called ordinary Heap without choosing a concrete representation would be misleading. This project therefore makes the distinction executable with a generalized <strong>d-ary heap</strong>, with <strong>d = 2</strong> as the familiar Binary Heap specialization inside the same lab.</p>
         </div>
         <div class="plain-note">
             <strong>Branching factor changes the trade-off</strong>
@@ -388,13 +382,13 @@
         </div>
         <div class="plain-note">
             <strong>What a heap swap means in memory</strong>
-            <p>Both heap labs reuse stable <code>HeapElement</code> objects inside our manually grown raw array. A swap exchanges references between array indexes. IDs and values remain attached to the same objects; only their indexes — and therefore their derived parent/child relationships — change.</p>
+            <p>The unified heap lab reuses stable <code>HeapElement</code> objects inside our manually grown raw array. A swap exchanges references between array indexes. IDs and values remain attached to the same objects; only their indexes — and therefore their derived parent/child relationships — change.</p>
         </div>
     </section>
 
     <section id="avl-balance" class='@SectionClass("avl-balance")'>
         <div class="section-heading">
-            <span>S5</span>
+            <span>S4</span>
             <div><h2>Balance factor and rotations</h2><p>AVL keeps the BST ordering rule, then repairs shape whenever one side becomes more than one level taller.</p></div>
         </div>
         <div class="concept-grid two">
@@ -420,7 +414,7 @@
 
     <section id="vector" class='@SectionClass("vector")'>
         <div class="section-heading">
-            <span>S6</span>
+            <span>S5</span>
             <div><h2>Vector: one ordered dimension of numeric data</h2><p>A vector is an ordered sequence of numbers. Each component has a stable index, so position is part of the structure and cannot be silently rearranged.</p></div>
         </div>
         <div class="concept-grid two">
@@ -439,7 +433,7 @@
     <section id="matrix" class='@SectionClass("matrix")'>
         <span id="matrices" class="anchor-target" aria-hidden="true"></span>
         <div class="section-heading">
-            <span>S7</span>
+            <span>S6</span>
             <div><h2>Matrix: dimensions, memory and why it matters</h2><p>A matrix is a rectangular grid of values. The shape is part of the data, and many operations are legal only when dimensions are compatible.</p></div>
         </div>
         <div class="concept-grid two">
@@ -491,7 +485,7 @@
 
     <section id="graph" class='@SectionClass("graph")'>
         <div class="section-heading">
-            <span>S8</span>
+            <span>S7</span>
             <div><h2>Graph: vertices, edges and adjacency</h2><p>A graph models relationships. Vertices are entities; edges describe which entities are connected and may also carry direction or weight.</p></div>
         </div>
         <div class="concept-grid two">
@@ -507,7 +501,7 @@
 
     <section id="red-black" class='@SectionClass("red-black")'>
         <div class="section-heading">
-            <span>S9</span>
+            <span>S8</span>
             <div><h2>Red-Black invariants and black-height</h2><p>Red-Black Tree keeps the same BST ordering, but it controls shape indirectly through color rules instead of AVL's exact balance factor.</p></div>
         </div>
         <div class="concept-grid two">
@@ -771,7 +765,7 @@
             <article class="concept-card"><span class="term">CRUD</span><h3>Heap Sort is snapshot-based, unlike a dynamic Heap ADT</h3><p>READ is safe, but CREATE/UPDATE/DELETE during sorting invalidates heap order, the boundary, and the finished-suffix proof, so restart on the changed data. For continuously changing priorities, use the Binary Heap structure instead.</p></article>
             <article class="concept-card"><span class="term queue">WHEN TO USE</span><h3>Choose it for strict memory + worst-case guarantees</h3><p>Heap Sort is useful when O(1) auxiliary array space and guaranteed Θ(n log n) matter. Prefer Merge Sort when stability matters, Quick Sort for strong average in-memory performance, or Insertion Sort for small/nearly-sorted online data.</p></article>
         </div>
-        <div class="concept-lesson-links"><a href="/sorting/heap">Open the Heap Sort lab →</a><a href="/structures/binary-heap">Review Binary Heap →</a><a href="/sorting/quick">Compare with Quick Sort →</a></div>
+        <div class="concept-lesson-links"><a href="/sorting/heap">Open the Heap Sort lab →</a><a href="/structures/heap">Review Binary Heap →</a><a href="/sorting/quick">Compare with Quick Sort →</a></div>
     </section>
 
     <section id="topological-sort" class='@SectionClass("topological-sort")'>
@@ -929,7 +923,7 @@
             <article class='@CardClass("dijkstra-complexity", "concept-card")'><span class="term">COMPLEXITY</span><h3>Selection data structure changes the runtime</h3><p>Relaxation still inspects adjacency entries. The difference is how the next smallest tentative vertex is selected: O(V) scanning per round versus logarithmic min-heap push/pop work.</p><div class="example"><strong>Memory:</strong> dist[], parent[], settled[] are O(V); advanced mode adds a frontier whose lazy entries can exceed V transiently.</div></article>
             <article class="concept-card"><span class="term">BFS vs DIJKSTRA</span><h3>Equal weights do not need a priority queue</h3><p>If every edge has the same cost, BFS already gives minimum edge count in O(V + E). Dijkstra is useful when different non-negative weights change which route is cheapest.</p></article>
         </div>
-        <div class="concept-lesson-links"><a href="/graph-algorithms/dijkstra">Open the Dijkstra lab →</a><a href="/search/bfs">Compare with BFS →</a><a href="/structures/binary-heap">Review Binary Heap →</a></div>
+        <div class="concept-lesson-links"><a href="/graph-algorithms/dijkstra">Open the Dijkstra lab →</a><a href="/search/bfs">Compare with BFS →</a><a href="/structures/heap">Review Binary Heap →</a></div>
     </section>
 
     <section id="mst" class='@SectionClass("mst")'>
@@ -947,7 +941,7 @@
             <article class='@CardClass("mst-complexity", "concept-card")'><span class="term">COMPLEXITY</span><h3>Both implementations are O(E log E)</h3><p>Prim's project-owned edge heap performs logarithmic push/pop work for frontier candidates. Kruskal manually merge-sorts E edge indexes, then DSU operations are near-constant amortized.</p><div class="example"><strong>Extra memory:</strong> O(V + E) for frontier/sorted edge indexes plus membership or DSU state.</div></article>
             <article class="concept-card"><span class="term">MST vs SHORTEST PATH</span><h3>Minimum total network cost is not minimum route cost</h3><p>An MST minimizes the sum of all chosen connections. Dijkstra minimizes the path from one source to each destination. An MST path between two vertices can be longer than their true shortest path in the original graph.</p></article>
         </div>
-        <div class="concept-lesson-links"><a href="/graph-algorithms/mst">Open the MST lab →</a><a href="/graph-algorithms/dijkstra">Compare with Dijkstra →</a><a href="/structures/binary-heap">Review Binary Heap →</a></div>
+        <div class="concept-lesson-links"><a href="/graph-algorithms/mst">Open the MST lab →</a><a href="/graph-algorithms/dijkstra">Compare with Dijkstra →</a><a href="/structures/heap">Review Binary Heap →</a></div>
     </section>
     <section id="gradient-descent" class='@SectionClass("gradient-descent")'>
         <div class="section-heading">
@@ -1192,8 +1186,7 @@
         "queue-stack" => "Queue & Stack: LIFO and FIFO",
         "bst" => "Binary Search Tree: height and search paths",
         "bst-balancing" => "BST balancing with Day-Stout-Warren",
-        "binary-heap" => "Binary Heap",
-        "general-heap" => "Generalized d-ary Heap",
+        "general-heap" => "Heap family: binary + d-ary",
         "avl-balance" => "AVL balancing and rotations",
         "matrix" => "Matrix: dimensions and memory",
         "matrix-compatibility" => "Matrix operation compatibility",
@@ -1273,7 +1266,6 @@
         "big-o" => "/sorting/bubble",
         "queue-stack" => "/structures/queue-stack",
         "bst" or "bst-balancing" => "/structures/bst",
-        "binary-heap" => "/structures/binary-heap",
         "general-heap" => "/structures/heap",
         "avl-balance" => "/structures/avl",
         "matrix" or "matrix-compatibility" => "/structures/matrix",
@@ -1334,7 +1326,7 @@
             "lifo-fifo" => "queue-stack",
             "tree-height" => "bst",
             "matrices" => "matrix",
-            "heap" => "binary-heap",
+            "heap" or "binary-heap" => "general-heap",
             var value => value
         };
     }
@@ -1342,8 +1334,7 @@
     private static bool IsKnownTopic(string topic) => topic switch
     {
         "visual-vs-memory" or "memory" or "identity" or "big-o" or
-        "queue-stack" or "bst" or "bst-balancing" or "binary-heap" or
-        "general-heap" or "avl-balance" or "matrix" or "matrix-compatibility" or
+        "queue-stack" or "bst" or "bst-balancing" or "general-heap" or "avl-balance" or "matrix" or "matrix-compatibility" or
         "vector" or "vector-memory" or "vector-dot-product" or "vector-norms" or "vector-similarity" or "vector-ml" or
         "gradient-descent" or "gradient-descent-loss" or "gradient-descent-update" or "gradient-descent-learning-rate" or "gradient-descent-convergence" or
         "linear-regression" or "linear-regression-prediction" or "linear-regression-residual" or "linear-regression-mse" or "linear-regression-gradient" or "logistic-regression" or "knn" or "kd-tree" or "k-means" or "decision-tree" or "pca" or "neuron-activations" or "mlp" or "backpropagation" or "optimizers" or "sparse-matrix" or "pagerank" or "spectral-clustering" or "message-passing" or

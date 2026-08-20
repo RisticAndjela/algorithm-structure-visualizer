@@ -1046,3 +1046,76 @@ button:disabled {
         flex-direction: column;
     }
 }
+
+/* The graph lab owns the available content width; only the canvas itself scrolls/pans. */
+.graph-page {
+    width: 100%;
+    max-width: none;
+}
+
+/* Compact playground chrome: topology is the focus, not oversized controls. */
+.lab-shell { padding: .9rem; }
+.canvas-note { margin-top: .35rem; font-size: .84rem; }
+.mode-selector {
+    gap: .55rem;
+    padding: .68rem .75rem;
+    margin: .7rem 0;
+}
+.mode-selector span,
+.operation-group label > span { font-size: .72rem; }
+.mode-selector small { font-size: .78rem; line-height: 1.4; }
+.mode-buttons button,
+.action-row button,
+.reset-strip button { padding: .52rem .64rem; font-size: .84rem; }
+
+.operation-layout {
+    grid-template-columns: minmax(18rem, .78fr) minmax(24rem, 1.22fr);
+    gap: .65rem;
+}
+.operation-group {
+    gap: .62rem;
+    padding: .72rem;
+}
+.operation-title > span { width: 30px; height: 30px; font-size: .78rem; }
+.operation-title strong { font-size: .92rem; }
+.operation-title small,
+.helper { font-size: .8rem; line-height: 1.4; }
+.operation-group input,
+.operation-group select { padding: .56rem .62rem; font-size: .88rem; }
+.edge-inputs { gap: .42rem; }
+.action-row { gap: .35rem; }
+.reset-strip { margin: .7rem 0; padding: .65rem .72rem; }
+
+.rename-tool {
+    border-top: 1px dashed var(--color-border);
+    padding-top: .45rem;
+}
+.rename-tool summary {
+    width: fit-content;
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    color: #596171;
+    font-size: .78rem;
+    font-weight: 800;
+    cursor: pointer;
+    list-style: none;
+}
+.rename-tool summary::-webkit-details-marker { display: none; }
+.rename-tool summary::before { content: "✎"; color: var(--color-primary); }
+.rename-tool summary span {
+    padding: .16rem .34rem;
+    border-radius: 999px;
+    background: var(--color-surface-subtle);
+    color: var(--color-text-muted);
+    font-size: .64rem;
+    font-weight: 700;
+}
+.rename-tool[open] .rename-row { margin-top: .5rem; }
+.rename-row button { padding: .56rem .66rem; font-size: .82rem; }
+
+.state-panel { padding: .72rem; }
+
+@media (max-width: 1050px) {
+    .operation-layout { grid-template-columns: 1fr; }
+}

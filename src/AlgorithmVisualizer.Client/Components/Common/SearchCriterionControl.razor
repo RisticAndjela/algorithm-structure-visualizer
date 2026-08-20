@@ -1,0 +1,43 @@
+<div class="search-criterion-control @(Compact ? "compact" : string.Empty)">
+    <div class="criterion-tabs" role="group" aria-label="Search criterion">
+        <button type="button"
+                class="@(!SearchById ? "active" : string.Empty)"
+                disabled="@Disabled"
+                @onclick="() => SetModeAsync(false)">Value</button>
+        <button type="button"
+                class="@(SearchById ? "active" : string.Empty)"
+                disabled="@Disabled"
+                @onclick="() => SetModeAsync(true)">ID</button>
+    </div>
+
+    @if (SearchById)
+    {
+        <label class="id-search-input">
+            <span>NODE ID</span>
+            <LiveTextInput Value="@IdValue"
+                           ValueChanged="IdValueChanged"
+                           Disabled="@Disabled"
+                           Placeholder="e.g. #A31F9C"
+                           MaxLength="7" />
+        </label>
+        <small>@IdHint</small>
+    }
+    else
+    {
+        <small>@ValueHint</small>
+    }
+</div>
+
+@code {
+    [Parameter] public bool SearchById { get; set; }
+    [Parameter] public EventCallback<bool> SearchByIdChanged { get; set; }
+    [Parameter] public string? IdValue { get; set; }
+    [Parameter] public EventCallback<string?> IdValueChanged { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public bool Compact { get; set; }
+    [Parameter] public string ValueHint { get; set; } = "Uses the VALUE / KEY input above and follows the structure's ordering rule.";
+    [Parameter] public string IdHint { get; set; } = "IDs are identities, not ordering keys, so this search may need to inspect the whole structure.";
+
+    private Task SetModeAsync(bool searchById)
+        => SearchById == searchById ? Task.CompletedTask : SearchByIdChanged.InvokeAsync(searchById);
+}

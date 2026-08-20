@@ -1,0 +1,15 @@
+<div class="quick-try" aria-label="Suggested values">
+    <span>Try:</span>
+    @foreach (var value in Values)
+    {
+        <button type="button" @onclick="() => SelectAsync(value)" disabled="@Disabled">@value</button>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<int> Values { get; set; } = Array.Empty<int>();
+    [Parameter, EditorRequired] public EventCallback<int> OnSelect { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    private Task SelectAsync(int value) => OnSelect.InvokeAsync(value);
+}

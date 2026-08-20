@@ -1,0 +1,130 @@
+.operation-tile {
+    min-width: 0;
+    display: grid;
+    align-content: space-between;
+    gap: .62rem;
+    padding: .76rem;
+    border: 1px solid var(--color-border, #e2e4ea);
+    border-radius: .84rem;
+    background: #fbfbfd;
+}
+
+.operation-tile-heading {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.operation-tile-glyph {
+    width: 2rem;
+    height: 2rem;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border-radius: .62rem;
+    color: #5b4ac9;
+    background: var(--color-primary-soft, #f0edff);
+    font-size: .82rem;
+    font-weight: 900;
+}
+
+.operation-tile-copy {
+    min-width: 0;
+    display: grid;
+    gap: .08rem;
+}
+
+.operation-tile-copy strong {
+    color: var(--color-text, #2f3440);
+    font-size: .8rem;
+    line-height: 1.2;
+}
+
+.operation-tile-copy small {
+    color: var(--color-text-muted, #767c89);
+    font-size: .65rem;
+    line-height: 1.35;
+}
+
+.operation-tile-body {
+    min-width: 0;
+    display: grid;
+    gap: .42rem;
+}
+
+.operation-tile-actions {
+    min-width: 0;
+    display: flex;
+    align-items: stretch;
+    flex-wrap: wrap;
+    gap: .36rem;
+}
+
+.operation-tile-actions ::deep button {
+    min-width: 0;
+    min-height: 2.4rem;
+    flex: 1 1 5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .34rem;
+    padding: .48rem .58rem;
+    border: 1px solid var(--color-border-strong, #d5d8e0);
+    border-radius: .62rem;
+    color: #565c6b;
+    background: #fff;
+    cursor: pointer;
+    font-size: .72rem;
+    font-weight: 780;
+    line-height: 1.15;
+}
+
+.operation-tile-actions ::deep button:hover:not(:disabled) {
+    border-color: #b9b3e8;
+    transform: translateY(-1px);
+}
+
+.operation-tile-actions ::deep button.primary {
+    border-color: var(--tile-accent, #6757e5);
+    color: #fff;
+    background: var(--tile-accent, #6757e5);
+}
+
+.operation-tile-actions ::deep button.danger {
+    border-color: #e9bdc1;
+    color: #ad4854;
+    background: #fff8f8;
+}
+
+.operation-tile-actions ::deep button.quiet {
+    border-color: #e5e7ed;
+    color: #747986;
+    background: #f8f9fb;
+}
+
+.operation-tile-actions ::deep button:disabled {
+    cursor: not-allowed;
+    opacity: .48;
+    transform: none;
+}
+
+.tone-purple { --tile-accent: #6757e5; }
+.tone-purple .operation-tile-glyph { color: #5b4ac9; background: #f0edff; }
+.tone-mint { --tile-accent: #178f83; }
+.tone-mint .operation-tile-glyph { color: #147d72; background: #eaf9f5; }
+.tone-blue { --tile-accent: #4d78c7; }
+.tone-blue .operation-tile-glyph { color: #426ebd; background: #eef5ff; }
+.tone-red { --tile-accent: #c95360; }
+.tone-red .operation-tile-glyph { color: #b24d59; background: #fff0f1; }
+.tone-gold { --tile-accent: #9a7426; }
+.tone-gold .operation-tile-glyph { color: #8a6422; background: #fff6df; }
+.tone-neutral { --tile-accent: #737988; }
+.tone-neutral .operation-tile-glyph { color: #737988; background: #f0f1f4; }
+
+@media (max-width: 640px) {
+    .operation-tile-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+}

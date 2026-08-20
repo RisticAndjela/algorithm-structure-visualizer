@@ -1,0 +1,35 @@
+<article class="memory-state-card @StateClass @(Reserved ? "reserved" : string.Empty)">
+    <header>
+        <span>@Label</span>
+        @if (!string.IsNullOrWhiteSpace(Status))
+        {
+            <strong>@Status</strong>
+        }
+    </header>
+
+    @if (!Reserved)
+    {
+        <div class="memory-card-value">
+            <strong>@Value</strong>
+            @if (!string.IsNullOrWhiteSpace(Identity))
+            {
+                <span>@Identity</span>
+            }
+        </div>
+    }
+
+    @if (ChildContent is not null)
+    {
+        <div class="memory-card-details">@ChildContent</div>
+    }
+</article>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+    [Parameter] public string? Status { get; set; }
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public string? Identity { get; set; }
+    [Parameter] public string? StateClass { get; set; }
+    [Parameter] public bool Reserved { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

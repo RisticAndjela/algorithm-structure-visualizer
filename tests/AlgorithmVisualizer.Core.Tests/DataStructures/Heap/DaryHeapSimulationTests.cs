@@ -100,6 +100,46 @@ public sealed class DaryHeapSimulationTests
     }
 
     [Fact]
+    public async Task SearchById_FindsStableElementIdentityWithLinearScan()
+    {
+        var heap = CreateHeap();
+        foreach (var value in new[] { 10, 20, 30, 40, 50, 60, 70 })
+        {
+            await heap.InsertAsync(value);
+        }
+
+        var before = heap.CreateSnapshot();
+        var target = before.Elements[^1];
+        var result = await heap.SearchByIdAsync(target.DisplayId);
+
+        Assert.True(result.Succeeded);
+        Assert.True(result.IsIdLookup);
+        Assert.Equal(target.Id, result.AffectedElementId);
+        Assert.Equal(target.DisplayId, result.RequestedDisplayId);
+        Assert.Equal("O(n)", result.WorstCaseComplexity);
+        Assert.Equal(before.Count, result.Comparisons);
+    }
+
+    [Fact]
+    public async Task GeneratedStarter_IsValidAndSupportsFurtherOperations()
+    {
+        var heap = CreateHeap();
+        Assert.True(heap.TrySetArity(4));
+
+        var generated = await heap.LoadStarterHeapAsync();
+        var starter = heap.CreateSnapshot();
+
+        Assert.True(generated);
+        Assert.Equal(7, starter.Count);
+        AssertDaryInvariant(starter);
+
+        var insert = await heap.InsertAsync(5);
+        Assert.True(insert.Succeeded);
+        Assert.Equal(8, heap.Count);
+        AssertDaryInvariant(heap.CreateSnapshot());
+    }
+
+    [Fact]
     public async Task Delete_PreservesSurvivingElementIdentityAndInvariant()
     {
         var heap = CreateHeap();

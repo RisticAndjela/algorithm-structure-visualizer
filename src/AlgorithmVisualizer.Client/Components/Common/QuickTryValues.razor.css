@@ -1,0 +1,32 @@
+.quick-try {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .38rem;
+}
+
+.quick-try > span {
+    color: var(--color-text-muted);
+    font-size: .76rem;
+    font-weight: 850;
+}
+
+.quick-try button {
+    min-width: 2.15rem;
+    min-height: 2rem;
+    padding: .32rem .48rem;
+    border: 1px solid #dddfe7;
+    border-radius: .58rem;
+    color: #555c69;
+    background: #fff;
+    font: inherit;
+    font-size: .78rem;
+    font-weight: 780;
+    cursor: pointer;
+}
+
+.quick-try button:hover:not(:disabled) {
+    border-color: #c8c0f6;
+    color: #5141c4;
+    background: #faf9ff;
+}

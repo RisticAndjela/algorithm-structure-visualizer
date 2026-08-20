@@ -15,7 +15,7 @@
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="vector-learn-title">A vector is simply an ordered list of numbers.</h2>
             <p>The important part is the position: index 0 means one thing, index 1 means another, and that order never changes while an operation runs.</p>
-            <ConceptLink class="learn-launchpad-link" Href="/learn/concepts/vector">Open Vector concepts &amp; memory →</ConceptLink>
+            <LessonLinkButton Href="/learn/concepts/vector">Open Vector concepts &amp; memory →</LessonLinkButton>
         </div>
         <div class="learn-grid">
             <article class="learn-card purple"><span>INDEX</span><strong>Position has meaning</strong><small>In [4, 7, 2], value 7 is component 1. Moving it would change the vector.</small></article>
@@ -41,7 +41,7 @@
     <section class="smart-tip" aria-label="Vector learning tip">
         <span class="tip-icon">✦</span>
         <div><strong>Read vectors by index:</strong><p>before calculating anything, ask “what does component i represent?” and keep that position aligned.</p></div>
-        <ConceptLink Href="/learn/concepts/vector-memory">See Vector memory →</ConceptLink>
+        <LessonLinkButton Href="/learn/concepts/vector-memory" Class="compact">See Vector memory →</LessonLinkButton>
     </section>
 
     <section class="builder-section" aria-labelledby="vector-build-title">
@@ -50,25 +50,24 @@
                 <span class="step-number">1</span>
                 <div><span class="section-kicker">BUILD</span><h2 id="vector-build-title">Enter the values, then choose what to do with them.</h2><p>Keep the vectors short while learning. Paired operations need A and B to have the same number of components.</p></div>
             </div>
-            <ConceptLink Href="/learn/concepts/vector-memory">How indexes map to memory →</ConceptLink>
+            <LessonLinkButton Href="/learn/concepts/vector-memory" Class="compact">How indexes map to memory →</LessonLinkButton>
         </div>
 
-        <div class="vector-input-grid">
-            <article class="vector-editor-card vector-a-card">
-                <header><span class="vector-letter">A</span><div><strong>Vector A</strong><small>Main vector / first input</small></div></header>
-                <label><span class="control-label">COMPONENTS</span><input value="@_aText" @oninput="AChanged" disabled="@IsBusy" placeholder="2, -1, 3" /></label>
-                <p>Write numbers in order, separated by commas or spaces.</p>
-            </article>
-            <article class="vector-editor-card vector-b-card">
-                <header><span class="vector-letter">B</span><div><strong>Vector B</strong><small>Used when an operation needs a second vector</small></div></header>
-                <label><span class="control-label">COMPONENTS</span><input value="@_bText" @oninput="BChanged" disabled="@IsBusy" placeholder="4, 5, -2" /></label>
-                <p>For A + B, A · B and distances, A and B must line up by index.</p>
-            </article>
+        <div class="vector-build-panel">
+            <label class="vector-input-line primary-vector">
+                <span class="vector-letter">A</span>
+                <span class="vector-input-copy"><strong>Vector A</strong><small>Main input · ordered components</small></span>
+                <input value="@_aText" @oninput="AChanged" disabled="@IsBusy" placeholder="2, -1, 3" aria-label="Vector A components" />
+            </label>
+            <label class="vector-input-line secondary-vector">
+                <span class="vector-letter">B</span>
+                <span class="vector-input-copy"><strong>Vector B</strong><small>Only read by paired operations</small></span>
+                <input value="@_bText" @oninput="BChanged" disabled="@IsBusy" placeholder="4, 5, -2" aria-label="Vector B components" />
+            </label>
         </div>
 
         <div class="vector-apply-row">
-            <label class="scalar-control"><span class="control-label">SCALAR</span><input value="@_scalarText" @oninput="ScalarChanged" disabled="@IsBusy" inputmode="decimal" /><small>Only used by scalar multiplication.</small></label>
-            <div class="vector-apply-copy"><strong>Ready to use these values?</strong><span>Applying input resets the previous simulation state.</span></div>
+            <div class="vector-apply-copy"><strong>Comma or space separated values</strong><span>Apply once, then choose operations without rebuilding the inputs.</span></div>
             <button class="primary-action" type="button" @onclick="ApplyInputs" disabled="@IsBusy">Use these values <span>→</span></button>
         </div>
 
@@ -92,29 +91,37 @@
             <div class="selected-operation"><span>SELECTED</span><strong>@OperationLabel</strong><small>@OperationCategory</small></div>
         </div>
 
+        @if (_operation == VectorOperationKind.ScalarMultiply)
+        {
+            <label class="scalar-control contextual-scalar">
+                <span><strong>Scalar s</strong><small>One multiplier applied to every component of A.</small></span>
+                <input value="@_scalarText" @oninput="ScalarChanged" disabled="@IsBusy" inputmode="decimal" aria-label="Scalar multiplier" />
+            </label>
+        }
+
         <div class="vector-operation-grid">
             <article class="vector-operation-card @(_operation == VectorOperationKind.Add ? "selected" : string.Empty)">
                 <div class="operation-card-top"><span class="operation-symbol">+</span><span class="operation-kind">VECTOR OUT</span></div>
-                <h3>Add A + B</h3><p>Add values at matching indexes.</p>
-                <div class="rule-box"><span>RULE</span><strong>result[i] = A[i] + B[i]</strong><small>A and B need the same dimension.</small></div>
+                <h3>Add A + B</h3><p>Combine two aligned vectors component-by-component; the output keeps the same dimension.</p>
+                <div class="rule-box"><span>RULE</span><strong>result[i] = A[i] + B[i]</strong><small>Use it for offsets, updates and combining feature vectors. A and B need the same dimension.</small></div>
                 <button type="button" class="@(_operation == VectorOperationKind.Add ? "primary" : string.Empty)" @onclick="() => SelectOperation(VectorOperationKind.Add)" disabled="@IsBusy">@(_operation == VectorOperationKind.Add ? "Selected" : "Choose addition") <span>Θ(n)</span></button>
             </article>
             <article class="vector-operation-card featured @(_operation == VectorOperationKind.DotProduct ? "selected" : string.Empty)">
                 <div class="operation-card-top"><span class="operation-symbol">·</span><span class="operation-kind">SCALAR OUT</span></div>
-                <h3>Dot product A · B</h3><p>Multiply matching components and add the products.</p>
-                <div class="rule-box"><span>RULE</span><strong>Σ A[i] × B[i]</strong><small>The accumulator grows one index at a time.</small></div>
+                <h3>Dot product A · B</h3><p>Turn two aligned vectors into one score by accumulating matching products.</p>
+                <div class="rule-box"><span>RULE</span><strong>Σ A[i] × B[i]</strong><small>Use it for weighted sums, projections and similarity building blocks. The accumulator grows one index at a time.</small></div>
                 <button type="button" class="@(_operation == VectorOperationKind.DotProduct ? "primary" : string.Empty)" @onclick="() => SelectOperation(VectorOperationKind.DotProduct)" disabled="@IsBusy">@(_operation == VectorOperationKind.DotProduct ? "Selected" : "Choose dot product") <span>Θ(n)</span></button>
             </article>
             <article class="vector-operation-card @(_operation == VectorOperationKind.L2Norm ? "selected" : string.Empty)">
                 <div class="operation-card-top"><span class="operation-symbol">‖ ‖</span><span class="operation-kind">SCALAR OUT</span></div>
-                <h3>Length ‖A‖₂</h3><p>Measure how long vector A is.</p>
-                <div class="rule-box"><span>RULE</span><strong>√Σ A[i]²</strong><small>Only A is needed.</small></div>
+                <h3>Length ‖A‖₂</h3><p>Reduce A to its Euclidean magnitude: how far its endpoint is from the origin.</p>
+                <div class="rule-box"><span>RULE</span><strong>√Σ A[i]²</strong><small>Use it to measure scale or before normalization. Only A is needed.</small></div>
                 <button type="button" class="@(_operation == VectorOperationKind.L2Norm ? "primary" : string.Empty)" @onclick="() => SelectOperation(VectorOperationKind.L2Norm)" disabled="@IsBusy">@(_operation == VectorOperationKind.L2Norm ? "Selected" : "Choose length") <span>Θ(n)</span></button>
             </article>
             <article class="vector-operation-card @(_operation == VectorOperationKind.EuclideanDistance ? "selected" : string.Empty)">
                 <div class="operation-card-top"><span class="operation-symbol">↔</span><span class="operation-kind">SCALAR OUT</span></div>
-                <h3>Distance A ↔ B</h3><p>Measure straight-line distance between two vectors.</p>
-                <div class="rule-box"><span>RULE</span><strong>√Σ(A[i] − B[i])²</strong><small>A and B need the same dimension.</small></div>
+                <h3>Distance A ↔ B</h3><p>Measure how far apart A and B are after comparing every aligned component.</p>
+                <div class="rule-box"><span>RULE</span><strong>√Σ(A[i] − B[i])²</strong><small>Useful for nearest-neighbor reasoning such as KNN. A and B need the same dimension.</small></div>
                 <button type="button" class="@(_operation == VectorOperationKind.EuclideanDistance ? "primary" : string.Empty)" @onclick="() => SelectOperation(VectorOperationKind.EuclideanDistance)" disabled="@IsBusy">@(_operation == VectorOperationKind.EuclideanDistance ? "Selected" : "Choose distance") <span>Θ(n)</span></button>
             </article>
         </div>
@@ -132,7 +139,7 @@
     </section>
 
     <section class="predict-section" aria-labelledby="vector-predict-title">
-        <div class="prediction-copy"><span class="step-number">2</span><div><span class="section-kicker">PREDICT FIRST</span><h2 id="vector-predict-title">What do you think @OperationLabel will produce?</h2><p>@(OperationProducesVector(_operation) ? "Predict the first result component. You can inspect the complete vector after the run." : "Predict the final scalar before the accumulator starts moving.")</p></div></div>
+        <div class="prediction-copy"><span class="step-number">2</span><div><span class="section-kicker">PREDICT FIRST</span><h2 id="vector-predict-title">Predict @OperationLabel.</h2><p>@(OperationProducesVector(_operation) ? "Optional: predict result[0] before Run." : "Optional: predict the final scalar before Run.")</p></div></div>
         <div class="prediction-card vector-prediction">
             <label><span>@PredictionLabel</span><input value="@_predictionText" @oninput="PredictionChanged" disabled="@IsBusy" inputmode="decimal" placeholder="Your prediction" /></label>
             @if (_predictionAnswered) { <p class="prediction-feedback @(_predictionCorrect ? "correct" : "incorrect")">@PredictionFeedback</p> }
@@ -155,7 +162,7 @@
             <div class="state-tabs" role="tablist" aria-label="Vector simulation view"><button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual state</button><button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory state</button></div>
             <p>@(_view == StateView.Visual ? "See each ordered component and the active index." : "See the same values as indexed double[] slots and conceptual byte offsets.")</p>
         </div>
-        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/vector">Vector concepts →</ConceptLink><ConceptLink Href="/learn/concepts/vector-memory">Vector memory →</ConceptLink></div>
+        <div class="lesson-reference-links"><LessonLinkButton Href="/learn/concepts/vector" Class="compact">Vector concepts →</LessonLinkButton><LessonLinkButton Href="/learn/concepts/vector-memory" Class="compact">Vector memory →</LessonLinkButton></div>
 
         <div class="vector-visualizer-shell">
             @if (_view == StateView.Visual)
@@ -201,7 +208,7 @@
         <div class="fit-grid">
             <article class="fit-card good"><span>GOOD FIT</span><strong>Coordinates, features and weights</strong><p>Each component has a stable role and numeric operations usually scan all indexes.</p></article>
             <article class="fit-card avoid"><span>AVOID FOR</span><strong>Items that constantly grow, shrink or change meaning</strong><p>If you mainly need arbitrary insertions, removals or key-based lookup, another structure communicates the data better.</p></article>
-            <article class="fit-card better"><span>NEXT CONNECTION</span><strong>Matrix</strong><p>A Matrix extends the same indexed numeric idea from one dimension into rows and columns.</p><div class="fit-links"><a href="/structures/matrix">Open Matrix →</a></div></article>
+            <article class="fit-card better"><span>NEXT CONNECTION</span><strong>Matrix</strong><p>A Matrix extends the same indexed numeric idea from one dimension into rows and columns.</p><div class="fit-links"><LessonLinkButton Href="/structures/matrix" Class="compact">Open Matrix →</LessonLinkButton></div></article>
         </div>
     </section>
 
@@ -220,7 +227,7 @@
         </div>
     </section>
 
-    <NextLessonCard Eyebrow="NEXT DATA STRUCTURE" Level="07 · Intermediate" Title="Matrix" Description="Extend indexed numeric storage from one ordered dimension into rows and columns." Href="/structures/matrix" LinkLabel="Open Matrix lesson" />
+    <NextLessonCard Eyebrow="NEXT DATA STRUCTURE" Level="06 · Intermediate" Title="Matrix" Description="Extend indexed numeric storage from one ordered dimension into rows and columns." Href="/structures/matrix" LinkLabel="Open Matrix lesson" />
 </div>
 
 <PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
@@ -324,7 +331,7 @@
     {
         if (!TryParseVector(_aText, out var a, out var errorA)) { _inputError = $"Vector A: {errorA}"; return; }
         if (!TryParseVector(_bText, out var b, out var errorB)) { _inputError = $"Vector B: {errorB}"; return; }
-        if (!TryParseDouble(_scalarText, out _)) { _inputError = "Scalar must be a real number."; return; }
+        if (_operation == VectorOperationKind.ScalarMultiply && !TryParseDouble(_scalarText, out _)) { _inputError = "Scalar must be a real number for scalar multiplication."; return; }
         _inputError = null;
         VectorLab.LoadVectors(a, b);
         ClearReview();

@@ -136,7 +136,7 @@
             <div class="state-tabs" role="tablist"><button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual State</button><button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory State</button></div>
             <p>@(_view == StateView.Visual ? "See tentative distances, the settled region and each relaxation on the graph." : "See dist[], parent[], settled[] and the active minimum-selection frontier behind the picture.")</p>
         </div>
-        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/dijkstra">Algorithm rule →</ConceptLink><ConceptLink Href="/learn/concepts/dijkstra-relaxation">Relaxation →</ConceptLink><ConceptLink Href="/learn/concepts/dijkstra-complexity">Complexity →</ConceptLink><a href="/structures/binary-heap">Review Binary Heap →</a></div>
+        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/dijkstra">Algorithm rule →</ConceptLink><ConceptLink Href="/learn/concepts/dijkstra-relaxation">Relaxation →</ConceptLink><ConceptLink Href="/learn/concepts/dijkstra-complexity">Complexity →</ConceptLink><a href="/structures/heap">Review Binary Heap →</a></div>
 
         <div class="state-surface">
             @if (_view == StateView.Visual)

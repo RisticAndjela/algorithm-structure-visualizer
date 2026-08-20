@@ -52,10 +52,7 @@ The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctnes
 
 ## Heap coverage
 
-`DataStructures/Heap/HeapSimulationTests.cs` verifies both Min Heap and Max Heap ordering, bubble-up, extract-root bubble-down, arbitrary search, delete repair, duplicate element identities, heap-kind switching rules, and manual backing-array capacity behavior.
-
-
-`DataStructures/Heap/DaryHeapSimulationTests.cs` verifies generalized d-ary Min/Max ordering for multiple branching factors, extract-root repair across all child candidates, the mathematical `d = 2` equivalence with Binary Heap indexing, arity-change safety, O(n) missing search, and stable surviving element identities after delete.
+`DataStructures/Heap/DaryHeapSimulationTests.cs` is the unified Heap coverage: Min/Max ordering across multiple branching factors, the `d = 2` Binary Heap case, extract-root repair across all child candidates, arity-change safety, linear value/ID search, generated-starter validity with continued operations, stable surviving element identities after delete, and the shared raw-array behavior.
 
 ## Matrix coverage
 

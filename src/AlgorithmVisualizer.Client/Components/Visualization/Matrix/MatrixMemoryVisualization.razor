@@ -1,85 +1,54 @@
 @using System.Globalization
 @using AlgorithmVisualizer.Core.DataStructures.Matrix
 
-<section class="matrix-memory" aria-label="Matrix memory state">
+<section class="matrix-memory" aria-label="@($"{Title} matrix memory state")">
     <header class="memory-header">
-        <div>
+        <div class="memory-title">
             <span class="memory-kicker">MEMORY STATE</span>
-            <h3>@Title · @Snapshot.Rows × @Snapshot.Columns</h3>
+            <h3>@Title</h3>
         </div>
-        <span class="memory-badge">@Snapshot.Rows rows · @Snapshot.Columns columns</span>
+        <span class="memory-shape">@Snapshot.Rows × @Snapshot.Columns</span>
     </header>
 
-    <p class="memory-lead">
-        Think of the matrix as an <strong>outer list of rows</strong>. Each row is one inner list, and every value keeps the same row/column position you see in the editor.
-    </p>
-
-    <section class="conceptual-memory" aria-label="Matrix as a list of lists">
-        <div class="conceptual-heading">
-            <div>
-                <span>CONCEPTUAL VIEW</span>
-                <strong>List of lists</strong>
-            </div>
-            <code>@($"{Title}[row][column]")</code>
+    <div class="nested-list-shell" aria-label="@($"{Title} as an outer list containing one inner list per row")">
+        <div class="outer-list-prefix" aria-hidden="true">
+            <strong>@Title</strong>
+            <span>=</span>
+            <span class="outer-bracket">[</span>
         </div>
 
-        <div class="nested-array">
-            <div class="array-open">
-                <strong>@Title</strong>
-                <span>→ [</span>
-            </div>
-
-            <div class="matrix-rows">
-                @for (var row = 0; row < Snapshot.Rows; row++)
-                {
-                    var currentRow = row;
-                    <div class="matrix-row">
-                        <span class="row-label">@($"{Title}[{currentRow}]")</span>
-                        <span class="inner-bracket" aria-hidden="true">[</span>
-
-                        <div class="row-values" style="--matrix-columns: @Snapshot.Columns;" aria-label="Row @currentRow values">
-                            @for (var column = 0; column < Snapshot.Columns; column++)
-                            {
-                                var currentColumn = column;
-                                <span class="row-value" title="@($"{Title}[{currentRow}][{currentColumn}]")">
-                                    @Format(Snapshot.GetValue(currentRow, currentColumn))
-                                </span>
-                            }
-                        </div>
-
-                        <span class="inner-bracket" aria-hidden="true">]</span>
-                    </div>
-                }
-            </div>
-
-            <div class="array-close" aria-hidden="true">]</div>
+        <div class="inner-lists">
+            @for (var row = 0; row < Snapshot.Rows; row++)
+            {
+                var currentRow = row;
+                <article class="inner-list" aria-label="@($"{Title} row {currentRow}: {FormatRow(currentRow)}")">
+                    <span class="inner-list-label">@($"{Title}[{currentRow}]")</span>
+                    <code class="inner-list-values">@FormatRow(currentRow)</code>
+                </article>
+            }
         </div>
-    </section>
 
-    <div class="memory-explainer">
-        <div>
-            <strong>Example</strong>
-            <span><code>@($"{Title}[1][2]")</code> means row 1, column 2.</span>
-        </div>
-        <div>
-            <strong>Important</strong>
-            <span>This is the learner-friendly shape. Our implementation stores the same values contiguously.</span>
-        </div>
+        <span class="outer-bracket outer-list-end" aria-hidden="true">]</span>
     </div>
+
+    <p class="memory-note">
+        <strong>Outer list → rows.</strong>
+        Each card is one inner list; cards run left → right in row order.
+    </p>
 
     <details class="raw-backing-memory">
         <summary>
-            <span>See the actual row-major <code>double[]</code></span>
-            <small>implementation detail</small>
+            <span>Actual implementation storage</span>
+            <small>row-major <code>double[]</code></small>
         </summary>
 
         <div class="raw-memory-body">
             <p>
-                <code>ManualMatrix</code> uses one contiguous array, not one C# list object per row. A matrix coordinate is converted to an array slot with
+                The list-of-lists view explains the shape. <code>ManualMatrix</code> stores the same values contiguously:
                 <code>index = row × @Snapshot.Columns + column</code>.
             </p>
 
-            <div class="flat-array" aria-label="Flat row-major backing array">
+            <div class="flat-array" aria-label="@($"{Title} flat row-major backing array")">
                 <span class="array-bracket" aria-hidden="true">[</span>
                 <div class="flat-values">
                     @for (var row = 0; row < Snapshot.Rows; row++)
@@ -103,6 +72,17 @@
 @code {
     [Parameter, EditorRequired] public MatrixGridSnapshot Snapshot { get; set; } = default!;
     [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    private string FormatRow(int row)
+    {
+        var values = new string[Snapshot.Columns];
+        for (var column = 0; column < Snapshot.Columns; column++)
+        {
+            values[column] = Format(Snapshot.GetValue(row, column));
+        }
+
+        return $"[{string.Join(", ", values)}]";
+    }
 
     private static string Format(double value) =>
         Math.Abs(value) < 1e-9

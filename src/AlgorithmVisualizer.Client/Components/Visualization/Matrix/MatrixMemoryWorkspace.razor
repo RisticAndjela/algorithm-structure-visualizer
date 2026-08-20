@@ -1,0 +1,76 @@
+@using System.Globalization
+@using AlgorithmVisualizer.Core.DataStructures.Matrix
+
+<section class="matrix-memory-workspace" aria-label="Matrix memory state">
+    <header class="workspace-header">
+        <div class="workspace-title">
+            <span class="memory-kicker">MEMORY STATE</span>
+            <h3>One outer list, one inner list per row.</h3>
+        </div>
+        <div class="memory-legend" aria-label="List of lists reading order">
+            <span>outer list</span><i aria-hidden="true">→</i><span>row lists</span><i aria-hidden="true">→</i><span>values</span>
+        </div>
+    </header>
+
+    <div class="memory-stack">
+        <MatrixMemoryStrip Snapshot="@A" Title="A" RowPrefix="A" Role="INPUT" />
+        <MatrixMemoryStrip Snapshot="@B" Title="B" RowPrefix="B" Role="INPUT" />
+        <MatrixMemoryStrip Snapshot="@Result" Title="@ResultTitle" RowPrefix="R" Role="RESULT" IsResult="true" />
+    </div>
+
+    <details class="backing-memory">
+        <summary>
+            <div><strong>Actual implementation storage</strong><small>same values, flattened row by row</small></div>
+            <code>row-major double[]</code>
+        </summary>
+        <div class="backing-body">
+            <p><code>index = row × columns + column</code>. The list-of-lists view above is the learning model; <code>ManualMatrix</code> stores each matrix in one contiguous array.</p>
+            <div class="backing-stack">
+                @foreach (var entry in Entries)
+                {
+                    <div class="backing-strip">
+                        <div class="backing-label"><strong>@entry.Title</strong><small>@entry.Snapshot.Values.Length slots</small></div>
+                        <div class="flat-array" aria-label="@($"{entry.Title} row-major backing array")">
+                            <span class="array-bracket" aria-hidden="true">[</span>
+                            <div class="flat-values">
+                                @for (var index = 0; index < entry.Snapshot.Values.Length; index++)
+                                {
+                                    var currentIndex = index;
+                                    <div class="flat-slot">
+                                        <strong>@Format(entry.Snapshot.Values[currentIndex])</strong>
+                                        <small>@currentIndex</small>
+                                    </div>
+                                }
+                            </div>
+                            <span class="array-bracket" aria-hidden="true">]</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </details>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public MatrixGridSnapshot A { get; set; } = default!;
+    [Parameter, EditorRequired] public MatrixGridSnapshot B { get; set; } = default!;
+    [Parameter, EditorRequired] public MatrixGridSnapshot Result { get; set; } = default!;
+    [Parameter] public string ResultTitle { get; set; } = "Result";
+
+    private IEnumerable<MemoryEntry> Entries
+    {
+        get
+        {
+            yield return new("A", A);
+            yield return new("B", B);
+            yield return new(ResultTitle, Result);
+        }
+    }
+
+    private static string Format(double value) =>
+        Math.Abs(value) < 1e-9
+            ? "0"
+            : Math.Round(value, 5).ToString("0.#####", CultureInfo.InvariantCulture);
+
+    private sealed record MemoryEntry(string Title, MatrixGridSnapshot Snapshot);
+}

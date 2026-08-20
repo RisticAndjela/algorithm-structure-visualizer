@@ -40,18 +40,11 @@
         <div class="object-grid">
             @foreach (var node in FlatNodes)
             {
-                <article class="node-object @GetStateClass(node.VisualState)" @key="node.Id">
-                    <div class="object-heading">
-                        <span>MEM-#@node.DisplayId</span>
-                        <strong>value = @node.Value</strong>
-                        <small>height = @node.Height · balance = @FormatBalance(node.BalanceFactor)</small>
-                    </div>
-                    <dl>
-                        <div><dt>parent</dt><dd>@FormatReference(node.ParentDisplayId)</dd></div>
-                        <div><dt>left</dt><dd>@FormatReference(node.Left?.DisplayId)</dd></div>
-                        <div><dt>right</dt><dd>@FormatReference(node.Right?.DisplayId)</dd></div>
-                    </dl>
-                </article>
+                <MemoryStateCard Label="@($"MEM-#{node.DisplayId}")" Status="@($"h {node.Height} · BF {FormatBalance(node.BalanceFactor)}")" Value="@($"value = {node.Value}")" Identity="@($"#{node.DisplayId}")" StateClass="@GetStateClass(node.VisualState)" @key="node.Id">
+                    <MemoryStateDetailRow Label="parent" Value="@FormatReference(node.ParentDisplayId)" />
+                    <MemoryStateDetailRow Label="left" Value="@FormatReference(node.Left?.DisplayId)" />
+                    <MemoryStateDetailRow Label="right" Value="@FormatReference(node.Right?.DisplayId)" />
+                </MemoryStateCard>
             }
         </div>
     }
@@ -100,16 +93,16 @@
 
     private static string GetStateClass(AvlNodeVisualState state) => state switch
     {
-        AvlNodeVisualState.Checking => "is-checking",
-        AvlNodeVisualState.Matched => "is-matched",
-        AvlNodeVisualState.Adding => "is-adding",
-        AvlNodeVisualState.Removing => "is-removing",
-        AvlNodeVisualState.Replacement => "is-replacement",
-        AvlNodeVisualState.PointerTarget => "is-pointer",
-        AvlNodeVisualState.Unbalanced => "is-unbalanced",
-        AvlNodeVisualState.RotationPivot => "is-pivot",
-        AvlNodeVisualState.Rotating => "is-rotating",
-        AvlNodeVisualState.Balanced => "is-balanced",
+        AvlNodeVisualState.Checking => "checking",
+        AvlNodeVisualState.Matched => "matched",
+        AvlNodeVisualState.Adding => "added",
+        AvlNodeVisualState.Removing => "removing",
+        AvlNodeVisualState.Replacement => "replacement",
+        AvlNodeVisualState.PointerTarget => "pointer",
+        AvlNodeVisualState.Unbalanced => "violation",
+        AvlNodeVisualState.RotationPivot => "candidate",
+        AvlNodeVisualState.Rotating => "rotating",
+        AvlNodeVisualState.Balanced => "fixed",
         _ => string.Empty
     };
 }

@@ -15,7 +15,7 @@
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="graph-learn-title">Start with the big idea, then build the connections.</h2>
             <p>A graph models entities and the relationships between them. Learn the four rules below first, then create your own topology in the playground.</p>
-            <ConceptLink class="learn-launchpad-link" Href="/learn/concepts/graph">Open the Graph concepts guide →</ConceptLink>
+            <LessonLinkButton Href="/learn/concepts/graph">Open the Graph concepts guide →</LessonLinkButton>
         </div>
         <div class="learn-launchpad-grid">
             <ConceptLink class="launch-card vertex-edge" Href="/learn/concepts/graph">
@@ -72,7 +72,7 @@
             <div class="lab-options">
                 @if (_lastResult is not null)
                 {
-                    <button class="last-run-button" type="button" @onclick="OpenLastRunPopup">Last run explanation</button>
+                    <button class="last-run-button" type="button" @onclick="OpenLastRunPopup">Last run</button>
                 }
                 <label class="popup-toggle">
                     <input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" />
@@ -99,7 +99,10 @@
                 <div class="operation-title"><span>01</span><div><strong>Vertices</strong><small>Create the entities first.</small></div></div>
                 <label><span>VERTEX LABEL</span><input @bind="_vertexLabel" maxlength="12" placeholder="e.g. A or Novi Sad" disabled="@IsBusy" /></label>
                 <div class="action-row"><button class="primary" @onclick="AddVertexAsync" disabled="@IsBusy">Add vertex</button><button @onclick="SearchVertexAsync" disabled="@IsBusy">Search</button><button @onclick="InspectNeighborsAsync" disabled="@IsBusy">Neighbors</button><button class="danger" @onclick="RemoveVertexAsync" disabled="@IsBusy">Remove</button></div>
-                <div class="rename-row"><label><span>RENAME SELECTED LABEL TO</span><input @bind="_newVertexLabel" maxlength="12" placeholder="new unique label" disabled="@IsBusy" /></label><button @onclick="RenameVertexAsync" disabled="@IsBusy">Rename vertex</button></div>
+                <details class="rename-tool">
+                    <summary>Rename vertex <span>small utility</span></summary>
+                    <div class="rename-row"><label><span>NEW UNIQUE LABEL</span><input @bind="_newVertexLabel" maxlength="12" placeholder="new label" disabled="@IsBusy" /></label><button @onclick="RenameVertexAsync" disabled="@IsBusy">Rename</button></div>
+                </details>
                 <small class="helper">Labels are unique (case-insensitive). Removing a vertex also removes every incident edge.</small>
             </section>
 
@@ -164,8 +167,8 @@
             <p>@(_view == StateView.Visual ? "See vertices and edges in the teaching canvas." : "See the same graph through adjacency storage and matrix/list memory views.")</p>
         </div>
         <div class="lesson-reference-links" aria-label="Graph learning links">
-            <ConceptLink Href="/learn/concepts/graph">Graph concepts →</ConceptLink>
-            <ConceptLink Href="/learn/concepts/visual-vs-memory">Concepts &amp; memory →</ConceptLink>
+            <LessonLinkButton Href="/learn/concepts/graph" Class="compact">Graph concepts →</LessonLinkButton>
+            <LessonLinkButton Href="/learn/concepts/visual-vs-memory" Class="compact">Concepts &amp; memory →</LessonLinkButton>
         </div>
 
         <section class="state-panel">
@@ -179,17 +182,6 @@
             }
         </section>
 
-        @if (_lastResult is not null)
-        {
-            <section class="last-run">
-                <div class="last-run-heading">
-                    <div><span>LAST RUN</span><strong>@RunHeadline(_lastResult)</strong></div>
-                    <button type="button" @onclick="OpenLastRunPopup">Open explanation</button>
-                </div>
-                <p>@RunExplanation(_lastResult)</p>
-                <div class="run-metrics"><span>Comparisons <strong>@_lastResult.Comparisons</strong></span><span>Vertices <strong>@_lastResult.InitialVertexCount → @_lastResult.FinalVertexCount</strong></span><span>Edges <strong>@_lastResult.InitialEdgeCount → @_lastResult.FinalEdgeCount</strong></span><span>Worst case <strong>@_lastResult.WorstCaseComplexity</strong></span></div>
-            </section>
-        }
 
     </section>
 
@@ -230,7 +222,7 @@
     <NextLessonCard Title="Red-Black Tree"
                     Description="Finish the structure track with the most rule-heavy self-balancing tree in the current curriculum."
                     Href="/structures/red-black"
-                    Level="09 · Advanced"
+                    Level="08 · Advanced"
                     LinkLabel="Open Red-Black lesson" />
 
 </div>
@@ -264,7 +256,7 @@
                 <div class="popup-body">
                     <h3>One graph, two synchronized representations.</h3>
                     <p>@RunRepresentationExplanation(_lastResult)</p>
-                    <ConceptLink class="popup-concept-link" Href="/learn/concepts/visual-vs-memory">Open Concepts &amp; Memory →</ConceptLink>
+                    <LessonLinkButton Class="compact" Href="/learn/concepts/visual-vs-memory">Open Concepts &amp; Memory →</LessonLinkButton>
                 </div>
             }
             else
@@ -272,7 +264,7 @@
                 <div class="popup-body">
                     <h3>@RunWhyHeadline(_lastResult)</h3>
                     <p>@RunWhyExplanation(_lastResult)</p>
-                    <ConceptLink class="popup-concept-link" Href="/learn/concepts/graph">Open the Graph concept guide →</ConceptLink>
+                    <LessonLinkButton Class="compact" Href="/learn/concepts/graph">Open the Graph concept guide →</LessonLinkButton>
                 </div>
             }
         </section>

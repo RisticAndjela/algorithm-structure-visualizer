@@ -46,10 +46,12 @@ public sealed record AvlOperationResult(
     int FinalCount,
     int HeightBefore,
     int HeightAfter,
-    AvlDeleteCase DeleteCase)
+    AvlDeleteCase DeleteCase,
+    string? RequestedDisplayId = null)
 {
     public int TotalChecks => Comparisons + SuccessorChecks + RebalanceChecks;
-    public string WorstCaseComplexity => "O(log n)";
+    public bool IsIdLookup => Operation == AvlOperationKind.Search && !string.IsNullOrWhiteSpace(RequestedDisplayId);
+    public string WorstCaseComplexity => IsIdLookup ? "O(n)" : "O(log n)";
     public string CurrentRunComplexity => TotalChecks <= 1 && RotationCount == 0 ? "Θ(1)" : "Θ(k)";
 
     public string? AffectedDisplayId => AffectedNodeId.HasValue

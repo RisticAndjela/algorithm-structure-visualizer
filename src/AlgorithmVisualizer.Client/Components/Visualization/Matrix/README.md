@@ -2,7 +2,7 @@
 
 - `MatrixEditor.razor` edits A/B cells without JavaScript.
 - `MatrixVisualization.razor` renders the mathematical grid and semantic cell states used during arithmetic and elimination.
-- `MatrixMemoryVisualization.razor` teaches memory in two layers: first a learner-friendly outer list of row lists, then an expandable view of the actual contiguous row-major `double[]` used by `ManualMatrix`.
+- `MatrixMemoryWorkspace.razor` owns the complete Memory State for A, B, and Result in one compact surface. `MatrixMemoryStrip.razor` renders one matrix as an outer list whose row lists stay side by side. The workspace keeps the actual contiguous row-major `double[]` used by `ManualMatrix` behind one secondary disclosure.
 
 Keep wide matrices scrollable inside visualization/editor regions. Do not create page-level horizontal overflow, and keep instructional text readable at normal laptop zoom.
 
@@ -11,7 +11,7 @@ Matrix input UX must make editability obvious: users may edit individual cells o
 The Memory State must not imply that the nested row-list drawing is the literal C# allocation used by `ManualMatrix`. Label it as the easier mental model, and preserve the real backing-array explanation with `index = row * columns + column` as a secondary advanced view.
 ## Memory-state presentation
 
-`MatrixMemoryVisualization` uses a compact nested-array mental model: one outer matrix reference, one horizontal inner list per row, and values aligned by column. Avoid nested card-per-cell layouts because they add visual noise and make the list-of-lists idea harder to read. Slot numbers and row-major storage are secondary implementation details and belong in the collapsed advanced backing-array view. Text in the primary memory view must remain comfortably readable.
+`MatrixMemoryWorkspace` must render A, B, and Result as three compact rows inside one shared Memory State surface. Each `MatrixMemoryStrip` shows one outer list and keeps every inner row list side by side; do not give A/B/Result separate full-width memory cards and do not stack inner lists vertically. Avoid nested card-per-cell layouts because they add visual noise and make the list-of-lists idea harder to read. Slot numbers and row-major storage are secondary implementation details and belong in the single collapsed backing-array view. Text in the primary memory view must remain comfortably readable.
 
 ## Beginner-first Matrix interaction
 

@@ -16,7 +16,7 @@
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="redblack-learn-title">BST ordering stays. Color rules keep paths short.</h2>
             <p>A Red-Black Tree is still a BST: smaller goes left, larger goes right. The extra color rules prevent one root-to-leaf path from becoming arbitrarily longer than another.</p>
-            <ConceptLink Href="/learn/concepts/red-black">Open Red-Black invariants &amp; black-height →</ConceptLink>
+            <LessonLinkButton Href="/learn/concepts/red-black">Open Red-Black invariants &amp; black-height →</LessonLinkButton>
         </div>
         <div class="learn-grid">
             <article class="learn-card purple"><span>ROOT</span><strong>Root is always black</strong><small>New nodes start red, but the final root may never remain red.</small></article>
@@ -49,7 +49,7 @@
             <strong>Do not memorize colors as decoration.</strong>
             <p>Ask which invariant is broken: red parent + red child, or unequal black-height after deletion. The parent/uncle/sibling colors tell you whether to recolor, rotate, or move the problem upward.</p>
         </div>
-        <ConceptLink Href="/learn/concepts/red-black">See the invariants →</ConceptLink>
+        <LessonLinkButton Href="/learn/concepts/red-black" Class="compact">See the invariants →</LessonLinkButton>
     </section>
 
     <section class="lab-shell">
@@ -74,16 +74,10 @@
             <div class="value-card">
                 <label>
                     <span class="control-label">VALUE / KEY</span>
-                    <InputNumber TValue="int?" @bind-Value="_value" disabled="@IsBusy" placeholder="e.g. 50" />
+                    <LiveIntInput @bind-Value="_value" Disabled="@IsBusy" Placeholder="e.g. 50" />
                 </label>
                 <small>Keys are unique. New nodes start red; the algorithm then repairs only the invariants that were actually disturbed.</small>
-                <div class="sample-values" aria-label="Suggested Red-Black values">
-                    <span>Try:</span>
-                    @foreach (var sample in SampleValues)
-                    {
-                        <button type="button" @onclick="() => SetValue(sample)" disabled="@IsBusy">@sample</button>
-                    }
-                </div>
+                <QuickTryValues Values="SampleValues" OnSelect="SetValue" Disabled="@IsBusy" />
             </div>
 
             <div class="operation-card insert-card">
@@ -92,8 +86,15 @@
             </div>
 
             <div class="operation-card search-card">
-                <div class="operation-heading"><span class="operation-glyph">?</span><span><strong>Search</strong><small>Follow one comparison path</small></span></div>
-                <button type="button" @onclick="SearchAsync" disabled="@(!CanRunValueOperation)">Search value <span>→</span></button>
+                <div class="operation-heading"><span class="operation-glyph">?</span><span><strong>Search</strong><small>Choose ordering key or object identity</small></span></div>
+                <SearchCriterionControl SearchById="@_searchById"
+                                        SearchByIdChanged="SetSearchMode"
+                                        IdValue="@_searchId"
+                                        IdValueChanged="SetSearchId"
+                                        Disabled="@IsBusy"
+                                        ValueHint="Value search follows the ordered tree path."
+                                        IdHint="ID is not the ordering key, so ID search may inspect every node: O(n)." />
+                <button type="button" @onclick="SearchAsync" disabled="@(!CanRunSearch)">Search @(_searchById ? "ID" : "value") <span>→</span></button>
             </div>
 
             <div class="operation-card delete-card">
@@ -139,8 +140,8 @@
         </div>
 
         <div class="lesson-reference-links" aria-label="Concepts and memory links">
-            <ConceptLink Href="/learn/concepts/red-black">Red-Black concepts →</ConceptLink>
-            <ConceptLink Href="/learn/concepts/visual-vs-memory">Red-Black links & memory →</ConceptLink>
+            <LessonLinkButton Href="/learn/concepts/red-black" Class="compact">Red-Black concepts →</LessonLinkButton>
+            <LessonLinkButton Href="/learn/concepts/visual-vs-memory" Class="compact">Red-Black links & memory →</LessonLinkButton>
         </div>
 
         @if (_activeStateView == StateView.Visual)
@@ -234,7 +235,7 @@
                         <strong>@GetPlainRunSummary(_lastResult)</strong>
                         <p>@GetComplexityExplanation(_lastResult)</p>
                     </div>
-                    <ConceptLink class="popup-learn" Href="/learn/concepts/red-black">Learn how Red-Black keeps h logarithmic →</ConceptLink>
+                    <LessonLinkButton Class="compact" Href="/learn/concepts/red-black">Learn how Red-Black keeps h logarithmic →</LessonLinkButton>
                 </div>
             }
             else
@@ -251,7 +252,7 @@
                         <strong>@GetMemoryHeadline(_lastResult)</strong>
                         <p>@GetMemoryExplanation(_lastResult)</p>
                     </div>
-                    <ConceptLink class="popup-learn" Href="/learn/concepts/visual-vs-memory">Visual state vs Memory state →</ConceptLink>
+                    <LessonLinkButton Class="compact" Href="/learn/concepts/visual-vs-memory">Visual state vs Memory state →</LessonLinkButton>
                 </div>
             }
 
@@ -283,6 +284,8 @@
     ];
 
     private int? _value;
+    private string? _searchId;
+    private bool _searchById;
     private string? _errorMessage;
     private string? _lastCapturedStepText;
     private int _frameIndex = -1;
@@ -300,6 +303,7 @@
 
     private bool IsBusy => SimulationState.IsRunning;
     private bool CanRunValueOperation => !IsBusy && _value.HasValue;
+    private bool CanRunSearch => !IsBusy && (_searchById ? !string.IsNullOrWhiteSpace(_searchId) : _value.HasValue);
     private bool CanStepBack => _frameIndex > 0;
     private bool CanStepForward => (_runFrames.Count > 0 && _frameIndex < _runFrames.Count - 1) || SimulationState.IsRunning;
     private int TimelineCount => _runFrames.Count;
@@ -348,8 +352,61 @@
     }
 
     private Task InsertAsync() => RunValueResultOperationAsync(RedBlackOperationKind.Insert, Tree.InsertAsync);
-    private Task SearchAsync() => RunValueResultOperationAsync(RedBlackOperationKind.Search, Tree.SearchAsync);
+    private async Task SearchAsync()
+    {
+        if (!_searchById)
+        {
+            await RunValueResultOperationAsync(RedBlackOperationKind.Search, Tree.SearchAsync);
+            return;
+        }
+
+        if (!ShortId.TryNormalize(_searchId, out var normalizedId, out var error))
+        {
+            _errorMessage = error;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        await RunIdSearchAsync(normalizedId);
+    }
     private Task DeleteAsync() => RunValueResultOperationAsync(RedBlackOperationKind.Delete, Tree.DeleteAsync);
+
+    private async Task RunIdSearchAsync(string normalizedId)
+    {
+        if (SimulationState.IsRunning)
+        {
+            return;
+        }
+
+        PrepareNewRun();
+        var runToken = SimulationState.Start("Starting Red-Black ID search for #" + normalizedId + ".");
+
+        try
+        {
+            var result = await Tree.SearchByIdAsync(normalizedId, runToken);
+            if (!IsCurrentRun(runToken))
+            {
+                return;
+            }
+
+            _lastResult = result;
+            SimulationState.SetCurrentStep("Run complete.");
+            SimulationState.Complete();
+            _popupTab = ResultPopupTab.Run;
+            _lastRunPopupOpen = _showRunPopups;
+        }
+        catch (OperationCanceledException) when (runToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = $"Something went wrong: {exception.Message}";
+            if (IsCurrentRun(runToken))
+            {
+                SimulationState.Complete("The run stopped because of an error.");
+            }
+        }
+    }
 
     private async Task RunValueResultOperationAsync(
         RedBlackOperationKind operationKind,
@@ -510,6 +567,20 @@
         _runFrames.Clear();
         _frameIndex = -1;
         _lastCapturedStepText = null;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task SetSearchMode(bool searchById)
+    {
+        _searchById = searchById;
+        _errorMessage = null;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task SetSearchId(string? value)
+    {
+        _searchId = value;
+        _errorMessage = null;
         return InvokeAsync(StateHasChanged);
     }
 
@@ -686,6 +757,8 @@
     {
         RedBlackOperationKind.Insert when result.DuplicateRejected => $"Insert: {result.RequestedValue} already exists",
         RedBlackOperationKind.Insert => $"Inserted {result.RequestedValue}",
+        RedBlackOperationKind.Search when result.IsIdLookup && result.Succeeded => $"Found #{result.RequestedDisplayId}",
+        RedBlackOperationKind.Search when result.IsIdLookup => $"ID #{result.RequestedDisplayId} not found",
         RedBlackOperationKind.Search when result.Succeeded => $"Found {result.RequestedValue}",
         RedBlackOperationKind.Search => $"Search: {result.RequestedValue} not found",
         RedBlackOperationKind.Delete when result.Succeeded => $"Deleted {result.RequestedValue}",
@@ -695,6 +768,13 @@
 
     private static string GetPlainRunSummary(RedBlackOperationResult result)
     {
+        if (result.IsIdLookup)
+        {
+            return result.Succeeded
+                ? "The simulator matched object identity by ID. Because IDs are not ordered by the tree invariant, it cannot discard a subtree from a key comparison."
+                : "No node had that ID. Unlike value search, ID search cannot choose only left or right from the BST ordering, so it may inspect every node.";
+        }
+
         if (result.DuplicateRejected)
         {
             return "The BST comparison path reached an equal key, so this strict Red-Black Tree rejected the duplicate before creating a new red node or running fix-up.";
@@ -724,6 +804,11 @@
 
     private static string GetComplexityExplanation(RedBlackOperationResult result)
     {
+        if (result.IsIdLookup)
+        {
+            return $"ID search used {result.Comparisons} identity check(s). The tree is ordered by VALUE / KEY, not by generated node ID, so an ID comparison cannot choose one ordered child branch. Without a separate ID index, worst-case time is O(n). Value search remains O(log n) because it can follow the ordering invariant.";
+        }
+
         if (result.InitialCount == 0)
         {
             return "An empty tree needs only a root check, so this particular run is constant work.";

@@ -16,7 +16,7 @@
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="avl-learn-title">BST ordering stays. AVL adds one repair rule.</h2>
             <p>Insert and search follow the same left/right rule as our BST. After a mutation, AVL walks upward, measures balance, and rotates only when a node becomes too heavy on one side.</p>
-            <ConceptLink Href="/learn/concepts/avl-balance">Open AVL balance &amp; rotations →</ConceptLink>
+            <LessonLinkButton Href="/learn/concepts/avl-balance">Open AVL balance &amp; rotations →</LessonLinkButton>
         </div>
         <div class="learn-grid">
             <article class="learn-card purple"><span>BALANCE</span><strong>BF = h(left) − h(right)</strong><small>Every node must finish with balance factor −1, 0, or +1.</small></article>
@@ -49,7 +49,7 @@
             <strong>Before a rotation:</strong>
             <p>read the first unbalanced node's BF, then inspect its heavy child. That pair tells you LL, RR, LR, or RL before anything moves.</p>
         </div>
-        <ConceptLink Href="/learn/concepts/avl-balance">How to choose the rotation →</ConceptLink>
+        <LessonLinkButton Href="/learn/concepts/avl-balance" Class="compact">How to choose the rotation →</LessonLinkButton>
     </section>
 
     <section class="lab-shell">
@@ -74,16 +74,10 @@
             <div class="value-card">
                 <label>
                     <span class="control-label">VALUE / KEY</span>
-                    <InputNumber TValue="int?" @bind-Value="_value" disabled="@IsBusy" placeholder="e.g. 50" />
+                    <LiveIntInput @bind-Value="_value" Disabled="@IsBusy" Placeholder="e.g. 50" />
                 </label>
                 <small>Keys are unique. Insertion uses our BST ordering first, then AVL balancing.</small>
-                <div class="sample-values" aria-label="Suggested AVL values">
-                    <span>Try:</span>
-                    @foreach (var sample in SampleValues)
-                    {
-                        <button type="button" @onclick="() => SetValue(sample)" disabled="@IsBusy">@sample</button>
-                    }
-                </div>
+                <QuickTryValues Values="SampleValues" OnSelect="SetValue" Disabled="@IsBusy" />
             </div>
 
             <div class="operation-card insert-card">
@@ -92,8 +86,15 @@
             </div>
 
             <div class="operation-card search-card">
-                <div class="operation-heading"><span class="operation-glyph">?</span><span><strong>Search</strong><small>Follow one comparison path</small></span></div>
-                <button type="button" @onclick="SearchAsync" disabled="@(!CanRunValueOperation)">Search value <span>→</span></button>
+                <div class="operation-heading"><span class="operation-glyph">?</span><span><strong>Search</strong><small>Choose ordering key or object identity</small></span></div>
+                <SearchCriterionControl SearchById="@_searchById"
+                                        SearchByIdChanged="SetSearchMode"
+                                        IdValue="@_searchId"
+                                        IdValueChanged="SetSearchId"
+                                        Disabled="@IsBusy"
+                                        ValueHint="Value search follows the ordered tree path."
+                                        IdHint="ID is not the ordering key, so ID search may inspect every node: O(n)." />
+                <button type="button" @onclick="SearchAsync" disabled="@(!CanRunSearch)">Search @(_searchById ? "ID" : "value") <span>→</span></button>
             </div>
 
             <div class="operation-card delete-card">
@@ -139,8 +140,8 @@
         </div>
 
         <div class="lesson-reference-links" aria-label="Concepts and memory links">
-            <ConceptLink Href="/learn/concepts/avl-balance">AVL concepts →</ConceptLink>
-            <ConceptLink Href="/learn/concepts/visual-vs-memory">AVL links & memory →</ConceptLink>
+            <LessonLinkButton Href="/learn/concepts/avl-balance" Class="compact">AVL concepts →</LessonLinkButton>
+            <LessonLinkButton Href="/learn/concepts/visual-vs-memory" Class="compact">AVL links & memory →</LessonLinkButton>
         </div>
 
         @if (_activeStateView == StateView.Visual)
@@ -193,7 +194,7 @@
     <NextLessonCard Title="Vector"
                     Description="Switch from linked tree references to fixed indexed numeric storage before extending the idea into Matrix rows and columns."
                     Href="/structures/vector"
-                    Level="06 · Intermediate"
+                    Level="05 · Intermediate"
                     LinkLabel="Open Vector lesson" />
 
 </div>
@@ -233,7 +234,7 @@
                         <strong>@GetPlainRunSummary(_lastResult)</strong>
                         <p>@GetComplexityExplanation(_lastResult)</p>
                     </div>
-                    <ConceptLink class="popup-learn" Href="/learn/concepts/avl-balance">Learn how AVL keeps h logarithmic →</ConceptLink>
+                    <LessonLinkButton Class="compact" Href="/learn/concepts/avl-balance">Learn how AVL keeps h logarithmic →</LessonLinkButton>
                 </div>
             }
             else
@@ -249,7 +250,7 @@
                         <strong>@GetMemoryHeadline(_lastResult)</strong>
                         <p>@GetMemoryExplanation(_lastResult)</p>
                     </div>
-                    <ConceptLink class="popup-learn" Href="/learn/concepts/visual-vs-memory">Visual state vs Memory state →</ConceptLink>
+                    <LessonLinkButton Class="compact" Href="/learn/concepts/visual-vs-memory">Visual state vs Memory state →</LessonLinkButton>
                 </div>
             }
 
@@ -283,6 +284,8 @@
     ];
 
     private int? _value;
+    private string? _searchId;
+    private bool _searchById;
     private string? _errorMessage;
     private string? _lastCapturedStepText;
     private int _frameIndex = -1;
@@ -298,6 +301,7 @@
 
     private bool IsBusy => SimulationState.IsRunning;
     private bool CanRunValueOperation => !IsBusy && _value.HasValue;
+    private bool CanRunSearch => !IsBusy && (_searchById ? !string.IsNullOrWhiteSpace(_searchId) : _value.HasValue);
     private bool CanStepBack => _frameIndex > 0;
     private bool CanStepForward => (_runFrames.Count > 0 && _frameIndex < _runFrames.Count - 1) || SimulationState.IsRunning;
     private int TimelineCount => _runFrames.Count;
@@ -343,8 +347,61 @@
     }
 
     private Task InsertAsync() => RunValueResultOperationAsync(AvlOperationKind.Insert, Tree.InsertAsync);
-    private Task SearchAsync() => RunValueResultOperationAsync(AvlOperationKind.Search, Tree.SearchAsync);
+    private async Task SearchAsync()
+    {
+        if (!_searchById)
+        {
+            await RunValueResultOperationAsync(AvlOperationKind.Search, Tree.SearchAsync);
+            return;
+        }
+
+        if (!ShortId.TryNormalize(_searchId, out var normalizedId, out var error))
+        {
+            _errorMessage = error;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        await RunIdSearchAsync(normalizedId);
+    }
     private Task DeleteAsync() => RunValueResultOperationAsync(AvlOperationKind.Delete, Tree.DeleteAsync);
+
+    private async Task RunIdSearchAsync(string normalizedId)
+    {
+        if (SimulationState.IsRunning)
+        {
+            return;
+        }
+
+        PrepareNewRun();
+        var runToken = SimulationState.Start("Starting AVL ID search for #" + normalizedId + ".");
+
+        try
+        {
+            var result = await Tree.SearchByIdAsync(normalizedId, runToken);
+            if (!IsCurrentRun(runToken))
+            {
+                return;
+            }
+
+            _lastResult = result;
+            SimulationState.SetCurrentStep("Run complete.");
+            SimulationState.Complete();
+            _popupTab = ResultPopupTab.Run;
+            _lastRunPopupOpen = _showRunPopups;
+        }
+        catch (OperationCanceledException) when (runToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = $"Something went wrong: {exception.Message}";
+            if (IsCurrentRun(runToken))
+            {
+                SimulationState.Complete("The run stopped because of an error.");
+            }
+        }
+    }
 
     private async Task RunValueResultOperationAsync(
         AvlOperationKind operationKind,
@@ -508,6 +565,20 @@
         return InvokeAsync(StateHasChanged);
     }
 
+    private Task SetSearchMode(bool searchById)
+    {
+        _searchById = searchById;
+        _errorMessage = null;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task SetSearchId(string? value)
+    {
+        _searchId = value;
+        _errorMessage = null;
+        return InvokeAsync(StateHasChanged);
+    }
+
     private void SetValue(int value)
     {
         if (!IsBusy)
@@ -649,6 +720,8 @@
     {
         AvlOperationKind.Insert when result.DuplicateRejected => $"Insert: {result.RequestedValue} already exists",
         AvlOperationKind.Insert => $"Inserted {result.RequestedValue}",
+        AvlOperationKind.Search when result.IsIdLookup && result.Succeeded => $"Found #{result.RequestedDisplayId}",
+        AvlOperationKind.Search when result.IsIdLookup => $"ID #{result.RequestedDisplayId} not found",
         AvlOperationKind.Search when result.Succeeded => $"Found {result.RequestedValue}",
         AvlOperationKind.Search => $"Search: {result.RequestedValue} not found",
         AvlOperationKind.Delete when result.Succeeded => $"Deleted {result.RequestedValue}",
@@ -658,6 +731,13 @@
 
     private static string GetPlainRunSummary(AvlOperationResult result)
     {
+        if (result.IsIdLookup)
+        {
+            return result.Succeeded
+                ? "The simulator matched object identity by ID. Because IDs are not ordered by the tree invariant, it cannot discard a subtree from a key comparison."
+                : "No node had that ID. Unlike value search, ID search cannot choose only left or right from the BST ordering, so it may inspect every node.";
+        }
+
         if (result.DuplicateRejected)
         {
             return "The BST comparison path reached an equal key, so this strict AVL tree rejected the duplicate before any rebalance work.";
@@ -687,6 +767,11 @@
 
     private static string GetComplexityExplanation(AvlOperationResult result)
     {
+        if (result.IsIdLookup)
+        {
+            return $"ID search used {result.Comparisons} identity check(s). The tree is ordered by VALUE / KEY, not by generated node ID, so an ID comparison cannot choose one ordered child branch. Without a separate ID index, worst-case time is O(n). Value search remains O(log n) because it can follow the ordering invariant.";
+        }
+
         if (result.InitialCount == 0)
         {
             return "An empty tree needs only a root check, so this particular run is constant work.";

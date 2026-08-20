@@ -1,0 +1,131 @@
+.matrix-memory-strip {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 6.4rem minmax(0, 1fr);
+    align-items: stretch;
+    border: 1px solid #e2e5eb;
+    border-radius: .78rem;
+    background: #fbfcfd;
+    overflow: hidden;
+}
+
+.matrix-memory-strip.result {
+    border-color: #dcd6ff;
+    background: #fbfaff;
+}
+
+.strip-identity {
+    display: grid;
+    align-content: center;
+    gap: .08rem;
+    padding: .58rem .68rem;
+    border-right: 1px solid #e5e7ed;
+    background: #f6f7f9;
+}
+
+.result .strip-identity {
+    border-right-color: #e4dfff;
+    background: #f4f1ff;
+}
+
+.strip-identity span {
+    color: #8a8f9c;
+    font-size: .61rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+}
+
+.strip-identity strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: #282d39;
+    font-size: .88rem;
+    line-height: 1.18;
+}
+
+.result .strip-identity strong {
+    color: #5548b8;
+}
+
+.strip-identity small {
+    color: #7c8290;
+    font-size: .66rem;
+    font-weight: 720;
+}
+
+.outer-list {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: .32rem;
+    padding: .48rem .56rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+}
+
+.outer-bracket {
+    flex: 0 0 auto;
+    color: #9189c8;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 1.18rem;
+    font-weight: 800;
+}
+
+.row-lists {
+    min-width: max-content;
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: .34rem;
+}
+
+.row-list {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: .34rem;
+    padding: .34rem .42rem;
+    border: 1px solid #dfe2e8;
+    border-radius: .52rem;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(31, 35, 48, .025);
+}
+
+.result .row-list {
+    border-color: #ded9fa;
+}
+
+.row-index {
+    color: #7d8390;
+    font-size: .65rem;
+    font-weight: 820;
+    white-space: nowrap;
+}
+
+.row-list code {
+    padding: 0;
+    color: #343945;
+    background: transparent;
+    font-size: .76rem;
+    font-weight: 760;
+    white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+    .matrix-memory-strip {
+        grid-template-columns: 1fr;
+    }
+
+    .strip-identity {
+        grid-template-columns: auto auto 1fr;
+        align-items: baseline;
+        gap: .42rem;
+        border-right: 0;
+        border-bottom: 1px solid #e5e7ed;
+    }
+
+    .strip-identity small {
+        justify-self: end;
+    }
+}

@@ -39,8 +39,11 @@ public sealed record HeapOperationResult(
     int CapacityAfter,
     int? StartIndex,
     int? EndIndex,
-    HeapRepairDirection RepairDirection)
+    HeapRepairDirection RepairDirection,
+    string? RequestedDisplayId = null)
 {
+    public bool IsIdLookup => Operation == HeapOperationKind.Search && !string.IsNullOrWhiteSpace(RequestedDisplayId);
+
     public string? AffectedDisplayId => AffectedElementId.HasValue
         ? AffectedElementId.Value.ToString("N")[..6].ToUpperInvariant()
         : null;

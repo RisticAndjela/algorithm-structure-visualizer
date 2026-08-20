@@ -21,7 +21,7 @@
             </p>
             <div class="learn-actions">
                 <a class="primary-link" href="/structures/matrix#matrix-workspace">Start with the matrices ↓</a>
-                <ConceptLink Href="/learn/concepts/matrix">Matrix concepts &amp; memory →</ConceptLink>
+                <LessonLinkButton Href="/learn/concepts/matrix">Matrix concepts &amp; memory →</LessonLinkButton>
             </div>
         </div>
         <div class="matrix-intuition" aria-label="Simple 2 by 3 matrix example">
@@ -54,108 +54,129 @@
     </header>
 
     <section id="matrix-workspace" class="guided-section build-section" aria-labelledby="build-title">
-        <div class="section-heading-row">
+        <div class="section-heading-row compact-heading matrix-build-heading">
             <div class="section-heading-copy">
                 <span class="step-number">1</span>
-                <div><span class="section-kicker">BUILD THE INPUT</span><h2 id="build-title">Start with the two matrices.</h2><p>Click a cell and type. Resize only when you need a different shape; examples and paste tools stay tucked away until you want them.</p></div>
+                <div>
+                    <span class="section-kicker">BUILD THE INPUT</span>
+                    <h2 id="build-title">Edit A and B directly.</h2>
+                    <p>Change the numbers in the cells. Resize, presets and paste tools stay secondary so the matrices remain the focus.</p>
+                </div>
             </div>
-            <div class="shape-checker" aria-label="Current dimension compatibility">
-                <div><span>A</span><strong>@Matrix.RowsA × @Matrix.ColumnsA</strong></div>
-                <div><span>B</span><strong>@Matrix.RowsB × @Matrix.ColumnsB</strong></div>
-                <div class="compatibility-line @(SameShape ? "ready" : "warning")"><i></i><span>A ± B</span><strong>@(SameShape ? "ready" : "needs same shape")</strong></div>
-                <div class="compatibility-line @(MultiplicationCompatible ? "ready" : "warning")"><i></i><span>A × B</span><strong>@(MultiplicationCompatible ? $"→ {Matrix.RowsA} × {Matrix.ColumnsB}" : $"needs {Matrix.ColumnsA} = {Matrix.RowsB}")</strong></div>
+
+            <div class="compatibility-strip" aria-label="Current dimension compatibility">
+                <div class="compatibility-chip @(SameShape ? "ready" : "warning")">
+                    <i></i>
+                    <span>A ± B</span>
+                    <strong>@(SameShape ? "same shape · ready" : "needs same shape")</strong>
+                </div>
+                <div class="compatibility-chip @(MultiplicationCompatible ? "ready" : "warning")">
+                    <i></i>
+                    <span>A × B</span>
+                    <strong>@(MultiplicationCompatible ? $"{Matrix.RowsA} × {Matrix.ColumnsB} result" : $"{Matrix.ColumnsA} cols ≠ {Matrix.RowsB} rows")</strong>
+                </div>
             </div>
         </div>
 
         <section class="matrix-editors" aria-label="Editable matrices">
             <article class="editor-card matrix-a-card">
                 <header class="editor-header">
-                    <div class="matrix-name"><span class="matrix-letter">A</span><div><strong>Matrix A</strong><small>Main input</small></div></div>
+                    <div class="matrix-name">
+                        <span class="matrix-letter">A</span>
+                        <div><strong>Matrix A</strong><small>@Matrix.RowsA × @Matrix.ColumnsA · main input</small></div>
+                    </div>
                     <div class="shape-controls" aria-label="Resize Matrix A">
                         <label><span>Rows</span><InputNumber TValue="int" @bind-Value="_rowsA" min="1" max="8" disabled="@IsBusy" /></label>
                         <span class="times">×</span>
-                        <label><span>Columns</span><InputNumber TValue="int" @bind-Value="_colsA" min="1" max="8" disabled="@IsBusy" /></label>
-                        <button class="resize-button" @onclick="() => Resize(MatrixSlot.A)" disabled="@IsBusy">Apply shape</button>
+                        <label><span>Cols</span><InputNumber TValue="int" @bind-Value="_colsA" min="1" max="8" disabled="@IsBusy" /></label>
+                        <button class="resize-button" @onclick="() => Resize(MatrixSlot.A)" disabled="@IsBusy">Resize</button>
                     </div>
                 </header>
 
-                <div class="editor-instruction"><span>Click any white cell</span><p>Type a number, then press Enter or click outside the cell.</p></div>
                 <div class="editor-scroll"><MatrixEditor Snapshot="@CurrentSnapshot.A" Disabled="@IsBusy" OnCellChanged="UpdateA" /></div>
 
-                <div class="quick-presets">
-                    <span>Try an example</span>
-                    <button @onclick="() => LoadPreset(MatrixSlot.A, MatrixPreset.Sequence)" disabled="@IsBusy">1, 2, 3…</button>
-                    <button @onclick="() => LoadPreset(MatrixSlot.A, MatrixPreset.Identity)" disabled="@IsBusy">Identity</button>
-                    <button @onclick="() => LoadPreset(MatrixSlot.A, MatrixPreset.RandomSmall)" disabled="@IsBusy">Random</button>
-                    <button @onclick="() => LoadPreset(MatrixSlot.A, MatrixPreset.Zero)" disabled="@IsBusy">Clear to 0</button>
-                </div>
-
-                <div class="property-strip" aria-label="Matrix A properties">
-                    <span class="property-label">A is:</span>
-                    @foreach (var label in PropertyLabels(_propertiesA))
-                    {
-                        <span>@label</span>
-                    }
+                <div class="editor-footer">
+                    <div class="quick-presets">
+                        <span>Try:</span>
+                        <button @onclick="() => LoadPreset(MatrixSlot.A, MatrixPreset.Sequence)" disabled="@IsBusy">1, 2, 3…</button>
+                        <button @onclick="() => LoadPreset(MatrixSlot.A, MatrixPreset.Identity)" disabled="@IsBusy">Identity</button>
+                        <button @onclick="() => LoadPreset(MatrixSlot.A, MatrixPreset.RandomSmall)" disabled="@IsBusy">Random</button>
+                        <button @onclick="() => LoadPreset(MatrixSlot.A, MatrixPreset.Zero)" disabled="@IsBusy">Zero</button>
+                    </div>
                 </div>
 
                 <details class="input-more">
-                    <summary><span>More ways to fill A</span><small>paste values · special examples</small></summary>
+                    <summary><span>More input + info</span><small>paste · presets · detected properties</small></summary>
                     <div class="input-more-body">
                         <div class="bulk-entry">
-                            <div><strong>Paste a whole matrix</strong><small>One row per line. Spaces or commas are accepted; the shape is detected automatically.</small></div>
+                            <div><strong>Paste a whole matrix</strong><small>One row per line. Spaces or commas are accepted and the shape is detected automatically.</small></div>
                             <textarea @bind="_matrixAText" @bind:event="oninput" disabled="@IsBusy" aria-label="Matrix A bulk values" placeholder="1 2 3&#10;4 5 6"></textarea>
                             <div class="bulk-entry-actions">
-                                <button class="primary" @onclick="() => ApplyMatrixText(MatrixSlot.A)" disabled="@IsBusy">Use these values</button>
-                                <button @onclick="() => LoadCurrentIntoText(MatrixSlot.A)" disabled="@IsBusy">Copy current A here</button>
+                                <button class="primary" @onclick="() => ApplyMatrixText(MatrixSlot.A)" disabled="@IsBusy">Use values</button>
+                                <button @onclick="() => LoadCurrentIntoText(MatrixSlot.A)" disabled="@IsBusy">Load current A</button>
                             </div>
                         </div>
-                        <div class="special-presets"><span>Special examples</span><button @onclick="() => LoadPreset(MatrixSlot.A, MatrixPreset.Diagonal)" disabled="@IsBusy">Diagonal</button><button @onclick="() => LoadPreset(MatrixSlot.A, MatrixPreset.Symmetric)" disabled="@IsBusy">Symmetric</button><button @onclick="() => LoadPreset(MatrixSlot.A, MatrixPreset.GraphAdjacency)" disabled="@IsBusy">Graph adjacency</button></div>
+                        <div class="input-side-tools">
+                            <div class="special-presets"><span>Special:</span><button @onclick="() => LoadPreset(MatrixSlot.A, MatrixPreset.Diagonal)" disabled="@IsBusy">Diagonal</button><button @onclick="() => LoadPreset(MatrixSlot.A, MatrixPreset.Symmetric)" disabled="@IsBusy">Symmetric</button><button @onclick="() => LoadPreset(MatrixSlot.A, MatrixPreset.GraphAdjacency)" disabled="@IsBusy">Graph adjacency</button></div>
+                            <div class="property-strip compact-properties" aria-label="Matrix A properties">
+                                <span class="property-label">Detected:</span>
+                                @foreach (var label in PropertyLabels(_propertiesA))
+                                {
+                                    <span>@label</span>
+                                }
+                            </div>
+                        </div>
                     </div>
                 </details>
             </article>
 
             <article class="editor-card matrix-b-card">
                 <header class="editor-header">
-                    <div class="matrix-name"><span class="matrix-letter">B</span><div><strong>Matrix B</strong><small>Second input</small></div></div>
+                    <div class="matrix-name">
+                        <span class="matrix-letter">B</span>
+                        <div><strong>Matrix B</strong><small>@Matrix.RowsB × @Matrix.ColumnsB · second input</small></div>
+                    </div>
                     <div class="shape-controls" aria-label="Resize Matrix B">
                         <label><span>Rows</span><InputNumber TValue="int" @bind-Value="_rowsB" min="1" max="8" disabled="@IsBusy" /></label>
                         <span class="times">×</span>
-                        <label><span>Columns</span><InputNumber TValue="int" @bind-Value="_colsB" min="1" max="8" disabled="@IsBusy" /></label>
-                        <button class="resize-button" @onclick="() => Resize(MatrixSlot.B)" disabled="@IsBusy">Apply shape</button>
+                        <label><span>Cols</span><InputNumber TValue="int" @bind-Value="_colsB" min="1" max="8" disabled="@IsBusy" /></label>
+                        <button class="resize-button" @onclick="() => Resize(MatrixSlot.B)" disabled="@IsBusy">Resize</button>
                     </div>
                 </header>
 
-                <div class="editor-instruction"><span>Click any white cell</span><p>B is needed for A+B, A−B, A⊙B, A×B and A·X=B.</p></div>
                 <div class="editor-scroll"><MatrixEditor Snapshot="@CurrentSnapshot.B" Disabled="@IsBusy" OnCellChanged="UpdateB" /></div>
 
-                <div class="quick-presets">
-                    <span>Try an example</span>
-                    <button @onclick="() => LoadPreset(MatrixSlot.B, MatrixPreset.Identity)" disabled="@IsBusy">Identity</button>
-                    <button @onclick="() => LoadPreset(MatrixSlot.B, MatrixPreset.Sequence)" disabled="@IsBusy">1, 2, 3…</button>
-                    <button @onclick="() => LoadPreset(MatrixSlot.B, MatrixPreset.RandomSmall)" disabled="@IsBusy">Random</button>
-                    <button @onclick="() => LoadPreset(MatrixSlot.B, MatrixPreset.Zero)" disabled="@IsBusy">Clear to 0</button>
-                </div>
-
-                <div class="property-strip" aria-label="Matrix B properties">
-                    <span class="property-label">B is:</span>
-                    @foreach (var label in PropertyLabels(_propertiesB))
-                    {
-                        <span>@label</span>
-                    }
+                <div class="editor-footer">
+                    <div class="quick-presets">
+                        <span>Try:</span>
+                        <button @onclick="() => LoadPreset(MatrixSlot.B, MatrixPreset.Identity)" disabled="@IsBusy">Identity</button>
+                        <button @onclick="() => LoadPreset(MatrixSlot.B, MatrixPreset.Sequence)" disabled="@IsBusy">1, 2, 3…</button>
+                        <button @onclick="() => LoadPreset(MatrixSlot.B, MatrixPreset.RandomSmall)" disabled="@IsBusy">Random</button>
+                        <button @onclick="() => LoadPreset(MatrixSlot.B, MatrixPreset.Zero)" disabled="@IsBusy">Zero</button>
+                    </div>
                 </div>
 
                 <details class="input-more">
-                    <summary><span>More ways to fill B</span><small>paste values · special examples</small></summary>
+                    <summary><span>More input + info</span><small>paste · presets · detected properties</small></summary>
                     <div class="input-more-body">
                         <div class="bulk-entry">
-                            <div><strong>Paste a whole matrix</strong><small>One row per line. Spaces or commas are accepted; the shape is detected automatically.</small></div>
+                            <div><strong>Paste a whole matrix</strong><small>One row per line. Spaces or commas are accepted and the shape is detected automatically.</small></div>
                             <textarea @bind="_matrixBText" @bind:event="oninput" disabled="@IsBusy" aria-label="Matrix B bulk values" placeholder="7 8 9&#10;10 11 12"></textarea>
                             <div class="bulk-entry-actions">
-                                <button class="primary" @onclick="() => ApplyMatrixText(MatrixSlot.B)" disabled="@IsBusy">Use these values</button>
-                                <button @onclick="() => LoadCurrentIntoText(MatrixSlot.B)" disabled="@IsBusy">Copy current B here</button>
+                                <button class="primary" @onclick="() => ApplyMatrixText(MatrixSlot.B)" disabled="@IsBusy">Use values</button>
+                                <button @onclick="() => LoadCurrentIntoText(MatrixSlot.B)" disabled="@IsBusy">Load current B</button>
                             </div>
                         </div>
-                        <div class="special-presets"><span>Special examples</span><button @onclick="() => LoadPreset(MatrixSlot.B, MatrixPreset.Diagonal)" disabled="@IsBusy">Diagonal</button><button @onclick="() => LoadPreset(MatrixSlot.B, MatrixPreset.Symmetric)" disabled="@IsBusy">Symmetric</button><button @onclick="() => LoadPreset(MatrixSlot.B, MatrixPreset.GraphAdjacency)" disabled="@IsBusy">Graph adjacency</button></div>
+                        <div class="input-side-tools">
+                            <div class="special-presets"><span>Special:</span><button @onclick="() => LoadPreset(MatrixSlot.B, MatrixPreset.Diagonal)" disabled="@IsBusy">Diagonal</button><button @onclick="() => LoadPreset(MatrixSlot.B, MatrixPreset.Symmetric)" disabled="@IsBusy">Symmetric</button><button @onclick="() => LoadPreset(MatrixSlot.B, MatrixPreset.GraphAdjacency)" disabled="@IsBusy">Graph adjacency</button></div>
+                            <div class="property-strip compact-properties" aria-label="Matrix B properties">
+                                <span class="property-label">Detected:</span>
+                                @foreach (var label in PropertyLabels(_propertiesB))
+                                {
+                                    <span>@label</span>
+                                }
+                            </div>
+                        </div>
                     </div>
                 </details>
             </article>
@@ -171,41 +192,37 @@
         <div class="section-heading-row compact-heading">
             <div class="section-heading-copy">
                 <span class="step-number">2</span>
-                <div><span class="section-kicker">CHOOSE ONE OPERATION</span><h2 id="operations-title">What do you want to see happen?</h2><p>Start with one of the four core ideas. Each card tells you the rule before you run it.</p></div>
+                <div><span class="section-kicker">CHOOSE ONE OPERATION</span><h2 id="operations-title">What do you want to see happen?</h2><p>Pick one core operation. Each card keeps only the rule you need before you run it.</p></div>
             </div>
-            <ConceptLink class="concept-link" Href="/learn/concepts/matrix-compatibility">Why dimensions matter →</ConceptLink>
+            <LessonLinkButton Href="/learn/concepts/matrix-compatibility" Class="compact">Why dimensions matter →</LessonLinkButton>
         </div>
 
         <div class="starter-operation-grid">
             <article class="starter-operation">
-                <div class="operation-card-top"><span class="operation-symbol">+</span><span class="status-pill @(SameShape ? "ready" : "warning")">@(SameShape ? "Ready now" : "Shape mismatch")</span></div>
-                <h3>Add A + B</h3>
-                <p>Add cells in the same position: <strong>[1,1] with [1,1]</strong>, then [1,2] with [1,2], and so on.</p>
-                <div class="rule-box"><span>Rule</span><strong>A and B need the same shape.</strong><small>@AdditionRuleText</small></div>
+                <div class="operation-card-top"><span class="operation-symbol">+</span><span class="status-pill @(SameShape ? "ready" : "warning")">@(SameShape ? "Ready" : "Shape mismatch")</span></div>
+                <div class="operation-copy"><h3>Add A + B</h3><p>Add values at the same row and column.</p></div>
+                <div class="rule-box"><span>Needs</span><strong>Same shape</strong></div>
                 <button @onclick='() => RunAsync("addition", Matrix.AddAsync)' disabled="@IsBusy">Run A + B <span>O(r·c)</span></button>
             </article>
 
             <article class="starter-operation featured">
-                <div class="operation-card-top"><span class="operation-symbol">×</span><span class="status-pill @(MultiplicationCompatible ? "ready" : "warning")">@(MultiplicationCompatible ? "Ready now" : "Check dimensions")</span></div>
-                <h3>Multiply A × B</h3>
-                <p>Build each result cell from <strong>one row of A</strong> and <strong>one column of B</strong>.</p>
-                <div class="rule-box"><span>Rule</span><strong>A columns = B rows.</strong><small>@MultiplicationRuleText</small></div>
+                <div class="operation-card-top"><span class="operation-symbol">×</span><span class="status-pill @(MultiplicationCompatible ? "ready" : "warning")">@(MultiplicationCompatible ? "Ready" : "Check dimensions")</span></div>
+                <div class="operation-copy"><h3>Multiply A × B</h3><p>One row of A · one column of B creates each result cell.</p></div>
+                <div class="rule-box"><span>Needs</span><strong>A columns = B rows</strong></div>
                 <button class="primary" @onclick='() => RunAsync("matrix multiplication", Matrix.MultiplyAsync)' disabled="@IsBusy">Run A × B <span>O(r·c·k)</span></button>
             </article>
 
             <article class="starter-operation">
-                <div class="operation-card-top"><span class="operation-symbol">T</span><span class="status-pill ready">Always available</span></div>
-                <h3>Transpose A</h3>
-                <p>Turn rows into columns. A value at <strong>[row,column]</strong> moves to <strong>[column,row]</strong>.</p>
-                <div class="rule-box"><span>Result</span><strong>@Matrix.ColumnsA × @Matrix.RowsA</strong><small>@Matrix.RowsA × @Matrix.ColumnsA becomes @Matrix.ColumnsA × @Matrix.RowsA.</small></div>
+                <div class="operation-card-top"><span class="operation-symbol">T</span><span class="status-pill ready">Ready</span></div>
+                <div class="operation-copy"><h3>Transpose A</h3><p>Move each value from [row,column] to [column,row].</p></div>
+                <div class="rule-box"><span>Result</span><strong>@Matrix.ColumnsA × @Matrix.RowsA</strong></div>
                 <button @onclick='() => RunAsync("transpose A", token => Matrix.TransposeAsync(MatrixSlot.A, token))' disabled="@IsBusy">Run Aᵀ <span>O(r·c)</span></button>
             </article>
 
             <article class="starter-operation">
                 <div class="operation-card-top"><span class="operation-symbol">R</span><span class="status-pill ready">Step-by-step</span></div>
-                <h3>Reduce A to RREF</h3>
-                <p>Watch pivots and row operations simplify the matrix until every pivot is isolated.</p>
-                <div class="rule-box"><span>Watch for</span><strong>pivot → scale → eliminate</strong><small>This is the mechanism behind solving systems and finding rank.</small></div>
+                <div class="operation-copy"><h3>Reduce A to RREF</h3><p>Choose a pivot, scale its row, then eliminate above and below it.</p></div>
+                <div class="rule-box"><span>Pattern</span><strong>pivot → scale → eliminate</strong></div>
                 <button @onclick='() => RunAsync("reduced row echelon form", Matrix.RrefAsync)' disabled="@IsBusy">Run RREF(A) <span>O(n³)</span></button>
             </article>
         </div>
@@ -291,7 +308,7 @@
 
         <div class="state-tabs-row">
             <div class="state-tabs" role="tablist"><button class="@(_activeView == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetView(StateView.Visual)">Visual state</button><button class="@(_activeView == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetView(StateView.Memory)">Memory state</button></div>
-            <div class="state-context"><p>@DisplayedSnapshot.FocusText</p><div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/matrix">Matrix concepts →</ConceptLink><ConceptLink Href="/learn/concepts/visual-vs-memory">Concepts &amp; memory →</ConceptLink></div></div>
+            <div class="state-context"><p>@DisplayedSnapshot.FocusText</p><div class="lesson-reference-links"><LessonLinkButton Href="/learn/concepts/matrix" Class="compact">Matrix concepts →</LessonLinkButton><LessonLinkButton Href="/learn/concepts/visual-vs-memory" Class="compact">Concepts &amp; memory →</LessonLinkButton></div></div>
         </div>
 
         @if (_activeView == StateView.Visual)
@@ -305,8 +322,10 @@
         }
         else
         {
-            <div class="memory-intro"><strong>Same numbers, different view.</strong><span>The grid is the learner-friendly view. Memory State shows how those values map to row-major storage.</span></div>
-            <div class="memory-workspace"><MatrixMemoryVisualization Snapshot="@DisplayedSnapshot.A" Title="A" /><MatrixMemoryVisualization Snapshot="@DisplayedSnapshot.B" Title="B" /><MatrixMemoryVisualization Snapshot="@DisplayedSnapshot.Result" Title="@DisplayedSnapshot.ResultLabel" /></div>
+            <MatrixMemoryWorkspace A="@DisplayedSnapshot.A"
+                                   B="@DisplayedSnapshot.B"
+                                   Result="@DisplayedSnapshot.Result"
+                                   ResultTitle="@DisplayedSnapshot.ResultLabel" />
         }
 
         <details class="continue-tools">
@@ -353,7 +372,7 @@
     <NextLessonCard Title="Graph"
                     Description="Reuse the matrix idea as one graph representation, then compare it with adjacency lists."
                     Href="/structures/graph"
-                    Level="08 · Intermediate"
+                    Level="07 · Intermediate"
                     LinkLabel="Open Graph lesson" />
 
 </div>
@@ -372,11 +391,11 @@
             }
             else if (_popupTab == ResultPopupTab.Memory)
             {
-                <div class="popup-body"><h3>The mathematical grid and the backing storage are two views of the same values.</h3><p>@GetMemoryExplanation(_lastResult)</p><ConceptLink class="popup-concept-link" Href="/learn/concepts/visual-vs-memory">Open Concepts &amp; Memory →</ConceptLink></div>
+                <div class="popup-body"><h3>The mathematical grid and the backing storage are two views of the same values.</h3><p>@GetMemoryExplanation(_lastResult)</p><LessonLinkButton Class="compact" Href="/learn/concepts/visual-vs-memory">Open Concepts &amp; Memory →</LessonLinkButton></div>
             }
             else
             {
-                <div class="popup-body"><h3>@GetWhyHeadline(_lastResult)</h3><p>@GetWhyExplanation(_lastResult)</p><ConceptLink class="popup-concept-link" Href="/learn/concepts/matrix">Open the Matrix concept guide →</ConceptLink></div>
+                <div class="popup-body"><h3>@GetWhyHeadline(_lastResult)</h3><p>@GetWhyExplanation(_lastResult)</p><LessonLinkButton Class="compact" Href="/learn/concepts/matrix">Open the Matrix concept guide →</LessonLinkButton></div>
             }
             <footer><label class="popup-toggle inside"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Show automatically after future Matrix runs</span></label></footer>
         </section>
@@ -438,12 +457,6 @@
     private bool MultiplicationCompatible => Matrix.ColumnsA == Matrix.RowsB;
     private bool ASquare => Matrix.RowsA == Matrix.ColumnsA;
     private bool SolveCompatible => ASquare && Matrix.RowsB == Matrix.RowsA && Matrix.ColumnsA + Matrix.ColumnsB <= 8;
-    private string AdditionRuleText => SameShape
-        ? $"Current shapes match: {Matrix.RowsA} × {Matrix.ColumnsA}."
-        : $"A is {Matrix.RowsA} × {Matrix.ColumnsA}; B is {Matrix.RowsB} × {Matrix.ColumnsB}. Try it anyway to see the rejection explained.";
-    private string MultiplicationRuleText => MultiplicationCompatible
-        ? $"{Matrix.ColumnsA} = {Matrix.RowsB}, so the result will be {Matrix.RowsA} × {Matrix.ColumnsB}."
-        : $"A has {Matrix.ColumnsA} column(s), but B has {Matrix.RowsB} row(s). Try it to see why multiplication stops.";
     private string SolveRuleText => SolveCompatible
         ? $"Ready: A is square and B has {Matrix.RowsB} matching row(s)."
         : "Needs square A, the same number of rows in B, and at most 8 columns in the visual [A | B] workspace.";

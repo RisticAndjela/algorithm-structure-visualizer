@@ -41,18 +41,11 @@
         <div class="object-grid">
             @foreach (var node in FlatNodes)
             {
-                <article class="node-object @GetColorClass(node.Color) @GetStateClass(node.VisualState)" @key="node.Id">
-                    <div class="object-heading">
-                        <span>MEM-#@node.DisplayId</span>
-                        <strong>value = @node.Value</strong>
-                        <small>color = @node.Color.ToString().ToUpperInvariant()</small>
-                    </div>
-                    <dl>
-                        <div><dt>parent</dt><dd>@FormatReference(node.ParentDisplayId)</dd></div>
-                        <div><dt>left</dt><dd>@FormatChildReference(node.Left)</dd></div>
-                        <div><dt>right</dt><dd>@FormatChildReference(node.Right)</dd></div>
-                    </dl>
-                </article>
+                <MemoryStateCard Label="@($"MEM-#{node.DisplayId}")" Status="@node.Color.ToString().ToUpperInvariant()" Value="@($"value = {node.Value}")" Identity="@($"#{node.DisplayId}")" StateClass="@GetStateClass(node.VisualState)" @key="node.Id">
+                    <MemoryStateDetailRow Label="parent" Value="@FormatReference(node.ParentDisplayId)" />
+                    <MemoryStateDetailRow Label="left" Value="@FormatChildReference(node.Left)" />
+                    <MemoryStateDetailRow Label="right" Value="@FormatChildReference(node.Right)" />
+                </MemoryStateCard>
             }
         </div>
     }
@@ -103,24 +96,20 @@
     private static string FormatChildReference(RedBlackNodeSnapshot? child) =>
         child is null ? "null → NIL(B)" : $"ref → MEM-#{child.DisplayId}";
 
-    private static string GetColorClass(RedBlackColor color) => color == RedBlackColor.Red
-        ? "color-red"
-        : "color-black";
-
     private static string GetStateClass(RedBlackNodeVisualState state) => state switch
     {
-        RedBlackNodeVisualState.Checking => "is-checking",
-        RedBlackNodeVisualState.Matched => "is-matched",
-        RedBlackNodeVisualState.Adding => "is-adding",
-        RedBlackNodeVisualState.Removing => "is-removing",
-        RedBlackNodeVisualState.Replacement => "is-replacement",
-        RedBlackNodeVisualState.PointerTarget => "is-pointer",
-        RedBlackNodeVisualState.Violation => "is-violation",
-        RedBlackNodeVisualState.RelativeFocus => "is-relative",
-        RedBlackNodeVisualState.RotationPivot => "is-pivot",
-        RedBlackNodeVisualState.Rotating => "is-rotating",
-        RedBlackNodeVisualState.Recolored => "is-recolored",
-        RedBlackNodeVisualState.Fixed => "is-fixed",
+        RedBlackNodeVisualState.Checking => "checking",
+        RedBlackNodeVisualState.Matched => "matched",
+        RedBlackNodeVisualState.Adding => "added",
+        RedBlackNodeVisualState.Removing => "removing",
+        RedBlackNodeVisualState.Replacement => "replacement",
+        RedBlackNodeVisualState.PointerTarget => "pointer",
+        RedBlackNodeVisualState.Violation => "violation",
+        RedBlackNodeVisualState.RelativeFocus => "relative",
+        RedBlackNodeVisualState.RotationPivot => "candidate",
+        RedBlackNodeVisualState.Rotating => "rotating",
+        RedBlackNodeVisualState.Recolored => "recolored",
+        RedBlackNodeVisualState.Fixed => "fixed",
         _ => string.Empty
     };
 }

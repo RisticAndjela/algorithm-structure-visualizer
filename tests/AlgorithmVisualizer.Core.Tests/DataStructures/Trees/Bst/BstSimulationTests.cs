@@ -57,6 +57,23 @@ public sealed class BstSimulationTests
     }
 
     [Fact]
+    public async Task SearchByIdAsync_FindsIdentityWithoutUsingKeyOrdering()
+    {
+        var tree = await CreateClassicTreeAsync();
+        var snapshot = Assert.IsType<BstNodeSnapshot>(tree.CreateSnapshot());
+        var target = Assert.IsType<BstNodeSnapshot>(snapshot.Right);
+
+        var result = await tree.SearchByIdAsync(target.DisplayId);
+
+        Assert.True(result.Succeeded);
+        Assert.True(result.IsIdLookup);
+        Assert.Equal(target.Id, result.AffectedNodeId);
+        Assert.Equal(target.DisplayId, result.RequestedDisplayId);
+        Assert.Equal("O(n)", result.WorstCaseComplexity);
+        Assert.True(result.Comparisons > 1);
+    }
+
+    [Fact]
     public async Task DeleteAsync_LeafDisconnectsOnlyLeaf()
     {
         var tree = await CreateClassicTreeAsync();

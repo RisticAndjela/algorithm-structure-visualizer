@@ -703,3 +703,8 @@
     .smart-tip { grid-template-columns: 1fr; }
     .smart-tip > a { grid-column: auto; }
 }
+
+
+@media (min-width: 1050px) {
+    .task-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

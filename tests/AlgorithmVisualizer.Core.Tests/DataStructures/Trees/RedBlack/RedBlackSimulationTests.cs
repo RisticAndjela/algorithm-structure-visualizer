@@ -92,6 +92,26 @@ public sealed class RedBlackSimulationTests
     }
 
     [Fact]
+    public async Task SearchByIdAsync_FindsIdentityWithoutChangingColorsOrShape()
+    {
+        var tree = await CreateClassicTreeAsync();
+        var before = Assert.IsType<RedBlackNodeSnapshot>(tree.CreateSnapshot());
+        var target = Assert.IsType<RedBlackNodeSnapshot>(before.Right);
+        var beforeSignature = ColorSignature(before);
+
+        var result = await tree.SearchByIdAsync(target.DisplayId);
+        var after = Assert.IsType<RedBlackNodeSnapshot>(tree.CreateSnapshot());
+
+        Assert.True(result.Succeeded);
+        Assert.True(result.IsIdLookup);
+        Assert.Equal(target.Id, result.AffectedNodeId);
+        Assert.Equal("O(n)", result.WorstCaseComplexity);
+        Assert.Equal(0, result.RotationCount);
+        Assert.Equal(beforeSignature, ColorSignature(after));
+        AssertRedBlackInvariant(after, requireRootBlack: true);
+    }
+
+    [Fact]
     public async Task DeleteAsync_TwoChildrenTransplantsSuccessorIdentity()
     {
         var tree = await CreateClassicTreeAsync();

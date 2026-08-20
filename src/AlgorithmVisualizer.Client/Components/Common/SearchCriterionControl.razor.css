@@ -1,0 +1,85 @@
+.search-criterion-control {
+    display: grid;
+    gap: .55rem;
+    margin-top: .65rem;
+}
+
+.criterion-tabs {
+    display: inline-grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: min(11rem, 100%);
+    padding: .2rem;
+    border: 1px solid var(--ink, #1f2430);
+    border-radius: .7rem;
+    background: rgba(255, 255, 255, .68);
+}
+
+.criterion-tabs button {
+    min-height: 2rem;
+    border: 0;
+    border-radius: .48rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: .78rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.criterion-tabs button.active {
+    background: var(--ink, #1f2430);
+    color: #fff;
+}
+
+.criterion-tabs button:disabled {
+    cursor: not-allowed;
+    opacity: .48;
+}
+
+.id-search-input {
+    display: grid;
+    gap: .3rem;
+}
+
+.id-search-input > span {
+    font-size: .68rem;
+    font-weight: 900;
+    letter-spacing: .09em;
+}
+
+.search-criterion-control small {
+    display: block;
+    max-width: 36ch;
+    color: var(--muted, #667085);
+    font-size: .76rem;
+    line-height: 1.4;
+}
+
+.search-criterion-control.compact {
+    gap: .34rem;
+    margin-top: 0;
+}
+
+.search-criterion-control.compact .criterion-tabs {
+    width: min(8.5rem, 100%);
+    padding: .14rem;
+    border-color: #d8dbe4;
+}
+
+.search-criterion-control.compact .criterion-tabs button {
+    min-height: 1.7rem;
+    font-size: .68rem;
+}
+
+.search-criterion-control.compact .id-search-input {
+    gap: .2rem;
+}
+
+.search-criterion-control.compact .id-search-input > span {
+    font-size: .6rem;
+}
+
+.search-criterion-control.compact small {
+    font-size: .66rem;
+    line-height: 1.35;
+}

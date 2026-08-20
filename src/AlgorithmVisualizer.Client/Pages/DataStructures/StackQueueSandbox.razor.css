@@ -1982,3 +1982,139 @@
 @media (max-width: 900px) {
     .module-header { grid-template-columns: 1fr; }
 }
+
+/* Homogeneous Learn First cards: Queue/Stack now follows the BST lesson pattern. */
+.learn-launchpad-grid .learn-card {
+    min-width: 0;
+    display: grid;
+    align-content: start;
+    gap: .42rem;
+    padding: 1rem;
+    border: 1px solid rgba(255,255,255,.76);
+    border-radius: 1rem;
+    box-shadow: 0 12px 24px rgba(49,57,87,.06);
+}
+.learn-launchpad-grid .learn-card > span { width: fit-content; padding: .3rem .54rem; border-radius: 999px; background: rgba(255,255,255,.9); font-size: .76rem; font-weight: 900; letter-spacing: .07em; }
+.learn-launchpad-grid .learn-card strong { font-size: 1.08rem; line-height: 1.2; }
+.learn-launchpad-grid .learn-card small { color: #666c79; font-size: .9rem; line-height: 1.5; }
+.learn-launchpad-grid .learn-card.purple { background: linear-gradient(135deg,#faf0ff,#f4f4ff); }
+.learn-launchpad-grid .learn-card.mint { background: linear-gradient(135deg,#edfbf7,#f5fffb); }
+.learn-launchpad-grid .learn-card.blue { background: linear-gradient(135deg,#eef7ff,#f6f9ff); }
+.learn-launchpad-grid .learn-card.gold { background: linear-gradient(135deg,#fff7e8,#fffdf5); }
+
+@media (min-width: 1050px) {
+    .task-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* Compact shared operation pattern: mirrors the small BST operation row. */
+.operation-panel {
+    grid-template-columns: minmax(13rem, 1.25fr) repeat(5, minmax(9.5rem, .8fr));
+    gap: .65rem;
+    align-items: stretch;
+}
+
+.value-card {
+    align-content: start;
+    gap: .48rem;
+    padding: .76rem;
+    border-radius: .84rem;
+}
+
+.value-input input {
+    min-height: 2.4rem;
+    padding: .48rem .62rem;
+    font-size: .82rem;
+}
+
+.value-card small {
+    font-size: .68rem;
+    line-height: 1.4;
+}
+
+.lookup-section {
+    display: grid;
+    gap: .55rem;
+}
+
+.lookup-heading {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: .35rem .65rem;
+    padding: 0 .08rem;
+}
+
+.lookup-heading p {
+    max-width: 78ch;
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: .7rem;
+    line-height: 1.45;
+}
+
+.lookup-panel {
+    grid-template-columns: minmax(13rem, 1.25fr) repeat(4, minmax(9.5rem, .8fr));
+    gap: .65rem;
+    padding-top: 0;
+    align-items: stretch;
+}
+
+.criterion-card {
+    min-width: 0;
+    align-content: start;
+    gap: .4rem;
+    padding: .76rem;
+    border-radius: .84rem;
+}
+
+.criterion-tabs button {
+    min-width: 3rem;
+    padding: .28rem .42rem;
+    font-size: .66rem;
+}
+
+.lookup-input input {
+    min-height: 2.4rem;
+    padding: .48rem .62rem;
+    font-size: .78rem;
+}
+
+.lookup-input > span {
+    font-size: .65rem;
+}
+
+@media (max-width: 1180px) {
+    .operation-panel,
+    .lookup-panel {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .value-card,
+    .criterion-card {
+        grid-column: span 3;
+    }
+}
+
+@media (max-width: 900px) {
+    .operation-panel,
+    .lookup-panel {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .value-card,
+    .criterion-card {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 640px) {
+    .operation-panel,
+    .lookup-panel {
+        grid-template-columns: 1fr;
+    }
+
+    .value-card,
+    .criterion-card {
+        grid-column: auto;
+    }
+}

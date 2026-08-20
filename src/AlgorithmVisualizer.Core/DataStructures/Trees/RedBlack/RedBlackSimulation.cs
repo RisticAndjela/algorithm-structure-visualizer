@@ -197,6 +197,65 @@ public sealed class RedBlackSimulation : SimulationAlgorithmBase
                 initialCount, heightBefore, blackHeightBefore, RedBlackDeleteCase.None);
         }, cancellationToken);
 
+    public Task<RedBlackOperationResult> SearchByIdAsync(string normalizedId, CancellationToken cancellationToken = default) =>
+        ExecuteExclusiveAsync(async () =>
+        {
+            var initialCount = _count;
+            var heightBefore = Height;
+            var blackHeightBefore = BlackHeight;
+            var state = new IdSearchState();
+            var stats = new FixupStats();
+
+            if (_root is null)
+            {
+                await NextStepAsync("The Red-Black Tree is empty, so no node ID can be present.", cancellationToken);
+                return BuildResult(
+                    RedBlackOperationKind.Search, 0, succeeded: false, duplicateRejected: false, null,
+                    comparisons: 0, successorChecks: 0, stats,
+                    initialCount, heightBefore, blackHeightBefore, RedBlackDeleteCase.None, normalizedId);
+            }
+
+            var found = await SearchByIdDepthFirstAsync(_root, normalizedId, state, cancellationToken);
+            if (found is null)
+            {
+                await NextStepAsync(
+                    $"ID #{normalizedId} was not found after checking all {state.Comparisons} node object(s). Red-Black balancing bounds key-search height, but color and key order do not order generated IDs, so ID search is O(n) in the worst case.",
+                    cancellationToken);
+            }
+
+            return BuildResult(
+                RedBlackOperationKind.Search, found?.Value ?? 0, found is not null, duplicateRejected: false, found?.Id,
+                state.Comparisons, successorChecks: 0, stats,
+                initialCount, heightBefore, blackHeightBefore, RedBlackDeleteCase.None, normalizedId);
+        }, cancellationToken);
+
+    private async Task<RedBlackNode?> SearchByIdDepthFirstAsync(
+        RedBlackNode? node,
+        string normalizedId,
+        IdSearchState state,
+        CancellationToken cancellationToken)
+    {
+        if (node is null) return null;
+
+        cancellationToken.ThrowIfCancellationRequested();
+        state.Comparisons++;
+        var match = node.Id.ToString("N").StartsWith(normalizedId, StringComparison.OrdinalIgnoreCase);
+        node.VisualState = match ? RedBlackNodeVisualState.Matched : RedBlackNodeVisualState.Checking;
+        NotifyChanged();
+
+        await NextStepAsync(
+            match
+                ? $"Check node {node.Value} (#{node.DisplayId}): ID matches #{normalizedId}."
+                : $"Check node {node.Value} (#{node.DisplayId}): ID does not match. Red/black color controls balancing and numeric keys control left/right order; neither provides a direction for a generated ID.",
+            cancellationToken);
+
+        if (match) return node;
+        node.VisualState = RedBlackNodeVisualState.Visited;
+        var leftMatch = await SearchByIdDepthFirstAsync(node.Left, normalizedId, state, cancellationToken);
+        if (leftMatch is not null) return leftMatch;
+        return await SearchByIdDepthFirstAsync(node.Right, normalizedId, state, cancellationToken);
+    }
+
     public Task<RedBlackOperationResult> DeleteAsync(int value, CancellationToken cancellationToken = default) =>
         ExecuteExclusiveAsync(async () =>
         {
@@ -929,6 +988,11 @@ public sealed class RedBlackSimulation : SimulationAlgorithmBase
         }
     }
 
+    private sealed class IdSearchState
+    {
+        public int Comparisons { get; set; }
+    }
+
     private RedBlackOperationResult BuildResult(
         RedBlackOperationKind operation,
         int requestedValue,
@@ -941,7 +1005,8 @@ public sealed class RedBlackSimulation : SimulationAlgorithmBase
         int initialCount,
         int heightBefore,
         int blackHeightBefore,
-        RedBlackDeleteCase deleteCase) =>
+        RedBlackDeleteCase deleteCase,
+        string? requestedDisplayId = null) =>
         new(
             operation,
             requestedValue,
@@ -960,7 +1025,8 @@ public sealed class RedBlackSimulation : SimulationAlgorithmBase
             Height,
             blackHeightBefore,
             BlackHeight,
-            deleteCase);
+            deleteCase,
+            requestedDisplayId);
 
     private async Task<TResult> ExecuteExclusiveAsync<TResult>(
         Func<Task<TResult>> operation,

@@ -4,8 +4,8 @@ using AlgorithmVisualizer.Core.Simulation.Contracts;
 namespace AlgorithmVisualizer.Core.DataStructures.Heap;
 
 /// <summary>
-/// Generalized d-ary min/max heap implemented from scratch over the same custom raw-array storage
-/// used by the binary heap. The binary heap is exactly the d = 2 special case. This implementation
+/// Generalized d-ary min/max heap implemented from scratch over project-owned raw-array storage.
+/// Binary Heap is exactly the d = 2 special case of this same implementation. This implementation
 /// allows d >= 2 and teaches how branching factor changes the index formulas and tree height.
 /// </summary>
 public sealed class DaryHeapSimulation : SimulationAlgorithmBase
@@ -195,6 +195,50 @@ public sealed class DaryHeapSimulation : SimulationAlgorithmBase
                 0, repair.FinalIndex, HeapRepairDirection.BubbleDown);
         }, cancellationToken);
 
+    public Task<HeapOperationResult> SearchByIdAsync(string normalizedId, CancellationToken cancellationToken = default) =>
+        ExecuteExclusiveAsync(async () =>
+        {
+            ResetVisualStates();
+            var initialCount = Count;
+            var capacityBefore = Capacity;
+            var comparisons = 0;
+
+            for (var index = 0; index < Count; index++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var current = _items[index];
+                comparisons++;
+                var match = string.Equals(current.DisplayId, normalizedId, StringComparison.OrdinalIgnoreCase);
+                current.VisualState = match ? HeapElementVisualState.Matched : HeapElementVisualState.Checking;
+                NotifyChanged();
+
+                await NextStepAsync(
+                    match
+                        ? $"Check index {index}: element #{current.DisplayId} matches requested ID #{normalizedId}."
+                        : $"Check index {index}: #{current.DisplayId} is not #{normalizedId}. Heap priority orders values, not generated IDs, so continue the array scan.",
+                    cancellationToken);
+
+                if (match)
+                {
+                    return new HeapOperationResult(
+                        HeapOperationKind.Search, Kind, current.Value, true, current.Id, current.Value,
+                        comparisons, 0, initialCount, Count, capacityBefore, Capacity,
+                        index, index, HeapRepairDirection.None, normalizedId);
+                }
+
+                current.VisualState = HeapElementVisualState.Normal;
+            }
+
+            await NextStepAsync(
+                $"All {Count} used slot(s) were checked. IDs are object identities, not heap priorities, so ID search is O(n) without a separate ID index.",
+                cancellationToken);
+
+            return new HeapOperationResult(
+                HeapOperationKind.Search, Kind, null, false, null, null,
+                comparisons, 0, initialCount, Count, capacityBefore, Capacity,
+                null, null, HeapRepairDirection.None, normalizedId);
+        }, cancellationToken);
+
     public Task<HeapOperationResult> SearchAsync(int value, CancellationToken cancellationToken = default) =>
         ExecuteExclusiveAsync(async () =>
         {
@@ -368,6 +412,31 @@ public sealed class DaryHeapSimulation : SimulationAlgorithmBase
                 HeapOperationKind.Delete, Kind, value, true, target.Id, target.Value,
                 comparisons + repairComparisons, swaps, initialCount, Count, capacityBefore, Capacity,
                 targetIndex, finalIndex, repairDirection);
+        }, cancellationToken);
+
+    public Task<bool> LoadStarterHeapAsync(CancellationToken cancellationToken = default) =>
+        ExecuteExclusiveAsync(async () =>
+        {
+            if (Count != 0)
+            {
+                await NextStepAsync("Starter heap is available only when the heap is empty, so your current work is never replaced silently.", cancellationToken);
+                return false;
+            }
+
+            var starterValues = Kind == HeapKind.Min
+                ? new[] { 10, 20, 25, 30, 40, 50, 70 }
+                : new[] { 90, 80, 75, 60, 50, 40, 20 };
+
+            for (var index = 0; index < starterValues.Length; index++)
+            {
+                _items.Add(new HeapElement(starterValues[index]));
+            }
+
+            NotifyChanged();
+            await NextStepAsync(
+                $"Generated a valid {Arity}-ary {KindLabel} starter heap with {Count} elements. Continue with Insert, Search, Delete, or Extract root; no hidden rebuild will run.",
+                cancellationToken);
+            return true;
         }, cancellationToken);
 
     public Task ClearAsync(CancellationToken cancellationToken = default) =>

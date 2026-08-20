@@ -26,21 +26,22 @@
         {
             var used = index < Snapshot.Count;
             var item = used ? Snapshot.Elements[index] : null;
-            <article class="slot @(used ? StateClass(item!.VisualState) : "free")">
-                <header><span>SLOT @index</span><strong>@(used ? "USED" : "RESERVED")</strong></header>
+            <MemoryStateCard Label="@($"SLOT {index}")"
+                             Status="@(used ? "USED" : "RESERVED")"
+                             Value="@(used ? item!.Value.ToString() : null)"
+                             Identity="@(used ? $"#{item!.DisplayId}" : null)"
+                             StateClass="@(used ? StateClass(item!.VisualState) : string.Empty)"
+                             Reserved="@(!used)">
                 @if (used)
                 {
-                    <div class="slot-value"><strong>@item!.Value</strong><span>#@item.DisplayId</span></div>
-                    <div class="slot-links">
-                        <span>parent <b>@(item.Index == 0 ? "—" : item.ParentIndex(Snapshot.Arity)?.ToString())</b></span>
-                        <span>children <b>@ChildRange(item.Index)</b></span>
-                    </div>
+                    <MemoryStateDetailRow Label="parent" Value="@ParentIndexLabel(item!.Index)" />
+                    <MemoryStateDetailRow Label="children" Value="@ChildRange(item.Index)" />
                 }
                 else
                 {
-                    <div class="free-copy">No element reference stored here.</div>
+                    <span>No element reference stored here.</span>
                 }
-            </article>
+            </MemoryStateCard>
         }
     </div>
 
@@ -53,6 +54,9 @@
 @code {
     [Parameter, EditorRequired]
     public DaryHeapSnapshot Snapshot { get; set; } = new(HeapKind.Min, 3, 0, 0, Array.Empty<DaryHeapElementSnapshot>());
+
+    private string ParentIndexLabel(int index) =>
+        index == 0 ? "—" : ((index - 1) / Snapshot.Arity).ToString();
 
     private string ChildRange(int index)
     {

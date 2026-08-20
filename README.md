@@ -71,6 +71,8 @@ The application now has thirty-four fully implemented learning modules: **Queue 
 - generic Last Run modal overlay/chrome shared by learning modules so pages cannot silently render result content inline when local popup CSS is absent;
 - Concepts & Memory learning page;
 - shared learner-facing module chrome in `wwwroot/css/learning-modules.css`, using the mature Queue & Stack / BST / Matrix / Graph visual language for sorting Learn First panels, module headers, tips, reference links, and lesson progression;
+- shared compact `OperationTile` controls for ordinary lab actions so Stack, Queue, Heap, and future modules keep BST-style operation hierarchy instead of oversized one-action cards;
+- shared Memory State detail rows for label/value pairs (`parent`, `left`, `right`, `children`) so reference labels stay consistently spaced and aligned across BST, AVL, Red-Black Tree, and Heap memory cards;
 - one application-wide curriculum hierarchy: Learn → Data Structures → Sorting → Search & Traversal → Machine Learning; advanced live lessons use a red difficulty dot, while planned lessons keep the neutral planned marker; Graph algorithms are classified inside those algorithm tracks rather than forming a separate navigation section: Topological Sort is Sorting; Dijkstra and MST are Search & Traversal;
 - difficulty-ordered curriculum navigation with reusable `NextLessonCard` links: Queue & Stack → BST → Binary Heap → d-ary Heap → AVL → Vector → Matrix → Graph → Red-Black Tree, then Bubble → Selection → Insertion → Merge → Quick → Heap Sort → Topological Sort (Advanced), then Linear Search → Binary Search → BFS → DFS → Dijkstra (Advanced) → Minimum Spanning Tree (Advanced), then Machine Learning continues Gradient Descent → Linear Regression → Logistic Regression → KNN → KD-Tree → K-Means → Decision Tree → PCA → Neuron + Activation Functions → Neural Network / MLP → Backpropagation → SGD / Momentum / Adam;
 - exact route-based links from every live lab to the relevant Concepts & Memory topic, plus reverse links from the concept sections back to the matching lesson;
@@ -207,7 +209,7 @@ Heap Sort has `Θ(n log n)` best/average/worst total time, `O(1)` extra array st
 
 Matrix is now a live pre-Graph foundation. `ManualMatrix` stores values in one row-major `double[]`. The Memory State deliberately teaches this in two layers: it first groups values as an outer list of row lists so row/column membership is easy to read, then exposes the actual flat backing array and its index formula.
 
-The Matrix UI uses a beginner-first **Build → Choose → Watch** workflow. Direct cell editing is the primary input path; paste controls and special presets are progressively disclosed instead of being shown simultaneously. A live shape/compatibility assistant explains whether `A ± B` and `A × B` currently fit, while invalid operations remain runnable so the simulator can teach why a shape is rejected. Row/column axis labels and `[row,column]` coordinates stay visible in both editing and playback views. Four core operation cards (addition, multiplication, transpose and RREF) explain the rule before execution; the complete advanced operation set remains available under **All matrix operations**.
+The Matrix UI uses a beginner-first **Build → Choose → Watch** workflow. Direct cell editing is the primary input path; the editor now uses compact fixed-size cells, small shape controls, `Try:` presets, and a two-chip compatibility strip so A/B remain the visual focus instead of being buried inside large setup cards. Paste controls and special presets are progressively disclosed. Invalid operations remain runnable so the simulator can teach why a shape is rejected. Row/column axes and `[row,column]` coordinates remain available without exposing screen-reader-only labels as visible UI. Four compact core operation cards (addition, multiplication, transpose and RREF) keep one short explanation plus the single rule that matters before execution; the complete advanced operation set remains available under **All matrix operations**.
 
 Implemented capabilities include direct editing/resizing, presets (zero, identity, sequence, diagonal, symmetric, random and graph adjacency), copy/swap/result chaining, addition/subtraction/Hadamard/scalar operations, matrix multiplication, transpose, powers, trace, determinant, minor/cofactor, elementary row operations, REF/RREF/rank, inverse, and solving `A·X=B`.
 
@@ -1431,7 +1433,7 @@ The project now has reusable manual linear structures, three reusable manual tre
 
 ### Matrix memory visualization
 
-The Matrix Memory State now presents the conceptual structure as a compact list of row lists (`A[0]`, `A[1]`, ...) with values aligned by column. The real contiguous row-major `double[]` remains available as an expandable implementation detail rather than dominating the learning view.
+The Matrix Memory State now presents the conceptual structure literally as an outer list whose row lists (`A[0]`, `A[1]`, ...) sit **side by side**. The workspace stacks Matrix A, then Matrix B, then the result vertically so the learner reads one complete nested list at a time. The real contiguous row-major `double[]` remains available as an expandable implementation detail rather than dominating the learning view.
 
 
 ## Graph module
@@ -1625,3 +1627,5 @@ The learner UI keeps the approved shell and the board-only scroll contract: only
 `/graph-ml/spectral-clustering` builds the normalized Laplacian `I − D⁻¹ᐟ²AD⁻¹ᐟ²` with `ManualMatrix`, solves the small symmetric eigenproblem with project-owned Jacobi rotations, row-normalizes the smallest-eigenvector embedding, and reuses the existing manual K-Means implementation to produce graph communities. `/graph-ml/message-passing` implements a basic GNN-style layer over CSR neighborhoods: gather → mean/sum aggregate → `Wself·h + Wnbr·m + b` → ReLU → synchronous layer commit. Two feature buffers prevent node iteration order from leaking into the mathematics.
 
 All four Phase 3 lessons follow the approved shared shell and the board-only scroll/pan contract. Core does not call sparse-matrix, PageRank, eigensolver, spectral-clustering, graph-neural-network, tensor, or automatic-differentiation libraries. The final Message Passing lesson closes the current AI/ML roadmap at step 17.
+
+- Queue/Stack uses one compact BST-style tile per action; shared operation buttons preserve canonical styling through CSS isolation.

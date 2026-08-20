@@ -65,7 +65,6 @@ builder.Services.AddScoped<QueueSimulation>();
 builder.Services.AddScoped<BstSimulation>();
 builder.Services.AddScoped<AvlSimulation>();
 builder.Services.AddScoped<RedBlackSimulation>();
-builder.Services.AddScoped<HeapSimulation>();
 builder.Services.AddScoped<DaryHeapSimulation>();
 builder.Services.AddScoped<GraphSimulation>();
 builder.Services.AddScoped<VectorSimulation>();

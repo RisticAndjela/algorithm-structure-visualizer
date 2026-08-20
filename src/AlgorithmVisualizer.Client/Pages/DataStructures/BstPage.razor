@@ -16,7 +16,7 @@
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="bst-learn-title">One comparison decides the next branch.</h2>
             <p>A BST repeats one rule: smaller goes left, larger goes right. Search, insert, and delete all depend on that ordering. This lab also lets you explicitly rebalance an existing BST so you can compare shape before and after.</p>
-            <ConceptLink Href="/learn/concepts/bst-balancing">Open BST height &amp; balancing →</ConceptLink>
+            <LessonLinkButton Href="/learn/concepts/bst-balancing">Open BST height &amp; balancing →</LessonLinkButton>
         </div>
         <div class="learn-grid">
             <article class="learn-card purple"><span>ORDER</span><strong>left &lt; node &lt; right</strong><small>This lab rejects duplicate keys so the invariant stays strict.</small></article>
@@ -50,7 +50,7 @@
             <strong>Before every step:</strong>
             <p>compare the target with the highlighted node and predict whether the next link will be left or right.</p>
         </div>
-        <ConceptLink Href="/learn/concepts/big-o">Why height changes the cost →</ConceptLink>
+        <LessonLinkButton Href="/learn/concepts/big-o" Class="compact">Why height changes the cost →</LessonLinkButton>
     </section>
 
     <section class="lab-shell">
@@ -75,16 +75,10 @@
             <div class="value-card">
                 <label>
                     <span class="control-label">VALUE / KEY</span>
-                    <InputNumber TValue="int?" @bind-Value="_value" disabled="@IsBusy" placeholder="e.g. 50" />
+                    <LiveIntInput @bind-Value="_value" Disabled="@IsBusy" Placeholder="e.g. 50" />
                 </label>
                 <small>The same number cannot be inserted twice in this BST.</small>
-                <div class="sample-values" aria-label="Suggested BST values">
-                    <span>Try:</span>
-                    @foreach (var sample in SampleValues)
-                    {
-                        <button type="button" @onclick="() => SetValue(sample)" disabled="@IsBusy">@sample</button>
-                    }
-                </div>
+                <QuickTryValues Values="SampleValues" OnSelect="SetValue" Disabled="@IsBusy" />
             </div>
 
             <div class="operation-card insert-card">
@@ -93,8 +87,15 @@
             </div>
 
             <div class="operation-card search-card">
-                <div class="operation-heading"><span class="operation-glyph">?</span><span><strong>Search</strong><small>Follow one comparison path</small></span></div>
-                <button type="button" @onclick="SearchAsync" disabled="@(!CanRunValueOperation)">Search value <span>→</span></button>
+                <div class="operation-heading"><span class="operation-glyph">?</span><span><strong>Search</strong><small>Choose ordering key or object identity</small></span></div>
+                <SearchCriterionControl SearchById="@_searchById"
+                                        SearchByIdChanged="SetSearchMode"
+                                        IdValue="@_searchId"
+                                        IdValueChanged="SetSearchId"
+                                        Disabled="@IsBusy"
+                                        ValueHint="Value search follows the ordered tree path."
+                                        IdHint="ID is not the ordering key, so ID search may inspect every node: O(n)." />
+                <button type="button" @onclick="SearchAsync" disabled="@(!CanRunSearch)">Search @(_searchById ? "ID" : "value") <span>→</span></button>
             </div>
 
             <div class="operation-card delete-card">
@@ -145,8 +146,8 @@
         </div>
 
         <div class="lesson-reference-links" aria-label="Concepts and memory links">
-            <ConceptLink Href="/learn/concepts/bst">BST concepts →</ConceptLink>
-            <ConceptLink Href="/learn/concepts/visual-vs-memory">BST visual vs memory →</ConceptLink>
+            <LessonLinkButton Href="/learn/concepts/bst" Class="compact">BST concepts →</LessonLinkButton>
+            <LessonLinkButton Href="/learn/concepts/visual-vs-memory" Class="compact">BST visual vs memory →</LessonLinkButton>
         </div>
 
         @if (_activeStateView == StateView.Visual)
@@ -196,11 +197,11 @@
             }
         </div>
     </section>
-    <NextLessonCard Title="Binary Heap"
-                    Description="Reuse tree thinking, then learn a complete-tree layout stored by array indexes."
-                    Href="/structures/binary-heap"
+    <NextLessonCard Title="Heap family"
+                    Description="Reuse tree thinking, then compare the same array-backed heap from binary d = 2 to higher branching factors."
+                    Href="/structures/heap"
                     Level="03 · Beginner → Intermediate"
-                    LinkLabel="Open Binary Heap lesson" />
+                    LinkLabel="Open Heap lesson" />
 
 </div>
 
@@ -248,7 +249,7 @@
                         <strong>@GetPlainRunSummary(_lastResult)</strong>
                         <p>@GetComplexityExplanation(_lastResult)</p>
                     </div>
-                    <a class="popup-learn" href="@GetResultLearnHref(_lastResult)">@GetResultLearnLabel(_lastResult)</a>
+                    <LessonLinkButton Class="compact" Href="@GetResultLearnHref(_lastResult)">@GetResultLearnLabel(_lastResult)</LessonLinkButton>
                 </div>
             }
             else
@@ -270,7 +271,7 @@
                         <strong>@GetMemoryHeadline(_lastResult)</strong>
                         <p>@GetMemoryExplanation(_lastResult)</p>
                     </div>
-                    <ConceptLink class="popup-learn" Href="/learn/concepts/visual-vs-memory">Visual state vs Memory state →</ConceptLink>
+                    <LessonLinkButton Class="compact" Href="/learn/concepts/visual-vs-memory">Visual state vs Memory state →</LessonLinkButton>
                 </div>
             }
 
@@ -305,6 +306,8 @@
     ];
 
     private int? _value;
+    private string? _searchId;
+    private bool _searchById;
     private string? _errorMessage;
     private string? _lastCapturedStepText;
     private int _frameIndex = -1;
@@ -320,6 +323,7 @@
 
     private bool IsBusy => SimulationState.IsRunning;
     private bool CanRunValueOperation => !IsBusy && _value.HasValue;
+    private bool CanRunSearch => !IsBusy && (_searchById ? !string.IsNullOrWhiteSpace(_searchId) : _value.HasValue);
     private bool CanBalanceTree => !IsBusy && Tree.Count > 1;
     private bool CanStepBack => _frameIndex > 0;
     private bool CanStepForward => (_runFrames.Count > 0 && _frameIndex < _runFrames.Count - 1) || SimulationState.IsRunning;
@@ -366,7 +370,23 @@
     }
 
     private Task InsertAsync() => RunValueResultOperationAsync(BstOperationKind.Insert, Tree.InsertAsync);
-    private Task SearchAsync() => RunValueResultOperationAsync(BstOperationKind.Search, Tree.SearchAsync);
+    private async Task SearchAsync()
+    {
+        if (!_searchById)
+        {
+            await RunValueResultOperationAsync(BstOperationKind.Search, Tree.SearchAsync);
+            return;
+        }
+
+        if (!ShortId.TryNormalize(_searchId, out var normalizedId, out var error))
+        {
+            _errorMessage = error;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        await RunIdSearchAsync(normalizedId);
+    }
     private Task DeleteAsync() => RunValueResultOperationAsync(BstOperationKind.Delete, Tree.DeleteAsync);
 
     private async Task BalanceTreeAsync()
@@ -405,6 +425,43 @@
             if (IsCurrentRun(runToken))
             {
                 SimulationState.Complete("The balance run stopped because of an error.");
+            }
+        }
+    }
+
+    private async Task RunIdSearchAsync(string normalizedId)
+    {
+        if (SimulationState.IsRunning)
+        {
+            return;
+        }
+
+        PrepareNewRun();
+        var runToken = SimulationState.Start("Starting BST ID search for #" + normalizedId + ".");
+
+        try
+        {
+            var result = await Tree.SearchByIdAsync(normalizedId, runToken);
+            if (!IsCurrentRun(runToken))
+            {
+                return;
+            }
+
+            _lastResult = result;
+            SimulationState.SetCurrentStep("Run complete.");
+            SimulationState.Complete();
+            _popupTab = ResultPopupTab.Run;
+            _lastRunPopupOpen = _showRunPopups;
+        }
+        catch (OperationCanceledException) when (runToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = $"Something went wrong: {exception.Message}";
+            if (IsCurrentRun(runToken))
+            {
+                SimulationState.Complete("The run stopped because of an error.");
             }
         }
     }
@@ -571,6 +628,20 @@
         return InvokeAsync(StateHasChanged);
     }
 
+    private Task SetSearchMode(bool searchById)
+    {
+        _searchById = searchById;
+        _errorMessage = null;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task SetSearchId(string? value)
+    {
+        _searchId = value;
+        _errorMessage = null;
+        return InvokeAsync(StateHasChanged);
+    }
+
     private void SetValue(int value)
     {
         if (!IsBusy)
@@ -731,6 +802,8 @@
     {
         BstOperationKind.Insert when result.DuplicateRejected => $"Insert: {result.RequestedValue} already exists",
         BstOperationKind.Insert => $"Inserted {result.RequestedValue}",
+        BstOperationKind.Search when result.IsIdLookup && result.Succeeded => $"Found #{result.RequestedDisplayId}",
+        BstOperationKind.Search when result.IsIdLookup => $"ID #{result.RequestedDisplayId} not found",
         BstOperationKind.Search when result.Succeeded => $"Found {result.RequestedValue}",
         BstOperationKind.Search => $"Search: {result.RequestedValue} not found",
         BstOperationKind.Delete when result.Succeeded => $"Deleted {result.RequestedValue}",
@@ -742,6 +815,13 @@
 
     private static string GetPlainRunSummary(BstOperationResult result)
     {
+        if (result.IsIdLookup)
+        {
+            return result.Succeeded
+                ? "The simulator matched object identity by ID. Because IDs are not ordered by the tree invariant, it cannot discard a subtree from a key comparison."
+                : "No node had that ID. Unlike value search, ID search cannot choose only left or right from the BST ordering, so it may inspect every node.";
+        }
+
         if (result.DuplicateRejected)
         {
             return "The comparison path reached an equal key, so this strict BST rejected the duplicate.";
@@ -769,6 +849,11 @@
 
     private static string GetComplexityExplanation(BstOperationResult result)
     {
+        if (result.IsIdLookup)
+        {
+            return $"ID search used {result.Comparisons} identity check(s). The tree is ordered by VALUE / KEY, not by generated node ID, so an ID comparison cannot choose one ordered child branch. Without a separate ID index, worst-case time is O(n). Value search remains O(h) because it can follow the ordering invariant.";
+        }
+
         if (result.Operation == BstOperationKind.Balance)
         {
             return $"Day-Stout-Warren visits and rewires nodes a constant number of times, so balancing is O(n) time. This implementation uses the existing node links and only a few node references/counters, so the algorithmic extra space is O(1). It performed {result.VineRotations} vine rotation(s) and {result.CompressionRotations} compression rotation(s) across {result.CompressionPasses} compression pass(es).";

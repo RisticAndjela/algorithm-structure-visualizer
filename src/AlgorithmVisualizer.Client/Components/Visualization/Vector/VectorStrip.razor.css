@@ -1,6 +1,6 @@
 .vector-strip { display:grid; gap:.5rem; }
 .vector-strip header { display:flex; justify-content:space-between; align-items:center; }
-.vector-strip header span { width:2rem; height:2rem; display:grid; place-items:center; border-radius:.65rem; color:#fff; background:#4b42a8; font-weight:900; }
+.vector-strip header span { width:auto; min-width:2rem; height:2rem; box-sizing:border-box; padding:0 .55rem; display:grid; place-items:center; border-radius:.65rem; color:#fff; background:#4b42a8; font-weight:900; white-space:nowrap; }
 .vector-strip.result header span { background:#16816e; }
 .vector-strip header strong { color:var(--color-text-muted); font-size:.72rem; }
 .vector-components { display:flex; flex-wrap:wrap; gap:.5rem; }

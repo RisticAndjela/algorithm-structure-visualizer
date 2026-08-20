@@ -6,3 +6,11 @@ src/AlgorithmVisualizer.Client/Components/Visualization/ComputationalGraph/Compu
 src/AlgorithmVisualizer.Client/Pages/MachineLearning/ComputationalGraphPage.razor
 src/AlgorithmVisualizer.Client/Pages/MachineLearning/ComputationalGraphPage.razor.css
 tests/AlgorithmVisualizer.Core.Tests/MachineLearning/DeepLearning/ComputationalGraphSimulationTests.cs
+src/AlgorithmVisualizer.Client/Pages/DataStructures/HeapPage.razor
+src/AlgorithmVisualizer.Client/Pages/DataStructures/HeapPage.razor.css
+src/AlgorithmVisualizer.Client/Components/Visualization/Heap/HeapVisualization.razor
+src/AlgorithmVisualizer.Client/Components/Visualization/Heap/HeapVisualization.razor.css
+src/AlgorithmVisualizer.Client/Components/Visualization/Heap/HeapMemoryVisualization.razor
+src/AlgorithmVisualizer.Client/Components/Visualization/Heap/HeapMemoryVisualization.razor.css
+src/AlgorithmVisualizer.Core/DataStructures/Heap/HeapSimulation.cs
+tests/AlgorithmVisualizer.Core.Tests/DataStructures/Heap/HeapSimulationTests.cs

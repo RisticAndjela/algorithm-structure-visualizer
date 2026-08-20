@@ -1,4 +1,5 @@
 @page "/structures/heap"
+@page "/structures/binary-heap"
 @implements IDisposable
 @using System.Text.Json
 @using AlgorithmVisualizer.Client.Components.Visualization.Heap
@@ -7,6 +8,7 @@
 @inject DaryHeapSimulation Heap
 @inject LearningSessionStore LearningStore
 @inject PracticeProgressStore PracticeProgress
+@inject NavigationManager Navigation
 
 <PageTitle>Heap Family Lab — Algorithm Visualizer</PageTitle>
 
@@ -16,7 +18,7 @@
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="heap-learn-title">“Heap” is the rule family. Binary Heap is one concrete member.</h2>
             <p>There is no separate data structure called an “ordinary heap” that sits beside Binary Heap. A heap is a family of priority-ordered structures. To make that distinction executable, this lab implements a generalized <strong>d-ary heap</strong>: each parent may have d children. Binary Heap is exactly d = 2.</p>
-            <ConceptLink Href="/learn/concepts/binary-heap">Heap vs Binary Heap: see the distinction →</ConceptLink>
+            <LessonLinkButton Href="/learn/concepts/general-heap">Open heap family concepts →</LessonLinkButton>
         </div>
         <div class="learn-grid">
             <article class="learn-card purple"><span>HEAP</span><strong>A family, not one shape</strong><small>The essential idea is parent/child priority. Different heap implementations choose different branching and storage strategies.</small></article>
@@ -32,7 +34,7 @@
                 <span>DATA STRUCTURES</span><span class="separator">/</span><span class="live-status"><i></i> Interactive lab</span>
             </div>
             <h1>Heap (generalized d-ary)</h1>
-            <p>Use a concrete generalized heap to see what changes when one parent can have 3, 4, or 5 children. Then open Binary Heap beside it and compare the index formulas, height, and bubble-down choices.</p>
+            <p>Use a concrete generalized heap to see what changes when one parent can have 3, 4, or 5 children. Set d = 2 for Binary Heap, then increase d and compare the index formulas, height, and bubble-down choices in the same implementation.</p>
         </div>
         <div class="complexity-summary">
             <div><span>ROOT</span><strong>O(1)</strong><small>always array index 0</small></div>
@@ -47,7 +49,7 @@
             <strong>Compare this formula with Binary Heap before pressing Step forward.</strong>
             <p>For d-ary heap: parent = (i − 1) / d and children = di + 1 through di + d. Binary Heap simply substitutes d = 2.</p>
         </div>
-        <a href="/structures/binary-heap">Open Binary Heap side by side →</a>
+        <LessonLinkButton Href="/learn/concepts/general-heap" Class="compact">Heap family concepts →</LessonLinkButton>
     </section>
 
     <section class="lab-shell">
@@ -62,31 +64,26 @@
             </div>
         </div>
 
-        <section class="kind-selector" aria-label="Heap type">
-            <div>
-                <span class="control-label">PRIORITY RULE</span>
-                <strong>@(Heap.Kind == HeapKind.Min ? "Min Heap" : "Max Heap")</strong>
-                <small>Min/Max mode may change only while empty because changing the priority rule would require a real rebuild.</small>
+        <section class="heap-config-strip" aria-label="Heap configuration">
+            <div class="heap-config-group">
+                <span class="control-label">PRIORITY</span>
+                <div class="heap-config-buttons">
+                    <button type="button" class="@(Heap.Kind == HeapKind.Min ? "active" : string.Empty)" @onclick="() => SelectKind(HeapKind.Min)" disabled="@IsBusy">Min ↓</button>
+                    <button type="button" class="@(Heap.Kind == HeapKind.Max ? "active" : string.Empty)" @onclick="() => SelectKind(HeapKind.Max)" disabled="@IsBusy">Max ↑</button>
+                </div>
             </div>
-            <div class="kind-buttons">
-                <button type="button" class="@(Heap.Kind == HeapKind.Min ? "active" : string.Empty)" @onclick="() => SelectKind(HeapKind.Min)" disabled="@IsBusy">Min Heap <span>↓</span></button>
-                <button type="button" class="@(Heap.Kind == HeapKind.Max ? "active" : string.Empty)" @onclick="() => SelectKind(HeapKind.Max)" disabled="@IsBusy">Max Heap <span>↑</span></button>
-            </div>
-        </section>
 
-        <section class="arity-selector" aria-label="Heap branching factor">
-            <div>
-                <span class="control-label">BRANCHING FACTOR d</span>
-                <strong>@(Heap.Arity) children maximum per parent</strong>
-                <small>Changing d changes every parent/child index relationship, so it is allowed only while the heap is empty.</small>
+            <div class="heap-config-group branching-config">
+                <span class="control-label">CHILDREN / PARENT</span>
+                <div class="heap-config-buttons">
+                    @foreach (var arity in ArityOptions)
+                    {
+                        <button type="button" class="@(Heap.Arity == arity ? "active" : string.Empty)" @onclick="() => SelectArity(arity)" disabled="@IsBusy">d = @arity</button>
+                    }
+                </div>
             </div>
-            <div class="arity-buttons">
-                @foreach (var arity in ArityOptions)
-                {
-                    <button type="button" class="@(Heap.Arity == arity ? "active" : string.Empty)" @onclick="() => SelectArity(arity)" disabled="@IsBusy">d = @arity</button>
-                }
-                <a href="/structures/binary-heap">Binary d = 2 →</a>
-            </div>
+
+            <small class="heap-config-note">Priority and d can change only while the heap is empty; changing either rule requires a rebuild.</small>
         </section>
 
         <section class="use-case-strip" aria-label="When heaps are useful">
@@ -97,41 +94,51 @@
 
         <section class="operation-panel" aria-label="Heap operations">
             <div class="value-card">
-                <label><span class="control-label">VALUE</span><InputNumber TValue="int?" @bind-Value="_value" disabled="@IsBusy" placeholder="e.g. 25" /></label>
-                <small>Duplicates are allowed. Equal values are different element objects with different IDs.</small>
-                <div class="sample-values">
-                    <span>Try:</span>
-                    @foreach (var sample in SampleValues)
-                    {
-                        <button type="button" @onclick="() => SetValue(sample)" disabled="@IsBusy">@sample</button>
-                    }
-                </div>
+                <label><span class="control-label">VALUE</span><LiveIntInput @bind-Value="_value" Disabled="@IsBusy" Placeholder="e.g. 25" /></label>
+                <small>Shared by Insert, value Search, and Delete. Duplicates are allowed.</small>
+                <QuickTryValues Values="SampleValues" OnSelect="SetValue" Disabled="@IsBusy" />
             </div>
 
-            <div class="operation-card insert-card">
-                <div class="operation-heading"><span class="operation-glyph">+</span><span><strong>Insert</strong><small>append + bubble-up</small></span></div>
-                <button class="primary-action" type="button" @onclick="InsertAsync" disabled="@(!CanRunValueOperation)">Insert value <span>↑</span></button>
-            </div>
+            <OperationTile Icon="+" Title="Insert" Subtitle="append · bubble up" Tone="purple">
+                <Actions>
+                    <button class="primary" type="button" @onclick="InsertAsync" disabled="@(!CanRunValueOperation)">Insert ↑</button>
+                </Actions>
+            </OperationTile>
 
-            <div class="operation-card extract-card">
-                <div class="operation-heading"><span class="operation-glyph">◆</span><span><strong>Extract root</strong><small>@(Heap.Kind == HeapKind.Min ? "remove minimum" : "remove maximum")</small></span></div>
-                <button type="button" @onclick="ExtractRootAsync" disabled="@(!CanExtract)">Extract root <span>↓</span></button>
-            </div>
+            <OperationTile Icon="◆" Title="Extract root" Subtitle="@ExtractRootSubtitle" Tone="blue">
+                <Actions>
+                    <button class="primary" type="button" @onclick="ExtractRootAsync" disabled="@(!CanExtract)">Extract ↓</button>
+                </Actions>
+            </OperationTile>
 
-            <div class="operation-card search-card">
-                <div class="operation-heading"><span class="operation-glyph">?</span><span><strong>Search</strong><small>linear array scan</small></span></div>
-                <button type="button" @onclick="SearchAsync" disabled="@(!CanRunValueOperation)">Search value <span>→</span></button>
-            </div>
+            <OperationTile Icon="?" Title="Search" Subtitle="value or object ID" Tone="mint">
+                <ChildContent>
+                    <SearchCriterionControl SearchById="@_searchById"
+                                            SearchByIdChanged="SetSearchMode"
+                                            IdValue="@_searchId"
+                                            IdValueChanged="SetSearchId"
+                                            Disabled="@IsBusy"
+                                            Compact="true"
+                                            ValueHint="Value search scans array slots: heap priority is not BST ordering."
+                                            IdHint="ID is not indexed either, so ID search is also O(n)." />
+                </ChildContent>
+                <Actions>
+                    <button class="primary" type="button" @onclick="SearchAsync" disabled="@(!CanRunSearch)">Search @(_searchById ? "ID" : "value") →</button>
+                </Actions>
+            </OperationTile>
 
-            <div class="operation-card delete-card">
-                <div class="operation-heading"><span class="operation-glyph">−</span><span><strong>Delete</strong><small>find + replace + repair</small></span></div>
-                <button class="delete-action" type="button" @onclick="DeleteAsync" disabled="@(!CanRunValueOperation)">Delete first match <span>×</span></button>
-            </div>
+            <OperationTile Icon="−" Title="Delete" Subtitle="find · replace · repair" Tone="red">
+                <Actions>
+                    <button class="danger" type="button" @onclick="DeleteAsync" disabled="@(!CanRunValueOperation)">Delete match ×</button>
+                </Actions>
+            </OperationTile>
 
-            <div class="operation-card reset-card">
-                <div class="operation-heading"><span class="operation-glyph">↺</span><span><strong>Reset heap</strong><small>clear used references</small></span></div>
-                <button type="button" @onclick="ClearHeapAsync" disabled="@IsBusy">Clear heap</button>
-            </div>
+            <OperationTile Icon="↺" Title="Start / reset" Subtitle="small setup utilities" Tone="neutral">
+                <Actions>
+                    <button type="button" @onclick="LoadStarterAsync" disabled="@(!CanLoadStarter)">Starter ✦</button>
+                    <button class="quiet" type="button" @onclick="ClearHeapAsync" disabled="@IsBusy">Clear</button>
+                </Actions>
+            </OperationTile>
         </section>
 
         <div class="sample-sequence">
@@ -158,8 +165,8 @@
         </div>
 
         <div class="lesson-reference-links" aria-label="Concepts and memory links">
-            <ConceptLink Href="/learn/concepts/general-heap">d-ary Heap concepts →</ConceptLink>
-            <ConceptLink Href="/learn/concepts/memory">Heap array memory →</ConceptLink>
+            <LessonLinkButton Href="/learn/concepts/general-heap" Class="compact">Heap concepts →</LessonLinkButton>
+            <LessonLinkButton Href="/learn/concepts/memory" Class="compact">Heap array memory →</LessonLinkButton>
         </div>
 
         @if (_activeStateView == StateView.Visual)
@@ -205,7 +212,7 @@
     <NextLessonCard Title="AVL Tree"
                     Description="Move from priority ordering to a BST that automatically repairs its height with rotations."
                     Href="/structures/avl"
-                    Level="05 · Intermediate"
+                    Level="04 · Intermediate"
                     LinkLabel="Open AVL lesson" />
 
 </div>
@@ -257,15 +264,17 @@
     private static readonly int[] ArityOptions = [2, 3, 4, 5];
     private static readonly IReadOnlyList<PracticeTaskDefinition> PracticeTasks =
     [
-        new(1, "See d = 3 change the parent formula", ["Clear the heap and choose d = 3.", "Insert 90, 70, 80, then 10.", "Watch parent = (i − 1) / 3 drive bubble-up."], "/learn/concepts/binary-heap"),
-        new(2, "Make three children compete", ["Use Min Heap with d = 3.", "Build at least seven values.", "Extract root and watch bubble-down compare up to three children before choosing one."], "/learn/concepts/binary-heap"),
-        new(3, "Increase branching to d = 4", ["Clear the heap and choose d = 4.", "Insert at least nine values.", "Compare the displayed height with the d = 3 run."], "/learn/concepts/binary-heap"),
+        new(1, "See d = 3 change the parent formula", ["Clear the heap and choose d = 3.", "Insert 90, 70, 80, then 10.", "Watch parent = (i − 1) / 3 drive bubble-up."], "/learn/concepts/general-heap"),
+        new(2, "Make three children compete", ["Use Min Heap with d = 3.", "Build at least seven values.", "Extract root and watch bubble-down compare up to three children before choosing one."], "/learn/concepts/general-heap"),
+        new(3, "Increase branching to d = 4", ["Clear the heap and choose d = 4.", "Insert at least nine values.", "Compare the displayed height with the d = 3 run."], "/learn/concepts/general-heap"),
         new(4, "Prove search is still linear", ["Build at least five elements.", "Search for a missing value.", "Notice that changing d does not create BST-style search ordering."], "/learn/concepts/big-o"),
-        new(5, "Delete and repair", ["Build a d-ary heap with at least five values.", "Delete a non-root value.", "Observe whether the last-slot replacement repairs upward or downward."], "/learn/concepts/binary-heap"),
+        new(5, "Delete and repair", ["Build a d-ary heap with at least five values.", "Delete a non-root value.", "Observe whether the last-slot replacement repairs upward or downward."], "/learn/concepts/general-heap"),
         new(6, "Compare storage with Binary Heap", ["Build enough values to grow capacity beyond four.", "Open Memory state.", "Compare the d-ary formula with the Binary Heap d = 2 formula."], "/learn/concepts/visual-vs-memory")
     ];
 
     private int? _value;
+    private string? _searchId;
+    private bool _searchById;
     private string? _errorMessage;
     private string? _lastCapturedStepText;
     private int _frameIndex = -1;
@@ -283,7 +292,10 @@
 
     private bool IsBusy => SimulationState.IsRunning;
     private bool CanRunValueOperation => !IsBusy && _value.HasValue;
+    private bool CanRunSearch => !IsBusy && (_searchById ? !string.IsNullOrWhiteSpace(_searchId) : _value.HasValue);
+    private bool CanLoadStarter => !IsBusy && Heap.Count == 0;
     private bool CanExtract => !IsBusy && Heap.Count > 0;
+    private string ExtractRootSubtitle => Heap.Kind == HeapKind.Min ? "remove minimum" : "remove maximum";
     private bool CanStepBack => _frameIndex > 0;
     private bool CanStepForward => (_runFrames.Count > 0 && _frameIndex < _runFrames.Count - 1) || SimulationState.IsRunning;
     private int TimelineCount => _runFrames.Count;
@@ -294,6 +306,11 @@
 
     protected override void OnInitialized()
     {
+        if (Heap.Count == 0 && new Uri(Navigation.Uri).AbsolutePath.EndsWith("/structures/binary-heap", StringComparison.OrdinalIgnoreCase))
+        {
+            Heap.TrySetArity(2);
+        }
+
         SimulationState.Changed += HandleStateChanged;
         Heap.Changed += HandleHeapChanged;
     }
@@ -345,7 +362,33 @@
     }
 
     private Task InsertAsync() => RunValueOperationAsync(HeapOperationKind.Insert, Heap.InsertAsync);
-    private Task SearchAsync() => RunValueOperationAsync(HeapOperationKind.Search, Heap.SearchAsync);
+    private async Task SearchAsync()
+    {
+        if (!_searchById)
+        {
+            await RunValueOperationAsync(HeapOperationKind.Search, Heap.SearchAsync);
+            return;
+        }
+
+        if (!ShortId.TryNormalize(_searchId, out var normalizedId, out var error))
+        {
+            _errorMessage = error;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        if (IsBusy) return;
+        PrepareNewRun();
+        var runToken = SimulationState.Start($"Starting d={Heap.Arity} heap ID search for #{normalizedId}.");
+        try
+        {
+            var result = await Heap.SearchByIdAsync(normalizedId, runToken);
+            if (!IsCurrentRun(runToken)) return;
+            FinishRun(result, recordPractice: false);
+        }
+        catch (OperationCanceledException) when (runToken.IsCancellationRequested) { }
+        catch (Exception exception) { HandleRunException(exception, runToken); }
+    }
     private Task DeleteAsync() => RunValueOperationAsync(HeapOperationKind.Delete, Heap.DeleteAsync);
 
     private async Task RunValueOperationAsync(HeapOperationKind kind, Func<int, CancellationToken, Task<HeapOperationResult>> operation)
@@ -381,6 +424,22 @@
         catch (Exception exception) { HandleRunException(exception, runToken); }
     }
 
+    private async Task LoadStarterAsync()
+    {
+        if (!CanLoadStarter) return;
+        PrepareNewRun();
+        var runToken = SimulationState.Start($"Generating a d={Heap.Arity} {Heap.Kind.ToString().ToLowerInvariant()} starter heap.");
+        try
+        {
+            var loaded = await Heap.LoadStarterHeapAsync(runToken);
+            if (!IsCurrentRun(runToken)) return;
+            SimulationState.SetCurrentStep(loaded ? "Generated heap ready — continue with any operation." : "Starter heap was not loaded.");
+            SimulationState.Complete();
+        }
+        catch (OperationCanceledException) when (runToken.IsCancellationRequested) { }
+        catch (Exception exception) { HandleRunException(exception, runToken); }
+    }
+
     private async Task ClearHeapAsync()
     {
         if (IsBusy) return;
@@ -400,10 +459,13 @@
         catch (Exception exception) { HandleRunException(exception, runToken); }
     }
 
-    private void FinishRun(HeapOperationResult result)
+    private void FinishRun(HeapOperationResult result, bool recordPractice = true)
     {
         _lastResult = result;
-        RecordPracticeEvent(new PracticeEvent(result.Operation, result.RequestedValue, result.Succeeded, result.Swaps, result.RepairDirection, result.Kind, Heap.Arity, result.FinalCount, result.CapacityAfter, result.Comparisons));
+        if (recordPractice)
+        {
+            RecordPracticeEvent(new PracticeEvent(result.Operation, result.RequestedValue, result.Succeeded, result.Swaps, result.RepairDirection, result.Kind, Heap.Arity, result.FinalCount, result.CapacityAfter, result.Comparisons));
+        }
         SimulationState.SetCurrentStep("Run complete.");
         SimulationState.Complete();
         _popupTab = result.Operation is HeapOperationKind.ExtractRoot or HeapOperationKind.Delete ? ResultPopupTab.Memory : ResultPopupTab.Run;
@@ -441,6 +503,20 @@
     private Task StepBackAsync() { if (SimulationState.IsRunning && !SimulationState.IsPaused) SimulationState.Pause(); if (_frameIndex > 0) _frameIndex--; return InvokeAsync(StateHasChanged); }
     private Task StepForwardAsync() { if (_frameIndex >= 0 && _frameIndex < _runFrames.Count - 1) { _frameIndex++; return InvokeAsync(StateHasChanged); } if (SimulationState.IsRunning) SimulationState.Step(); return Task.CompletedTask; }
     private Task ResetPlaybackAsync() { SimulationState.Reset(); _runFrames.Clear(); _frameIndex = -1; _lastCapturedStepText = null; return InvokeAsync(StateHasChanged); }
+
+    private Task SetSearchMode(bool searchById)
+    {
+        _searchById = searchById;
+        _errorMessage = null;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task SetSearchId(string? value)
+    {
+        _searchId = value;
+        _errorMessage = null;
+        return InvokeAsync(StateHasChanged);
+    }
 
     private void SetValue(int value) { if (!IsBusy) { _value = value; _errorMessage = null; } }
     private void SetStateView(StateView view)
@@ -515,7 +591,7 @@
         3 => $"Current d = {Heap.Arity}. Choose d = 4 and build at least nine values.",
         4 => "Build five or more elements and search for a value that is not present.",
         5 => "Delete a non-root value whose last-element replacement needs a repair.",
-        6 => _memoryOpenedDuringTask ? "Memory state opened — compare d-ary formulas with the Binary Heap link." : "Build at least five elements, then open Memory state.",
+        6 => _memoryOpenedDuringTask ? "Memory state opened — compare the d-ary formulas and switch to d = 2 to inspect the binary special case." : "Build at least five elements, then open Memory state.",
         _ => string.Empty
     };
 
@@ -531,6 +607,8 @@
         HeapOperationKind.Insert => $"Inserted {result.RequestedValue}",
         HeapOperationKind.ExtractRoot when result.Succeeded => $"Extracted root {result.AffectedValue}",
         HeapOperationKind.ExtractRoot => "Extract root: heap was empty",
+        HeapOperationKind.Search when result.IsIdLookup && result.Succeeded => $"Found #{result.RequestedDisplayId}",
+        HeapOperationKind.Search when result.IsIdLookup => $"ID #{result.RequestedDisplayId} not found",
         HeapOperationKind.Search when result.Succeeded => $"Found {result.RequestedValue}",
         HeapOperationKind.Search => $"Search: {result.RequestedValue} not found",
         HeapOperationKind.Delete when result.Succeeded => $"Deleted {result.RequestedValue}",
@@ -540,6 +618,12 @@
 
     private static string GetPlainRunSummary(HeapOperationResult result)
     {
+        if (result.IsIdLookup)
+        {
+            return result.Succeeded
+                ? "The matching element identity was found by scanning used array slots. Heap priority orders values, not generated IDs."
+                : "Every used slot was checked. Without a separate ID index, heap search-by-ID cannot prune the scan.";
+        }
         if (!result.Succeeded) return result.Operation == HeapOperationKind.ExtractRoot ? "No element existed at index 0, so nothing changed." : "The requested value was not found, so the heap stayed unchanged.";
         return result.Operation switch
         {
@@ -552,14 +636,22 @@
         };
     }
 
-    private string GetComplexityExplanation(HeapOperationResult result) => result.Operation switch
+    private string GetComplexityExplanation(HeapOperationResult result)
     {
-        HeapOperationKind.Insert => $"Insert appends in constant time, then can move through at most the heap height. This run made {result.Comparisons} comparison(s) and {result.Swaps} swap(s); worst case is O(log_d n) levels (O(log n) asymptotically), with d = {Heap.Arity} in this run.",
-        HeapOperationKind.ExtractRoot => $"Root access is O(1), but restoring order after moving the last element can follow one downward path. This run used {result.Comparisons} comparison(s); worst case follows O(log_d n) levels (O(log n) asymptotically), while each bubble-down level may compare up to d = {Heap.Arity} children.",
-        HeapOperationKind.Search => $"The heap property only compares parents with children. It does not tell us whether an arbitrary value is left or right, so this run checked {result.Comparisons} slot(s) and worst case is O(n).",
-        HeapOperationKind.Delete => $"Repair itself is O(log n), but locating an arbitrary value can require scanning all n slots. This run used {result.Comparisons} total comparison(s), so delete-by-value is O(n) overall.",
-        _ => string.Empty
-    };
+        if (result.IsIdLookup)
+        {
+            return $"ID search checked {result.Comparisons} slot(s). The heap invariant orders VALUE priority only; generated IDs have no relation to parent/child priority. Without a separate ID index, worst-case ID search is O(n), exactly like arbitrary value search in a heap.";
+        }
+
+        return result.Operation switch
+        {
+            HeapOperationKind.Insert => $"Insert appends in constant time, then can move through at most the heap height. This run made {result.Comparisons} comparison(s) and {result.Swaps} swap(s); worst case is O(log_d n) levels (O(log n) asymptotically), with d = {Heap.Arity} in this run.",
+            HeapOperationKind.ExtractRoot => $"Root access is O(1), but restoring order after moving the last element can follow one downward path. This run used {result.Comparisons} comparison(s); worst case follows O(log_d n) levels (O(log n) asymptotically), while each bubble-down level may compare up to d = {Heap.Arity} children.",
+            HeapOperationKind.Search => $"The heap property only compares parents with children. It does not tell us where an arbitrary value is, so this run checked {result.Comparisons} slot(s) and worst case is O(n).",
+            HeapOperationKind.Delete => $"Repair itself is O(log n), but locating an arbitrary value can require scanning all n slots. This run used {result.Comparisons} total comparison(s), so delete-by-value is O(n) overall.",
+            _ => string.Empty
+        };
+    }
 
     private string GetMemoryExplanation(HeapOperationResult result)
     {

@@ -1,0 +1,34 @@
+<article class="operation-tile @ToneClass @Class">
+    <div class="operation-tile-heading">
+        <span class="operation-tile-glyph" aria-hidden="true">@Icon</span>
+        <span class="operation-tile-copy">
+            <strong>@Title</strong>
+            @if (!string.IsNullOrWhiteSpace(Subtitle))
+            {
+                <small>@Subtitle</small>
+            }
+        </span>
+    </div>
+
+    @if (ChildContent is not null)
+    {
+        <div class="operation-tile-body">@ChildContent</div>
+    }
+
+    @if (Actions is not null)
+    {
+        <div class="operation-tile-actions">@Actions</div>
+    }
+</article>
+
+@code {
+    [Parameter, EditorRequired] public string Icon { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public string Tone { get; set; } = "purple";
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+
+    private string ToneClass => $"tone-{Tone}";
+}

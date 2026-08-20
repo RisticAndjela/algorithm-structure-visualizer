@@ -35,11 +35,13 @@ public sealed record BstOperationResult(
     BstDeleteCase DeleteCase,
     int VineRotations = 0,
     int CompressionRotations = 0,
-    int CompressionPasses = 0)
+    int CompressionPasses = 0,
+    string? RequestedDisplayId = null)
 {
     public int TotalChecks => Comparisons + SuccessorChecks;
     public int TotalRotations => VineRotations + CompressionRotations;
-    public string WorstCaseComplexity => Operation == BstOperationKind.Balance ? "O(n)" : "O(h)";
+    public bool IsIdLookup => Operation == BstOperationKind.Search && !string.IsNullOrWhiteSpace(RequestedDisplayId);
+    public string WorstCaseComplexity => Operation == BstOperationKind.Balance || IsIdLookup ? "O(n)" : "O(h)";
 
     public string CurrentRunComplexity
     {
@@ -48,6 +50,11 @@ public sealed record BstOperationResult(
             if (Operation == BstOperationKind.Balance)
             {
                 return InitialCount <= 1 ? "Θ(1)" : "Θ(n)";
+            }
+
+            if (IsIdLookup)
+            {
+                return TotalChecks <= 1 ? "Θ(1)" : "Θ(k)";
             }
 
             if (TotalChecks <= 1)

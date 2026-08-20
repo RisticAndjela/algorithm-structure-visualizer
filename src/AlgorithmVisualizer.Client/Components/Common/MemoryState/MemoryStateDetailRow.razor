@@ -1,0 +1,9 @@
+<div class="memory-state-detail-row">
+    <b>@Label</b>
+    <span>@Value</span>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+    [Parameter] public string? Value { get; set; }
+}

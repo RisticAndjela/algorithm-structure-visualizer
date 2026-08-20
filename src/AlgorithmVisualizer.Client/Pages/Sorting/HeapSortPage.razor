@@ -61,7 +61,7 @@
             <p>The active heap boundary, parent/child indexes, and finished suffix all describe one fixed snapshot. A mutation can invalidate both heap order and final suffix claims. For continuously changing priority data, use the Binary Heap structure instead of Heap Sort.</p>
             <span class="compatibility-badge restart">READ safe · mutations restart</span>
         </div>
-        <div class="lesson-reference-links"><a href="/structures/binary-heap">Review the Binary Heap lab →</a><ConceptLink Href="/learn/concepts/binary-heap">Binary Heap concepts →</ConceptLink></div>
+        <div class="lesson-reference-links"><a href="/structures/heap">Review Heap d = 2 mode →</a><ConceptLink Href="/learn/concepts/general-heap">Heap concepts →</ConceptLink></div>
     </section>
 
     <section id="heap-sort-lab" class="builder-section" aria-labelledby="heap-sort-build-title">
@@ -138,7 +138,7 @@
             </div>
             <p>@(_view == StateView.Visual ? "Visual state keeps the complete-tree view synchronized with the same array and makes the active heap/sorted suffix boundary explicit." : "Memory state shows that no tree nodes or O(n) helper array exist: Heap Sort only swaps element references inside one fixed array.")</p>
         </div>
-        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/heap-sort">Heap Sort concepts →</ConceptLink><ConceptLink Href="/learn/concepts/binary-heap">Heap indexing →</ConceptLink><ConceptLink Href="/learn/concepts/memory">Array memory →</ConceptLink><ConceptLink Href="/learn/concepts/big-o">Complexity guide →</ConceptLink></div>
+        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/heap-sort">Heap Sort concepts →</ConceptLink><ConceptLink Href="/learn/concepts/general-heap">Heap indexing →</ConceptLink><ConceptLink Href="/learn/concepts/memory">Array memory →</ConceptLink><ConceptLink Href="/learn/concepts/big-o">Complexity guide →</ConceptLink></div>
 
         <div class="visual-shell">
             @if (_view == StateView.Visual) { <HeapSortVisualization Snapshot="@DisplayedSnapshot" /> }

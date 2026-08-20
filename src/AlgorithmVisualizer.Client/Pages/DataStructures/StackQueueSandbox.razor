@@ -15,29 +15,13 @@
             <span class="section-kicker">LEARN FIRST</span>
             <h2 id="learn-launchpad-title">Start with the big idea, then practice it.</h2>
             <p>Use this page like a lab: learn one simple rule, try it, then check the visual and memory views.</p>
-            <ConceptLink class="learn-launchpad-link" Href="/learn/concepts/queue-stack">Open Queue & Stack concepts →</ConceptLink>
+            <LessonLinkButton Href="/learn/concepts/queue-stack">Open Queue &amp; Stack concepts →</LessonLinkButton>
         </div>
         <div class="learn-launchpad-grid">
-            <ConceptLink class="launch-card lifo" Href="/learn/concepts/queue-stack">
-                <span class="card-badge">STACK</span>
-                <strong>LIFO</strong>
-                <small>The last item added is the first one removed.</small>
-            </ConceptLink>
-            <ConceptLink class="launch-card fifo" Href="/learn/concepts/queue-stack">
-                <span class="card-badge">QUEUE</span>
-                <strong>FIFO</strong>
-                <small>The first item added is the first one removed.</small>
-            </ConceptLink>
-            <ConceptLink class="launch-card identity" Href="/learn/concepts/identity">
-                <span class="card-badge">ID + VALUE</span>
-                <strong>Same value, different item</strong>
-                <small>Two 7s can exist because they are two separate objects with different IDs.</small>
-            </ConceptLink>
-            <ConceptLink class="launch-card memory" Href="/learn/concepts/memory">
-                <span class="card-badge">MEMORY</span>
-                <strong>See both views</strong>
-                <small>The drawing helps you learn. The memory tab shows how the app stores it.</small>
-            </ConceptLink>
+            <article class="learn-card purple"><span>STACK</span><strong>LIFO</strong><small>The last item added is the first one removed.</small></article>
+            <article class="learn-card mint"><span>QUEUE</span><strong>FIFO</strong><small>The first item added is the first one removed.</small></article>
+            <article class="learn-card blue"><span>ID + VALUE</span><strong>Identity is separate from data</strong><small>Two 7s can exist because they are separate objects with different IDs.</small></article>
+            <article class="learn-card gold"><span>MEMORY</span><strong>One rule, two views</strong><small>Visual state teaches LIFO/FIFO; Memory state shows the backing references and slots.</small></article>
         </div>
     </section>
 
@@ -51,7 +35,7 @@
             <h1>Queue &amp; Stack</h1>
             <p>Build, search, delete, and compare what you see on screen with a simple memory view.</p>
         </div>
-        <ConceptLink class="header-concepts-link" Href="/learn/concepts/queue-stack">Open Queue & Stack concepts →</ConceptLink>
+        <LessonLinkButton Href="/learn/concepts/queue-stack">Open Queue &amp; Stack concepts →</LessonLinkButton>
     </header>
 
     <section class="smart-tip" aria-label="Learning tip">
@@ -60,7 +44,7 @@
             <strong>Quick tip:</strong>
             <p>Before you press Play, guess which item will be checked first.</p>
         </div>
-        <ConceptLink class="tip-link" Href="/learn/concepts/big-o">Simple Big-O guide →</ConceptLink>
+        <LessonLinkButton Class="compact" Href="/learn/concepts/big-o">Simple Big-O guide →</LessonLinkButton>
     </section>
 
     <section class="lab-shell">
@@ -85,90 +69,99 @@
             <div class="value-card">
                 <label class="value-input">
                     <span class="control-label">VALUE</span>
-                    <InputNumber TValue="int?" @bind-Value="_newValue" disabled="@IsBusy" placeholder="e.g. 8" />
+                    <LiveIntInput @bind-Value="_newValue" Disabled="@IsBusy" Placeholder="e.g. 8" />
                 </label>
-                <small>You can add the same value more than once. Each item still gets its own ID. <ConceptLink Href="/learn/concepts/identity">Why?</ConceptLink></small>
+                <small>Shared by Push and Enqueue. Duplicate values are fine because every element keeps its own ID. <ConceptLink Href="/learn/concepts/identity">Why?</ConceptLink></small>
+                <QuickTryValues Values="SampleValues" OnSelect="SetNewValue" Disabled="@IsBusy" />
             </div>
 
-            <div class="operation-group stack-operations">
-                <div class="operation-title">
-                    <span class="operation-glyph stack-glyph" aria-hidden="true">S</span>
-                    <span><strong>Stack</strong><small>Add and remove at the top</small></span>
-                </div>
-                <div class="operation-actions">
-                    <button class="action-primary" type="button" @onclick="PushAsync" disabled="@(!CanAddValue)">Push <span>↑</span></button>
-                    <button type="button" @onclick="PopAsync" disabled="@IsBusy">Pop <span>↓</span></button>
-                    <button class="action-quiet" type="button" @onclick="ClearStackAsync" disabled="@IsBusy">Reset</button>
-                </div>
-            </div>
+            <OperationTile Icon="+" Title="Push" Subtitle="STACK · add at TOP" Tone="purple">
+                <Actions>
+                    <button class="primary" type="button" @onclick="PushAsync" disabled="@(!CanAddValue)">Push value ↑</button>
+                </Actions>
+            </OperationTile>
 
-            <div class="operation-group queue-operations">
-                <div class="operation-title">
-                    <span class="operation-glyph queue-glyph" aria-hidden="true">Q</span>
-                    <span><strong>Queue</strong><small>Add at rear, remove at front</small></span>
-                </div>
-                <div class="operation-actions">
-                    <button class="action-primary" type="button" @onclick="EnqueueAsync" disabled="@(!CanAddValue)">Enqueue <span>→</span></button>
-                    <button type="button" @onclick="DequeueAsync" disabled="@IsBusy">Dequeue <span>→</span></button>
-                    <button class="action-quiet" type="button" @onclick="ClearQueueAsync" disabled="@IsBusy">Reset</button>
-                </div>
-            </div>
+            <OperationTile Icon="−" Title="Pop" Subtitle="STACK · remove TOP" Tone="purple">
+                <Actions>
+                    <button type="button" @onclick="PopAsync" disabled="@IsBusy">Pop top ↓</button>
+                </Actions>
+            </OperationTile>
+
+            <OperationTile Icon="+" Title="Enqueue" Subtitle="QUEUE · add at REAR" Tone="mint">
+                <Actions>
+                    <button class="primary" type="button" @onclick="EnqueueAsync" disabled="@(!CanAddValue)">Enqueue →</button>
+                </Actions>
+            </OperationTile>
+
+            <OperationTile Icon="−" Title="Dequeue" Subtitle="QUEUE · remove FRONT" Tone="mint">
+                <Actions>
+                    <button type="button" @onclick="DequeueAsync" disabled="@IsBusy">Dequeue →</button>
+                </Actions>
+            </OperationTile>
+
+            <OperationTile Icon="↺" Title="Reset" Subtitle="small structure utility" Tone="neutral">
+                <Actions>
+                    <button class="quiet" type="button" @onclick="ClearStackAsync" disabled="@IsBusy">Stack ↺</button>
+                    <button class="quiet" type="button" @onclick="ClearQueueAsync" disabled="@IsBusy">Queue ↺</button>
+                </Actions>
+            </OperationTile>
         </section>
 
-        <section class="lookup-panel" aria-label="Find and delete operations">
-            <div class="lookup-intro">
+        <section class="lookup-section" aria-label="Find and delete operations">
+            <div class="lookup-heading">
                 <span class="section-kicker">FIND OR DELETE</span>
-                <h3>2. Choose what should match.</h3>
-                <p>The app checks one item at a time. If a value appears twice, the first match in that structure wins.</p>
+                <p>Choose Value or ID once, then run the same match against Stack or Queue. The first match in traversal order wins.</p>
             </div>
 
-            <div class="criterion-card">
-                <div class="criterion-header">
-                    <span class="control-label">MATCH BY</span>
-                    <div class="criterion-tabs" role="group" aria-label="Lookup criterion">
-                        <button type="button" class="@GetCriterionButtonClass(LinearLookupCriterion.Value)" @onclick="() => SetLookupCriterion(LinearLookupCriterion.Value)" disabled="@IsBusy">Value</button>
-                        <button type="button" class="@GetCriterionButtonClass(LinearLookupCriterion.Id)" @onclick="() => SetLookupCriterion(LinearLookupCriterion.Id)" disabled="@IsBusy">ID</button>
+            <div class="lookup-panel">
+                <div class="criterion-card">
+                    <div class="criterion-header">
+                        <span class="control-label">MATCH BY</span>
+                        <div class="criterion-tabs" role="group" aria-label="Lookup criterion">
+                            <button type="button" class="@GetCriterionButtonClass(LinearLookupCriterion.Value)" @onclick="() => SetLookupCriterion(LinearLookupCriterion.Value)" disabled="@IsBusy">Value</button>
+                            <button type="button" class="@GetCriterionButtonClass(LinearLookupCriterion.Id)" @onclick="() => SetLookupCriterion(LinearLookupCriterion.Id)" disabled="@IsBusy">ID</button>
+                        </div>
                     </div>
+
+                    @if (_lookupCriterion == LinearLookupCriterion.Value)
+                    {
+                        <label class="lookup-input">
+                            <span>Target value</span>
+                            <LiveIntInput @bind-Value="_lookupValue" Disabled="@IsBusy" Placeholder="e.g. 7" />
+                        </label>
+                    }
+                    else
+                    {
+                        <label class="lookup-input">
+                            <span>Target element ID</span>
+                            <LiveTextInput @bind-Value="_lookupId" Disabled="@IsBusy" Placeholder="#A31F9C" MaxLength="7" />
+                        </label>
+                    }
                 </div>
 
-                @if (_lookupCriterion == LinearLookupCriterion.Value)
-                {
-                    <label class="lookup-input">
-                        <span>Target value</span>
-                        <InputNumber TValue="int?" @bind-Value="_lookupValue" disabled="@IsBusy" placeholder="e.g. 7" />
-                    </label>
-                    <small>Use this when you know the number.</small>
-                }
-                else
-                {
-                    <label class="lookup-input">
-                        <span>Target element ID</span>
-                        <InputText @bind-Value="_lookupId" disabled="@IsBusy" placeholder="#A31F9C" />
-                    </label>
-                    <small>Use the short ID shown under an item. IDs are unique, even when values repeat.</small>
-                }
-            </div>
+                <OperationTile Icon="?" Title="Find stack" Subtitle="STACK · TOP → bottom" Tone="purple">
+                    <Actions>
+                        <button class="primary" type="button" @onclick="FindStackAsync" disabled="@(!CanRunLookup)">Find match →</button>
+                    </Actions>
+                </OperationTile>
 
-            <div class="lookup-actions-card stack-lookup">
-                <div class="lookup-direction">
-                    <span class="operation-glyph stack-glyph" aria-hidden="true">S</span>
-                    <span><strong>Stack checks</strong><small>TOP → bottom</small></span>
-                </div>
-                <div class="lookup-buttons">
-                    <button type="button" @onclick="FindStackAsync" disabled="@(!CanRunLookup)">Find</button>
-                    <button class="delete-button" type="button" @onclick="DeleteStackAsync" disabled="@(!CanRunLookup)">Delete</button>
-                </div>
-            </div>
+                <OperationTile Icon="−" Title="Delete stack" Subtitle="STACK · first match" Tone="red">
+                    <Actions>
+                        <button class="danger" type="button" @onclick="DeleteStackAsync" disabled="@(!CanRunLookup)">Delete match ×</button>
+                    </Actions>
+                </OperationTile>
 
-            <div class="lookup-actions-card queue-lookup">
-                <div class="lookup-direction">
-                    <span class="operation-glyph queue-glyph" aria-hidden="true">Q</span>
-                    <span><strong>Queue checks</strong><small>FRONT → rear</small></span>
-                </div>
-                <div class="lookup-buttons">
-                    <button type="button" @onclick="FindQueueAsync" disabled="@(!CanRunLookup)">Find</button>
-                    <button class="delete-button" type="button" @onclick="DeleteQueueAsync" disabled="@(!CanRunLookup)">Delete</button>
-                </div>
+                <OperationTile Icon="?" Title="Find queue" Subtitle="QUEUE · FRONT → rear" Tone="mint">
+                    <Actions>
+                        <button class="primary" type="button" @onclick="FindQueueAsync" disabled="@(!CanRunLookup)">Find match →</button>
+                    </Actions>
+                </OperationTile>
+
+                <OperationTile Icon="−" Title="Delete queue" Subtitle="QUEUE · first match" Tone="red">
+                    <Actions>
+                        <button class="danger" type="button" @onclick="DeleteQueueAsync" disabled="@(!CanRunLookup)">Delete match ×</button>
+                    </Actions>
+                </OperationTile>
             </div>
         </section>
 
@@ -199,8 +192,8 @@
         </div>
 
         <div class="lesson-reference-links" aria-label="Concepts and memory links">
-            <ConceptLink Href="/learn/concepts/queue-stack">Queue & Stack concepts →</ConceptLink>
-            <ConceptLink Href="/learn/concepts/memory">Memory basics →</ConceptLink>
+            <LessonLinkButton Href="/learn/concepts/queue-stack">Queue &amp; Stack concepts →</LessonLinkButton>
+            <LessonLinkButton Href="/learn/concepts/memory">Memory basics →</LessonLinkButton>
         </div>
 
         @if (_activeStateView == StateView.Visual)
@@ -307,7 +300,7 @@
                         <strong>In simple words</strong>
                         <p>@GetPlainComplexityExplanation(_lastTraversalResult)</p>
                     </div>
-                    <ConceptLink class="popup-learn" Href="/learn/concepts/big-o">Learn O(1), O(n), n and k →</ConceptLink>
+                    <LessonLinkButton Class="compact" Href="/learn/concepts/big-o">Learn O(1), O(n), n and k →</LessonLinkButton>
                 </div>
             }
             else
@@ -333,7 +326,7 @@
                             <p>A Find only reads and compares. A failed Delete also leaves the structure unchanged because no matching element was found.</p>
                         </div>
                     }
-                    <ConceptLink class="popup-learn" Href="/learn/concepts/memory">Open the simple memory guide →</ConceptLink>
+                    <LessonLinkButton Class="compact" Href="/learn/concepts/memory">Open the simple memory guide →</LessonLinkButton>
                 </div>
             }
 
@@ -348,6 +341,7 @@
     private const string ModuleKey = "queue-stack";
     private const string CompletedTasksStorageKey = "algorithm-visualizer.queue-stack.completed-tasks.v2";
     private const string PopupSettingStorageKey = "algorithm-visualizer.queue-stack.result-popups.v1";
+    private static readonly int[] SampleValues = [3, 7, 2, 9, 4];
 
     private int? _newValue;
     private int? _lookupValue;
@@ -440,6 +434,13 @@
         await InvokeAsync(StateHasChanged);
     }
 
+    private Task SetNewValue(int value)
+    {
+        _newValue = value;
+        _errorMessage = null;
+        return InvokeAsync(StateHasChanged);
+    }
+
     private Task PushAsync() => RunValueOperationAsync("Starting Stack Push.", "Stack", "Add", (value, token) => Stack.PushAsync(value, token));
     private Task EnqueueAsync() => RunValueOperationAsync("Starting Queue Enqueue.", "Queue", "Add", (value, token) => Queue.EnqueueAsync(value, token));
     private Task PopAsync() => RunSimpleOperationAsync("Starting Stack Pop.", "Stack", "Remove end", token => Stack.PopAsync(token));
@@ -523,7 +524,7 @@
             return;
         }
 
-        if (!TryNormalizeShortId(_lookupId, out var idKey, out var error))
+        if (!ShortId.TryNormalize(_lookupId, out var idKey, out var error))
         {
             _errorMessage = error;
             await InvokeAsync(StateHasChanged);
@@ -647,32 +648,6 @@
 
     private string GetCriterionButtonClass(LinearLookupCriterion criterion) => _lookupCriterion == criterion ? "active" : string.Empty;
 
-    private static bool TryNormalizeShortId(string? rawId, out string normalizedId, out string error)
-    {
-        normalizedId = string.Empty;
-        error = string.Empty;
-        if (string.IsNullOrWhiteSpace(rawId))
-        {
-            error = "Enter the 6-character ID shown under an element.";
-            return false;
-        }
-
-        var compact = rawId.Trim().TrimStart('#').Replace("-", string.Empty, StringComparison.Ordinal);
-        if (compact.Length != 6)
-        {
-            error = "Use the 6-character ID shown in the app, for example #A31F9C.";
-            return false;
-        }
-
-        if (compact.Any(character => !Uri.IsHexDigit(character)))
-        {
-            error = "An ID uses 6 characters from 0-9 and A-F.";
-            return false;
-        }
-
-        normalizedId = compact.ToUpperInvariant();
-        return true;
-    }
 
     private void SetStateView(StateView view)
     {
