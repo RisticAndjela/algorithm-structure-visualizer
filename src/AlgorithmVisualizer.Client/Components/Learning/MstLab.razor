@@ -8,7 +8,7 @@
 @inject LearningSessionStore LearningStore
 @inject PracticeProgressStore PracticeProgress
 
-<div class="mst-page learning-module-page learning-module-shell">
+<div class="mst-page learning-module-page learning-module-shell search-traversal-module-page">
     <section class="learn-launchpad" aria-labelledby="mst-learn-title">
         <div class="learn-copy">
             <span class="section-kicker">LEARN FIRST</span>
@@ -128,12 +128,14 @@
                 }
             </div>
         </div>
-        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" Compact="true" />
+
+        <RunMetricStrip Items="@MstRunMetrics" AriaLabel="Minimum Spanning Tree live metrics" />
+
         <div class="state-tabs-row">
             <div class="state-tabs" role="tablist"><button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual State</button><button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory State</button></div>
             <p>@(_view == StateView.Visual ? "See chosen, rejected and candidate edges directly on the graph." : "See the frontier or Union-Find state that explains why each edge is accepted or rejected.")</p>
         </div>
-        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/mst">MST rule →</ConceptLink><ConceptLink Href="/learn/concepts/mst-prim">Prim cut →</ConceptLink><ConceptLink Href="/learn/concepts/mst-kruskal">Kruskal + DSU →</ConceptLink><ConceptLink Href="/learn/concepts/mst-complexity">Complexity →</ConceptLink></div>
         <div class="state-surface">
             @if (_view == StateView.Visual)
             {
@@ -144,6 +146,13 @@
                 <MstMemoryVisualization Snapshot="@DisplayedSnapshot" />
             }
         </div>
+
+        @if (_view == StateView.Visual)
+        {
+            <StateLegend Items="@MstLegendItems" />
+        }
+
+        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/mst">MST rule →</ConceptLink><ConceptLink Href="/learn/concepts/mst-prim">Prim cut →</ConceptLink><ConceptLink Href="/learn/concepts/mst-kruskal">Kruskal + DSU →</ConceptLink><ConceptLink Href="/learn/concepts/mst-complexity">Complexity →</ConceptLink></div>
     </section>
 
     <section class="fit-section">
@@ -226,6 +235,21 @@
     private int TimelinePosition => _frameIndex >= 0 ? _frameIndex + 1 : 0;
     private string DisplayedStepText => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].StepText : SimulationState.CurrentStepText;
     private MstSnapshot DisplayedSnapshot => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].Snapshot : Mst.CreateSnapshot();
+    private IReadOnlyList<RunMetricItem> MstRunMetrics =>
+    [
+        new("Selected", DisplayedSnapshot.SelectedEdgeIndices.Length.ToString(), DisplayedSnapshot.SelectedEdgeIndices.Length == 0 ? "No forest edge selected yet." : $"{DisplayedSnapshot.SelectedEdgeIndices.Length} accepted edge(s)."),
+        new("Total weight", DisplayedSnapshot.TotalWeight.ToString("0.###"), DisplayedSnapshot.ComponentCount <= 1 ? "Current tree/forest weight." : $"{DisplayedSnapshot.ComponentCount} components remain."),
+        new(DisplayedSnapshot.Variant == MstVariant.Prim ? "Min frontier" : "Sorted edges", (DisplayedSnapshot.Variant == MstVariant.Prim ? DisplayedSnapshot.Frontier.Length : DisplayedSnapshot.SortedEdgeIndices.Length).ToString(), DisplayedSnapshot.Variant == MstVariant.Prim ? $"{DisplayedSnapshot.FrontierPushes} pushes · {DisplayedSnapshot.FrontierPops} pops" : $"{DisplayedSnapshot.SortComparisons} sort comparisons · {DisplayedSnapshot.CycleSkips} cycle skips"),
+        new("Components", DisplayedSnapshot.ComponentCount.ToString(), DisplayedSnapshot.ComponentCount <= 1 ? "Connected candidate." : "Minimum spanning forest in progress.")
+    ];
+
+    private static readonly IReadOnlyList<StateLegendItem> MstLegendItems =
+    [
+        new("Selected MST/forest edge", "selected"),
+        new("Current candidate", "current"),
+        new("Rejected cycle edge", "rejected"),
+        new("Vertex already connected", "connected")
+    ];
     private string GraphLabSummary { get { var s = Graph.CreateSnapshot(); return s.VertexCount == 0 ? "Graph lab is empty." : $"{s.VertexCount} vertices · {s.EdgeCount} edges · {(s.Directed ? "directed" : "undirected")} · {(s.Weighted ? "weighted" : "unweighted")}"; } }
     private string PredictionFeedback => _predictionCorrect ? "Correct — that is the first edge this deterministic implementation selects." : $"This implementation selects {ExpectedFirstEdgeText()} first.";
     private string LastRunHeadline => _result is null ? "Minimum Spanning Tree" : _result.IsMinimumSpanningTree ? $"MST weight = {_result.TotalWeight:0.###}" : $"Minimum spanning forest · {_result.ComponentCount} components";

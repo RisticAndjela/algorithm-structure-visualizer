@@ -3,11 +3,6 @@
 @using AlgorithmVisualizer.Client.Components.Visualization.Graphs
 
 <section class="mst-visual" aria-label="Minimum Spanning Tree visual state">
-    <div class="mst-summary-strip">
-        <div><span>SELECTED</span><strong>@Snapshot.SelectedEdgeIndices.Length</strong><small>@SelectedSummary</small></div>
-        <div><span>TOTAL WEIGHT</span><strong>@Snapshot.TotalWeight.ToString("0.###")</strong><small>@(Snapshot.ComponentCount <= 1 ? "tree candidate" : $"{Snapshot.ComponentCount} forest components")</small></div>
-        <div><span>@FrontierTitle.ToUpperInvariant()</span><strong>@FrontierCount</strong><small>@FrontierSummary</small></div>
-    </div>
 
     <GraphVisualization Snapshot="@VisualGraph" ShowDefaultLegend="false" />
 
@@ -28,12 +23,6 @@
         </div>
     </div>
 
-    <div class="mst-legend" aria-label="MST state legend">
-        <span><i class="selected"></i>Selected MST/forest edge</span>
-        <span><i class="candidate"></i>Current candidate</span>
-        <span><i class="rejected"></i>Rejected cycle edge</span>
-        <span><i class="forest"></i>Vertex already connected</span>
-    </div>
 </section>
 
 @code {
@@ -41,13 +30,6 @@
     public MstSnapshot Snapshot { get; set; } = new(
         new(false, true, 0, 0, [], [], []), [], [], [], [], -1, -1, -1, -1,
         0d, 0, 0, 0, 0, 0, 0, 0, 0, MstPhase.Ready, MstVariant.Prim, 0);
-
-    private string FrontierTitle => Snapshot.Variant == MstVariant.Prim ? "Min frontier" : "Sorted edges";
-    private int FrontierCount => Snapshot.Variant == MstVariant.Prim ? Snapshot.Frontier.Length : Snapshot.SortedEdgeIndices.Length;
-    private string FrontierSummary => Snapshot.Variant == MstVariant.Prim
-        ? $"{Snapshot.FrontierPushes} pushes · {Snapshot.FrontierPops} pops"
-        : $"{Snapshot.SortComparisons} sort comparisons · {Snapshot.CycleSkips} cycle skips";
-    private string SelectedSummary => Snapshot.SelectedEdgeIndices.Length == 0 ? "none yet" : string.Join(" · ", Snapshot.SelectedEdgeIndices.Select(EdgeText));
 
     private GraphSnapshot VisualGraph
     {

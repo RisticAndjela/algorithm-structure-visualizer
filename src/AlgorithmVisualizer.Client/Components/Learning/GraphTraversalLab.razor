@@ -9,7 +9,7 @@
 @inject LearningSessionStore LearningStore
 @inject PracticeProgressStore PracticeProgress
 
-<div class="graph-traversal-page learning-module-page learning-module-shell">
+<div class="graph-traversal-page learning-module-page learning-module-shell search-traversal-module-page">
     <section class="learn-launchpad" aria-labelledby="traversal-learn-title">
         <div class="learn-copy">
             <span class="section-kicker">LEARN FIRST</span>
@@ -143,13 +143,14 @@
             </div>
         </div>
 
-        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" Compact="true" />
+
+        <RunMetricStrip Items="@TraversalRunMetrics" AriaLabel="@TraversalRunMetricsAriaLabel" />
 
         <div class="state-tabs-row">
             <div class="state-tabs" role="tablist"><button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual State</button><button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory State</button></div>
             <p>@(_view == StateView.Visual ? "See the visit order, current vertex and frontier directly on the graph." : $"See the same run as visited state plus the {FrontierRule} used to choose what comes next.")</p>
         </div>
-        <div class="lesson-reference-links"><ConceptLink Href="@ConceptHref">Traversal rule →</ConceptLink><ConceptLink Href="@ComplexityHref">Complexity →</ConceptLink><a href="/structures/queue-stack">Review Queue &amp; Stack →</a></div>
 
         <div class="state-surface">
             @if (_view == StateView.Visual)
@@ -161,6 +162,13 @@
                 <GraphTraversalMemoryVisualization Snapshot="@DisplayedSnapshot" FrontierRule="@FrontierRule" />
             }
         </div>
+
+        @if (_view == StateView.Visual)
+        {
+            <StateLegend Items="@TraversalLegendItems" />
+        }
+
+        <div class="lesson-reference-links"><ConceptLink Href="@ConceptHref">Traversal rule →</ConceptLink><ConceptLink Href="@ComplexityHref">Complexity →</ConceptLink><a href="/structures/queue-stack">Review Queue &amp; Stack →</a></div>
     </section>
 
     <section class="fit-section">
@@ -258,6 +266,23 @@
     private string DisplayedStepText => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].StepText : SimulationState.CurrentStepText;
     private GraphTraversalSnapshot DisplayedSnapshot => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].Snapshot : CurrentSnapshot;
     private GraphTraversalSnapshot CurrentSnapshot => Kind == GraphTraversalLessonKind.BreadthFirst ? Bfs.CreateSnapshot() : Dfs.CreateSnapshot();
+    private string TraversalRunMetricsAriaLabel => $"{ShortName} live metrics";
+    private IReadOnlyList<RunMetricItem> TraversalRunMetrics =>
+    [
+        new("Frontier", DisplayedSnapshot.FrontierIndices.Length.ToString(), $"{DisplayedSnapshot.FrontierLabel}: {FormatOrder(DisplayedSnapshot.FrontierIndices)}"),
+        new("Visited", $"{DisplayedSnapshot.TraversalOrderIndices.Length} / {DisplayedSnapshot.VertexCount}", FormatOrder(DisplayedSnapshot.TraversalOrderIndices)),
+        new("Edge checks", DisplayedSnapshot.EdgeChecks.ToString(), "Adjacency entries inspected."),
+        new("Mode", Kind == GraphTraversalLessonKind.BreadthFirst ? "FIFO queue" : _dfsVariant == DepthFirstTraversalVariant.Recursive ? "Recursive DFS" : "Explicit stack", FrontierRule)
+    ];
+
+    private IReadOnlyList<StateLegendItem> TraversalLegendItems =>
+    [
+        new("Unvisited", "unvisited"),
+        new(DisplayedSnapshot.FrontierLabel, "frontier"),
+        new("Current", "current"),
+        new("Checking neighbor", "neighbor"),
+        new("Visited", "visited")
+    ];
     private string GraphLabSummary { get { var s = Graph.CreateSnapshot(); return s.VertexCount == 0 ? "Graph lab is empty." : $"{s.VertexCount} vertices · {s.EdgeCount} edges · {(s.Directed ? "directed" : "undirected")}"; } }
     private string PredictionFeedback => _predictionCorrect ? "Correct — that is the next vertex under the current adjacency order." : $"The second visit is {SecondVisitLabel}. Follow the frontier to see why.";
     private string SecondVisitLabel { get { var expected = ExpectedSecondVisit(); return expected < 0 ? "none" : _graph.Vertices[expected].Label; } }

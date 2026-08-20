@@ -9,7 +9,7 @@
 
 <PageTitle>Linear Search — Algorithm Visualizer</PageTitle>
 
-<div class="linear-search-page learning-module-page learning-module-shell">
+<div class="linear-search-page learning-module-page learning-module-shell search-traversal-module-page">
     <section class="learn-launchpad" aria-labelledby="linear-learn-title">
         <div class="learn-copy">
             <span class="section-kicker">LEARN FIRST</span>
@@ -136,25 +136,6 @@
             </div>
         </div>
 
-        <div class="state-tabs-row">
-            <div class="state-tabs" role="tablist" aria-label="Linear Search state view">
-                <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state</button>
-                <button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
-            </div>
-            <p>@(_view == StateView.Visual ? "The visual view separates checked, current, found and unvisited positions." : "The memory view proves that search only reads fixed slots; values and references never move.")</p>
-        </div>
-
-        <div class="lesson-reference-links" aria-label="Linear Search concepts and memory links">
-            <ConceptLink Href="/learn/concepts/linear-search">Linear Search concepts →</ConceptLink>
-            <ConceptLink Href="/learn/concepts/linear-search-complexity">Complexity →</ConceptLink>
-            <ConceptLink Href="/learn/concepts/linear-vs-binary-search">Linear vs Binary Search →</ConceptLink>
-        </div>
-
-        <div class="visualizer-shell">
-            @if (_view == StateView.Visual) { <LinearSearchVisualization Snapshot="@DisplayedSnapshot" /> }
-            else { <LinearSearchMemoryVisualization Snapshot="@DisplayedSnapshot" /> }
-        </div>
-
         <SimulationToolbar OnPlay="PlayTimelineAsync"
                            OnPause="PauseTimelineAsync"
                            OnStepBack="StepBackAsync"
@@ -164,18 +145,38 @@
                            CanStepForwardOverride="@CanStepForward"
                            StepTextOverride="@DisplayedStepText"
                            TimelinePosition="@TimelinePosition"
-                           TimelineCount="@TimelineCount" />
+                           TimelineCount="@TimelineCount"
+                           Compact="true" />
 
-        <div class="run-dashboard" aria-label="Linear Search live metrics">
-            <article><span>Target</span><strong>@_target</strong><small>The value being compared.</small></article>
-            <article><span>Comparisons</span><strong>@DisplayedSnapshot.Comparisons</strong><small>One per inspected index.</small></article>
-            <article><span>Checked</span><strong>@DisplayedSnapshot.CheckedCount / @DisplayedSnapshot.Count</strong><small>Prefix already ruled out or matched.</small></article>
-            <article><span>Result</span><strong>@DisplayedResultText</strong><small>@DisplayedResultNote</small></article>
-        </div>
+        <RunMetricStrip Items="@LinearRunMetrics" AriaLabel="Linear Search live metrics" />
 
         <div class="invariant-panel">
             <div><span>INVARIANT TO WATCH</span><h3>Before checking index i, every index smaller than i has already been ruled out.</h3><p>That is why the first equality is automatically the first occurrence of the target.</p></div>
             <div class="early-exit-note"><span>STOP RULE</span><strong>A match stops immediately; a miss cannot stop early.</strong><p>Without additional ordering information, an unchecked position may still contain the target.</p></div>
+        </div>
+
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist" aria-label="Linear Search state view">
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state</button>
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
+            </div>
+            <p>@(_view == StateView.Visual ? "The visual view separates checked, current, found and unvisited positions." : "The memory view proves that search only reads fixed slots; values and references never move.")</p>
+        </div>
+
+        <div class="visualizer-shell">
+            @if (_view == StateView.Visual) { <LinearSearchVisualization Snapshot="@DisplayedSnapshot" /> }
+            else { <LinearSearchMemoryVisualization Snapshot="@DisplayedSnapshot" /> }
+        </div>
+
+        @if (_view == StateView.Visual)
+        {
+            <StateLegend Items="@LinearLegendItems" />
+        }
+
+        <div class="lesson-reference-links" aria-label="Linear Search concepts and memory links">
+            <ConceptLink Href="/learn/concepts/linear-search">Linear Search concepts →</ConceptLink>
+            <ConceptLink Href="/learn/concepts/linear-search-complexity">Complexity →</ConceptLink>
+            <ConceptLink Href="/learn/concepts/linear-vs-binary-search">Linear vs Binary Search →</ConceptLink>
         </div>
     </section>
 
@@ -305,6 +306,21 @@
     private LinearSearchSnapshot DisplayedSnapshot => DisplayedFrame?.Snapshot ?? LinearSearch.CreateSnapshot();
     private string DisplayedResultText => DisplayedSnapshot.FoundIndex is int found ? $"index {found}" : (DisplayedSnapshot.Phase is LinearSearchPhase.NotFound or LinearSearchPhase.Complete) && DisplayedSnapshot.CheckedCount == DisplayedSnapshot.Count ? "Not found" : "Searching";
     private string DisplayedResultNote => DisplayedSnapshot.FoundIndex is not null ? "First equal slot ends the scan." : DisplayedSnapshot.Phase == LinearSearchPhase.Complete ? "Every required index was checked." : "No conclusion yet.";
+    private IReadOnlyList<RunMetricItem> LinearRunMetrics =>
+    [
+        new("Target", _target.ToString(), "Value being compared."),
+        new("Comparisons", DisplayedSnapshot.Comparisons.ToString(), "One per inspected index."),
+        new("Checked", $"{DisplayedSnapshot.CheckedCount} / {DisplayedSnapshot.Count}", "Prefix already inspected."),
+        new("Result", DisplayedResultText, DisplayedResultNote)
+    ];
+
+    private static readonly IReadOnlyList<StateLegendItem> LinearLegendItems =
+    [
+        new("Current comparison", "current"),
+        new("Checked / no match", "checked"),
+        new("First match", "found"),
+        new("Not visited yet", "unvisited")
+    ];
 
     private string PredictionFeedback
     {

@@ -22,19 +22,7 @@
             }
         </div>
 
-        <div class="visual-guide">
-            <article class="guide-part current"><span>ACTIVE RANGE</span><strong>@RangeText</strong><small>Only this sorted interval can still contain the answer.</small></article>
-            <article class="guide-part checked"><span>MIDPOINT</span><strong>@MidText</strong><small>One comparison decides which half can be discarded.</small></article>
-            <article class="guide-part result"><span>RESULT</span><strong>@ResultText</strong><small>@ResultNote</small></article>
-        </div>
 
-        <div class="legend" aria-label="Binary Search legend">
-            <span><i class="swatch current"></i>Current midpoint</span>
-            <span><i class="swatch active"></i>Still possible</span>
-            <span><i class="swatch candidate"></i>First-occurrence candidate</span>
-            <span><i class="swatch checked"></i>Discarded</span>
-            <span><i class="swatch found"></i>Returned match</span>
-        </div>
     }
 </section>
 
@@ -44,11 +32,6 @@
     private string VariantText => Snapshot.Variant == BinarySearchVariant.AnyMatch
         ? "Basic mode: return the first matching midpoint encountered."
         : "Advanced mode: remember a match and keep searching left for the first occurrence.";
-
-    private string RangeText => Snapshot.Left <= Snapshot.Right ? $"[{Snapshot.Left}, {Snapshot.Right}]" : "empty";
-    private string MidText => Snapshot.Mid >= 0 ? $"index {Snapshot.Mid} · value {Snapshot.Elements[Snapshot.Mid].Value}" : "—";
-    private string ResultText => Snapshot.FoundIndex is int found ? $"Found at index {found}" : Snapshot.CandidateIndex is int candidate ? $"Candidate {candidate}" : (Snapshot.Phase is BinarySearchPhase.NotFound or BinarySearchPhase.Complete) && Snapshot.Left > Snapshot.Right ? "Not found" : "Searching";
-    private string ResultNote => Snapshot.FoundIndex is not null ? "This index is final." : Snapshot.CandidateIndex is not null ? "Advanced mode still checks the left half." : "No final answer yet.";
 
     private static string StateClass(BinarySearchElementVisualState state) => state switch
     {

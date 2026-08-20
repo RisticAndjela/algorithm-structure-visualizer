@@ -403,7 +403,7 @@ button:disabled {
     flex-wrap: wrap;
     align-items: center;
     gap: .48rem;
-    margin-top: .95rem;
+    margin-top: .72rem;
 }
 
 .preset-row > span {
@@ -1263,12 +1263,13 @@ button:disabled {
 }
 
 
-.search-builder { display: grid; grid-template-columns: minmax(0, 1fr) minmax(9rem, .28fr) auto; gap: .8rem; align-items: end; }
+.search-builder { display: grid; grid-template-columns: minmax(0, 1fr) minmax(9rem, .28fr) auto; gap: .65rem; align-items: end; }
+.search-builder > .primary-action { align-self: end; margin-bottom: 1.38rem; white-space: nowrap; }
 .target-input { display: grid; gap: .42rem; }
 .target-input > span { color: var(--color-text-muted); font-size: .75rem; font-weight: 850; letter-spacing: .07em; }
 .target-input input { min-height: 3rem; width: 100%; padding: .65rem .8rem; border: 1px solid var(--color-border-strong); border-radius: .72rem; background: #fff; color: var(--color-text); font: inherit; }
 .target-input small { color: var(--color-text-soft); }
-.current-search { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .8rem; margin-top: 1rem; }
+.current-search { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .65rem; margin-top: .7rem; }
 .current-search > div { display: grid; gap: .22rem; padding: .8rem .9rem; border: 1px solid var(--color-border); border-radius: .8rem; background: #fff; }
 .current-search span { color: var(--color-text-muted); font-size: .72rem; font-weight: 850; letter-spacing: .07em; }
 .current-search strong { font-size: .96rem; overflow-wrap: anywhere; }
@@ -1276,7 +1277,7 @@ button:disabled {
 .not-found-choice.chosen { border-color: var(--color-primary); background: var(--color-primary-soft); color: var(--color-primary-strong); }
 .single-variant { grid-template-columns: repeat(2, minmax(0,1fr)); }
 .static-card { cursor: default; text-align: left; }
-@media (max-width: 850px) { .search-builder { grid-template-columns: 1fr; } .current-search { grid-template-columns: 1fr; } .single-variant { grid-template-columns: 1fr; } }
+@media (max-width: 850px) { .search-builder { grid-template-columns: 1fr; } .search-builder > .primary-action { justify-self: start; margin-bottom: 0; } .current-search { grid-template-columns: 1fr; } .single-variant { grid-template-columns: 1fr; } }
 
 .presort-panel {
     display: grid;

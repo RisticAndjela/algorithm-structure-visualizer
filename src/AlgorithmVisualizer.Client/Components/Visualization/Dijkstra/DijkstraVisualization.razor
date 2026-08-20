@@ -3,11 +3,6 @@
 @using AlgorithmVisualizer.Client.Components.Visualization.Graphs
 
 <section class="dijkstra-visual" aria-label="Dijkstra visual state">
-    <div class="dijkstra-summary-strip">
-        <div><span>SETTLED</span><strong>@Snapshot.SettledOrderIndices.Length / @Snapshot.VertexCount</strong><small>@SettledText</small></div>
-        <div><span>RELAXATIONS</span><strong>@Snapshot.RelaxationAttempts</strong><small>@Snapshot.DistanceUpdates distance updates</small></div>
-        <div><span>FRONTIER</span><strong>@Snapshot.FrontierEntries.Length</strong><small>@FrontierLabel</small></div>
-    </div>
 
     <GraphVisualization Snapshot="@VisualGraph" ShowDefaultLegend="false" />
 
@@ -22,13 +17,6 @@
         }
     </div>
 
-    <div class="dijkstra-legend" aria-label="Dijkstra state legend">
-        <span><i class="unreached"></i>Unreached</span>
-        <span><i class="frontier"></i>Tentative</span>
-        <span><i class="current"></i>Current minimum</span>
-        <span><i class="neighbor"></i>Relaxing edge</span>
-        <span><i class="settled"></i>Settled</span>
-    </div>
 </section>
 
 @code {
@@ -36,9 +24,6 @@
     public DijkstraSnapshot Snapshot { get; set; } = new(
         new(false, true, 0, 0, [], [], []), [], [], [], -1, -1, null,
         0, 0, 0, 0, 0, 0, DijkstraPhase.Ready, DijkstraVariant.LinearScan);
-
-    private string FrontierLabel => Snapshot.Variant == DijkstraVariant.MinHeap ? "manual min-heap entries" : "finite unsettled vertices";
-    private string SettledText => FormatLabels(Snapshot.SettledOrderIndices);
 
     private GraphSnapshot VisualGraph
     {
@@ -74,20 +59,6 @@
 
             return Snapshot.Graph with { Vertices = vertices, Edges = edges };
         }
-    }
-
-    private string FormatLabels(int[] indices)
-    {
-        if (indices.Length == 0) return "none yet";
-        var labels = new string[indices.Length];
-        for (var index = 0; index < indices.Length; index++)
-        {
-            var vertexIndex = indices[index];
-            labels[index] = vertexIndex >= 0 && vertexIndex < Snapshot.Graph.Vertices.Length
-                ? Snapshot.Graph.Vertices[vertexIndex].Label
-                : "?";
-        }
-        return string.Join(" → ", labels);
     }
 
     private static string FormatDistance(double value) => double.IsPositiveInfinity(value) ? "∞" : value.ToString("0.###");

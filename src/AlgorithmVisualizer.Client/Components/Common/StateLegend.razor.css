@@ -51,6 +51,11 @@
 .tone-neighbor { background: #5ca9d9; }
 .tone-ordered { background: #46a98a; }
 .tone-cycle { background: #d96357; }
+.tone-unvisited { background: #f4f5f8; }
+.tone-checked { background: #c9ced9; }
+.tone-found, .tone-visited, .tone-settled, .tone-selected { background: #46a98a; }
+.tone-candidate, .tone-frontier, .tone-tentative, .tone-connected { background: #8b79ed; }
+.tone-rejected { background: #d96357; }
 
 @media (max-width: 720px) {
     .state-legend { align-items: flex-start; flex-direction: column; gap: .45rem; }

@@ -10,7 +10,7 @@
 
 <PageTitle>Binary Search — Algorithm Visualizer</PageTitle>
 
-<div class="linear-search-page learning-module-page learning-module-shell">
+<div class="linear-search-page learning-module-page learning-module-shell search-traversal-module-page">
     <section class="learn-launchpad" aria-labelledby="binary-learn-title">
         <div class="learn-copy">
             <span class="section-kicker">LEARN FIRST</span>
@@ -126,14 +126,22 @@
     <section class="lab-section" aria-labelledby="binary-visualizer-title">
         <div class="lab-heading"><div><span class="section-kicker">3 · WATCH THE ALGORITHM</span><h2 id="binary-visualizer-title">Watch one midpoint eliminate an entire half.</h2></div><div class="lab-actions"><label class="popup-toggle"><input type="checkbox" checked="@_showRunPopups" @onchange="ToggleRunPopups" /><span>Open explanation after run</span></label>@if (_lastResult is not null) { <button class="secondary-action" type="button" @onclick="OpenLastRunPopup">Last explanation</button> }<button class="sort-button" type="button" @onclick="RunSearchAsync" disabled="@(IsBusy || _showSortChooser)"><span>▶</span> Search for @_target</button></div></div>
 
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" Compact="true" />
+
+        <RunMetricStrip Items="@BinaryRunMetrics" AriaLabel="Binary Search live metrics" />
+
+        <div class="invariant-panel"><div><span>INVARIANT TO WATCH</span><h3>If the target exists, it must remain inside [left, right] — or be the saved candidate in First-occurrence mode.</h3><p>Every boundary update is justified by sorted order.</p></div><div class="early-exit-note"><span>HALVING RULE</span><strong>Each unequal comparison removes roughly half the remaining indexes.</strong><p>That repeated halving is the source of logarithmic growth.</p></div></div>
+
         <div class="state-tabs-row"><div class="state-tabs" role="tablist"><button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state</button><button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state</button></div><p>@(_view == StateView.Visual ? "See active, discarded, midpoint, candidate and final positions." : "See that the array never moves: only left/right/mid integers change.")</p></div>
-        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/binary-search">Binary Search concepts →</ConceptLink><ConceptLink Href="/learn/concepts/binary-search-complexity">Complexity →</ConceptLink><ConceptLink Href="/learn/concepts/linear-vs-binary-search">Linear vs Binary →</ConceptLink></div>
+
         <div class="visualizer-shell">@if (_view == StateView.Visual) { <BinarySearchVisualization Snapshot="@DisplayedSnapshot" /> } else { <BinarySearchMemoryVisualization Snapshot="@DisplayedSnapshot" /> }</div>
 
-        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+        @if (_view == StateView.Visual)
+        {
+            <StateLegend Items="@BinaryLegendItems" />
+        }
 
-        <div class="run-dashboard"><article><span>Target</span><strong>@_target</strong><small>@VariantLabel</small></article><article><span>Comparisons</span><strong>@DisplayedSnapshot.Comparisons</strong><small>Midpoint reads.</small></article><article><span>Active range</span><strong>@DisplayedRangeText</strong><small>@DisplayedSnapshot.ActiveCount candidate slot(s).</small></article><article><span>Result</span><strong>@DisplayedResultText</strong><small>@DisplayedResultNote</small></article></div>
-        <div class="invariant-panel"><div><span>INVARIANT TO WATCH</span><h3>If the target exists, it must remain inside [left, right] — or be the saved candidate in First-occurrence mode.</h3><p>Every boundary update is justified by sorted order.</p></div><div class="early-exit-note"><span>HALVING RULE</span><strong>Each unequal comparison removes roughly half the remaining indexes.</strong><p>That repeated halving is the source of logarithmic growth.</p></div></div>
+        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/binary-search">Binary Search concepts →</ConceptLink><ConceptLink Href="/learn/concepts/binary-search-complexity">Complexity →</ConceptLink><ConceptLink Href="/learn/concepts/linear-vs-binary-search">Linear vs Binary →</ConceptLink></div>
     </section>
 
     <section class="algorithm-map">
@@ -234,6 +242,22 @@
     private string DisplayedRangeText => DisplayedSnapshot.Left <= DisplayedSnapshot.Right ? $"[{DisplayedSnapshot.Left}, {DisplayedSnapshot.Right}]" : "empty";
     private string DisplayedResultText => DisplayedSnapshot.FoundIndex is int found ? $"index {found}" : DisplayedSnapshot.CandidateIndex is int candidate ? $"candidate {candidate}" : (DisplayedSnapshot.Phase is BinarySearchPhase.NotFound or BinarySearchPhase.Complete) && DisplayedSnapshot.Left > DisplayedSnapshot.Right ? "Not found" : "Searching";
     private string DisplayedResultNote => DisplayedSnapshot.FoundIndex is not null ? "Final returned index." : DisplayedSnapshot.CandidateIndex is not null ? "Advanced mode still checks left." : "No final result yet.";
+    private IReadOnlyList<RunMetricItem> BinaryRunMetrics =>
+    [
+        new("Target", _target.ToString(), VariantLabel),
+        new("Comparisons", DisplayedSnapshot.Comparisons.ToString(), "Midpoint reads."),
+        new("Active range", DisplayedRangeText, $"{DisplayedSnapshot.ActiveCount} candidate slot(s)."),
+        new("Result", DisplayedResultText, DisplayedResultNote)
+    ];
+
+    private static readonly IReadOnlyList<StateLegendItem> BinaryLegendItems =
+    [
+        new("Current midpoint", "current"),
+        new("Still possible", "active"),
+        new("First-occurrence candidate", "candidate"),
+        new("Discarded", "checked"),
+        new("Returned match", "found")
+    ];
     private string VariantLabel => _variant == BinarySearchVariant.AnyMatch ? "Basic · any match" : "Advanced · first occurrence";
 
     private string PredictionFeedback { get { var actual = PredictResultIndex(Current.Elements, _target, _variant); if (_predictionCorrect) return actual >= 0 ? $"Correct. This mode returns index {actual}." : "Correct. The candidate range eventually becomes empty."; return actual >= 0 ? $"This mode returns index {actual}. Follow the midpoint decisions to see why." : "The target is absent, so the correct prediction is not present."; } }

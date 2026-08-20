@@ -3,21 +3,9 @@
 @using AlgorithmVisualizer.Client.Components.Visualization.Graphs
 
 <section class="traversal-visual" aria-label="Graph traversal visual state">
-    <div class="traversal-summary-strip">
-        <div><span>FRONTIER</span><strong>@Snapshot.FrontierLabel</strong><small>@FrontierText</small></div>
-        <div><span>VISIT ORDER</span><strong>@OrderCount / @Snapshot.VertexCount</strong><small>@OrderText</small></div>
-        <div><span>EDGE CHECKS</span><strong>@Snapshot.EdgeChecks</strong><small>adjacency entries inspected</small></div>
-    </div>
 
     <GraphVisualization Snapshot="@VisualGraph" ShowDefaultLegend="false" />
 
-    <div class="traversal-legend" aria-label="Traversal state legend">
-        <span><i class="unvisited"></i>Unvisited</span>
-        <span><i class="frontier"></i>@Snapshot.FrontierLabel</span>
-        <span><i class="current"></i>Current</span>
-        <span><i class="neighbor"></i>Checking neighbor</span>
-        <span><i class="visited"></i>Visited</span>
-    </div>
 </section>
 
 @code {
@@ -25,10 +13,6 @@
     public GraphTraversalSnapshot Snapshot { get; set; } = new(
         new(false, false, 0, 0, [], [], []), [], [], [], -1, -1, null, 0, 0,
         GraphTraversalPhase.Ready, "Frontier", "Level");
-
-    private int OrderCount => Snapshot.TraversalOrderIndices.Length;
-    private string FrontierText => FormatLabels(Snapshot.FrontierIndices);
-    private string OrderText => FormatLabels(Snapshot.TraversalOrderIndices);
 
     private GraphSnapshot VisualGraph
     {
@@ -66,17 +50,5 @@
         }
     }
 
-    private string FormatLabels(int[] indices)
-    {
-        if (indices.Length == 0) return "empty";
-        var labels = new string[indices.Length];
-        for (var index = 0; index < indices.Length; index++)
-        {
-            var vertexIndex = indices[index];
-            labels[index] = vertexIndex >= 0 && vertexIndex < Snapshot.Graph.Vertices.Length
-                ? Snapshot.Graph.Vertices[vertexIndex].Label
-                : "?";
-        }
-        return string.Join(" → ", labels);
-    }
+
 }

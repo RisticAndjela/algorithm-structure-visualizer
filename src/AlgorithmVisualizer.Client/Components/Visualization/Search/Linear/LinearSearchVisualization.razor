@@ -29,33 +29,12 @@
             }
         </div>
 
-        <div class="visual-guide">
-            <article class="guide-part current"><span>CURRENT INDEX</span><strong>@CurrentText</strong><small>The only value being compared right now.</small></article>
-            <article class="guide-part checked"><span>CHECKED</span><strong>@Snapshot.CheckedCount / @Snapshot.Count</strong><small>Every earlier index has already been ruled out.</small></article>
-            <article class="guide-part result"><span>RESULT</span><strong>@ResultText</strong><small>Linear Search stops immediately when the first match appears.</small></article>
-        </div>
 
-        <div class="legend" aria-label="Linear Search legend">
-            <span><i class="swatch current"></i>Current comparison</span>
-            <span><i class="swatch checked"></i>Checked / no match</span>
-            <span><i class="swatch found"></i>First match</span>
-            <span><i class="swatch unvisited"></i>Not visited yet</span>
-        </div>
     }
 </section>
 
 @code {
     [Parameter, EditorRequired] public LinearSearchSnapshot Snapshot { get; set; } = default!;
-
-    private string CurrentText => Snapshot.CurrentIndex >= 0
-        ? $"index {Snapshot.CurrentIndex} · value {Snapshot.Elements[Snapshot.CurrentIndex].Value}"
-        : Snapshot.Phase == LinearSearchPhase.Complete ? "Run complete" : "Not started";
-
-    private string ResultText => Snapshot.FoundIndex is int found
-        ? $"Found at index {found}"
-        : (Snapshot.Phase is LinearSearchPhase.NotFound or LinearSearchPhase.Complete) && Snapshot.CheckedCount == Snapshot.Count
-            ? "Not found"
-            : "Still searching";
 
     private static string StateClass(LinearSearchElementVisualState state) => state switch
     {

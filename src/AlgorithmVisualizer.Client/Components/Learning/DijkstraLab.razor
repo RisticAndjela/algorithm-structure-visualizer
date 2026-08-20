@@ -8,7 +8,7 @@
 @inject LearningSessionStore LearningStore
 @inject PracticeProgressStore PracticeProgress
 
-<div class="dijkstra-page learning-module-page learning-module-shell">
+<div class="dijkstra-page learning-module-page learning-module-shell search-traversal-module-page">
     <section class="learn-launchpad" aria-labelledby="dijkstra-learn-title">
         <div class="learn-copy">
             <span class="section-kicker">LEARN FIRST</span>
@@ -70,7 +70,6 @@
                     <button type="button" @onclick="() => LoadPreset(DijkstraPreset.Directed)" disabled="@IsBusy">Directed</button>
                     <button type="button" @onclick="() => LoadPreset(DijkstraPreset.Disconnected)" disabled="@IsBusy">Disconnected</button>
                     <button type="button" @onclick="() => LoadPreset(DijkstraPreset.ZeroWeight)" disabled="@IsBusy">Zero weight</button>
-                    <button type="button" @onclick="() => LoadPreset(DijkstraPreset.NegativeEdge)" disabled="@IsBusy">Negative edge</button>
                     <button type="button" @onclick="() => LoadPreset(DijkstraPreset.Single)" disabled="@IsBusy">Single</button>
                 </div>
             </div>
@@ -130,13 +129,14 @@
             </div>
         </div>
 
-        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" Compact="true" />
+
+        <RunMetricStrip Items="@DijkstraRunMetrics" AriaLabel="Dijkstra live metrics" />
 
         <div class="state-tabs-row">
             <div class="state-tabs" role="tablist"><button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual State</button><button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory State</button></div>
             <p>@(_view == StateView.Visual ? "See tentative distances, the settled region and each relaxation on the graph." : "See dist[], parent[], settled[] and the active minimum-selection frontier behind the picture.")</p>
         </div>
-        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/dijkstra">Algorithm rule →</ConceptLink><ConceptLink Href="/learn/concepts/dijkstra-relaxation">Relaxation →</ConceptLink><ConceptLink Href="/learn/concepts/dijkstra-complexity">Complexity →</ConceptLink><a href="/structures/heap">Review Binary Heap →</a></div>
 
         <div class="state-surface">
             @if (_view == StateView.Visual)
@@ -148,6 +148,13 @@
                 <DijkstraMemoryVisualization Snapshot="@DisplayedSnapshot" />
             }
         </div>
+
+        @if (_view == StateView.Visual)
+        {
+            <StateLegend Items="@DijkstraLegendItems" />
+        }
+
+        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/dijkstra">Algorithm rule →</ConceptLink><ConceptLink Href="/learn/concepts/dijkstra-relaxation">Relaxation →</ConceptLink><ConceptLink Href="/learn/concepts/dijkstra-complexity">Complexity →</ConceptLink><a href="/structures/heap">Review Binary Heap →</a></div>
     </section>
 
     <section class="fit-section">
@@ -230,6 +237,22 @@
     private int TimelinePosition => _frameIndex >= 0 ? _frameIndex + 1 : 0;
     private string DisplayedStepText => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].StepText : SimulationState.CurrentStepText;
     private DijkstraSnapshot DisplayedSnapshot => _frameIndex >= 0 && _frameIndex < _frames.Count ? _frames[_frameIndex].Snapshot : Dijkstra.CreateSnapshot();
+    private IReadOnlyList<RunMetricItem> DijkstraRunMetrics =>
+    [
+        new("Settled", $"{DisplayedSnapshot.SettledOrderIndices.Length} / {DisplayedSnapshot.VertexCount}", FormatOrder(DisplayedSnapshot.SettledOrderIndices)),
+        new("Relaxations", DisplayedSnapshot.RelaxationAttempts.ToString(), $"{DisplayedSnapshot.DistanceUpdates} distance update(s)."),
+        new("Frontier", DisplayedSnapshot.FrontierEntries.Length.ToString(), DisplayedSnapshot.Variant == DijkstraVariant.MinHeap ? "Manual min-heap entries." : "Finite unsettled vertices."),
+        new("Mode", DisplayedSnapshot.Variant == DijkstraVariant.MinHeap ? "Min-heap" : "Linear scan", DisplayedSnapshot.Variant == DijkstraVariant.MinHeap ? "Priority frontier." : "Minimum chosen by scanning dist[].")
+    ];
+
+    private static readonly IReadOnlyList<StateLegendItem> DijkstraLegendItems =
+    [
+        new("Unreached", "unvisited"),
+        new("Tentative", "tentative"),
+        new("Current minimum", "current"),
+        new("Relaxing edge", "neighbor"),
+        new("Settled", "settled")
+    ];
     private string GraphLabSummary { get { var s = Graph.CreateSnapshot(); return s.VertexCount == 0 ? "Graph lab is empty." : $"{s.VertexCount} vertices · {s.EdgeCount} edges · {(s.Directed ? "directed" : "undirected")} · {(s.Weighted ? "weighted" : "unweighted")}"; } }
     private string PredictionFeedback => _predictionCorrect ? "Correct — that is the smallest tentative distance after the start is relaxed." : $"The second settled vertex is {SecondSettledLabel}. Compare the start's outgoing edge costs.";
     private string SecondSettledLabel { get { var expected = ExpectedSecondSettled(); return expected < 0 ? "none" : Label(expected); } }
