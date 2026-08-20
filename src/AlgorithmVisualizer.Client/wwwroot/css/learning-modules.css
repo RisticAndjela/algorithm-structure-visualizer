@@ -1225,3 +1225,163 @@ body .learning-module-page.learning-module-shell {
 @media (max-width: 780px) {
     .learning-module-page.learning-module-shell.ml-module-page .graphml-summary-row { grid-template-columns: 1fr; }
 }
+
+/* Sorting / ordering run workspace -------------------------------------------------
+   Keep all live-run information above the state surface, then show the state, then
+   the shared color key. This is intentionally compact so the animation remains the
+   visual focus instead of oversized dashboard chrome. */
+.learning-module-page.learning-module-shell.sorting-module-page .lab-heading {
+    padding: .9rem 1rem;
+    align-items: center;
+}
+.learning-module-page.learning-module-shell.sorting-module-page .lab-heading h2 {
+    margin-top: .18rem;
+    font-size: clamp(1.05rem, 1.45vw, 1.3rem);
+    line-height: 1.25;
+}
+.learning-module-page.learning-module-shell.sorting-module-page .run-dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    gap: 0;
+    padding: 0;
+    margin: 0;
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+    background: #fafbfc;
+}
+.learning-module-page.learning-module-shell.sorting-module-page .run-dashboard > article,
+.learning-module-page.learning-module-shell.sorting-module-page .run-dashboard > div {
+    min-height: 0;
+    display: grid;
+    align-content: start;
+    gap: .14rem;
+    padding: .62rem .75rem;
+    border: 0;
+    border-right: 1px solid var(--color-border);
+    border-radius: 0;
+    background: transparent;
+}
+.learning-module-page.learning-module-shell.sorting-module-page .run-dashboard > :last-child {
+    border-right: 0;
+}
+.learning-module-page.learning-module-shell.sorting-module-page .run-dashboard span,
+.learning-module-page.learning-module-shell.sorting-module-page .role-strip span,
+.learning-module-page.learning-module-shell.sorting-module-page .invariant-panel > div > span {
+    color: var(--color-text-muted);
+    font-size: .66rem;
+    font-weight: 850;
+    letter-spacing: .07em;
+}
+.learning-module-page.learning-module-shell.sorting-module-page .run-dashboard strong {
+    font-size: .98rem;
+    line-height: 1.2;
+}
+.learning-module-page.learning-module-shell.sorting-module-page .run-dashboard small {
+    color: var(--color-text-soft);
+    font-size: .73rem;
+    line-height: 1.35;
+}
+.learning-module-page.learning-module-shell.sorting-module-page .role-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: .55rem;
+    margin: 0;
+    padding: .7rem .85rem;
+    border-bottom: 1px solid var(--color-border);
+    background: #fff;
+}
+.learning-module-page.learning-module-shell.sorting-module-page .role-strip article {
+    min-height: 0;
+    gap: .14rem;
+    padding: .58rem .7rem;
+    border-radius: .68rem;
+}
+.learning-module-page.learning-module-shell.sorting-module-page .role-strip strong {
+    font-size: .9rem;
+}
+.learning-module-page.learning-module-shell.sorting-module-page .role-strip small {
+    font-size: .72rem;
+    line-height: 1.35;
+}
+.learning-module-page.learning-module-shell.sorting-module-page .invariant-panel {
+    gap: .65rem;
+    padding: .75rem .85rem;
+    border-top: 0;
+    border-bottom: 1px solid var(--color-border);
+}
+.learning-module-page.learning-module-shell.sorting-module-page .invariant-panel h3 {
+    margin: .18rem 0 .24rem;
+    font-size: .94rem;
+    line-height: 1.3;
+}
+.learning-module-page.learning-module-shell.sorting-module-page .invariant-panel p,
+.learning-module-page.learning-module-shell.sorting-module-page .early-exit-note p {
+    font-size: .78rem;
+    line-height: 1.42;
+}
+.learning-module-page.learning-module-shell.sorting-module-page .early-exit-note {
+    padding: .62rem .7rem;
+    border-radius: .68rem;
+}
+.learning-module-page.learning-module-shell.sorting-module-page .state-tabs-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .8rem;
+    padding: .55rem .75rem 0;
+}
+.learning-module-page.learning-module-shell.sorting-module-page .state-tabs {
+    display: inline-flex;
+    flex: 0 0 auto;
+    gap: .25rem;
+    border: 1px solid var(--color-border);
+    border-radius: .72rem;
+    padding: .2rem;
+    background: #f1f2f6;
+}
+.learning-module-page.learning-module-shell.sorting-module-page .state-tabs button {
+    min-height: 2.2rem;
+    padding: .42rem .68rem;
+    border: 0;
+    border-radius: .55rem;
+    font-size: .76rem;
+}
+.learning-module-page.learning-module-shell.sorting-module-page .state-tabs button + button {
+    border-left: 0;
+}
+.learning-module-page.learning-module-shell.sorting-module-page .state-tabs button.active {
+    border: 1px solid var(--color-border);
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(20, 24, 40, .05);
+}
+.learning-module-page.learning-module-shell.sorting-module-page .state-tabs-row > p {
+    margin: 0;
+    max-width: 48rem;
+    color: var(--color-text-soft);
+    font-size: .75rem;
+    line-height: 1.4;
+    text-align: right;
+}
+.learning-module-page.learning-module-shell.sorting-module-page .lesson-reference-links {
+    margin: .45rem .75rem .55rem;
+}
+.learning-module-page.learning-module-shell.sorting-module-page .visualizer-shell,
+.learning-module-page.learning-module-shell.sorting-module-page .visual-shell,
+.learning-module-page.learning-module-shell.sorting-module-page .state-surface {
+    min-height: 0;
+    margin: 0 .75rem;
+}
+@media (max-width: 760px) {
+    .learning-module-page.learning-module-shell.sorting-module-page .state-tabs-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+    .learning-module-page.learning-module-shell.sorting-module-page .state-tabs-row > p { text-align: left; }
+    .learning-module-page.learning-module-shell.sorting-module-page .invariant-panel { grid-template-columns: 1fr; }
+}
+.learning-module-page.learning-module-shell.sorting-module-page .state-legend {
+    margin: 0 .75rem .75rem;
+    border: 1px solid var(--color-border);
+    border-top: 0;
+    border-radius: 0 0 .8rem .8rem;
+}

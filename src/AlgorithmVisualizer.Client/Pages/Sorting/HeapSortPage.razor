@@ -9,7 +9,7 @@
 
 <PageTitle>Heap Sort — Algorithm Visualizer</PageTitle>
 
-<div class="heap-sort-page learning-module-page learning-module-shell">
+<div class="heap-sort-page learning-module-page learning-module-shell sorting-module-page">
     <section class="learn-launchpad" aria-labelledby="heap-sort-learn-title">
         <div class="learn-copy">
             <span class="section-kicker">LEARN FIRST</span>
@@ -121,15 +121,9 @@
             </div>
         </div>
 
-        <div class="run-dashboard heap-dashboard">
-            <div><span>HEAP SIZE</span><strong>@DisplayedSnapshot.HeapSize</strong></div>
-            <div><span>EXTRACTIONS</span><strong>@DisplayedSnapshot.Extractions</strong></div>
-            <div><span>COMPARISONS</span><strong>@DisplayedSnapshot.Comparisons</strong></div>
-            <div><span>SWAPS</span><strong>@DisplayedSnapshot.Swaps</strong></div>
-            <div><span>BUILD WORK</span><strong>@DisplayedSnapshot.BuildComparisons / @DisplayedSnapshot.BuildSwaps</strong><small>comparisons / swaps</small></div>
-        </div>
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" Compact="true" />
 
-        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+        <RunMetricStrip Items="@HeapRunMetrics" AriaLabel="Heap Sort live metrics" />
 
         <div class="state-tabs-row">
             <div class="state-tabs" role="tablist" aria-label="Heap Sort simulation view">
@@ -138,12 +132,16 @@
             </div>
             <p>@(_view == StateView.Visual ? "Visual state keeps the complete-tree view synchronized with the same array and makes the active heap/sorted suffix boundary explicit." : "Memory state shows that no tree nodes or O(n) helper array exist: Heap Sort only swaps element references inside one fixed array.")</p>
         </div>
-        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/heap-sort">Heap Sort concepts →</ConceptLink><ConceptLink Href="/learn/concepts/general-heap">Heap indexing →</ConceptLink><ConceptLink Href="/learn/concepts/memory">Array memory →</ConceptLink><ConceptLink Href="/learn/concepts/big-o">Complexity guide →</ConceptLink></div>
-
         <div class="visual-shell">
             @if (_view == StateView.Visual) { <HeapSortVisualization Snapshot="@DisplayedSnapshot" /> }
             else { <HeapSortMemoryVisualization Snapshot="@DisplayedSnapshot" /> }
         </div>
+
+        @if (_view == StateView.Visual)
+        {
+            <StateLegend Items="@HeapLegendItems" />
+        }
+        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/heap-sort">Heap Sort concepts →</ConceptLink><ConceptLink Href="/learn/concepts/general-heap">Heap indexing →</ConceptLink><ConceptLink Href="/learn/concepts/memory">Array memory →</ConceptLink><ConceptLink Href="/learn/concepts/big-o">Complexity guide →</ConceptLink></div>
     </section>
 
     <section class="algorithm-map" aria-labelledby="heap-sort-map-title">
@@ -219,6 +217,24 @@
 }
 
 @code {
+    private IReadOnlyList<RunMetricItem> HeapRunMetrics =>
+    [
+        new("Heap size", DisplayedSnapshot.HeapSize.ToString(), "Indexes still participating in the active max heap."),
+        new("Extractions", DisplayedSnapshot.Extractions.ToString(), "Roots already moved into the final suffix."),
+        new("Comparisons", DisplayedSnapshot.Comparisons.ToString(), "Heap-order comparisons performed so far."),
+        new("Swaps", DisplayedSnapshot.Swaps.ToString(), "In-place exchanges in build and extraction."),
+        new("Build work", $"{DisplayedSnapshot.BuildComparisons} / {DisplayedSnapshot.BuildSwaps}", "Comparisons / swaps used to build the heap.")
+    ];
+
+    private static readonly StateLegendItem[] HeapLegendItems =
+    [
+        new("Active heap", "heap"),
+        new("Parent", "parent"),
+        new("Larger child", "child"),
+        new("Swap", "swap"),
+        new("Final suffix", "sorted")
+    ];
+
     private const string ModuleKey = "heap-sort";
     private const string CompletedTasksStorageKey = "algorithm-visualizer.heap-sort.completed-tasks.v1";
     private const string PopupSettingStorageKey = "algorithm-visualizer.heap-sort.result-popups.v1";

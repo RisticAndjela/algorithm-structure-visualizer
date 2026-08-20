@@ -1,0 +1,57 @@
+.state-legend {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    padding: .62rem .9rem;
+    border-top: 1px solid var(--color-border);
+    background: #fafbfc;
+    color: var(--color-text-muted);
+}
+
+.state-legend__title {
+    flex: 0 0 auto;
+    font-size: .66rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+}
+
+.state-legend__items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .42rem .9rem;
+}
+
+.state-legend__item {
+    display: inline-flex;
+    align-items: center;
+    gap: .34rem;
+    font-size: .76rem;
+    font-weight: 650;
+    white-space: nowrap;
+}
+
+.state-legend__swatch {
+    width: .62rem;
+    height: .62rem;
+    flex: 0 0 auto;
+    border-radius: .2rem;
+    background: #d9dce5;
+}
+
+.tone-compare, .tone-scan { background: #796ce5; }
+.tone-swap, .tone-pivot, .tone-destination { background: #d99a30; }
+.tone-keep, .tone-region, .tone-child { background: #69b6a2; }
+.tone-sorted, .tone-finished { background: #65ae94; }
+.tone-active, .tone-heap { background: #ddd9f6; }
+.tone-minimum, .tone-parent, .tone-read { background: #8d80ec; }
+.tone-divide { background: #d8c78f; }
+.tone-write { background: #58a78f; }
+.tone-ready { background: #8b79ed; }
+.tone-current { background: #ee9c45; }
+.tone-neighbor { background: #5ca9d9; }
+.tone-ordered { background: #46a98a; }
+.tone-cycle { background: #d96357; }
+
+@media (max-width: 720px) {
+    .state-legend { align-items: flex-start; flex-direction: column; gap: .45rem; }
+}

@@ -9,7 +9,7 @@
 
 <PageTitle>Bubble Sort — Algorithm Visualizer</PageTitle>
 
-<div class="bubble-page learning-module-page learning-module-shell">
+<div class="bubble-page learning-module-page learning-module-shell sorting-module-page">
     <section class="learn-launchpad" aria-labelledby="bubble-learn-title">
         <div class="learn-copy">
             <span class="section-kicker">LEARN FIRST</span>
@@ -149,6 +149,31 @@
             </div>
         </div>
 
+        <SimulationToolbar OnPlay="PlayTimelineAsync"
+                           OnPause="PauseTimelineAsync"
+                           OnStepBack="StepBackAsync"
+                           OnStepForward="StepForwardAsync"
+                           OnReset="ResetPlaybackAsync"
+                           CanStepBack="@CanStepBack"
+                           CanStepForwardOverride="@CanStepForward"
+                           StepTextOverride="@DisplayedStepText"
+                           TimelinePosition="@TimelinePosition"
+                           TimelineCount="@TimelineCount" Compact="true" />
+
+        <RunMetricStrip Items="@BubbleRunMetrics" AriaLabel="Bubble Sort live metrics" />
+
+        <div class="invariant-panel">
+            <div><span>INVARIANT TO WATCH</span><h3>After pass p, the p largest finished values are fixed at the right.</h3><p>The algorithm never needs to compare that sorted suffix again. This is why each pass is one comparison shorter.</p></div>
+            @if (_variant == BubbleSortVariant.Optimized)
+            {
+                <div class="early-exit-note"><span>OPTIMIZATION ACTIVE</span><strong>No swaps in a whole pass?</strong><p>Then every remaining adjacent pair is ordered, so the optimized run stops early.</p></div>
+            }
+            else
+            {
+                <div class="early-exit-note"><span>BASIC MODE</span><strong>No early exit on purpose.</strong><p>The canonical version continues through every shrinking pass so you can see the full nested-loop comparison pattern.</p></div>
+            }
+        </div>
+
         <div class="state-tabs-row">
             <div class="state-tabs" role="tablist" aria-label="Bubble Sort state view">
                 <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state</button>
@@ -157,11 +182,6 @@
             <p>@(_view == StateView.Visual
                 ? "The visual view shows adjacent comparisons, swaps, and the sorted suffix growing on the right."
                 : "The memory view shows the same fixed array slots and element identities, so duplicate stability and in-place swaps are explicit.")</p>
-        </div>
-
-        <div class="lesson-reference-links" aria-label="Concepts and memory links">
-            <ConceptLink Href="/learn/concepts/bubble-sort">Bubble Sort concepts →</ConceptLink>
-            <ConceptLink Href="/learn/concepts/bubble-sort">Bubble Sort memory & stability →</ConceptLink>
         </div>
 
         <div class="visualizer-shell">
@@ -175,34 +195,13 @@
             }
         </div>
 
-        <SimulationToolbar OnPlay="PlayTimelineAsync"
-                           OnPause="PauseTimelineAsync"
-                           OnStepBack="StepBackAsync"
-                           OnStepForward="StepForwardAsync"
-                           OnReset="ResetPlaybackAsync"
-                           CanStepBack="@CanStepBack"
-                           CanStepForwardOverride="@CanStepForward"
-                           StepTextOverride="@DisplayedStepText"
-                           TimelinePosition="@TimelinePosition"
-                           TimelineCount="@TimelineCount" />
-
-        <div class="run-dashboard" aria-label="Bubble Sort live metrics">
-            <article><span>Pass</span><strong>@PassMetric</strong><small>A full left-to-right scan of the unsorted region.</small></article>
-            <article><span>Comparisons</span><strong>@DisplayedSnapshot.Comparisons</strong><small>Each one checks exactly one adjacent pair.</small></article>
-            <article><span>Swaps</span><strong>@DisplayedSnapshot.Swaps</strong><small>Only out-of-order neighbors exchange places.</small></article>
-            <article><span>Fixed on right</span><strong>@DisplayedSnapshot.SortedCount / @DisplayedSnapshot.Count</strong><small>This suffix is already final.</small></article>
-        </div>
-
-        <div class="invariant-panel">
-            <div><span>INVARIANT TO WATCH</span><h3>After pass p, the p largest finished values are fixed at the right.</h3><p>The algorithm never needs to compare that sorted suffix again. This is why each pass is one comparison shorter.</p></div>
-            @if (_variant == BubbleSortVariant.Optimized)
-            {
-                <div class="early-exit-note"><span>OPTIMIZATION ACTIVE</span><strong>No swaps in a whole pass?</strong><p>Then every remaining adjacent pair is ordered, so the optimized run stops early.</p></div>
-            }
-            else
-            {
-                <div class="early-exit-note"><span>BASIC MODE</span><strong>No early exit on purpose.</strong><p>The canonical version continues through every shrinking pass so you can see the full nested-loop comparison pattern.</p></div>
-            }
+        @if (_view == StateView.Visual)
+        {
+            <StateLegend Items="@BubbleLegendItems" />
+        }
+        <div class="lesson-reference-links" aria-label="Concepts and memory links">
+            <ConceptLink Href="/learn/concepts/bubble-sort">Bubble Sort concepts →</ConceptLink>
+            <ConceptLink Href="/learn/concepts/bubble-sort">Bubble Sort memory & stability →</ConceptLink>
         </div>
     </section>
 
@@ -331,6 +330,22 @@
 }
 
 @code {
+    private IReadOnlyList<RunMetricItem> BubbleRunMetrics =>
+    [
+        new("Pass", PassMetric, "One left-to-right scan of the unsorted region."),
+        new("Comparisons", DisplayedSnapshot.Comparisons.ToString(), "Adjacent pairs checked so far."),
+        new("Swaps", DisplayedSnapshot.Swaps.ToString(), "Out-of-order neighbors exchanged."),
+        new("Fixed right", $"{DisplayedSnapshot.SortedCount} / {DisplayedSnapshot.Count}", "Values already final in the right suffix.")
+    ];
+
+    private static readonly StateLegendItem[] BubbleLegendItems =
+    [
+        new("Comparing", "compare"),
+        new("Swap needed / moved", "swap"),
+        new("Keep order", "keep"),
+        new("Fixed / sorted", "sorted")
+    ];
+
     private const string ModuleKey = "bubble-sort";
     private const string CompletedTasksStorageKey = "algorithm-visualizer.bubble-sort.completed-tasks.v1";
     private const string PopupSettingStorageKey = "algorithm-visualizer.bubble-sort.result-popups.v1";

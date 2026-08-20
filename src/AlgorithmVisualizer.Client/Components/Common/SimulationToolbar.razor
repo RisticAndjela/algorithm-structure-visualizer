@@ -1,7 +1,7 @@
 @implements IDisposable
 @inject SimulationState State
 
-<section class="simulation-toolbar" aria-label="Simulation playback controls">
+<section class="simulation-toolbar @(Compact ? "compact" : string.Empty)" aria-label="Simulation playback controls">
     <div class="toolbar-section playback-section">
         <div class="toolbar-label">
             <span>PLAYBACK</span>
@@ -89,6 +89,7 @@
     [Parameter] public string? StepTextOverride { get; set; }
     [Parameter] public int TimelinePosition { get; set; }
     [Parameter] public int TimelineCount { get; set; }
+    [Parameter] public bool Compact { get; set; }
 
     private bool CanPlay => State.IsRunning && State.IsPaused;
     private bool CanPause => State.IsRunning && !State.IsPaused;

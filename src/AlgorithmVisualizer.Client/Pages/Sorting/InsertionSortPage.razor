@@ -9,7 +9,7 @@
 
 <PageTitle>Insertion Sort — Algorithm Visualizer</PageTitle>
 
-<div class="insertion-page learning-module-page learning-module-shell">
+<div class="insertion-page learning-module-page learning-module-shell sorting-module-page">
     <section class="learn-launchpad" aria-labelledby="insertion-learn-title">
         <div class="learn-copy">
             <span class="section-kicker">LEARN FIRST</span>
@@ -132,34 +132,19 @@
             </div>
         </div>
 
-        <div class="state-tabs-row">
-            <div class="state-tabs" role="tablist" aria-label="Insertion Sort state view">
-                <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state</button>
-                <button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
-            </div>
-            <p>@(_view == StateView.Visual
-                ? "The visual view shows the held key, the temporary gap, shifts to the right, and the sorted prefix growing one item at a time."
-                : "The memory view shows the fixed array slots, the held element identity, and every shift/write used to insert the key.")</p>
-        </div>
+        <SimulationToolbar OnPlay="PlayTimelineAsync"
+                           OnPause="PauseTimelineAsync"
+                           OnStepBack="StepBackAsync"
+                           OnStepForward="StepForwardAsync"
+                           OnReset="ResetPlaybackAsync"
+                           CanStepBack="@CanStepBack"
+                           CanStepForwardOverride="@CanStepForward"
+                           StepTextOverride="@DisplayedStepText"
+                           TimelinePosition="@TimelinePosition"
+                           TimelineCount="@TimelineCount"
+                           Compact="true" />
 
-        <div class="lesson-reference-links" aria-label="Concepts and memory links">
-            <ConceptLink Href="/learn/concepts/insertion-sort">Insertion Sort concepts →</ConceptLink>
-            <ConceptLink Href="/learn/concepts/insertion-sort">Insertion Sort memory & online behavior →</ConceptLink>
-        </div>
-
-        <div class="visualizer-shell">
-            @if (_view == StateView.Visual) { <InsertionSortVisualization Snapshot="@DisplayedSnapshot" /> }
-            else { <InsertionSortMemoryVisualization Snapshot="@DisplayedSnapshot" /> }
-        </div>
-
-        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
-
-        <div class="run-dashboard" aria-label="Insertion Sort live metrics">
-            <article><span>Pass</span><strong>@PassMetric</strong><small>One new key joins the sorted prefix per pass.</small></article>
-            <article><span>Comparisons</span><strong>@DisplayedSnapshot.Comparisons</strong><small>@(_variant == InsertionSortVariant.BinarySearch ? "Binary probes used to locate insertion points." : "Backward key comparisons through the prefix.")</small></article>
-            <article><span>Shifts</span><strong>@DisplayedSnapshot.Shifts</strong><small>Larger values moved one slot right.</small></article>
-            <article><span>Sorted prefix</span><strong>@DisplayedSnapshot.SortedPrefixLength / @DisplayedSnapshot.Count</strong><small>The left side already in order.</small></article>
-        </div>
+        <RunMetricStrip Items="@InsertionRunMetrics" AriaLabel="Insertion Sort live metrics" />
 
         <div class="role-strip" aria-label="Insertion Sort current roles">
             <article><span>HELD KEY</span><strong>@RoleKey</strong><small>Temporarily outside the array.</small></article>
@@ -170,6 +155,31 @@
         <div class="invariant-panel">
             <div><span>INVARIANT TO WATCH</span><h3>Before each pass, the entire left prefix is already sorted.</h3><p>The algorithm never needs to sort that prefix from scratch. It only makes room for one new key and restores the same invariant with a prefix one item longer.</p></div>
             <div class="early-exit-note"><span>WHY IT CAN BE FAST</span><strong>Nearly sorted data means very short travel.</strong><p>In Linear mode, a key that already belongs near its current position needs only a few comparisons and shifts. That is why the best case is Θ(n).</p></div>
+        </div>
+
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist" aria-label="Insertion Sort state view">
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state</button>
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
+            </div>
+            <p>@(_view == StateView.Visual
+                ? "The visual view shows the held key, the temporary gap, shifts to the right, and the sorted prefix growing one item at a time."
+                : "The memory view shows the fixed array slots, the held element identity, and every shift/write used to insert the key.")</p>
+        </div>
+
+        <div class="visualizer-shell">
+            @if (_view == StateView.Visual) { <InsertionSortVisualization Snapshot="@DisplayedSnapshot" /> }
+            else { <InsertionSortMemoryVisualization Snapshot="@DisplayedSnapshot" /> }
+        </div>
+
+        @if (_view == StateView.Visual)
+        {
+            <StateLegend Items="@InsertionLegendItems" />
+        }
+
+        <div class="lesson-reference-links" aria-label="Concepts and memory links">
+            <ConceptLink Href="/learn/concepts/insertion-sort">Insertion Sort concepts →</ConceptLink>
+            <ConceptLink Href="/learn/concepts/insertion-sort">Insertion Sort memory & online behavior →</ConceptLink>
         </div>
     </section>
 
@@ -278,6 +288,23 @@
 }
 
 @code {
+    private static readonly StateLegendItem[] InsertionLegendItems =
+    [
+        new("Held key / gap", "destination"),
+        new("Insertion point", "minimum"),
+        new("Compare / probe", "scan"),
+        new("Shift right", "swap"),
+        new("Sorted prefix", "sorted")
+    ];
+
+    private IReadOnlyList<RunMetricItem> InsertionRunMetrics =>
+    [
+        new("Pass", PassMetric, "One key joins the sorted prefix per pass."),
+        new("Comparisons", DisplayedSnapshot.Comparisons.ToString(), _variant == InsertionSortVariant.BinarySearch ? "Binary probes used to locate the insertion point." : "Backward comparisons through the sorted prefix."),
+        new("Shifts", DisplayedSnapshot.Shifts.ToString(), "Larger values moved one slot to the right."),
+        new("Sorted prefix", $"{DisplayedSnapshot.SortedPrefixLength} / {DisplayedSnapshot.Count}", "The left side that is already ordered.")
+    ];
+
     private const string ModuleKey = "insertion-sort";
     private const string CompletedTasksStorageKey = "algorithm-visualizer.insertion-sort.completed-tasks.v1";
     private const string PopupSettingStorageKey = "algorithm-visualizer.insertion-sort.result-popups.v1";

@@ -9,7 +9,7 @@
 
 <PageTitle>Quick Sort — Algorithm Visualizer</PageTitle>
 
-<div class="quick-page learning-module-page learning-module-shell">
+<div class="quick-page learning-module-page learning-module-shell sorting-module-page">
     <section class="learn-launchpad" aria-labelledby="quick-learn-title">
         <div class="learn-copy">
             <span class="section-kicker">LEARN FIRST</span>
@@ -124,15 +124,9 @@
             </div>
         </div>
 
-        <div class="run-dashboard">
-            <div><span>PARTITIONS</span><strong>@DisplayedSnapshot.Partitions</strong></div>
-            <div><span>COMPARISONS</span><strong>@DisplayedSnapshot.Comparisons</strong></div>
-            <div><span>SWAPS</span><strong>@DisplayedSnapshot.Swaps</strong></div>
-            <div><span>DEPTH</span><strong>@DisplayedSnapshot.CurrentDepth / @DisplayedSnapshot.MaxDepth</strong></div>
-            <div><span>PIVOT</span><strong>@DisplayedPivot</strong></div>
-        </div>
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" Compact="true" />
 
-        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+        <RunMetricStrip Items="@QuickRunMetrics" AriaLabel="Quick Sort live metrics" />
 
         <div class="state-tabs-row">
             <div class="state-tabs" role="tablist" aria-label="Quick Sort simulation view">
@@ -141,12 +135,16 @@
             </div>
             <p>@(_view == StateView.Visual ? "Visual state shows the current pivot, scan, partition regions, and which indexes are already final." : "Memory state shows the same fixed array slots, item identity, and the recursion-stack cost that Quick Sort adds even though it uses no O(n) buffer.")</p>
         </div>
-        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/quick-sort">Quick Sort concepts →</ConceptLink><ConceptLink Href="/learn/concepts/memory">Array &amp; recursion memory →</ConceptLink><ConceptLink Href="/learn/concepts/big-o">Complexity guide →</ConceptLink></div>
-
         <div class="visual-shell">
             @if (_view == StateView.Visual) { <QuickSortVisualization Snapshot="@DisplayedSnapshot" /> }
             else { <QuickSortMemoryVisualization Snapshot="@DisplayedSnapshot" /> }
         </div>
+
+        @if (_view == StateView.Visual)
+        {
+            <StateLegend Items="@QuickLegendItems" />
+        }
+        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/quick-sort">Quick Sort concepts →</ConceptLink><ConceptLink Href="/learn/concepts/memory">Array &amp; recursion memory →</ConceptLink><ConceptLink Href="/learn/concepts/big-o">Complexity guide →</ConceptLink></div>
     </section>
 
     <section class="algorithm-map" aria-labelledby="quick-map-title">
@@ -222,6 +220,24 @@
 }
 
 @code {
+    private IReadOnlyList<RunMetricItem> QuickRunMetrics =>
+    [
+        new("Partitions", DisplayedSnapshot.Partitions.ToString(), "Partition regions completed so far."),
+        new("Comparisons", DisplayedSnapshot.Comparisons.ToString(), "Values checked against the active pivot rule."),
+        new("Swaps", DisplayedSnapshot.Swaps.ToString(), "In-place exchanges performed so far."),
+        new("Depth", $"{DisplayedSnapshot.CurrentDepth} / {DisplayedSnapshot.MaxDepth}", "Current / deepest recursion level."),
+        new("Pivot", DisplayedPivot, "Pivot active in the displayed step.")
+    ];
+
+    private static readonly StateLegendItem[] QuickLegendItems =
+    [
+        new("Active range", "active"),
+        new("Pivot", "pivot"),
+        new("Scan", "scan"),
+        new("Classified region", "region"),
+        new("Final position", "sorted")
+    ];
+
     private const string ModuleKey = "quick-sort";
     private const string CompletedTasksStorageKey = "algorithm-visualizer.quick-sort.completed-tasks.v1";
     private const string PopupSettingStorageKey = "algorithm-visualizer.quick-sort.result-popups.v1";

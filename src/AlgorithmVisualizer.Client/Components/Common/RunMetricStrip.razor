@@ -1,0 +1,24 @@
+@if (Items.Count > 0)
+{
+    <div class="run-metric-strip" aria-label="@AriaLabel">
+        @foreach (var item in Items)
+        {
+            <article class="run-metric-card">
+                <span>@item.Label</span>
+                <strong>@item.Value</strong>
+                @if (!string.IsNullOrWhiteSpace(item.Description))
+                {
+                    <small>@item.Description</small>
+                }
+            </article>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<RunMetricItem> Items { get; set; } = [];
+
+    [Parameter]
+    public string AriaLabel { get; set; } = "Live run metrics";
+}

@@ -48,14 +48,6 @@
 .guide-part.scan { border-color: #cee1f8; background: #f7fbff; }
 .guide-part.prefix { border-color: #d5eee9; background: #f7fcfb; }
 
-.legend { min-width: max-content; display: flex; flex-wrap: wrap; justify-content: center; gap: .65rem 1rem; color: var(--color-text-soft); font-size: .88rem; font-weight: 650; }
-.legend span { display: inline-flex; align-items: center; gap: .42rem; }
-.swatch { width: .78rem; height: .78rem; display: inline-block; border: 1px solid var(--color-border-strong); border-radius: .22rem; background: #fff; }
-.swatch.destination { border-color: #e2b874; background: #fff7e8; }
-.swatch.minimum { border-color: #8f83ee; background: #f0edff; }
-.swatch.compare { border-color: #76a8e8; background: #e8f2ff; }
-.swatch.swap { border-color: #e2b874; background: var(--color-warning-soft); }
-.swatch.sorted { border-color: #87cfc1; background: #f0fbf8; }
 
 @media (max-width: 900px) { .visual-guide { grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: 28rem; } }
 @media (max-width: 700px) {

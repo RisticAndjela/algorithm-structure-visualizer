@@ -9,7 +9,7 @@
 
 <PageTitle>Selection Sort — Algorithm Visualizer</PageTitle>
 
-<div class="selection-page learning-module-page learning-module-shell">
+<div class="selection-page learning-module-page learning-module-shell sorting-module-page">
     <section class="learn-launchpad" aria-labelledby="selection-learn-title">
         <div class="learn-copy">
             <span class="section-kicker">LEARN FIRST</span>
@@ -148,26 +148,6 @@
             </div>
         </div>
 
-        <div class="state-tabs-row">
-            <div class="state-tabs" role="tablist" aria-label="Selection Sort state view">
-                <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state</button>
-                <button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
-            </div>
-            <p>@(_view == StateView.Visual
-                ? "The visual view shows the destination index, current minimum candidate, scan position, and the sorted prefix growing on the left."
-                : "The memory view keeps array indexes and element identities visible so you can see classic swaps versus stable shifting.")</p>
-        </div>
-
-        <div class="lesson-reference-links" aria-label="Concepts and memory links">
-            <ConceptLink Href="/learn/concepts/selection-sort">Selection Sort concepts →</ConceptLink>
-            <ConceptLink Href="/learn/concepts/selection-sort">Selection Sort memory & stability →</ConceptLink>
-        </div>
-
-        <div class="visualizer-shell">
-            @if (_view == StateView.Visual) { <SelectionSortVisualization Snapshot="@DisplayedSnapshot" /> }
-            else { <SelectionSortMemoryVisualization Snapshot="@DisplayedSnapshot" /> }
-        </div>
-
         <SimulationToolbar OnPlay="PlayTimelineAsync"
                            OnPause="PauseTimelineAsync"
                            OnStepBack="StepBackAsync"
@@ -177,14 +157,9 @@
                            CanStepForwardOverride="@CanStepForward"
                            StepTextOverride="@DisplayedStepText"
                            TimelinePosition="@TimelinePosition"
-                           TimelineCount="@TimelineCount" />
+                           TimelineCount="@TimelineCount" Compact="true" />
 
-        <div class="run-dashboard" aria-label="Selection Sort live metrics">
-            <article><span>Pass</span><strong>@PassMetric</strong><small>One destination index is fixed per pass.</small></article>
-            <article><span>Comparisons</span><strong>@DisplayedSnapshot.Comparisons</strong><small>Every remaining value must be checked against the minimum.</small></article>
-            <article><span>@(_variant == SelectionSortVariant.StableShift ? "Moves" : "Swaps")</span><strong>@(_variant == SelectionSortVariant.StableShift ? DisplayedSnapshot.Moves : DisplayedSnapshot.Swaps)</strong><small>@(_variant == SelectionSortVariant.StableShift ? "Array-slot writes used to preserve stability." : "At most one direct swap per pass.")</small></article>
-            <article><span>Fixed on left</span><strong>@DisplayedSnapshot.SortedPrefixLength / @DisplayedSnapshot.Count</strong><small>This prefix is final.</small></article>
-        </div>
+        <RunMetricStrip Items="@SelectionRunMetrics" AriaLabel="Selection Sort live metrics" />
 
         <div class="role-strip" aria-label="Selection Sort current roles">
             <article><span>DESTINATION</span><strong>@RoleDestination</strong><small>Where the minimum must go.</small></article>
@@ -195,6 +170,30 @@
         <div class="invariant-panel">
             <div><span>INVARIANT TO WATCH</span><h3>Before each pass, everything left of the destination is already final.</h3><p>The pass searches only the unsorted suffix. After the minimum is placed, the sorted prefix grows by exactly one position.</p></div>
             <div class="early-exit-note"><span>IMPORTANT DIFFERENCE</span><strong>Already sorted does not mean fewer comparisons.</strong><p>Both variants still scan the complete remaining suffix on every pass. Best, average, and worst comparison growth are all Θ(n²).</p></div>
+        </div>
+
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist" aria-label="Selection Sort state view">
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state</button>
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
+            </div>
+            <p>@(_view == StateView.Visual
+                ? "The visual view shows the destination index, current minimum candidate, scan position, and the sorted prefix growing on the left."
+                : "The memory view keeps array indexes and element identities visible so you can see classic swaps versus stable shifting.")</p>
+        </div>
+
+        <div class="visualizer-shell">
+            @if (_view == StateView.Visual) { <SelectionSortVisualization Snapshot="@DisplayedSnapshot" /> }
+            else { <SelectionSortMemoryVisualization Snapshot="@DisplayedSnapshot" /> }
+        </div>
+
+        @if (_view == StateView.Visual)
+        {
+            <StateLegend Items="@SelectionLegendItems" />
+        }
+        <div class="lesson-reference-links" aria-label="Concepts and memory links">
+            <ConceptLink Href="/learn/concepts/selection-sort">Selection Sort concepts →</ConceptLink>
+            <ConceptLink Href="/learn/concepts/selection-sort">Selection Sort memory & stability →</ConceptLink>
         </div>
     </section>
 
@@ -331,6 +330,23 @@
 }
 
 @code {
+    private IReadOnlyList<RunMetricItem> SelectionRunMetrics =>
+    [
+        new("Pass", PassMetric, "One destination index becomes final per pass."),
+        new("Comparisons", DisplayedSnapshot.Comparisons.ToString(), "Remaining values checked against the current minimum."),
+        new(_variant == SelectionSortVariant.StableShift ? "Moves" : "Swaps", (_variant == SelectionSortVariant.StableShift ? DisplayedSnapshot.Moves : DisplayedSnapshot.Swaps).ToString(), _variant == SelectionSortVariant.StableShift ? "Slot writes that preserve equal-item order." : "Direct exchanges used to place the minimum."),
+        new("Fixed left", $"{DisplayedSnapshot.SortedPrefixLength} / {DisplayedSnapshot.Count}", "Values already final in the left prefix.")
+    ];
+
+    private IReadOnlyList<StateLegendItem> SelectionLegendItems =>
+    [
+        new("Destination", "destination"),
+        new("Current minimum", "minimum"),
+        new("Scanning / comparing", "compare"),
+        new(_variant == SelectionSortVariant.StableShift ? "Shift / insert" : "Swap", "swap"),
+        new("Fixed / sorted", "sorted")
+    ];
+
     private const string ModuleKey = "selection-sort";
     private const string CompletedTasksStorageKey = "algorithm-visualizer.selection-sort.completed-tasks.v1";
     private const string PopupSettingStorageKey = "algorithm-visualizer.selection-sort.result-popups.v1";

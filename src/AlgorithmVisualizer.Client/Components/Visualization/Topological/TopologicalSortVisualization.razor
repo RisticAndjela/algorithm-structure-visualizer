@@ -3,12 +3,6 @@
 @using AlgorithmVisualizer.Client.Components.Visualization.Graphs
 
 <section class="topological-visual" aria-label="Topological Sort visual state">
-    <div class="topological-summary-strip">
-        <div><span>ORDER</span><strong>@Snapshot.OutputIndices.Length / @Snapshot.VertexCount</strong><small>@OrderText</small></div>
-        <div><span>EDGE CHECKS</span><strong>@Snapshot.EdgeChecks</strong><small>@UpdateText</small></div>
-        <div><span>@FrontierTitle.ToUpperInvariant()</span><strong>@Snapshot.FrontierIndices.Length</strong><small>@FrontierText</small></div>
-    </div>
-
     <GraphVisualization Snapshot="@VisualGraph" ShowDefaultLegend="false" />
 
     <div class="order-strip" aria-label="Current topological order">
@@ -33,13 +27,6 @@
         <div class="cycle-banner"><strong>Cycle detected</strong><span>A directed cycle means no valid topological ordering exists.</span></div>
     }
 
-    <div class="topological-legend" aria-label="Topological Sort state legend">
-        <span><i class="ready"></i>@(Snapshot.Variant == TopologicalSortVariant.KahnQueue ? "Ready / indegree 0" : "Recursion path")</span>
-        <span><i class="current"></i>Current</span>
-        <span><i class="neighbor"></i>Inspecting edge</span>
-        <span><i class="ordered"></i>@(Snapshot.Variant == TopologicalSortVariant.KahnQueue ? "Ordered" : "Finished")</span>
-        <span><i class="cycle"></i>Cycle edge</span>
-    </div>
 </section>
 
 @code {
@@ -48,10 +35,6 @@
         new(true, false, 0, 0, [], [], []), [], [], [], [], -1, -1, null,
         0, 0, 0, 0, 0, false, TopologicalSortPhase.Ready, TopologicalSortVariant.KahnQueue);
 
-    private string FrontierTitle => Snapshot.Variant == TopologicalSortVariant.KahnQueue ? "Ready queue" : "Call stack";
-    private string FrontierText => FormatLabels(Snapshot.FrontierIndices);
-    private string OrderText => Snapshot.CycleDetected ? "invalid because a cycle exists" : FormatLabels(Snapshot.OutputIndices);
-    private string UpdateText => Snapshot.Variant == TopologicalSortVariant.KahnQueue ? $"{Snapshot.InDegreeUpdates} indegree updates" : $"{Snapshot.BacktrackCount} finishes/backtracks";
 
     private GraphSnapshot VisualGraph
     {
@@ -93,11 +76,5 @@
     }
 
     private string Label(int index) => index >= 0 && index < Snapshot.Graph.Vertices.Length ? Snapshot.Graph.Vertices[index].Label : "?";
-    private string FormatLabels(int[] indices)
-    {
-        if (indices.Length == 0) return "none yet";
-        var labels = new string[indices.Length];
-        for (var index = 0; index < indices.Length; index++) labels[index] = Label(indices[index]);
-        return string.Join(" → ", labels);
-    }
+
 }

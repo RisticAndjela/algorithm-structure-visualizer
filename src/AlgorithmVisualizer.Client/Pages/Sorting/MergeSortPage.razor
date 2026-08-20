@@ -9,7 +9,7 @@
 
 <PageTitle>Merge Sort — Algorithm Visualizer</PageTitle>
 
-<div class="merge-page learning-module-page learning-module-shell">
+<div class="merge-page learning-module-page learning-module-shell sorting-module-page">
     <section class="learn-launchpad" aria-labelledby="merge-learn-title">
         <div class="learn-copy">
             <span class="section-kicker">LEARN FIRST</span>
@@ -129,34 +129,9 @@
             </div>
         </div>
 
-        <div class="state-tabs-row">
-            <div class="state-tabs" role="tablist" aria-label="Merge Sort state view">
-                <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state</button>
-                <button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
-            </div>
-            <p>@(_view == StateView.Visual
-                ? "The visual view shows only the current recursive focus: either one parent splitting into two children, or two sorted child runs merging through the buffer. The main array stays visible below as your reference."
-                : "The memory view shows the main array beside the O(n) auxiliary buffer and makes copy-back writes explicit.")</p>
-        </div>
+        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" Compact="true" />
 
-        <div class="lesson-reference-links" aria-label="Concepts and memory links">
-            <ConceptLink Href="/learn/concepts/merge-sort">Merge Sort concepts →</ConceptLink>
-            <ConceptLink Href="/learn/concepts/merge-sort">Merge Sort buffer & stability →</ConceptLink>
-        </div>
-
-        <div class="visualizer-shell">
-            @if (_view == StateView.Visual) { <MergeSortVisualization Snapshot="@DisplayedSnapshot" /> }
-            else { <MergeSortMemoryVisualization Snapshot="@DisplayedSnapshot" /> }
-        </div>
-
-        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
-
-        <div class="run-dashboard" aria-label="Merge Sort live metrics">
-            <article><span>Merges</span><strong>@DisplayedSnapshot.Merges</strong><small>Two neighboring sorted runs combined into one.</small></article>
-            <article><span>Comparisons</span><strong>@DisplayedSnapshot.Comparisons</strong><small>Front-value comparisons plus natural-run detection in advanced mode.</small></article>
-            <article><span>Writes</span><strong>@DisplayedSnapshot.Writes</strong><small>Writes to the buffer and copies back to the array.</small></article>
-            <article><span>@(_variant == MergeSortVariant.TopDownRecursive ? "Depth" : "Run pass")</span><strong>@VariantProgressMetric</strong><small>@(_variant == MergeSortVariant.TopDownRecursive ? "Current recursion level / deepest level reached." : "Natural merge pass and detected run count.")</small></article>
-        </div>
+        <RunMetricStrip Items="@MergeRunMetrics" AriaLabel="Merge Sort live metrics" />
 
         <div class="role-strip" aria-label="Merge Sort current roles">
             <article><span>LEFT FRONT</span><strong>@LeftFrontText</strong><small>The next unread candidate from the left sorted run.</small></article>
@@ -167,6 +142,30 @@
         <div class="invariant-panel">
             <div><span>INVARIANT TO WATCH</span><h3>Merge is only called on two runs that are already sorted.</h3><p>That one guarantee is why looking only at the two front unread values is enough to choose the globally smallest remaining value for the merged range.</p></div>
             <div class="early-exit-note"><span>STABILITY RULE</span><strong>On equality, choose from the left run first.</strong><p>The implementation uses <code>left.Value &lt;= right.Value</code>. Earlier equal items therefore stay ahead of later equal items.</p></div>
+        </div>
+
+        <div class="state-tabs-row">
+            <div class="state-tabs" role="tablist" aria-label="Merge Sort state view">
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Visual)">Visual state</button>
+                <button type="button" role="tab" aria-selected="@(_view == StateView.Memory)" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => SetStateView(StateView.Memory)">Memory state</button>
+            </div>
+            <p>@(_view == StateView.Visual
+                ? "The visual view shows only the current recursive focus: either one parent splitting into two children, or two sorted child runs merging through the buffer. The main array stays visible below as your reference."
+                : "The memory view shows the main array beside the O(n) auxiliary buffer and makes copy-back writes explicit.")</p>
+        </div>
+
+        <div class="visualizer-shell">
+            @if (_view == StateView.Visual) { <MergeSortVisualization Snapshot="@DisplayedSnapshot" /> }
+            else { <MergeSortMemoryVisualization Snapshot="@DisplayedSnapshot" /> }
+        </div>
+
+        @if (_view == StateView.Visual)
+        {
+            <StateLegend Items="@MergeLegendItems" />
+        }
+        <div class="lesson-reference-links" aria-label="Concepts and memory links">
+            <ConceptLink Href="/learn/concepts/merge-sort">Merge Sort concepts →</ConceptLink>
+            <ConceptLink Href="/learn/concepts/merge-sort">Merge Sort buffer & stability →</ConceptLink>
         </div>
     </section>
 
@@ -269,6 +268,22 @@
 }
 
 @code {
+    private IReadOnlyList<RunMetricItem> MergeRunMetrics =>
+    [
+        new("Merges", DisplayedSnapshot.Merges.ToString(), "Neighboring sorted runs combined so far."),
+        new("Comparisons", DisplayedSnapshot.Comparisons.ToString(), "Front-value comparisons and run detection work."),
+        new("Writes", DisplayedSnapshot.Writes.ToString(), "Buffer writes plus copies back to the array."),
+        new(_variant == MergeSortVariant.TopDownRecursive ? "Depth" : "Run pass", VariantProgressMetric, _variant == MergeSortVariant.TopDownRecursive ? "Current recursion level / deepest level reached." : "Natural merge pass and detected run count.")
+    ];
+
+    private static readonly StateLegendItem[] MergeLegendItems =
+    [
+        new("Divide focus", "divide"),
+        new("Read front", "read"),
+        new("Buffer / copy", "write"),
+        new("Finished", "sorted")
+    ];
+
     private const string ModuleKey = "merge-sort";
     private const string CompletedTasksStorageKey = "algorithm-visualizer.merge-sort.completed-tasks.v1";
     private const string PopupSettingStorageKey = "algorithm-visualizer.merge-sort.result-popups.v1";

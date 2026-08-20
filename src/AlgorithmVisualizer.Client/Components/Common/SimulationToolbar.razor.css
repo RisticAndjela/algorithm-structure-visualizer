@@ -240,3 +240,47 @@
         gap: .2rem;
     }
 }
+
+/* Compact mode is used by dense algorithm labs where playback, current step and
+   metrics all live above the visualization. Default pages keep the original scale. */
+.simulation-toolbar.compact {
+    grid-template-columns: minmax(21rem, 1.15fr) minmax(16rem, 1fr) minmax(13rem, .72fr);
+    border-radius: .75rem;
+}
+.compact .toolbar-section,
+.compact .current-step,
+.compact .speed-control {
+    padding: .66rem .78rem;
+}
+.compact .playback-section { gap: .48rem; }
+.compact .toolbar-label > span,
+.compact .current-step-label,
+.compact .toolbar-label-text {
+    font-size: .74rem;
+}
+.compact .toolbar-label small,
+.compact .speed-heading small,
+.compact .speed-scale,
+.compact .timeline-position {
+    font-size: .76rem;
+}
+.compact .playback-actions button {
+    min-height: 2.15rem;
+    padding: .42rem .6rem;
+    font-size: .8rem;
+}
+.compact .current-step { gap: .6rem; }
+.compact .step-status {
+    padding: .3rem .44rem;
+    font-size: .76rem;
+}
+.compact .step-copy { gap: .14rem; }
+.compact .step-copy output {
+    min-height: 1rem;
+    font-size: .82rem;
+    line-height: 1.35;
+}
+.compact .speed-heading strong { font-size: .8rem; }
+@media (max-width: 1120px) {
+    .simulation-toolbar.compact { grid-template-columns: 1fr 1fr; }
+}

@@ -1,0 +1,17 @@
+@if (Items.Count > 0)
+{
+    <div class="state-legend" aria-label="State color legend">
+        <span class="state-legend__title">COLOR KEY</span>
+        <div class="state-legend__items">
+            @foreach (var item in Items)
+            {
+                <span class="state-legend__item"><i class="state-legend__swatch @($"tone-{item.Tone}")"></i>@item.Label</span>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<StateLegendItem> Items { get; set; } = [];
+}
