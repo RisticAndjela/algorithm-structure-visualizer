@@ -42,7 +42,7 @@
 .legend-ring.best { border-color: var(--color-primary); }
 .legend-ring.pruned { border-color: var(--color-border-strong); opacity: .35; }
 .tree-card { display: flex; flex-direction: column; gap: .65rem; }
-.tree-levels { display: grid; gap: .5rem; max-height: 22rem; overflow: auto; padding-right: .15rem; }
+.tree-levels { display: grid; gap: .5rem; max-height: none; overflow: visible; padding-right: 0; }
 .tree-level { display: grid; gap: .3rem; }
 .depth-label { color: var(--color-text-muted); font-size: .7rem; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
 .tree-level-nodes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .35rem; }

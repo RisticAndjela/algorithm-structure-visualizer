@@ -27,7 +27,7 @@
 
     <header class="module-header">
         <div class="header-copy">
-            <div class="module-eyebrow"><span>MACHINE LEARNING · PHASE 1 STEP 2</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <div class="module-eyebrow"><span>MACHINE LEARNING · PHASE 1 STEP 1</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
             <h1>Gradient Descent</h1>
             <p>Choose a starting point and step size. Then watch the C# loop calculate the slope, move the parameters and decide whether to stop.</p>
         </div>
@@ -115,7 +115,7 @@
         }
     </section>
 
-    <section class="predict-section" aria-labelledby="gd-predict-title">
+    <section class="predict-section ml-predict-split" aria-labelledby="gd-predict-title">
         <div class="heading-with-step"><span class="step-number">2</span><div><span class="section-kicker">PREDICT</span><h2 id="gd-predict-title">Will the first step make the loss better or worse?</h2><p>Choose before you run it. The simulator checks the real first update.</p></div></div>
         <div class="prediction-card">
             <div class="prediction-actions">
@@ -143,7 +143,9 @@
             </div>
         </div>
 
-        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+        <SimulationToolbar Compact="true" OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+
+        <RunMetricStrip Items="@LiveRunMetrics" AriaLabel="Gradient Descent live metrics" />
 
         <div class="state-tabs-row">
             <div class="state-tabs" role="tablist">
@@ -152,19 +154,13 @@
             </div>
             <p>@ViewExplanation</p>
         </div>
-        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/gradient-descent">Algorithm rule →</ConceptLink><ConceptLink Href="/learn/concepts/gradient-descent-loss">Loss surface →</ConceptLink><ConceptLink Href="/learn/concepts/gradient-descent-learning-rate">What is step size? →</ConceptLink><ConceptLink Href="/learn/concepts/gradient-descent-convergence">Convergence →</ConceptLink></div>
 
-        <div class="state-surface ml-state-surface" tabindex="0">
+        <div class="state-surface ml-state-surface">
             @if (_view == StateView.Visual)
             {
                 <div class="gd-visual-state">
                     <GradientLandscape Snapshot="@DisplayedSnapshot" />
-                    <div class="gd-vector-grid">
-                        <GradientVectorStrip Name="CURRENT · θ" Values="@DisplayedSnapshot.Parameters" CurrentIndex="@DisplayedSnapshot.CurrentIndex" Subtitle="where we are now" />
-                        <GradientVectorStrip Name="SLOPE · ∇J" Values="@DisplayedSnapshot.Gradient" CurrentIndex="@DisplayedSnapshot.CurrentIndex" Subtitle="which way is uphill" Kind="gradient" />
-                        <GradientVectorStrip Name="STEP · η∇J" Values="@DisplayedSnapshot.ScaledGradient" CurrentIndex="@DisplayedSnapshot.CurrentIndex" Subtitle="how far we move" Kind="gradient" />
-                        <GradientVectorStrip Name="NEXT · θ′" Values="@DisplayedSnapshot.NextParameters" CurrentIndex="@DisplayedSnapshot.CurrentIndex" Subtitle="where this step lands" Kind="candidate" />
-                    </div>
+                    <GradientUpdateInsight Snapshot="@DisplayedSnapshot" />
                 </div>
             }
             else
@@ -188,6 +184,7 @@
                 </section>
             }
         </div>
+        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/gradient-descent">Algorithm rule →</ConceptLink><ConceptLink Href="/learn/concepts/gradient-descent-loss">Loss surface →</ConceptLink><ConceptLink Href="/learn/concepts/gradient-descent-learning-rate">What is step size? →</ConceptLink><ConceptLink Href="/learn/concepts/gradient-descent-convergence">Convergence →</ConceptLink></div>
     </section>
 
     <section class="fit-section" aria-labelledby="gd-fit-title">
@@ -209,7 +206,7 @@
         </div>
     </section>
 
-    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="03 · Interactive" Title="Linear Regression" Description="Use the optimizer you just learned to fit a real prediction model to training points." Href="/ml-foundations/linear-regression" LinkLabel="Open Linear Regression" />
+    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="02 · Interactive" Title="Linear Regression" Description="Use the optimizer you just learned to fit a real prediction model to training points." Href="/ml-foundations/linear-regression" LinkLabel="Open Linear Regression" />
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)
@@ -234,6 +231,7 @@
 <PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
 
 @code {
+    private IReadOnlyList<RunMetricItem> LiveRunMetrics => [new("PHASE", PhaseRole), new("ITERATION", DisplayedSnapshot.Iteration.ToString()), new("LOSS", Format(DisplayedSnapshot.Loss)), new("GRADIENT NORM", DisplayedSnapshot.Phase == GradientDescentPhase.Ready ? "—" : Format(DisplayedSnapshot.GradientNorm)), new("EFFECTIVE η", Format(DisplayedSnapshot.EffectiveLearningRate))];
     private const string ModuleKey = "gradient-descent";
     private const string PopupSettingStorageKey = "algorithm-visualizer.gradient-descent.show-run-popup.v1";
     private readonly List<RunFrame> _frames = [];

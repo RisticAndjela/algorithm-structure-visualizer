@@ -1,0 +1,130 @@
+@using System.Globalization
+@using AlgorithmVisualizer.Core.MachineLearning.Optimization.GradientDescent
+
+<section class="gd-update-insight" aria-label="Gradient Descent current update">
+    <header class="gd-update-header">
+        <div>
+            <span>CURRENT UPDATE</span>
+            <strong>Read the move from left to right.</strong>
+            <small>The gradient is the uphill direction. Gradient Descent scales it by η, subtracts that step, and proposes the next θ.</small>
+        </div>
+        <div class="gd-update-formula" aria-label="theta prime equals theta minus eta times gradient">θ′ = θ − η∇J</div>
+    </header>
+
+    <div class="gd-update-flow">
+        <article class="gd-update-card slope">
+            <div class="gd-card-heading">
+                <span>1 · CURRENT SLOPE</span>
+                <small>∥∇J∥ = @Format(Snapshot.GradientNorm)</small>
+            </div>
+            <strong>@FormatVector(Snapshot.Gradient)</strong>
+            <p>@SlopeExplanation</p>
+            <div class="gd-component-row">
+                @for (var index = 0; index < Snapshot.Gradient.Length; index++)
+                {
+                    <span class="@(index == Snapshot.CurrentIndex ? "active" : string.Empty)"><small>∂J/∂θ@index</small><b>@Format(Snapshot.Gradient[index])</b></span>
+                }
+            </div>
+        </article>
+
+        <div class="gd-flow-arrow" aria-hidden="true">
+            <span>scale by</span>
+            <strong>η = @Format(Snapshot.EffectiveLearningRate)</strong>
+            <i>→</i>
+        </div>
+
+        <article class="gd-update-card step">
+            <div class="gd-card-heading">
+                <span>2 · STEP TO SUBTRACT</span>
+                <small>η × ∇J</small>
+            </div>
+            <strong>@FormatVector(Snapshot.ScaledGradient)</strong>
+            <p>This is the actual movement size. A larger η makes the same slope produce a larger jump.</p>
+            <div class="gd-component-row">
+                @for (var index = 0; index < Snapshot.ScaledGradient.Length; index++)
+                {
+                    <span class="@(index == Snapshot.CurrentIndex ? "active" : string.Empty)"><small>Δθ@index</small><b>@Format(Snapshot.ScaledGradient[index])</b></span>
+                }
+            </div>
+        </article>
+
+        <div class="gd-flow-arrow" aria-hidden="true">
+            <span>subtract</span>
+            <strong>θ − step</strong>
+            <i>→</i>
+        </div>
+
+        <article class="gd-update-card next">
+            <div class="gd-card-heading">
+                <span>3 · NEXT POINT</span>
+                <small>@NextPhaseLabel</small>
+            </div>
+            <strong>@FormatVector(Snapshot.NextParameters)</strong>
+            <p>@NextPointExplanation</p>
+            <div class="gd-next-loss">
+                <span>CURRENT LOSS <b>@Format(Snapshot.Loss)</b></span>
+                <span>CANDIDATE LOSS <b>@Format(CandidateLoss)</b></span>
+            </div>
+        </article>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public GradientDescentSnapshot Snapshot { get; set; } = default!;
+
+    private double CandidateLoss => EvaluateLoss(Snapshot.NextParameters);
+
+    private string SlopeExplanation
+    {
+        get
+        {
+            if (Snapshot.Gradient.Length == 0 || Snapshot.Gradient.All(value => Math.Abs(value) < 1e-12))
+                return "The slope is effectively flat here, so there is almost no downhill move left to make.";
+
+            var directions = Snapshot.Gradient.Select((value, index) => value > 0d
+                ? $"θ{index} should move lower"
+                : value < 0d
+                    ? $"θ{index} should move higher"
+                    : $"θ{index} can stay put");
+            return string.Join(" · ", directions);
+        }
+    }
+
+    private string NextPointExplanation
+    {
+        get
+        {
+            if (Snapshot.NextParameters.Length == 0) return "The candidate will appear after the gradient has been scaled.";
+            var delta = CandidateLoss - Snapshot.Loss;
+            if (!double.IsFinite(delta)) return "This candidate is non-finite, so the run should stop instead of committing it.";
+            if (Math.Abs(delta) < 1e-10) return "The candidate has essentially the same loss as the current point.";
+            return delta < 0d
+                ? $"This candidate lowers the loss by {Format(Math.Abs(delta))}."
+                : $"This candidate raises the loss by {Format(delta)} — the step is moving the wrong way or is too large.";
+        }
+    }
+
+    private string NextPhaseLabel => Snapshot.Phase == GradientDescentPhase.UpdatingParameters ? "candidate θ′" : "next θ preview";
+
+    private double EvaluateLoss(IReadOnlyList<double> parameters)
+    {
+        if (parameters.Count == 0) return Snapshot.Loss;
+        var length = Math.Min(parameters.Count, Math.Min(Snapshot.Target.Length, Snapshot.Curvature.Length));
+        var loss = 0d;
+        for (var index = 0; index < length; index++)
+        {
+            if (!double.IsFinite(parameters[index]) || !double.IsFinite(Snapshot.Target[index]) || !double.IsFinite(Snapshot.Curvature[index])) return double.PositiveInfinity;
+            var difference = parameters[index] - Snapshot.Target[index];
+            loss += 0.5d * Snapshot.Curvature[index] * difference * difference;
+        }
+        return loss;
+    }
+
+    private static string FormatVector(IReadOnlyList<double> values) => values.Count == 0
+        ? "[—]"
+        : $"[{string.Join(", ", values.Select(Format))}]";
+
+    private static string Format(double value) => double.IsFinite(value)
+        ? value.ToString("0.####", CultureInfo.InvariantCulture)
+        : "∞";
+}

@@ -27,7 +27,7 @@
 
     <header class="module-header">
         <div class="header-copy">
-            <div class="module-eyebrow"><span>MACHINE LEARNING · PHASE 1 STEP 7</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <div class="module-eyebrow"><span>MACHINE LEARNING · PHASE 1 STEP 6</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
             <h1>K-Means</h1>
             <p>Cluster unlabeled points by alternating nearest-centroid assignment and centroid updates, with every distance and mean update visible.</p>
         </div>
@@ -128,7 +128,9 @@
             </div>
         </div>
 
-        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+        <SimulationToolbar Compact="true" OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+
+        <RunMetricStrip Items="@LiveRunMetrics" AriaLabel="K-Means live metrics" />
 
         <div class="state-tabs-row">
             <div class="state-tabs" role="tablist" aria-label="K-Means state view">
@@ -138,13 +140,7 @@
             <p>@ViewExplanation</p>
         </div>
 
-        <div class="lesson-reference-links" aria-label="K-Means concept links">
-            <ConceptLink Href="/learn/concepts/k-means">K-Means concepts →</ConceptLink>
-            <ConceptLink Href="/structures/vector">Distance &amp; vector storage →</ConceptLink>
-            <ConceptLink Href="/ml-foundations/kd-tree">How KD-Tree uses distance differently →</ConceptLink>
-        </div>
-
-        <div class="state-surface ml-state-surface" tabindex="0">
+        <div class="state-surface ml-state-surface">
             @if (_view == StateView.Visual)
             {
                 <KMeansPlot Snapshot="@DisplayedSnapshot" />
@@ -177,13 +173,12 @@
                 </section>
             }
         </div>
-
-        <div class="run-dashboard compact-run-metrics kmeans-run-dashboard" aria-label="K-Means live metrics">
-            <div><span>PHASE</span><strong>@PhaseText(DisplayedSnapshot.Phase)</strong></div>
-            <div><span>ROUND</span><strong>@DisplayedSnapshot.Iteration</strong></div>
-            <div><span>INERTIA</span><strong>@FormatMetric(DisplayedSnapshot.Inertia)</strong></div>
-            <div><span>CENTROID MOVE</span><strong>@FormatMetric(DisplayedSnapshot.MaxCentroidMovement)</strong></div>
+        <div class="lesson-reference-links" aria-label="K-Means concept links">
+            <ConceptLink Href="/learn/concepts/k-means">K-Means concepts →</ConceptLink>
+            <ConceptLink Href="/structures/vector">Distance &amp; vector storage →</ConceptLink>
+            <ConceptLink Href="/ml-foundations/kd-tree">How KD-Tree uses distance differently →</ConceptLink>
         </div>
+
     </section>
 
     <section class="fit-section" aria-labelledby="kmeans-fit-title">
@@ -205,7 +200,7 @@
         </div>
     </section>
 
-    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="08 · Planned" Title="Decision Tree" Description="Switch from unlabeled clustering to supervised split decisions: choose a feature and threshold that make child groups purer." Href="/ml-foundations/decision-tree" LinkLabel="Preview Decision Tree" />
+    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="07 · Interactive" Title="Decision Tree" Description="Switch from unlabeled clustering to supervised split decisions: choose a feature and threshold that make child groups purer." Href="/ml-foundations/decision-tree" LinkLabel="Open Decision Tree" />
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)
@@ -225,6 +220,7 @@
 <PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
 
 @code {
+    private IReadOnlyList<RunMetricItem> LiveRunMetrics => [new("PHASE", PhaseText(DisplayedSnapshot.Phase)), new("ROUND", DisplayedSnapshot.Iteration.ToString()), new("INERTIA", FormatMetric(DisplayedSnapshot.Inertia)), new("CENTROID MOVE", FormatMetric(DisplayedSnapshot.MaxCentroidMovement))];
     private const string ModuleKey = "k-means";
     private const string PopupSettingStorageKey = "algorithm-visualizer.k-means.show-run-popup.v1";
 

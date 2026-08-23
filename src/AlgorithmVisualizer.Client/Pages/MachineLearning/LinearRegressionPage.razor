@@ -27,7 +27,7 @@
 
     <header class="module-header">
         <div class="header-copy">
-            <div class="module-eyebrow"><span>MACHINE LEARNING · PHASE 1 STEP 3</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <div class="module-eyebrow"><span>MACHINE LEARNING · PHASE 1 STEP 2</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
             <h1>Linear Regression</h1>
             <p>Fit a straight line to training examples using the Gradient Descent idea from the previous lesson.</p>
         </div>
@@ -130,6 +130,19 @@
             </div>
         </div>
 
+        <SimulationToolbar Compact="true" OnPlay="PlayTimelineAsync"
+                           OnPause="PauseTimelineAsync"
+                           OnStepBack="StepBackAsync"
+                           OnStepForward="StepForwardAsync"
+                           OnReset="ResetPlaybackAsync"
+                           CanStepBack="@CanStepBack"
+                           CanStepForwardOverride="@CanStepForward"
+                           StepTextOverride="@DisplayedStepText"
+                           TimelinePosition="@TimelinePosition"
+                           TimelineCount="@TimelineCount" />
+
+        <RunMetricStrip Items="@LiveRunMetrics" AriaLabel="Linear Regression live metrics" />
+
         <div class="state-tabs-row">
             <div class="state-tabs" role="tablist" aria-label="Linear Regression state view">
                 <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual state</button>
@@ -138,13 +151,7 @@
             <p>@ViewExplanation</p>
         </div>
 
-        <div class="lesson-reference-links" aria-label="Linear Regression concept links">
-            <ConceptLink Href="/learn/concepts/linear-regression">Linear Regression concepts →</ConceptLink>
-            <ConceptLink Href="/learn/concepts/gradient-descent">Gradient Descent refresher →</ConceptLink>
-            <ConceptLink Href="/structures/vector">Vector storage refresher →</ConceptLink>
-        </div>
-
-        <div class="state-surface ml-state-surface" tabindex="0">
+        <div class="state-surface ml-state-surface">
             @if (_view == StateView.Visual)
             {
                 <LinearRegressionPlot Snapshot="@DisplayedSnapshot" />
@@ -170,24 +177,12 @@
                 </section>
             }
         </div>
-
-        <SimulationToolbar OnPlay="PlayTimelineAsync"
-                           OnPause="PauseTimelineAsync"
-                           OnStepBack="StepBackAsync"
-                           OnStepForward="StepForwardAsync"
-                           OnReset="ResetPlaybackAsync"
-                           CanStepBack="@CanStepBack"
-                           CanStepForwardOverride="@CanStepForward"
-                           StepTextOverride="@DisplayedStepText"
-                           TimelinePosition="@TimelinePosition"
-                           TimelineCount="@TimelineCount" />
-
-        <div class="run-dashboard" aria-label="Linear Regression live metrics">
-            <article><span>Iteration</span><strong>@DisplayedSnapshot.Iteration</strong><small>One full batch update of weight and bias.</small></article>
-            <article><span>Weight</span><strong>@Format(DisplayedSnapshot.Weight)</strong><small>Controls the slope of the line.</small></article>
-            <article><span>Bias</span><strong>@Format(DisplayedSnapshot.Bias)</strong><small>Moves the line up or down.</small></article>
-            <article><span>MSE</span><strong>@Format(DisplayedSnapshot.Loss)</strong><small>Average squared prediction error.</small></article>
+        <div class="lesson-reference-links" aria-label="Linear Regression concept links">
+            <ConceptLink Href="/learn/concepts/linear-regression">Linear Regression concepts →</ConceptLink>
+            <ConceptLink Href="/learn/concepts/gradient-descent">Gradient Descent refresher →</ConceptLink>
+            <ConceptLink Href="/structures/vector">Vector storage refresher →</ConceptLink>
         </div>
+
     </section>
 
     <section class="fit-section" aria-labelledby="lr-fit-title">
@@ -209,7 +204,7 @@
         </div>
     </section>
 
-    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="04 · Interactive" Title="Logistic Regression" Description="Reuse the weighted sum, then map it through a sigmoid so the output becomes a probability for binary classification." Href="/ml-foundations/logistic-regression" LinkLabel="Open Logistic Regression" />
+    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="03 · Interactive" Title="Logistic Regression" Description="Reuse the weighted sum, then map it through a sigmoid so the output becomes a probability for binary classification." Href="/ml-foundations/logistic-regression" LinkLabel="Open Logistic Regression" />
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)
@@ -234,6 +229,7 @@
 <PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
 
 @code {
+    private IReadOnlyList<RunMetricItem> LiveRunMetrics => [new("Iteration", DisplayedSnapshot.Iteration.ToString(), "One full batch update of weight and bias."), new("Weight", Format(DisplayedSnapshot.Weight), "Controls the slope of the line."), new("Bias", Format(DisplayedSnapshot.Bias), "Moves the line up or down."), new("MSE", Format(DisplayedSnapshot.Loss), "Average squared prediction error.")];
     private const string ModuleKey = "linear-regression";
     private const string PopupSettingStorageKey = "algorithm-visualizer.linear-regression.show-run-popup.v1";
     private readonly List<RunFrame> _frames = [];

@@ -27,7 +27,7 @@
 
     <header class="module-header">
         <div class="header-copy">
-            <div class="module-eyebrow"><span>MACHINE LEARNING · PHASE 1 STEP 6</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <div class="module-eyebrow"><span>MACHINE LEARNING · PHASE 1 STEP 5</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
             <h1>KD-Tree</h1>
             <p>Build a spatial binary tree, then trace nearest-neighbor search as it descends, backtracks, and prunes whole regions.</p>
         </div>
@@ -116,7 +116,9 @@
             </div>
         </div>
 
-        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+        <SimulationToolbar Compact="true" OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+
+        <RunMetricStrip Items="@LiveRunMetrics" AriaLabel="KD-Tree live metrics" />
 
         <div class="state-tabs-row">
             <div class="state-tabs" role="tablist" aria-label="KD-Tree state view">
@@ -126,13 +128,7 @@
             <p>@ViewExplanation</p>
         </div>
 
-        <div class="lesson-reference-links" aria-label="KD-Tree concept links">
-            <ConceptLink Href="/learn/concepts/kd-tree">KD-Tree concepts →</ConceptLink>
-            <ConceptLink Href="/ml-foundations/knn">Compare with brute-force KNN →</ConceptLink>
-            <ConceptLink Href="/structures/bst">Binary-tree refresher →</ConceptLink>
-        </div>
-
-        <div class="state-surface ml-state-surface" tabindex="0">
+        <div class="state-surface ml-state-surface">
             @if (_view == StateView.Visual)
             {
                 <KdTreePlot Snapshot="@DisplayedSnapshot" />
@@ -158,13 +154,12 @@
                 </section>
             }
         </div>
-
-        <div class="run-dashboard compact-run-metrics kd-run-dashboard" aria-label="KD-Tree live metrics">
-            <div><span>PHASE</span><strong>@PhaseText(DisplayedSnapshot.Phase)</strong></div>
-            <div><span>VISITED</span><strong>@DisplayedSnapshot.VisitedNodes / @DisplayedSnapshot.Count</strong></div>
-            <div><span>PRUNED</span><strong>@DisplayedSnapshot.PrunedNodes</strong></div>
-            <div><span>BEST DIST.</span><strong>@FormatDistance(DisplayedSnapshot.BestDistance)</strong></div>
+        <div class="lesson-reference-links" aria-label="KD-Tree concept links">
+            <ConceptLink Href="/learn/concepts/kd-tree">KD-Tree concepts →</ConceptLink>
+            <ConceptLink Href="/ml-foundations/knn">Compare with brute-force KNN →</ConceptLink>
+            <ConceptLink Href="/structures/bst">Binary-tree refresher →</ConceptLink>
         </div>
+
     </section>
 
     <section class="fit-section" aria-labelledby="kd-fit-title">
@@ -186,7 +181,7 @@
         </div>
     </section>
 
-    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="07 · Interactive" Title="K-Means" Description="Replace labeled neighbors with learned centroids: assign points, move centroids, repeat until cluster membership stabilizes." Href="/ml-foundations/k-means" LinkLabel="Open K-Means" />
+    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="06 · Interactive" Title="K-Means" Description="Replace labeled neighbors with learned centroids: assign points, move centroids, repeat until cluster membership stabilizes." Href="/ml-foundations/k-means" LinkLabel="Open K-Means" />
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)
@@ -206,6 +201,7 @@
 <PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
 
 @code {
+    private IReadOnlyList<RunMetricItem> LiveRunMetrics => [new("PHASE", PhaseText(DisplayedSnapshot.Phase)), new("VISITED", $"{DisplayedSnapshot.VisitedNodes} / {DisplayedSnapshot.Count}"), new("PRUNED", DisplayedSnapshot.PrunedNodes.ToString()), new("BEST DIST.", FormatDistance(DisplayedSnapshot.BestDistance))];
     private const string ModuleKey = "kd-tree";
     private const string PopupSettingStorageKey = "algorithm-visualizer.kd-tree.show-run-popup.v1";
     private readonly List<RunFrame> _frames = [];

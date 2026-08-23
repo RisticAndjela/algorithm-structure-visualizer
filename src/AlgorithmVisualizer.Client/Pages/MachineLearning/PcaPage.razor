@@ -27,7 +27,7 @@
 
     <header class="module-header">
         <div class="header-copy">
-            <div class="module-eyebrow"><span>MACHINE LEARNING · PHASE 1 STEP 9</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <div class="module-eyebrow"><span>MACHINE LEARNING · PHASE 1 STEP 8</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
             <h1>PCA</h1>
             <p>Reduce numeric dimensions by preserving the direction with the most variance, with centering, covariance, direction search, and projection exposed step by step.</p>
         </div>
@@ -109,7 +109,9 @@
             </div>
         </div>
 
-        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+        <SimulationToolbar Compact="true" OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+
+        <RunMetricStrip Items="@LiveRunMetrics" AriaLabel="PCA live metrics" />
 
         <div class="state-tabs-row">
             <div class="state-tabs" role="tablist" aria-label="PCA state view">
@@ -119,13 +121,7 @@
             <p>@ViewExplanation</p>
         </div>
 
-        <div class="lesson-reference-links" aria-label="PCA concept links">
-            <ConceptLink Href="/learn/concepts/pca">PCA concepts →</ConceptLink>
-            <ConceptLink Href="/structures/vector">Vector / dot product →</ConceptLink>
-            <ConceptLink Href="/structures/matrix">Matrix / covariance storage →</ConceptLink>
-        </div>
-
-        <div class="state-surface ml-state-surface" tabindex="0">
+        <div class="state-surface ml-state-surface">
             @if (_view == StateView.Visual)
             {
                 <PcaPlot Snapshot="@DisplayedSnapshot" />
@@ -153,13 +149,12 @@
                 </section>
             }
         </div>
-
-        <div class="run-dashboard compact-run-metrics pca-run-dashboard" aria-label="PCA live metrics">
-            <div><span>PHASE</span><strong>@PhaseText(DisplayedSnapshot.Phase)</strong></div>
-            <div><span>PC1</span><strong>@DirectionText(DisplayedSnapshot.PrincipalComponent)</strong></div>
-            <div><span>EXPLAINED</span><strong>@PercentOrDash(DisplayedSnapshot.ExplainedVarianceRatio)</strong></div>
-            <div><span>POINT</span><strong>@CurrentPointText</strong></div>
+        <div class="lesson-reference-links" aria-label="PCA concept links">
+            <ConceptLink Href="/learn/concepts/pca">PCA concepts →</ConceptLink>
+            <ConceptLink Href="/structures/vector">Vector / dot product →</ConceptLink>
+            <ConceptLink Href="/structures/matrix">Matrix / covariance storage →</ConceptLink>
         </div>
+
     </section>
 
     <section class="fit-section" aria-labelledby="pca-fit-title">
@@ -181,7 +176,7 @@
         </div>
     </section>
 
-    <NextLessonCard Eyebrow="NEXT TRACK · DEEP LEARNING" Level="10 · Interactive" Title="Neuron + Activation Functions" Description="Turn vectors into a trainable unit: compute a weighted sum, add bias, then compare nonlinear activation functions." Href="/deep-learning/neuron-activations" LinkLabel="Open Neuron + Activations" />
+    <NextLessonCard Eyebrow="NEXT TRACK · DEEP LEARNING" Level="09 · Interactive" Title="Neuron + Activation Functions" Description="Turn vectors into a trainable unit: compute a weighted sum, add bias, then compare nonlinear activation functions." Href="/deep-learning/neuron-activations" LinkLabel="Open Neuron + Activations" />
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)
@@ -197,6 +192,7 @@
 <PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
 
 @code {
+    private IReadOnlyList<RunMetricItem> LiveRunMetrics => [new("PHASE", PhaseText(DisplayedSnapshot.Phase)), new("PC1", DirectionText(DisplayedSnapshot.PrincipalComponent)), new("EXPLAINED", PercentOrDash(DisplayedSnapshot.ExplainedVarianceRatio)), new("POINT", CurrentPointText)];
     private const string ModuleKey = "pca";
     private const string PopupSettingStorageKey = "algorithm-visualizer.pca.show-run-popup.v1";
     private readonly List<RunFrame> _frames = [];

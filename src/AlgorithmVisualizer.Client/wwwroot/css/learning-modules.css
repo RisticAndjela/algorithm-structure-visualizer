@@ -534,13 +534,14 @@ body .learning-module-page.learning-module-shell {
 }
 
 
-/* Machine-learning state cards stay part of the normal lesson flow.
-   Only the actual drawing board scrolls; headers, legends, current-step copy,
-   metrics and Memory explanations must never be trapped inside one giant scroller. */
+/* Machine-learning Visual State stays in normal page flow. Neither the state surface,
+   its board wrapper, nor child teaching panels may become generic nested scrollers.
+   Wide/dense drawings must resize, reflow, or use content-driven height instead. */
 .learning-module-page.learning-module-shell.ml-module-page .ml-state-surface {
     width: 100%;
     min-width: 0;
     max-width: 100%;
+    min-height: 0;
     overflow: visible;
     box-sizing: border-box;
 }
@@ -549,28 +550,29 @@ body .learning-module-page.learning-module-shell {
     position: relative;
     width: 100%;
     min-width: 0;
-    height: clamp(22rem, 48vh, 29rem);
-    overflow: auto;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable;
-    touch-action: pan-x pan-y;
+    max-width: 100%;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    overscroll-behavior: auto;
+    scrollbar-gutter: auto;
+    touch-action: auto;
     box-sizing: border-box;
 }
 
 .learning-module-page.learning-module-shell.ml-module-page .ml-visual-board:focus {
-    outline: 2px solid rgba(103, 87, 229, .18);
-    outline-offset: 2px;
+    outline: none;
+}
+
+.learning-module-page.learning-module-shell.ml-module-page .ml-visual-board > * {
+    min-width: 0 !important;
+    max-width: 100%;
 }
 
 .learning-module-page.learning-module-shell.ml-module-page .ml-visual-board svg {
-    max-width: none;
-    max-height: none;
-}
-
-@media (max-width: 760px) {
-    .learning-module-page.learning-module-shell.ml-module-page .ml-visual-board {
-        height: 23rem;
-    }
+    width: 100%;
+    max-width: 100%;
+    height: auto;
 }
 
 /* Shared last-run modal chrome. Scoped pages may add content-specific tabs/metrics, but the modal itself must always open as an overlay. */
@@ -1230,16 +1232,16 @@ body .learning-module-page.learning-module-shell {
    Sorting and Search/Traversal keep all live-run information above the state surface,
    then show the state, then the shared color key. Keep the animation as the visual
    focus instead of oversized dashboard chrome. */
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .lab-heading {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .lab-heading {
     padding: .9rem 1rem;
     align-items: center;
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .lab-heading h2 {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .lab-heading h2 {
     margin-top: .18rem;
     font-size: clamp(1.05rem, 1.45vw, 1.3rem);
     line-height: 1.25;
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .run-dashboard {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .run-dashboard {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
     gap: 0;
@@ -1249,8 +1251,8 @@ body .learning-module-page.learning-module-shell {
     border-bottom: 1px solid var(--color-border);
     background: #fafbfc;
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .run-dashboard > article,
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .run-dashboard > div {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .run-dashboard > article,
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .run-dashboard > div {
     min-height: 0;
     display: grid;
     align-content: start;
@@ -1261,27 +1263,27 @@ body .learning-module-page.learning-module-shell {
     border-radius: 0;
     background: transparent;
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .run-dashboard > :last-child {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .run-dashboard > :last-child {
     border-right: 0;
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .run-dashboard span,
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .role-strip span,
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .invariant-panel > div > span {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .run-dashboard span,
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .role-strip span,
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .invariant-panel > div > span {
     color: var(--color-text-muted);
     font-size: .66rem;
     font-weight: 850;
     letter-spacing: .07em;
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .run-dashboard strong {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .run-dashboard strong {
     font-size: .98rem;
     line-height: 1.2;
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .run-dashboard small {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .run-dashboard small {
     color: var(--color-text-soft);
     font-size: .73rem;
     line-height: 1.35;
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .role-strip {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .role-strip {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
     gap: .55rem;
@@ -1290,47 +1292,47 @@ body .learning-module-page.learning-module-shell {
     border-bottom: 1px solid var(--color-border);
     background: #fff;
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .role-strip article {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .role-strip article {
     min-height: 0;
     gap: .14rem;
     padding: .58rem .7rem;
     border-radius: .68rem;
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .role-strip strong {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .role-strip strong {
     font-size: .9rem;
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .role-strip small {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .role-strip small {
     font-size: .72rem;
     line-height: 1.35;
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .invariant-panel {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .invariant-panel {
     gap: .65rem;
     padding: .75rem .85rem;
     border-top: 0;
     border-bottom: 1px solid var(--color-border);
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .invariant-panel h3 {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .invariant-panel h3 {
     margin: .18rem 0 .24rem;
     font-size: .94rem;
     line-height: 1.3;
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .invariant-panel p,
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .early-exit-note p {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .invariant-panel p,
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .early-exit-note p {
     font-size: .78rem;
     line-height: 1.42;
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .early-exit-note {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .early-exit-note {
     padding: .62rem .7rem;
     border-radius: .68rem;
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .state-tabs-row {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .state-tabs-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: .8rem;
     padding: .55rem .75rem 0;
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .state-tabs {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .state-tabs {
     display: inline-flex;
     flex: 0 0 auto;
     gap: .25rem;
@@ -1339,22 +1341,22 @@ body .learning-module-page.learning-module-shell {
     padding: .2rem;
     background: #f1f2f6;
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .state-tabs button {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .state-tabs button {
     min-height: 2.2rem;
     padding: .42rem .68rem;
     border: 0;
     border-radius: .55rem;
     font-size: .76rem;
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .state-tabs button + button {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .state-tabs button + button {
     border-left: 0;
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .state-tabs button.active {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .state-tabs button.active {
     border: 1px solid var(--color-border);
     background: #fff;
     box-shadow: 0 1px 2px rgba(20, 24, 40, .05);
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .state-tabs-row > p {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .state-tabs-row > p {
     margin: 0;
     max-width: 48rem;
     color: var(--color-text-soft);
@@ -1362,26 +1364,59 @@ body .learning-module-page.learning-module-shell {
     line-height: 1.4;
     text-align: right;
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .lesson-reference-links {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .lesson-reference-links {
     margin: .45rem .75rem .55rem;
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .visualizer-shell,
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .visual-shell,
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .state-surface {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .visualizer-shell,
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .visual-shell,
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .state-surface {
     min-height: 0;
     margin: 0 .75rem;
 }
 @media (max-width: 760px) {
-    .learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .state-tabs-row {
+    .learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .state-tabs-row {
         align-items: stretch;
         flex-direction: column;
     }
-    .learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .state-tabs-row > p { text-align: left; }
-    .learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .invariant-panel { grid-template-columns: 1fr; }
+    .learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .state-tabs-row > p { text-align: left; }
+    .learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .invariant-panel { grid-template-columns: 1fr; }
 }
-.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page) .state-legend {
+.learning-module-page.learning-module-shell:is(.sorting-module-page, .search-traversal-module-page, .ml-module-page) .state-legend {
     margin: 0 .75rem .75rem;
     border: 1px solid var(--color-border);
     border-top: 0;
     border-radius: 0 0 .8rem .8rem;
+}
+
+
+/* ML global normalization ----------------------------------------------------------
+   Canonical order matches Sorting/Search: run controls and live context first, then
+   Visual/Memory state, then references/legend. This is a temporary global guard so
+   individual ML lessons cannot drift while their algorithm-specific designs evolve. */
+.learning-module-page.learning-module-shell.ml-module-page .lab-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+.learning-module-page.learning-module-shell.ml-module-page .lab-section > * { order: 3; }
+.learning-module-page.learning-module-shell.ml-module-page .lab-section > .lab-heading { order: 0; }
+.learning-module-page.learning-module-shell.ml-module-page .lab-section > .simulation-toolbar { order: 1; }
+.learning-module-page.learning-module-shell.ml-module-page .lab-section > .run-dashboard,
+.learning-module-page.learning-module-shell.ml-module-page .lab-section > .run-metric-strip { order: 2; }
+.learning-module-page.learning-module-shell.ml-module-page .lab-section > .role-strip,
+.learning-module-page.learning-module-shell.ml-module-page .lab-section > .invariant-panel { order: 3; }
+.learning-module-page.learning-module-shell.ml-module-page .lab-section > .state-tabs-row { order: 4; }
+.learning-module-page.learning-module-shell.ml-module-page .lab-section > .state-surface { order: 5; }
+.learning-module-page.learning-module-shell.ml-module-page .lab-section > .state-legend { order: 6; }
+.learning-module-page.learning-module-shell.ml-module-page .lab-section > .lesson-reference-links { order: 7; }
+
+.learning-module-page.learning-module-shell.ml-module-page .lab-section > .state-tabs-row {
+    margin-top: .65rem;
+}
+.learning-module-page.learning-module-shell.ml-module-page .lab-section > .state-surface {
+    margin-top: .45rem;
+}
+.learning-module-page.learning-module-shell.ml-module-page .lab-section > .lesson-reference-links {
+    margin-top: .55rem;
+    margin-bottom: .75rem;
 }

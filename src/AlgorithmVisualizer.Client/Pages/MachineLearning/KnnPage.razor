@@ -27,7 +27,7 @@
 
     <header class="module-header">
         <div class="header-copy">
-            <div class="module-eyebrow"><span>MACHINE LEARNING · PHASE 1 STEP 5</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <div class="module-eyebrow"><span>MACHINE LEARNING · PHASE 1 STEP 4</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
             <h1>K-Nearest Neighbors</h1>
             <p>Move a query through a labeled 2D dataset and watch the exact distance scan, top-k neighbor set, and majority vote that produce the prediction.</p>
         </div>
@@ -136,7 +136,7 @@
             </div>
         </div>
 
-        <SimulationToolbar OnPlay="PlayTimelineAsync"
+        <SimulationToolbar Compact="true" OnPlay="PlayTimelineAsync"
                            OnPause="PauseTimelineAsync"
                            OnStepBack="StepBackAsync"
                            OnStepForward="StepForwardAsync"
@@ -147,6 +147,8 @@
                            TimelinePosition="@TimelinePosition"
                            TimelineCount="@TimelineCount" />
 
+        <RunMetricStrip Items="@LiveRunMetrics" AriaLabel="KNN live metrics" />
+
         <div class="state-tabs-row">
             <div class="state-tabs" role="tablist" aria-label="KNN state view">
                 <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual state</button>
@@ -155,13 +157,7 @@
             <p>@ViewExplanation</p>
         </div>
 
-        <div class="lesson-reference-links" aria-label="KNN concept links">
-            <ConceptLink Href="/learn/concepts/knn">KNN concepts →</ConceptLink>
-            <ConceptLink Href="/structures/vector">Vector distance refresher →</ConceptLink>
-            <ConceptLink Href="/ml-foundations/logistic-regression">Compare with Logistic Regression →</ConceptLink>
-        </div>
-
-        <div class="state-surface ml-state-surface" tabindex="0">
+        <div class="state-surface ml-state-surface">
             @if (_view == StateView.Visual)
             {
                 <KnnPlot Snapshot="@DisplayedSnapshot" />
@@ -191,13 +187,12 @@
                 </section>
             }
         </div>
-
-        <div class="run-dashboard compact-run-metrics knn-run-dashboard" aria-label="KNN live metrics">
-            <div><span>SCAN</span><strong>@ScanText</strong></div>
-            <div><span>DISTANCE</span><strong>@FormatDistance(DisplayedSnapshot.CurrentDistance)</strong></div>
-            <div><span>TOP-K</span><strong>@FilledNeighborCount / @DisplayedSnapshot.K</strong></div>
-            <div><span>PREDICTION</span><strong>@PredictionText(DisplayedSnapshot.PredictedClass)</strong></div>
+        <div class="lesson-reference-links" aria-label="KNN concept links">
+            <ConceptLink Href="/learn/concepts/knn">KNN concepts →</ConceptLink>
+            <ConceptLink Href="/structures/vector">Vector distance refresher →</ConceptLink>
+            <ConceptLink Href="/ml-foundations/logistic-regression">Compare with Logistic Regression →</ConceptLink>
         </div>
+
     </section>
 
     <section class="fit-section" aria-labelledby="knn-fit-title">
@@ -219,7 +214,7 @@
         </div>
     </section>
 
-    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="06 · Interactive" Title="KD-Tree" Description="Organize points by alternating spatial splits, then descend, backtrack, and prune regions that cannot beat the current best." Href="/ml-foundations/kd-tree" LinkLabel="Open KD-Tree" />
+    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="05 · Interactive" Title="KD-Tree" Description="Organize points by alternating spatial splits, then descend, backtrack, and prune regions that cannot beat the current best." Href="/ml-foundations/kd-tree" LinkLabel="Open KD-Tree" />
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)
@@ -244,6 +239,7 @@
 <PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
 
 @code {
+    private IReadOnlyList<RunMetricItem> LiveRunMetrics => [new("SCAN", ScanText), new("DISTANCE", FormatDistance(DisplayedSnapshot.CurrentDistance)), new("TOP-K", $"{FilledNeighborCount} / {DisplayedSnapshot.K}"), new("PREDICTION", PredictionText(DisplayedSnapshot.PredictedClass))];
     private const string ModuleKey = "knn";
     private const string PopupSettingStorageKey = "algorithm-visualizer.knn.show-run-popup.v1";
     private readonly List<RunFrame> _frames = [];

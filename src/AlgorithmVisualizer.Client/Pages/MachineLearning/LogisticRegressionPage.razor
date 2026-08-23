@@ -27,7 +27,7 @@
 
     <header class="module-header">
         <div class="header-copy">
-            <div class="module-eyebrow"><span>MACHINE LEARNING · PHASE 1 STEP 4</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <div class="module-eyebrow"><span>MACHINE LEARNING · PHASE 1 STEP 3</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
             <h1>Logistic Regression</h1>
             <p>Train a binary classifier and watch the score, sigmoid curve, probability, threshold, and decision boundary stay connected.</p>
         </div>
@@ -137,6 +137,19 @@
             </div>
         </div>
 
+        <SimulationToolbar Compact="true" OnPlay="PlayTimelineAsync"
+                           OnPause="PauseTimelineAsync"
+                           OnStepBack="StepBackAsync"
+                           OnStepForward="StepForwardAsync"
+                           OnReset="ResetPlaybackAsync"
+                           CanStepBack="@CanStepBack"
+                           CanStepForwardOverride="@CanStepForward"
+                           StepTextOverride="@DisplayedStepText"
+                           TimelinePosition="@TimelinePosition"
+                           TimelineCount="@TimelineCount" />
+
+        <RunMetricStrip Items="@LiveRunMetrics" AriaLabel="Logistic Regression live metrics" />
+
         <div class="state-tabs-row">
             <div class="state-tabs" role="tablist" aria-label="Logistic Regression state view">
                 <button type="button" role="tab" aria-selected="@(_view == StateView.Visual)" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual state</button>
@@ -145,14 +158,7 @@
             <p>@ViewExplanation</p>
         </div>
 
-        <div class="lesson-reference-links" aria-label="Logistic Regression concept links">
-            <ConceptLink Href="/learn/concepts/logistic-regression">Logistic Regression concepts →</ConceptLink>
-            <ConceptLink Href="/ml-foundations/linear-regression">Linear Regression refresher →</ConceptLink>
-            <ConceptLink Href="/ml-foundations/gradient-descent">Gradient Descent refresher →</ConceptLink>
-            <ConceptLink Href="/structures/vector">Vector storage refresher →</ConceptLink>
-        </div>
-
-        <div class="state-surface ml-state-surface" tabindex="0">
+        <div class="state-surface ml-state-surface">
             @if (_view == StateView.Visual)
             {
                 <LogisticRegressionPlot Snapshot="@DisplayedSnapshot" />
@@ -179,25 +185,13 @@
                 </section>
             }
         </div>
-
-        <SimulationToolbar OnPlay="PlayTimelineAsync"
-                           OnPause="PauseTimelineAsync"
-                           OnStepBack="StepBackAsync"
-                           OnStepForward="StepForwardAsync"
-                           OnReset="ResetPlaybackAsync"
-                           CanStepBack="@CanStepBack"
-                           CanStepForwardOverride="@CanStepForward"
-                           StepTextOverride="@DisplayedStepText"
-                           TimelinePosition="@TimelinePosition"
-                           TimelineCount="@TimelineCount" />
-
-        <div class="run-dashboard logistic-dashboard" aria-label="Logistic Regression live metrics">
-            <article><span>Update</span><strong>@DisplayedSnapshot.Iteration</strong><small>One full-batch weight + bias update.</small></article>
-            <article><span>Weight</span><strong>@Format(DisplayedSnapshot.Weight)</strong><small>Controls which direction probability rises.</small></article>
-            <article><span>Boundary</span><strong>@BoundaryText(DisplayedSnapshot.Weight, DisplayedSnapshot.Bias)</strong><small>Score z = 0, therefore p = 0.5.</small></article>
-            <article><span>Cross-entropy</span><strong>@Format(DisplayedSnapshot.Loss)</strong><small>Probability error used for training.</small></article>
-            <article><span>Accuracy</span><strong>@FormatPercent(DisplayedSnapshot.Accuracy)</strong><small>Examples currently on the correct side.</small></article>
+        <div class="lesson-reference-links" aria-label="Logistic Regression concept links">
+            <ConceptLink Href="/learn/concepts/logistic-regression">Logistic Regression concepts →</ConceptLink>
+            <ConceptLink Href="/ml-foundations/linear-regression">Linear Regression refresher →</ConceptLink>
+            <ConceptLink Href="/ml-foundations/gradient-descent">Gradient Descent refresher →</ConceptLink>
+            <ConceptLink Href="/structures/vector">Vector storage refresher →</ConceptLink>
         </div>
+
     </section>
 
     <section class="fit-section" aria-labelledby="logistic-fit-title">
@@ -219,7 +213,7 @@
         </div>
     </section>
 
-    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="05 · Interactive" Title="K-Nearest Neighbors" Description="Stop learning one global boundary. Compare a new point with stored examples and let the nearest neighbors vote." Href="/ml-foundations/knn" LinkLabel="Open KNN" />
+    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="04 · Interactive" Title="K-Nearest Neighbors" Description="Stop learning one global boundary. Compare a new point with stored examples and let the nearest neighbors vote." Href="/ml-foundations/knn" LinkLabel="Open KNN" />
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)
@@ -244,6 +238,7 @@
 <PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
 
 @code {
+    private IReadOnlyList<RunMetricItem> LiveRunMetrics => [new("Update", DisplayedSnapshot.Iteration.ToString(), "One full-batch weight + bias update."), new("Weight", Format(DisplayedSnapshot.Weight), "Controls which direction probability rises."), new("Boundary", BoundaryText(DisplayedSnapshot.Weight, DisplayedSnapshot.Bias), "Score z = 0, therefore p = 0.5."), new("Cross-entropy", Format(DisplayedSnapshot.Loss), "Probability error used for training."), new("Accuracy", FormatPercent(DisplayedSnapshot.Accuracy), "Examples currently on the correct side.")];
     private const string ModuleKey = "logistic-regression";
     private const string PopupSettingStorageKey = "algorithm-visualizer.logistic-regression.show-run-popup.v1";
     private readonly List<RunFrame> _frames = [];

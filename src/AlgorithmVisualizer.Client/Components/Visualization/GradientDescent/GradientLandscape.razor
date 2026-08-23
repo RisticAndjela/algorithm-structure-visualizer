@@ -1,47 +1,143 @@
 @using System.Globalization
-@using System.Text
 @using AlgorithmVisualizer.Core.MachineLearning.Optimization.GradientDescent
 
 <section class="gradient-landscape" aria-label="Gradient descent parameter landscape">
-    <div class="gradient-summary-strip">
-        <div><span>UPDATE</span><strong>@Snapshot.Iteration</strong><small>@PhaseLabel</small></div>
-        <div><span>LOSS J(θ)</span><strong>@FormatValue(Snapshot.Loss)</strong><small>lower is better</small></div>
-        <div><span>GRADIENT NORM</span><strong>@FormatValue(Snapshot.GradientNorm)</strong><small>||∇J||₂</small></div>
-        <div><span>EFFECTIVE η</span><strong>@FormatValue(Snapshot.EffectiveLearningRate)</strong><small>step multiplier</small></div>
-    </div>
-
     <div class="landscape-copy">
-        <div><span>PARAMETER SPACE</span><strong>Contours show equal-loss regions.</strong></div>
-        <small>The path connects committed parameter vectors. The green point marks the minimum; purple marks the current θ.</small>
+        <div class="landscape-copy-main">
+            <span>PARAMETER SPACE</span>
+            <strong>See the complete path, the current point and the minimum in one frame.</strong>
+            <small>Every significant simulation point is fitted inside the canvas. Hover or focus any marker to inspect the exact iteration, parameters and loss.</small>
+        </div>
+        <div class="landscape-visibility-badge" title="The viewport is fitted from the target, current point, candidate and every committed history point.">
+            <span>COMPLETE VIEW</span>
+            <strong>@VisiblePointCount markers</strong>
+        </div>
     </div>
 
     <div class="landscape-canvas ml-visual-board" tabindex="0">
         <div class="landscape-stage">
-        <svg viewBox="0 0 120 70" role="img" aria-label="Gradient descent path toward the loss minimum" preserveAspectRatio="xMidYMid meet">
-            <ellipse class="loss-contour outer" cx="@CenterX" cy="@CenterY" rx="@ContourRx(34)" ry="@ContourRy(20)" />
-            <ellipse class="loss-contour middle" cx="@CenterX" cy="@CenterY" rx="@ContourRx(24)" ry="@ContourRy(14)" />
-            <ellipse class="loss-contour inner" cx="@CenterX" cy="@CenterY" rx="@ContourRx(13)" ry="@ContourRy(8)" />
-            @if (!string.IsNullOrWhiteSpace(PathPoints))
-            {
-                <polyline class="trajectory-line" points="@PathPoints" />
-            }
-            @foreach (var point in Snapshot.History)
-            {
-                if (point.Parameters.Length >= 2)
+            <svg viewBox="@($"0 0 {FormatCoordinate(StageWidth)} {FormatCoordinate(StageHeight)}")"
+                 role="img"
+                 aria-label="Gradient descent path toward the loss minimum"
+                 preserveAspectRatio="xMidYMid meet">
+                <defs>
+                    <marker id="gd-candidate-arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto" markerUnits="strokeWidth">
+                        <path d="M0,0 L7,3.5 L0,7 z" class="candidate-arrow-head" />
+                    </marker>
+                    <clipPath id="gd-plot-clip" clipPathUnits="userSpaceOnUse">
+                        <rect x="@FormatCoordinate(PlotLeft)"
+                              y="@FormatCoordinate(PlotTop)"
+                              width="@FormatCoordinate(PlotWidth)"
+                              height="@FormatCoordinate(PlotHeight)"
+                              rx="10" />
+                    </clipPath>
+                </defs>
+
+                <rect class="plot-boundary" x="@FormatCoordinate(PlotLeft)" y="@FormatCoordinate(PlotTop)" width="@FormatCoordinate(PlotWidth)" height="@FormatCoordinate(PlotHeight)" rx="10" />
+                <g clip-path="url(#gd-plot-clip)">
+                <line class="origin-axis" x1="@FormatCoordinate(PlotLeft)" y1="@FormatCoordinate(CenterY)" x2="@FormatCoordinate(PlotRight)" y2="@FormatCoordinate(CenterY)" />
+                <line class="origin-axis" x1="@FormatCoordinate(CenterX)" y1="@FormatCoordinate(PlotTop)" x2="@FormatCoordinate(CenterX)" y2="@FormatCoordinate(PlotBottom)" />
+
+                <ellipse class="loss-contour outer" cx="@FormatCoordinate(CenterX)" cy="@FormatCoordinate(CenterY)" rx="@ContourRx(0.43d)" ry="@ContourRy(0.43d)" />
+                <ellipse class="loss-contour middle" cx="@FormatCoordinate(CenterX)" cy="@FormatCoordinate(CenterY)" rx="@ContourRx(0.30d)" ry="@ContourRy(0.30d)" />
+                <ellipse class="loss-contour inner" cx="@FormatCoordinate(CenterX)" cy="@FormatCoordinate(CenterY)" rx="@ContourRx(0.17d)" ry="@ContourRy(0.17d)" />
+
+                @if (!string.IsNullOrWhiteSpace(PathPoints))
                 {
-                    <circle class="trajectory-point" cx="@CoordinateX(point.Parameters[0])" cy="@CoordinateY(point.Parameters[1])" r="1.45" />
+                    <polyline class="trajectory-line" points="@PathPoints" />
                 }
-            }
-            @if (HasCandidate)
+
+                @for (var index = 0; index < Snapshot.History.Length; index++)
+                {
+                    var point = Snapshot.History[index];
+                    if (IsPlottable(point.Parameters))
+                    {
+                        var pointX = MapX(point.Parameters[0]);
+                        var pointY = MapY(point.Parameters[1]);
+                        <g class="trajectory-node @(index == 0 ? "start" : string.Empty)"
+                           tabindex="0"
+                           role="img"
+                           aria-label="@HistoryPointTooltip(point)">
+                            <title>@HistoryPointTooltip(point)</title>
+                            <circle class="point-hit-area" cx="@FormatCoordinate(pointX)" cy="@FormatCoordinate(pointY)" r="13" />
+                            <circle class="trajectory-point" cx="@FormatCoordinate(pointX)" cy="@FormatCoordinate(pointY)" r="5.2" />
+                            @if (ShouldShowIterationLabel(index))
+                            {
+                                <foreignObject class="iteration-label-host"
+                                               x="@FormatCoordinate(pointX + 7d)"
+                                               y="@FormatCoordinate(pointY - 20d)"
+                                               width="44"
+                                               height="18">
+                                    <span xmlns="http://www.w3.org/1999/xhtml" class="iteration-label">@point.Iteration</span>
+                                </foreignObject>
+                            }
+                            <foreignObject class="svg-point-tooltip" x="@FormatCoordinate(TooltipX(pointX))" y="@FormatCoordinate(TooltipY(pointY))" width="240" height="82">
+                                <div xmlns="http://www.w3.org/1999/xhtml" class="svg-tooltip-card">
+                                    <span>COMMITTED · ITERATION @point.Iteration</span>
+                                    <strong>θ = [@ParameterValue(point.Parameters, 0), @ParameterValue(point.Parameters, 1)]</strong>
+                                    <small>loss @FormatValue(point.Loss) · η @FormatValue(point.LearningRate)</small>
+                                </div>
+                            </foreignObject>
+                        </g>
+                    }
+                }
+
+                @if (HasCandidate)
+                {
+                    <line class="candidate-line" x1="@FormatCoordinate(CurrentX)" y1="@FormatCoordinate(CurrentY)" x2="@FormatCoordinate(CandidateX)" y2="@FormatCoordinate(CandidateY)" marker-end="url(#gd-candidate-arrow)" />
+                    <g class="candidate-node" tabindex="0" role="img" aria-label="@CandidateTooltip">
+                        <title>@CandidateTooltip</title>
+                        <circle class="point-hit-area" cx="@FormatCoordinate(CandidateX)" cy="@FormatCoordinate(CandidateY)" r="14" />
+                        <circle class="candidate-point" cx="@FormatCoordinate(CandidateX)" cy="@FormatCoordinate(CandidateY)" r="6.2" />
+                        <foreignObject class="svg-point-tooltip" x="@FormatCoordinate(TooltipX(CandidateX))" y="@FormatCoordinate(TooltipY(CandidateY))" width="240" height="82">
+                            <div xmlns="http://www.w3.org/1999/xhtml" class="svg-tooltip-card candidate-tip">
+                                <span>CANDIDATE · θ′</span>
+                                <strong>θ′ = [@ParameterValue(Snapshot.NextParameters, 0), @ParameterValue(Snapshot.NextParameters, 1)]</strong>
+                                <small>candidate loss @FormatValue(CandidateLoss)</small>
+                            </div>
+                        </foreignObject>
+                    </g>
+                }
+
+                <g class="minimum-node" tabindex="0" role="img" aria-label="@MinimumTooltip">
+                    <title>@MinimumTooltip</title>
+                    <circle class="minimum-crosshair" cx="@FormatCoordinate(CenterX)" cy="@FormatCoordinate(CenterY)" r="17" />
+                    <circle class="point-hit-area" cx="@FormatCoordinate(CenterX)" cy="@FormatCoordinate(CenterY)" r="17" />
+                    <circle class="minimum-halo" cx="@FormatCoordinate(CenterX)" cy="@FormatCoordinate(CenterY)" r="11.5" />
+                    <circle class="minimum-point" cx="@FormatCoordinate(CenterX)" cy="@FormatCoordinate(CenterY)" r="4.8" />
+                    <foreignObject class="svg-point-tooltip" x="@FormatCoordinate(TooltipX(CenterX))" y="@FormatCoordinate(TooltipY(CenterY))" width="240" height="82">
+                        <div xmlns="http://www.w3.org/1999/xhtml" class="svg-tooltip-card minimum-tip">
+                            <span>MINIMUM · TARGET θ*</span>
+                            <strong>θ* = [@ParameterValue(Snapshot.Target, 0), @ParameterValue(Snapshot.Target, 1)]</strong>
+                            <small>loss = 0 for this teaching objective</small>
+                        </div>
+                    </foreignObject>
+                </g>
+
+                <g class="current-node" tabindex="0" role="img" aria-label="@CurrentTooltip">
+                    <title>@CurrentTooltip</title>
+                    <circle class="point-hit-area" cx="@FormatCoordinate(CurrentX)" cy="@FormatCoordinate(CurrentY)" r="15" />
+                    <circle class="current-halo" cx="@FormatCoordinate(CurrentX)" cy="@FormatCoordinate(CurrentY)" r="8.5" />
+                    <circle class="current-point" cx="@FormatCoordinate(CurrentX)" cy="@FormatCoordinate(CurrentY)" r="4" />
+                    <foreignObject class="svg-point-tooltip" x="@FormatCoordinate(TooltipX(CurrentX))" y="@FormatCoordinate(TooltipY(CurrentY))" width="240" height="82">
+                        <div xmlns="http://www.w3.org/1999/xhtml" class="svg-tooltip-card current-tip">
+                            <span>CURRENT · ITERATION @Snapshot.Iteration</span>
+                            <strong>θ = [@ParameterValue(Snapshot.Parameters, 0), @ParameterValue(Snapshot.Parameters, 1)]</strong>
+                            <small>loss @FormatValue(Snapshot.Loss) · ∥∇J∥ @FormatValue(Snapshot.GradientNorm)</small>
+                        </div>
+                    </foreignObject>
+                </g>
+                </g>
+            </svg>
+
+            <div class="landscape-label minimum-label" style="left:@CssX(LabelX(CenterX));top:@CssY(LabelYAbove(CenterY));">minimum θ*</div>
+            <div class="landscape-label current-label" style="left:@CssX(LabelX(CurrentX));top:@CssY(LabelYBelow(CurrentY));">current θ</div>
+            @if (Snapshot.History.Length > 0 && IsPlottable(Snapshot.History[0].Parameters))
             {
-                <line class="candidate-line" x1="@CurrentX" y1="@CurrentY" x2="@CandidateX" y2="@CandidateY" />
-                <circle class="candidate-point" cx="@CandidateX" cy="@CandidateY" r="2" />
+                var startX = MapX(Snapshot.History[0].Parameters[0]);
+                var startY = MapY(Snapshot.History[0].Parameters[1]);
+                <div class="landscape-label start-label" style="left:@CssX(LabelX(startX));top:@CssY(LabelYBelow(startY));">start</div>
             }
-            <circle class="minimum-point" cx="@CenterX" cy="@CenterY" r="2.3" />
-            <circle class="current-point" cx="@CurrentX" cy="@CurrentY" r="2.7" />
-        </svg>
-        <div class="landscape-label minimum-label" style="left:@CssX(LabelX(CenterX));top:@CssY(LabelY(CenterY));">minimum</div>
-        <div class="landscape-label current-label" style="left:@CssX(LabelX(CurrentX));top:@CssY(LabelY(CurrentY));">θ</div>
         </div>
     </div>
 
@@ -49,118 +145,176 @@
         <span><i class="path"></i>Committed path</span>
         <span><i class="current"></i>Current θ</span>
         <span><i class="candidate"></i>Candidate θ′</span>
-        <span><i class="minimum"></i>Minimum</span>
+        <span><i class="minimum"></i>Minimum / target</span>
+        <small>Every marker supports hover and keyboard focus.</small>
     </div>
 </section>
 
 @code {
     [Parameter, EditorRequired] public GradientDescentSnapshot Snapshot { get; set; } = default!;
 
-    private const double PlotWidth = 120d;
-    private const double PlotHeight = 70d;
-    private const double PlotLeft = 7d;
-    private const double PlotRight = 113d;
-    private const double PlotTop = 6d;
-    private const double PlotBottom = 64d;
+    private const double StageWidth = 1000d;
+    private const double StageHeight = 500d;
+    private const double HorizontalPadding = 76d;
+    private const double VerticalPadding = 62d;
+    private const double MarkerSafeInsetX = 34d;
+    private const double MarkerSafeInsetY = 28d;
 
-    private double CenterX => Snapshot.Target.Length > 0 ? MapX(Snapshot.Target[0]) : 50d;
-    private double CenterY => Snapshot.Target.Length > 1 ? MapY(Snapshot.Target[1]) : 50d;
-    private double CurrentX => Snapshot.Parameters.Length > 0 ? MapX(Snapshot.Parameters[0]) : 50d;
-    private double CurrentY => Snapshot.Parameters.Length > 1 ? MapY(Snapshot.Parameters[1]) : 50d;
-    private double CandidateX => Snapshot.NextParameters.Length > 0 ? MapX(Snapshot.NextParameters[0]) : CurrentX;
-    private double CandidateY => Snapshot.NextParameters.Length > 1 ? MapY(Snapshot.NextParameters[1]) : CurrentY;
-    private double XMin => AxisBound(0, true);
-    private double XMax => AxisBound(0, false);
-    private double YMin => AxisBound(1, true);
-    private double YMax => AxisBound(1, false);
-    private bool HasCandidate => Snapshot.Phase == GradientDescentPhase.UpdatingParameters;
-    private string PhaseLabel => Snapshot.Phase switch
-    {
-        GradientDescentPhase.ComputingGradient => "computing gradient",
-        GradientDescentPhase.ScalingGradient => "scaling gradient",
-        GradientDescentPhase.UpdatingParameters => "updating parameters",
-        GradientDescentPhase.EvaluatingLoss => "evaluating loss",
-        GradientDescentPhase.Complete => "completed",
-        GradientDescentPhase.Diverged => "diverged",
-        _ => "ready"
-    };
+    private double PlotLeft => HorizontalPadding;
+    private double PlotRight => StageWidth - HorizontalPadding;
+    private double PlotTop => VerticalPadding;
+    private double PlotBottom => StageHeight - VerticalPadding;
+    private double PlotWidth => PlotRight - PlotLeft;
+    private double PlotHeight => PlotBottom - PlotTop;
+    private double DataLeft => PlotLeft + MarkerSafeInsetX;
+    private double DataRight => PlotRight - MarkerSafeInsetX;
+    private double DataTop => PlotTop + MarkerSafeInsetY;
+    private double DataBottom => PlotBottom - MarkerSafeInsetY;
+    private double DataWidth => DataRight - DataLeft;
+    private double DataHeight => DataBottom - DataTop;
+
+    private double XHalfSpan => AxisHalfSpan(0);
+    private double YHalfSpan => AxisHalfSpan(1);
+    private double XMin => TargetValue(0) - XHalfSpan;
+    private double XMax => TargetValue(0) + XHalfSpan;
+    private double YMin => TargetValue(1) - YHalfSpan;
+    private double YMax => TargetValue(1) + YHalfSpan;
+
+    private double CenterX => MapX(TargetValue(0));
+    private double CenterY => MapY(TargetValue(1));
+    private double CurrentX => IsFiniteAt(Snapshot.Parameters, 0) ? MapX(Snapshot.Parameters[0]) : CenterX;
+    private double CurrentY => IsFiniteAt(Snapshot.Parameters, 1) ? MapY(Snapshot.Parameters[1]) : CenterY;
+    private double CandidateX => IsFiniteAt(Snapshot.NextParameters, 0) ? MapX(Snapshot.NextParameters[0]) : CurrentX;
+    private double CandidateY => IsFiniteAt(Snapshot.NextParameters, 1) ? MapY(Snapshot.NextParameters[1]) : CurrentY;
+    private bool HasCandidate => Snapshot.Phase == GradientDescentPhase.UpdatingParameters && IsPlottable(Snapshot.NextParameters);
+    private int VisiblePointCount => Snapshot.History.Count(point => IsPlottable(point.Parameters)) + 2 + (HasCandidate ? 1 : 0);
+    private double CandidateLoss => EvaluateLoss(Snapshot.NextParameters);
 
     private string PathPoints
     {
         get
         {
-            var builder = new StringBuilder();
+            var points = new List<string>(Snapshot.History.Length);
             for (var index = 0; index < Snapshot.History.Length; index++)
             {
                 var point = Snapshot.History[index];
-                if (point.Parameters.Length < 2) continue;
-                if (builder.Length > 0) builder.Append(' ');
-                builder.Append(CoordinateX(point.Parameters[0]));
-                builder.Append(',');
-                builder.Append(CoordinateY(point.Parameters[1]));
+                if (!IsPlottable(point.Parameters)) continue;
+                points.Add($"{CoordinateX(point.Parameters[0])},{CoordinateY(point.Parameters[1])}");
             }
-            return builder.ToString();
+            return string.Join(' ', points);
         }
     }
 
-    private string ContourRx(double basis)
+    private string ContourRx(double proportion)
     {
-        var curvature = Snapshot.Curvature.Length > 0 ? Snapshot.Curvature[0] : 1d;
-        var requested = Math.Clamp(basis / Math.Sqrt(Math.Max(0.05d, curvature)), 5d, 34d);
-        var available = Math.Max(4d, Math.Min(CenterX - PlotLeft, PlotRight - CenterX));
-        return FormatCoordinate(Math.Min(requested, available));
+        var curvature = CurvatureValue(0);
+        var anisotropy = 1d / Math.Sqrt(curvature);
+        var normalized = Math.Clamp(anisotropy, 0.55d, 1.8d);
+        return FormatCoordinate(Math.Min(DataWidth * proportion * normalized, DataWidth * 0.47d));
     }
 
-    private string ContourRy(double basis)
+    private string ContourRy(double proportion)
     {
-        var curvature = Snapshot.Curvature.Length > 1 ? Snapshot.Curvature[1] : 1d;
-        var requested = Math.Clamp(basis / Math.Sqrt(Math.Max(0.05d, curvature)), 5d, 34d);
-        var available = Math.Max(3d, Math.Min(CenterY - PlotTop, PlotBottom - CenterY));
-        return FormatCoordinate(Math.Min(requested, available));
+        var curvature = CurvatureValue(1);
+        var anisotropy = 1d / Math.Sqrt(curvature);
+        var normalized = Math.Clamp(anisotropy, 0.55d, 1.8d);
+        return FormatCoordinate(Math.Min(DataHeight * proportion * normalized, DataHeight * 0.47d));
     }
 
-    private double AxisBound(int axis, bool minimum)
+    private double TargetValue(int axis) => IsFiniteAt(Snapshot.Target, axis) ? Snapshot.Target[axis] : 0d;
+
+    private double CurvatureValue(int axis) => IsFiniteAt(Snapshot.Curvature, axis)
+        ? Math.Max(0.05d, Snapshot.Curvature[axis])
+        : 1d;
+
+    private double AxisHalfSpan(int axis)
     {
-        var min = double.PositiveInfinity;
-        var max = double.NegativeInfinity;
+        var target = TargetValue(axis);
+        var furthestDistance = 0d;
 
         void Include(IReadOnlyList<double> values)
         {
-            if (values.Count <= axis || !double.IsFinite(values[axis])) return;
-            min = Math.Min(min, values[axis]);
-            max = Math.Max(max, values[axis]);
+            if (!IsFiniteAt(values, axis)) return;
+            furthestDistance = Math.Max(furthestDistance, Math.Abs(values[axis] - target));
         }
 
-        Include(Snapshot.Target);
         Include(Snapshot.Parameters);
         Include(Snapshot.NextParameters);
         for (var index = 0; index < Snapshot.History.Length; index++) Include(Snapshot.History[index].Parameters);
 
-        if (!double.IsFinite(min) || !double.IsFinite(max)) return minimum ? -1d : 1d;
-        var range = Math.Max(1d, max - min);
-        var padding = Math.Max(.75d, range * .16d);
-        return minimum ? min - padding : max + padding;
+        // Keep the target/minimum in the centre and reserve 32% breathing room beyond the
+        // furthest real simulation point. This prevents markers, labels and hover cards from
+        // being visually pinned to the plot boundary while still fitting the entire run.
+        var minimumLandscapeRoom = 2.2d / Math.Sqrt(CurvatureValue(axis));
+        var contentRoom = furthestDistance <= 1e-9d ? 1d : (furthestDistance * 1.32d) + 0.24d;
+        return Math.Max(minimumLandscapeRoom, contentRoom);
     }
 
     private double MapX(double value)
     {
-        var mapped = PlotLeft + (((value - XMin) / Math.Max(1e-9d, XMax - XMin)) * (PlotRight - PlotLeft));
-        return Math.Clamp(mapped, PlotLeft, PlotRight);
+        var ratio = (value - XMin) / Math.Max(1e-9d, XMax - XMin);
+        return DataLeft + (Math.Clamp(ratio, 0d, 1d) * DataWidth);
     }
 
     private double MapY(double value)
     {
-        var mapped = PlotBottom - (((value - YMin) / Math.Max(1e-9d, YMax - YMin)) * (PlotBottom - PlotTop));
-        return Math.Clamp(mapped, PlotTop, PlotBottom);
+        var ratio = (value - YMin) / Math.Max(1e-9d, YMax - YMin);
+        return DataBottom - (Math.Clamp(ratio, 0d, 1d) * DataHeight);
+    }
+
+    private bool ShouldShowIterationLabel(int index)
+    {
+        if (Snapshot.History.Length <= 9) return true;
+        if (index == 0 || index == Snapshot.History.Length - 1) return true;
+        var stride = Math.Max(2, Snapshot.History.Length / 6);
+        return index % stride == 0;
+    }
+
+    private double TooltipX(double pointX)
+    {
+        var preferred = pointX + 16d;
+        if (preferred + 240d > PlotRight) preferred = pointX - 256d;
+        return Math.Clamp(preferred, PlotLeft + 4d, PlotRight - 244d);
+    }
+
+    private double TooltipY(double pointY)
+    {
+        var preferred = pointY - 94d;
+        if (preferred < PlotTop) preferred = pointY + 16d;
+        return Math.Clamp(preferred, PlotTop + 4d, PlotBottom - 86d);
+    }
+
+    private double EvaluateLoss(IReadOnlyList<double> parameters)
+    {
+        var length = Math.Min(parameters.Count, Math.Min(Snapshot.Target.Length, Snapshot.Curvature.Length));
+        if (length == 0) return Snapshot.Loss;
+        var loss = 0d;
+        for (var index = 0; index < length; index++)
+        {
+            if (!double.IsFinite(parameters[index]) || !double.IsFinite(Snapshot.Target[index]) || !double.IsFinite(Snapshot.Curvature[index])) return double.PositiveInfinity;
+            var difference = parameters[index] - Snapshot.Target[index];
+            loss += 0.5d * Snapshot.Curvature[index] * difference * difference;
+        }
+        return loss;
     }
 
     private string CoordinateX(double value) => FormatCoordinate(MapX(value));
     private string CoordinateY(double value) => FormatCoordinate(MapY(value));
-    private static double LabelX(double value) => Math.Clamp(value, PlotLeft + 1d, PlotRight - 8d);
-    private static double LabelY(double value) => Math.Clamp(value, PlotTop + 2d, PlotBottom - 2d);
-    private static string CssX(double value) => Percent((value / PlotWidth) * 100d);
-    private static string CssY(double value) => Percent((value / PlotHeight) * 100d);
+    private double LabelX(double value) => Math.Clamp(value, PlotLeft + 8d, PlotRight - 96d);
+    private double LabelYAbove(double value) => Math.Clamp(value - 30d, PlotTop + 8d, PlotBottom - 36d);
+    private double LabelYBelow(double value) => Math.Clamp(value + 20d, PlotTop + 24d, PlotBottom - 18d);
+    private string CssX(double value) => Percent((value / StageWidth) * 100d);
+    private string CssY(double value) => Percent((value / StageHeight) * 100d);
+
+    private string HistoryPointTooltip(GradientDescentHistoryPoint point) => $"Committed iteration {point.Iteration}: θ = [{ParameterValue(point.Parameters, 0)}, {ParameterValue(point.Parameters, 1)}], loss = {FormatValue(point.Loss)}, η = {FormatValue(point.LearningRate)}";
+    private string CurrentTooltip => $"Current θ = [{ParameterValue(Snapshot.Parameters, 0)}, {ParameterValue(Snapshot.Parameters, 1)}], loss = {FormatValue(Snapshot.Loss)}";
+    private string CandidateTooltip => $"Candidate θ′ = [{ParameterValue(Snapshot.NextParameters, 0)}, {ParameterValue(Snapshot.NextParameters, 1)}], candidate loss = {FormatValue(CandidateLoss)}";
+    private string MinimumTooltip => $"Loss minimum / target θ* = [{ParameterValue(Snapshot.Target, 0)}, {ParameterValue(Snapshot.Target, 1)}]";
+
+    private static bool IsFiniteAt(IReadOnlyList<double> values, int index) => values.Count > index && double.IsFinite(values[index]);
+    private static bool IsPlottable(IReadOnlyList<double> values) => IsFiniteAt(values, 0) && IsFiniteAt(values, 1);
+    private static string ParameterValue(IReadOnlyList<double> values, int index) => IsFiniteAt(values, index) ? FormatValue(values[index]) : "—";
+    private static string FormatValue(double value) => double.IsFinite(value) ? value.ToString("0.####", CultureInfo.InvariantCulture) : "∞";
     private static string FormatCoordinate(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
-    private static string FormatValue(double value) => Math.Abs(value) < 1e-12 ? "0" : value.ToString("0.####", CultureInfo.InvariantCulture);
     private static string Percent(double value) => $"{FormatCoordinate(value)}%";
 }

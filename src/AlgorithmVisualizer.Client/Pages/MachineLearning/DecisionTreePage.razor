@@ -27,7 +27,7 @@
 
     <header class="module-header">
         <div class="header-copy">
-            <div class="module-eyebrow"><span>MACHINE LEARNING · PHASE 1 STEP 8</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
+            <div class="module-eyebrow"><span>MACHINE LEARNING · PHASE 1 STEP 7</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div>
             <h1>Decision Tree</h1>
             <p>Build an interpretable binary classifier by scanning feature thresholds, measuring impurity reduction, and following one root-to-leaf path for each prediction.</p>
         </div>
@@ -87,7 +87,7 @@
             <section class="dt-advanced-panel" aria-label="Decision Tree advanced settings">
                 <div class="advanced-copy"><span>OPTIONAL</span><strong>Change criterion, stopping depth, or training data.</strong><p>These settings change real tree behavior, but they stay out of the beginner path.</p></div>
                 <div class="criterion-choice"><span>IMPURITY</span><div class="prediction-actions"><button type="button" class="@CriterionClass(DecisionTreeCriterion.Gini)" @onclick="() => SetCriterion(DecisionTreeCriterion.Gini)" disabled="@IsBusy">Gini</button><button type="button" class="@CriterionClass(DecisionTreeCriterion.Entropy)" @onclick="() => SetCriterion(DecisionTreeCriterion.Entropy)" disabled="@IsBusy">Entropy</button></div></div>
-                <label class="depth-field"><span>MAX DEPTH</span><input type="number" min="1" max="6" value="@_maxDepth" @onchange="MaxDepthChanged" disabled="@IsBusy" /></label>
+                <label class="depth-field"><span>MAX DEPTH</span><input type="number" min="1" max="6" value="@_maxDepth" @oninput="MaxDepthChanged" disabled="@IsBusy" /></label>
                 <label class="dataset-editor"><span>CUSTOM DATASET · x,y,label; …</span><textarea value="@_datasetText" @onchange="DatasetChanged" disabled="@IsBusy"></textarea><small>Use 4–20 examples. Labels must be 0 or 1.</small></label>
             </section>
         }
@@ -114,12 +114,14 @@
                 <button type="button" class="sort-button" @onclick="RunAsync" disabled="@IsBusy"><span>▶</span> Build Decision Tree</button>
             </div>
         </div>
-        <SimulationToolbar OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+
+        <SimulationToolbar Compact="true" OnPlay="PlayTimelineAsync" OnPause="PauseTimelineAsync" OnStepBack="StepBackAsync" OnStepForward="StepForwardAsync" OnReset="ResetPlaybackAsync" CanStepBack="@CanStepBack" CanStepForwardOverride="@CanStepForward" StepTextOverride="@DisplayedStepText" TimelinePosition="@TimelinePosition" TimelineCount="@TimelineCount" />
+
+        <RunMetricStrip Items="@LiveRunMetrics" AriaLabel="Decision Tree live metrics" />
 
         <div class="state-tabs-row"><div class="state-tabs" role="tablist"><button type="button" class="@(_view == StateView.Visual ? "active" : string.Empty)" @onclick="() => _view = StateView.Visual">Visual state</button><button type="button" class="@(_view == StateView.Memory ? "active" : string.Empty)" @onclick="() => _view = StateView.Memory">Memory state</button></div><p>@ViewExplanation</p></div>
-        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/decision-tree">Decision Tree concepts →</ConceptLink><ConceptLink Href="/ml-foundations/k-means">Compare with K-Means →</ConceptLink><ConceptLink Href="/structures/vector">Feature vectors →</ConceptLink></div>
 
-        <div class="state-surface ml-state-surface" tabindex="0">
+        <div class="state-surface ml-state-surface">
             @if (_view == StateView.Visual)
             {
                 <DecisionTreePlot Snapshot="@DisplayedSnapshot" />
@@ -139,12 +141,8 @@
                 </section>
             }
         </div>
-        <div class="run-dashboard compact-run-metrics dt-run-dashboard" aria-label="Decision Tree live metrics">
-            <div><span>PHASE</span><strong>@PhaseText(DisplayedSnapshot.Phase)</strong></div>
-            <div><span>CANDIDATE</span><strong>@CandidateText</strong></div>
-            <div><span>GAIN</span><strong>@FormatMetric(DisplayedSnapshot.CandidateGain)</strong></div>
-            <div><span>LEFT / RIGHT</span><strong>@ChildrenText</strong></div>
-        </div>
+        <div class="lesson-reference-links"><ConceptLink Href="/learn/concepts/decision-tree">Decision Tree concepts →</ConceptLink><ConceptLink Href="/ml-foundations/k-means">Compare with K-Means →</ConceptLink><ConceptLink Href="/structures/vector">Feature vectors →</ConceptLink></div>
+
     </section>
 
     <section class="fit-section" aria-labelledby="dt-fit-title">
@@ -166,7 +164,7 @@
         </div>
     </section>
 
-    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="09 · Interactive" Title="PCA" Description="Move from supervised feature-threshold rules to dimensionality reduction by finding directions that preserve the most variance." Href="/ml-foundations/pca" LinkLabel="Open PCA" />
+    <NextLessonCard Eyebrow="NEXT MACHINE-LEARNING LESSON" Level="08 · Interactive" Title="PCA" Description="Move from supervised feature-threshold rules to dimensionality reduction by finding directions that preserve the most variance." Href="/ml-foundations/pca" LinkLabel="Open PCA" />
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)
@@ -182,6 +180,7 @@
 <PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
 
 @code {
+    private IReadOnlyList<RunMetricItem> LiveRunMetrics => [new("PHASE", PhaseText(DisplayedSnapshot.Phase)), new("CANDIDATE", CandidateText), new("GAIN", FormatMetric(DisplayedSnapshot.CandidateGain)), new("LEFT / RIGHT", ChildrenText)];
     private const string ModuleKey = "decision-tree";
     private const string PopupSettingStorageKey = "algorithm-visualizer.decision-tree.show-run-popup.v1";
     private readonly List<RunFrame> _frames = [];
