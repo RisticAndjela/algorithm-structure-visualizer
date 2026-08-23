@@ -7,56 +7,81 @@
             <div><span>FEATURE SPACE</span><strong>@Heading</strong></div>
             <small>@Snapshot.Count points · @PhaseText(Snapshot.Phase)</small>
         </div>
-        <div class="pca-plot-shell ml-visual-board" tabindex="0">
+
+        <div class="pca-plot-shell ml-visual-board">
             <svg viewBox="0 0 780 450" role="img" aria-label="PCA points, mean, principal component, and projected positions" preserveAspectRatio="xMidYMid meet">
-                <rect x="@Left" y="@Top" width="@(Right - Left)" height="@(Bottom - Top)" rx="18" class="plot-bg" />
-                @foreach (var line in GridLines)
-                {
-                    <line x1="@line.X1" y1="@line.Y1" x2="@line.X2" y2="@line.Y2" class="grid-line" />
-                }
+                <defs>
+                    <clipPath id="pca-plot-clip"><rect x="@Svg(Left)" y="@Svg(Top)" width="@Svg(Right - Left)" height="@Svg(Bottom - Top)" rx="18" /></clipPath>
+                    <marker id="pca-axis-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+                        <path d="M 0 0 L 10 5 L 0 10 z" class="principal-arrow"></path>
+                    </marker>
+                </defs>
 
-                @if (HasPrincipalDirection)
-                {
-                    <line x1="@AxisStart.X" y1="@AxisStart.Y" x2="@AxisEnd.X" y2="@AxisEnd.Y" class="principal-axis" />
-                }
-
-                @if (Snapshot.Phase is PcaPhase.Projection or PcaPhase.Complete)
-                {
-                    @for (var index = 0; index < Snapshot.Count; index++)
+                <rect x="@Svg(Left)" y="@Svg(Top)" width="@Svg(Right - Left)" height="@Svg(Bottom - Top)" rx="18" class="plot-bg" />
+                <g clip-path="url(#pca-plot-clip)">
+                    @foreach (var line in GridLines)
                     {
-                        <line x1="@X(Snapshot.Features[index][0])" y1="@Y(Snapshot.Features[index][1])"
-                              x2="@X(Snapshot.ProjectedFeatures[index][0])" y2="@Y(Snapshot.ProjectedFeatures[index][1])"
-                              class="projection-link @(index == Snapshot.CurrentPointIndex ? "active" : string.Empty)" />
+                        <line x1="@Svg(line.X1)" y1="@Svg(line.Y1)" x2="@Svg(line.X2)" y2="@Svg(line.Y2)" class="grid-line" />
                     }
-                }
 
-                @for (var index = 0; index < Snapshot.Count; index++)
-                {
-                    var current = index == Snapshot.CurrentPointIndex;
-                    <circle cx="@X(Snapshot.Features[index][0])" cy="@Y(Snapshot.Features[index][1])" r="@(current ? 10.5 : 8)" class="original-point @(current ? "active" : string.Empty)">
-                        <title>Point @index · [@Format(Snapshot.Features[index][0]), @Format(Snapshot.Features[index][1])]</title>
-                    </circle>
+                    @if (HasPrincipalDirection)
+                    {
+                        <line x1="@Svg(AxisStart.X)" y1="@Svg(AxisStart.Y)" x2="@Svg(AxisEnd.X)" y2="@Svg(AxisEnd.Y)" class="principal-axis" marker-end="url(#pca-axis-arrow)" />
+                    }
 
                     @if (Snapshot.Phase is PcaPhase.Projection or PcaPhase.Complete)
                     {
-                        <circle cx="@X(Snapshot.ProjectedFeatures[index][0])" cy="@Y(Snapshot.ProjectedFeatures[index][1])" r="@(current ? 7.5 : 5.5)" class="projected-point @(current ? "active" : string.Empty)">
-                            <title>Projected point @index · coordinate @Format(Snapshot.Projections[index])</title>
-                        </circle>
+                        @for (var index = 0; index < Snapshot.Count; index++)
+                        {
+                            <line x1="@Svg(X(Snapshot.Features[index][0]))" y1="@Svg(Y(Snapshot.Features[index][1]))"
+                                  x2="@Svg(X(Snapshot.ProjectedFeatures[index][0]))" y2="@Svg(Y(Snapshot.ProjectedFeatures[index][1]))"
+                                  class="projection-link @(index == Snapshot.CurrentPointIndex ? "active" : string.Empty)" />
+                        }
                     }
-                }
 
-                @if (HasMean)
-                {
-                    var mx = X(Snapshot.Mean[0]);
-                    var my = Y(Snapshot.Mean[1]);
-                    <circle cx="@mx" cy="@my" r="14" class="mean-halo"><title>Mean [@Format(Snapshot.Mean[0]), @Format(Snapshot.Mean[1])]</title></circle>
-                    <line x1="@(mx - 7)" y1="@my" x2="@(mx + 7)" y2="@my" class="mean-cross" />
-                    <line x1="@mx" y1="@(my - 7)" x2="@mx" y2="@(my + 7)" class="mean-cross" />
-                }
+                    @for (var index = 0; index < Snapshot.Count; index++)
+                    {
+                        var current = index == Snapshot.CurrentPointIndex;
+                        var px = X(Snapshot.Features[index][0]);
+                        var py = Y(Snapshot.Features[index][1]);
+                        @if (current)
+                        {
+                            <circle cx="@Svg(px)" cy="@Svg(py)" r="17" class="current-point-halo" />
+                        }
+                        <circle cx="@Svg(px)" cy="@Svg(py)" r="@Svg(current ? 11d : 9d)" class="original-point @(current ? "active" : string.Empty)">
+                            <title>Point @index · [@Format(Snapshot.Features[index][0]), @Format(Snapshot.Features[index][1])]</title>
+                        </circle>
+                        <foreignObject x="@Svg(PointLabelX(px))" y="@Svg(PointLabelY(py))" width="36" height="20" class="point-label-object">
+                            <div xmlns="http://www.w3.org/1999/xhtml" class="point-label">P@(index + 1)</div>
+                        </foreignObject>
+
+                        @if (Snapshot.Phase is PcaPhase.Projection or PcaPhase.Complete)
+                        {
+                            var projectedX = X(Snapshot.ProjectedFeatures[index][0]);
+                            var projectedY = Y(Snapshot.ProjectedFeatures[index][1]);
+                            <circle cx="@Svg(projectedX)" cy="@Svg(projectedY)" r="@Svg(current ? 8.5d : 6.5d)" class="projected-point @(current ? "active" : string.Empty)">
+                                <title>Projected point @index · coordinate @Format(Snapshot.Projections[index])</title>
+                            </circle>
+                        }
+                    }
+
+                    @if (HasMean)
+                    {
+                        var mx = X(Snapshot.Mean[0]);
+                        var my = Y(Snapshot.Mean[1]);
+                        <circle cx="@Svg(mx)" cy="@Svg(my)" r="16" class="mean-halo"><title>Mean [@Format(Snapshot.Mean[0]), @Format(Snapshot.Mean[1])]</title></circle>
+                        <line x1="@Svg(mx - 8d)" y1="@Svg(my)" x2="@Svg(mx + 8d)" y2="@Svg(my)" class="mean-cross" />
+                        <line x1="@Svg(mx)" y1="@Svg(my - 8d)" x2="@Svg(mx)" y2="@Svg(my + 8d)" class="mean-cross" />
+                        <foreignObject x="@Svg(MeanLabelX(mx))" y="@Svg(MeanLabelY(my))" width="68" height="24" class="mean-label-object">
+                            <div xmlns="http://www.w3.org/1999/xhtml" class="mean-label">MEAN μ</div>
+                        </foreignObject>
+                    }
+                </g>
             </svg>
             <span class="axis-note y-note">feature 2 ↑</span>
             <span class="axis-note x-note">feature 1 →</span>
         </div>
+
         <div class="pca-legend">
             <span><i class="legend-dot original"></i>original point</span>
             <span><i class="legend-cross"></i>mean</span>
@@ -83,6 +108,7 @@
     private const double Right = 724d;
     private const double Top = 36d;
     private const double Bottom = 390d;
+    private const double SafeInset = 30d;
 
     private bool HasMean => Snapshot.Mean.Length >= 2 && (Snapshot.Phase != PcaPhase.Ready || Math.Abs(Snapshot.Mean[0]) > 1e-12d || Math.Abs(Snapshot.Mean[1]) > 1e-12d);
     private bool HasPrincipalDirection => Snapshot.PrincipalComponent.Length >= 2 && (Math.Abs(Snapshot.PrincipalComponent[0]) > 1e-9d || Math.Abs(Snapshot.PrincipalComponent[1]) > 1e-9d);
@@ -109,8 +135,12 @@
     private double XMax => Bound(0, false);
     private double YMin => Bound(1, true);
     private double YMax => Bound(1, false);
-    private double X(double value) => Math.Clamp(Scale(value, XMin, XMax, Left, Right), Left, Right);
-    private double Y(double value) => Math.Clamp(Scale(value, YMin, YMax, Bottom, Top), Top, Bottom);
+    private double X(double value) => Math.Clamp(Scale(value, XMin, XMax, Left + SafeInset, Right - SafeInset), Left + SafeInset, Right - SafeInset);
+    private double Y(double value) => Math.Clamp(Scale(value, YMin, YMax, Bottom - SafeInset, Top + SafeInset), Top + SafeInset, Bottom - SafeInset);
+    private double PointLabelX(double x) => Math.Clamp(x + 9d, Left + 4d, Right - 40d);
+    private double PointLabelY(double y) => Math.Clamp(y - 23d, Top + 4d, Bottom - 24d);
+    private double MeanLabelX(double x) => Math.Clamp(x + 18d, Left + 4d, Right - 72d);
+    private double MeanLabelY(double y) => Math.Clamp(y - 31d, Top + 4d, Bottom - 28d);
 
     private PlotPoint AxisStart => PrincipalAxisPoint(-AxisExtent);
     private PlotPoint AxisEnd => PrincipalAxisPoint(AxisExtent);
@@ -121,8 +151,8 @@
             if (Snapshot.PrincipalComponent.Length < 2) return 0d;
             var px = Math.Abs(Snapshot.PrincipalComponent[0]);
             var py = Math.Abs(Snapshot.PrincipalComponent[1]);
-            var xLimit = px <= 1e-12d ? double.PositiveInfinity : ((XMax - XMin) * .44d) / px;
-            var yLimit = py <= 1e-12d ? double.PositiveInfinity : ((YMax - YMin) * .44d) / py;
+            var xLimit = px <= 1e-12d ? double.PositiveInfinity : ((XMax - XMin) * .40d) / px;
+            var yLimit = py <= 1e-12d ? double.PositiveInfinity : ((YMax - YMin) * .40d) / py;
             var extent = Math.Min(xLimit, yLimit);
             return double.IsFinite(extent) ? Math.Max(0d, extent) : 0d;
         }
@@ -132,9 +162,7 @@
     {
         var meanX = Snapshot.Mean.Length > 0 ? Snapshot.Mean[0] : 0d;
         var meanY = Snapshot.Mean.Length > 1 ? Snapshot.Mean[1] : 0d;
-        return new PlotPoint(
-            X(meanX + amount * Snapshot.PrincipalComponent[0]),
-            Y(meanY + amount * Snapshot.PrincipalComponent[1]));
+        return new PlotPoint(X(meanX + amount * Snapshot.PrincipalComponent[0]), Y(meanY + amount * Snapshot.PrincipalComponent[1]));
     }
 
     private double Bound(int axis, bool minimum)
@@ -158,7 +186,7 @@
         }
         if (!double.IsFinite(min) || !double.IsFinite(max)) return minimum ? -1d : 1d;
         var range = Math.Max(1d, max - min);
-        var padding = Math.Max(.8d, range * .16d);
+        var padding = Math.Max(.8d, range * .14d);
         return minimum ? min - padding : max + padding;
     }
 
@@ -190,6 +218,7 @@
     }
     private static int PhaseOrder(PcaPhase phase) => phase switch { PcaPhase.Centering => 1, PcaPhase.Covariance => 2, PcaPhase.Direction => 3, PcaPhase.Projection => 4, PcaPhase.Complete => 5, _ => 0 };
     private static string PhaseText(PcaPhase phase) => phase switch { PcaPhase.Centering => "centering", PcaPhase.Covariance => "covariance", PcaPhase.Direction => "principal direction", PcaPhase.Projection => "projection", PcaPhase.Complete => "complete", _ => "ready" };
+    private static string Svg(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
     private static string Format(double value) => double.IsFinite(value) ? (Math.Abs(value) < 1e-12d ? "0" : value.ToString("0.###", CultureInfo.InvariantCulture)) : "—";
     private sealed record GridLine(double X1, double Y1, double X2, double Y2);
     private sealed record PlotPoint(double X, double Y);

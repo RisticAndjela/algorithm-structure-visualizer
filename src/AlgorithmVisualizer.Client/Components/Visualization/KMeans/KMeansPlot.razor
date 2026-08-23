@@ -5,53 +5,74 @@
     <div class="kmeans-workspace">
         <section class="cluster-plot-card">
             <header>
-                <div><span>FEATURE SPACE</span><strong>Every point is visible; centroids are the large cross markers.</strong></div>
+                <div><span>FEATURE SPACE</span><strong>Points stay visible while centroids move between cluster rounds.</strong></div>
                 <small>@Snapshot.Count points · @Snapshot.ClusterCount clusters · @PhaseText(Snapshot.Phase)</small>
             </header>
-            <div class="cluster-plot ml-visual-board" tabindex="0">
+
+            <div class="cluster-plot ml-visual-board">
                 <svg viewBox="0 0 780 440" role="img" aria-label="Two-dimensional K-Means clustering plot" preserveAspectRatio="xMidYMid meet">
-                    <rect x="@Left" y="@Top" width="@(Right - Left)" height="@(Bottom - Top)" rx="18" class="plot-bg" />
-                    @foreach (var line in GridLines)
-                    {
-                        <line x1="@line.X1" y1="@line.Y1" x2="@line.X2" y2="@line.Y2" class="plot-grid-line" />
-                    }
-                    <line x1="@Left" y1="@Bottom" x2="@Right" y2="@Bottom" class="axis-line" />
-                    <line x1="@Left" y1="@Top" x2="@Left" y2="@Bottom" class="axis-line" />
+                    <defs>
+                        <clipPath id="kmeans-plot-clip"><rect x="@Svg(Left)" y="@Svg(Top)" width="@Svg(Right - Left)" height="@Svg(Bottom - Top)" rx="18" /></clipPath>
+                    </defs>
 
-                    @for (var pointIndex = 0; pointIndex < Snapshot.Features.Length; pointIndex++)
-                    {
-                        var cluster = Snapshot.Assignments[pointIndex];
-                        if (cluster >= 0 && cluster < Snapshot.Centroids.Length)
+                    <rect x="@Svg(Left)" y="@Svg(Top)" width="@Svg(Right - Left)" height="@Svg(Bottom - Top)" rx="18" class="plot-bg" />
+                    <g clip-path="url(#kmeans-plot-clip)">
+                        @foreach (var line in GridLines)
                         {
-                            <line x1="@X(Snapshot.Features[pointIndex][0])" y1="@Y(Snapshot.Features[pointIndex][1])"
-                                  x2="@X(Snapshot.Centroids[cluster][0])" y2="@Y(Snapshot.Centroids[cluster][1])"
-                                  class="assignment-link @ClusterClass(cluster)" />
+                            <line x1="@Svg(line.X1)" y1="@Svg(line.Y1)" x2="@Svg(line.X2)" y2="@Svg(line.Y2)" class="plot-grid-line" />
                         }
-                    }
+                        <line x1="@Svg(Left)" y1="@Svg(Bottom)" x2="@Svg(Right)" y2="@Svg(Bottom)" class="axis-line" />
+                        <line x1="@Svg(Left)" y1="@Svg(Top)" x2="@Svg(Left)" y2="@Svg(Bottom)" class="axis-line" />
 
-                    @for (var pointIndex = 0; pointIndex < Snapshot.Features.Length; pointIndex++)
-                    {
-                        var cluster = Snapshot.Assignments[pointIndex];
-                        <circle cx="@X(Snapshot.Features[pointIndex][0])" cy="@Y(Snapshot.Features[pointIndex][1])" r="@(pointIndex == Snapshot.CurrentPointIndex ? 11 : 8.5)"
-                                class="data-point @ClusterClass(cluster) @PointStateClass(Snapshot.PointStates[pointIndex])">
-                            <title>Point @pointIndex · [@Format(Snapshot.Features[pointIndex][0]), @Format(Snapshot.Features[pointIndex][1])] · @(cluster >= 0 ? $"cluster {cluster + 1}" : "not assigned yet")</title>
-                        </circle>
-                    }
+                        @for (var pointIndex = 0; pointIndex < Snapshot.Features.Length; pointIndex++)
+                        {
+                            var cluster = Snapshot.Assignments[pointIndex];
+                            if (cluster >= 0 && cluster < Snapshot.Centroids.Length)
+                            {
+                                <line x1="@Svg(X(Snapshot.Features[pointIndex][0]))" y1="@Svg(Y(Snapshot.Features[pointIndex][1]))"
+                                      x2="@Svg(X(Snapshot.Centroids[cluster][0]))" y2="@Svg(Y(Snapshot.Centroids[cluster][1]))"
+                                      class="assignment-link @ClusterClass(cluster)" />
+                            }
+                        }
 
-                    @for (var cluster = 0; cluster < Snapshot.Centroids.Length; cluster++)
-                    {
-                        var cx = X(Snapshot.Centroids[cluster][0]);
-                        var cy = Y(Snapshot.Centroids[cluster][1]);
-                        <circle cx="@cx" cy="@cy" r="18" class="centroid-halo @ClusterClass(cluster) @CentroidStateClass(Snapshot.CentroidStates[cluster])">
-                            <title>Centroid @(cluster + 1) · [@Format(Snapshot.Centroids[cluster][0]), @Format(Snapshot.Centroids[cluster][1])]</title>
-                        </circle>
-                        <line x1="@(cx - 8)" y1="@cy" x2="@(cx + 8)" y2="@cy" class="centroid-cross @ClusterClass(cluster)" />
-                        <line x1="@cx" y1="@(cy - 8)" x2="@cx" y2="@(cy + 8)" class="centroid-cross @ClusterClass(cluster)" />
-                    }
+                        @for (var pointIndex = 0; pointIndex < Snapshot.Features.Length; pointIndex++)
+                        {
+                            var cluster = Snapshot.Assignments[pointIndex];
+                            var px = X(Snapshot.Features[pointIndex][0]);
+                            var py = Y(Snapshot.Features[pointIndex][1]);
+                            var current = pointIndex == Snapshot.CurrentPointIndex;
+                            @if (current)
+                            {
+                                <circle cx="@Svg(px)" cy="@Svg(py)" r="17" class="current-point-halo" />
+                            }
+                            <circle cx="@Svg(px)" cy="@Svg(py)" r="@Svg(current ? 11.5d : 9.5d)"
+                                    class="data-point @ClusterClass(cluster) @PointStateClass(Snapshot.PointStates[pointIndex])">
+                                <title>Point @pointIndex · [@Format(Snapshot.Features[pointIndex][0]), @Format(Snapshot.Features[pointIndex][1])] · @(cluster >= 0 ? $"cluster {cluster + 1}" : "not assigned yet")</title>
+                            </circle>
+                            <foreignObject x="@Svg(PointLabelX(px))" y="@Svg(PointLabelY(py))" width="34" height="20" class="point-label-object">
+                                <div xmlns="http://www.w3.org/1999/xhtml" class="point-label">P@(pointIndex + 1)</div>
+                            </foreignObject>
+                        }
+
+                        @for (var cluster = 0; cluster < Snapshot.Centroids.Length; cluster++)
+                        {
+                            var cx = X(Snapshot.Centroids[cluster][0]);
+                            var cy = Y(Snapshot.Centroids[cluster][1]);
+                            <circle cx="@Svg(cx)" cy="@Svg(cy)" r="20" class="centroid-halo @ClusterClass(cluster) @CentroidStateClass(Snapshot.CentroidStates[cluster])">
+                                <title>Centroid @(cluster + 1) · [@Format(Snapshot.Centroids[cluster][0]), @Format(Snapshot.Centroids[cluster][1])]</title>
+                            </circle>
+                            <line x1="@Svg(cx - 9d)" y1="@Svg(cy)" x2="@Svg(cx + 9d)" y2="@Svg(cy)" class="centroid-cross @ClusterClass(cluster)" />
+                            <line x1="@Svg(cx)" y1="@Svg(cy - 9d)" x2="@Svg(cx)" y2="@Svg(cy + 9d)" class="centroid-cross @ClusterClass(cluster)" />
+                            <foreignObject x="@Svg(CentroidLabelX(cx))" y="@Svg(CentroidLabelY(cy))" width="76" height="25" class="centroid-label-object">
+                                <div xmlns="http://www.w3.org/1999/xhtml" class="centroid-label @ClusterClass(cluster)">C@(cluster + 1) · @SafeCount(cluster)</div>
+                            </foreignObject>
+                        }
+                    </g>
                 </svg>
                 <span class="axis-note y-note">feature 2 ↑</span>
                 <span class="axis-note x-note">feature 1 →</span>
             </div>
+
             <div class="kmeans-legend">
                 <span><i class="legend-dot unassigned"></i>unassigned point</span>
                 @for (var cluster = 0; cluster < Snapshot.Centroids.Length; cluster++)
@@ -86,12 +107,12 @@
     private const double Right = 726d;
     private const double Top = 34d;
     private const double Bottom = 378d;
+    private const double SafeInset = 28d;
 
     private double MinX => Bound(0, true);
     private double MaxX => Bound(0, false);
     private double MinY => Bound(1, true);
     private double MaxY => Bound(1, false);
-    private string RoundText => Snapshot.Iteration == 0 ? "ready" : Snapshot.Iteration.ToString(CultureInfo.InvariantCulture);
     private string StoryTitle => Snapshot.Phase switch
     {
         KMeansPhase.Initializing => "Start from visible seeds.",
@@ -102,8 +123,12 @@
     };
     private string StopRuleText => Snapshot.Converged ? "converged" : Snapshot.MaxCentroidMovement > 0d ? $"max move {Format(Snapshot.MaxCentroidMovement)}" : "not checked yet";
 
-    private double X(double value) => Math.Clamp(Scale(value, MinX, MaxX, Left, Right), Left, Right);
-    private double Y(double value) => Math.Clamp(Scale(value, MinY, MaxY, Bottom, Top), Top, Bottom);
+    private double X(double value) => Math.Clamp(Scale(value, MinX, MaxX, Left + SafeInset, Right - SafeInset), Left + SafeInset, Right - SafeInset);
+    private double Y(double value) => Math.Clamp(Scale(value, MinY, MaxY, Bottom - SafeInset, Top + SafeInset), Top + SafeInset, Bottom - SafeInset);
+    private double PointLabelX(double x) => Math.Clamp(x + 8d, Left + 4d, Right - 38d);
+    private double PointLabelY(double y) => Math.Clamp(y - 22d, Top + 4d, Bottom - 24d);
+    private double CentroidLabelX(double x) => Math.Clamp(x + 16d, Left + 4d, Right - 80d);
+    private double CentroidLabelY(double y) => Math.Clamp(y - 31d, Top + 4d, Bottom - 29d);
 
     private double Bound(int axis, bool minimum)
     {
@@ -122,7 +147,7 @@
 
         if (!double.IsFinite(min) || !double.IsFinite(max)) return minimum ? -1d : 1d;
         var range = Math.Max(1d, max - min);
-        var padding = Math.Max(.8d, range * .14d);
+        var padding = Math.Max(.8d, range * .12d);
         return minimum ? min - padding : max + padding;
     }
 
@@ -151,7 +176,7 @@
     private static string PointStateClass(KMeansPointState state) => state.ToString().ToLowerInvariant();
     private static string CentroidStateClass(KMeansCentroidState state) => state.ToString().ToLowerInvariant();
     private static string PhaseText(KMeansPhase phase) => phase switch { KMeansPhase.Initializing => "initialize", KMeansPhase.Assigning => "assign", KMeansPhase.Updating => "move centroids", KMeansPhase.Complete => "complete", _ => "ready" };
-    private static string FormatMetric(double value) => value <= 0d ? "—" : Format(value);
+    private static string Svg(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
     private static string Format(double value) => double.IsFinite(value) ? (Math.Abs(value) < 1e-12d ? "0" : value.ToString("0.##", CultureInfo.InvariantCulture)) : "—";
     private sealed record GridLine(double X1, double Y1, double X2, double Y2);
 }

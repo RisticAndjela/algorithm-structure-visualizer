@@ -28,7 +28,7 @@
             return (minW-padW,maxW+padW,minB-padB,maxB+padB);
         }
     }
-    private double PctX(double value){var b=Bounds;return 6d+88d*((value-b.MinW)/Math.Max(1e-9,b.MaxW-b.MinW));}
-    private double PctY(double value){var b=Bounds;return 94d-88d*((value-b.MinB)/Math.Max(1e-9,b.MaxB-b.MinB));}
+    private double PctX(double value){var b=Bounds;return 10d+80d*((value-b.MinW)/Math.Max(1e-9,b.MaxW-b.MinW));}
+    private double PctY(double value){var b=Bounds;return 90d-80d*((value-b.MinB)/Math.Max(1e-9,b.MaxB-b.MinB));}
     private string StyleAt(double weight, double bias) => FormattableString.Invariant($"left:{PctX(weight):0.###}%;top:{PctY(bias):0.###}%");
 }

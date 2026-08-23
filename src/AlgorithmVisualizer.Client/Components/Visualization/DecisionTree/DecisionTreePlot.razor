@@ -97,8 +97,8 @@
     private string PointStyle(int index) => $"left:{PercentX(Snapshot.Features[index][0]).ToString("0.###", CultureInfo.InvariantCulture)}%;top:{PercentY(Snapshot.Features[index][1]).ToString("0.###", CultureInfo.InvariantCulture)}%;";
     private static string NodeClass(DecisionTreeNodeSnapshot node) => node.State switch { DecisionTreeNodeState.Active => "active", DecisionTreeNodeState.Leaf => "leaf", DecisionTreeNodeState.Split => "split", _ => "stored" };
 
-    private double PercentX(double value) => Math.Clamp(Scale(value, Min(0), Max(0), 8d, 92d), 8d, 92d);
-    private double PercentY(double value) => Math.Clamp(100d - Scale(value, Min(1), Max(1), 8d, 92d), 8d, 92d);
+    private double PercentX(double value) => Math.Clamp(Scale(value, Min(0), Max(0), 10d, 90d), 10d, 90d);
+    private double PercentY(double value) => Math.Clamp(100d - Scale(value, Min(1), Max(1), 10d, 90d), 10d, 90d);
     private double Min(int axis) => RawMin(axis) - Padding(axis);
     private double Max(int axis) => RawMax(axis) + Padding(axis);
     private double RawMin(int axis)

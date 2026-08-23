@@ -1,5 +1,6 @@
 @using System.Globalization
 @using AlgorithmVisualizer.Core.MachineLearning.Supervised.KdTree
+@using AlgorithmVisualizer.Client.Components.Visualization.KdTree
 
 <section class="kd-visual" aria-label="KD-Tree visual state">
     <div class="kd-workspace">
@@ -67,25 +68,7 @@
         </div>
 
         <aside class="tree-card">
-            <div class="visual-card-heading"><div><span>TREE VIEW</span><strong>Point + split axis</strong></div><small>@Snapshot.Nodes.Length nodes built</small></div>
-            <div class="tree-levels">
-                @foreach (var depth in Depths)
-                {
-                    <div class="tree-level">
-                        <span class="depth-label">depth @depth</span>
-                        <div class="tree-level-nodes">
-                            @foreach (var node in NodesAtDepth(depth))
-                            {
-                                <article class="tree-node @StateClass(node.State)">
-                                    <small>node @node.NodeId · example @node.PointIndex</small>
-                                    <strong>[@Format(node.Point[0]), @Format(node.Point[1])]</strong>
-                                    <span>split @(node.Axis == 0 ? "x" : "y")</span>
-                                </article>
-                            }
-                        </div>
-                    </div>
-                }
-            </div>
+            <KdTreeHierarchy Snapshot="@Snapshot" />
             <div class="tree-story"><span>CURRENT STEP</span><strong>@StoryHeadline</strong><p>@Snapshot.FocusText</p></div>
         </aside>
     </div>
@@ -94,8 +77,13 @@
 @code {
     [Parameter, EditorRequired] public KdTreeSnapshot Snapshot { get; set; } = default!;
 
+    private const double PlotLeft = 48d;
+    private const double PlotRight = 712d;
+    private const double PlotTop = 28d;
+    private const double PlotBottom = 408d;
+    private const double SafeInset = 18d;
+
     private readonly List<Region> _regions = [];
-    private readonly List<int> _depths = [];
     private KdTreeSnapshot? _regionSnapshot;
 
     private IReadOnlyList<Region> Regions
@@ -104,15 +92,6 @@
         {
             EnsureLayout();
             return _regions;
-        }
-    }
-
-    private IReadOnlyList<int> Depths
-    {
-        get
-        {
-            EnsureLayout();
-            return _depths;
         }
     }
 
@@ -143,12 +122,8 @@
         if (ReferenceEquals(_regionSnapshot, Snapshot)) return;
         _regionSnapshot = Snapshot;
         _regions.Clear();
-        _depths.Clear();
         if (Snapshot.Nodes.Length == 0 || Snapshot.RootNodeId < 0) return;
         BuildRegion(Snapshot.RootNodeId, XMin, XMax, YMin, YMax);
-        var maxDepth = 0;
-        for (var index = 0; index < Snapshot.Nodes.Length; index++) if (Snapshot.Nodes[index].Depth > maxDepth) maxDepth = Snapshot.Nodes[index].Depth;
-        for (var depth = 0; depth <= maxDepth; depth++) _depths.Add(depth);
     }
 
     private void BuildRegion(int nodeId, double minX, double maxX, double minY, double maxY)
@@ -166,11 +141,6 @@
             BuildRegion(node.LeftNodeId, minX, maxX, minY, node.Point[1]);
             BuildRegion(node.RightNodeId, minX, maxX, node.Point[1], maxY);
         }
-    }
-
-    private IEnumerable<KdTreeNodeSnapshot> NodesAtDepth(int depth)
-    {
-        for (var index = 0; index < Snapshot.Nodes.Length; index++) if (Snapshot.Nodes[index].Depth == depth) yield return Snapshot.Nodes[index];
     }
 
     private KdTreeNodeState StateForPoint(int pointIndex)
@@ -195,14 +165,14 @@
     private double RawMax(int component) { var max = Snapshot.Query[component]; for (var i = 0; i < Snapshot.Count; i++) if (Snapshot.Features[i][component] > max) max = Snapshot.Features[i][component]; return max; }
     private double MapX(double value)
     {
-        var mapped = 48d + (((value - XMin) / Math.Max(1e-9d, XMax - XMin)) * 664d);
-        return Math.Clamp(mapped, 48d, 712d);
+        var mapped = (PlotLeft + SafeInset) + (((value - XMin) / Math.Max(1e-9d, XMax - XMin)) * ((PlotRight - SafeInset) - (PlotLeft + SafeInset)));
+        return Math.Clamp(mapped, PlotLeft + SafeInset, PlotRight - SafeInset);
     }
 
     private double MapY(double value)
     {
-        var mapped = 408d - (((value - YMin) / Math.Max(1e-9d, YMax - YMin)) * 380d);
-        return Math.Clamp(mapped, 28d, 408d);
+        var mapped = (PlotBottom - SafeInset) - (((value - YMin) / Math.Max(1e-9d, YMax - YMin)) * ((PlotBottom - SafeInset) - (PlotTop + SafeInset)));
+        return Math.Clamp(mapped, PlotTop + SafeInset, PlotBottom - SafeInset);
     }
 
     private string QueryDiamond

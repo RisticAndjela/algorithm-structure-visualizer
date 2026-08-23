@@ -8,7 +8,8 @@
         <div><span>UPDATE</span><strong>@Snapshot.Iteration</strong></div>
     </div>
 
-    <div class="lr-plot-board ml-visual-board" tabindex="0">
+    <div class="lr-visual-workspace">
+    <div class="lr-plot-board ml-visual-board">
         <svg viewBox="0 0 760 390" role="img" aria-label="Training points, current regression line, predictions, and residuals">
         <rect x="54" y="24" width="670" height="310" rx="16" class="plot-bg" />
         @for (var tick = 0; tick <= 4; tick++)
@@ -35,6 +36,17 @@
         }
         </svg>
     </div>
+    <aside class="lr-fit-story" aria-label="Current Linear Regression fit">
+        <span>CURRENT FIT</span>
+        <strong>@FitHeadline</strong>
+        <div class="fit-story-metrics">
+            <span><small>WEIGHT</small><b>@Format(Snapshot.Weight)</b></span>
+            <span><small>BIAS</small><b>@Format(Snapshot.Bias)</b></span>
+            <span><small>LARGEST MISS</small><b>@Format(LargestResidualMagnitude)</b></span>
+        </div>
+        <p>@Snapshot.FocusText</p>
+    </aside>
+    </div>
 
     <div class="lr-plot-legend">
         <span><i class="actual"></i>Training point</span>
@@ -46,6 +58,39 @@
 
 @code {
     [Parameter, EditorRequired] public LinearRegressionSnapshot Snapshot { get; set; } = default!;
+
+
+    private string FitHeadline => Snapshot.Phase switch
+    {
+        LinearRegressionPhase.Predicting => $"Predict example {SafeCurrentIndex} with the current line.",
+        LinearRegressionPhase.MeasuringError => $"Measure the miss on example {SafeCurrentIndex}.",
+        LinearRegressionPhase.ComputingGradient => "Combine residuals into dw and db.",
+        LinearRegressionPhase.UpdatingModel => "Move weight and bias together.",
+        LinearRegressionPhase.Complete => "The current line is the final reviewed fit.",
+        LinearRegressionPhase.Diverged => "The update became unstable.",
+        _ => "The line will move as MSE falls."
+    };
+
+    private int SafeCurrentIndex => Snapshot.CurrentPointIndex >= 0 && Snapshot.CurrentPointIndex < Snapshot.Count ? Snapshot.CurrentPointIndex : 0;
+
+    private double LargestResidualMagnitude
+    {
+        get
+        {
+            var largest = 0d;
+            for (var index = 0; index < Snapshot.Residuals.Length; index++)
+            {
+                largest = Math.Max(largest, Math.Abs(Snapshot.Residuals[index]));
+            }
+            return largest;
+        }
+    }
+
+    private const double PlotLeft = 54d;
+    private const double PlotRight = 724d;
+    private const double PlotTop = 24d;
+    private const double PlotBottom = 334d;
+    private const double SafeInset = 12d;
 
     private double XMin => Min(Snapshot.X) - XPadding;
     private double XMax => Max(Snapshot.X) + XPadding;
@@ -77,14 +122,14 @@
     private double Predict(double x) => (Snapshot.Weight * x) + Snapshot.Bias;
     private double MapX(double x)
     {
-        var mapped = 54d + (((x - XMin) / Math.Max(1e-9d, XMax - XMin)) * 670d);
-        return Math.Clamp(mapped, 54d, 724d);
+        var mapped = (PlotLeft + SafeInset) + (((x - XMin) / Math.Max(1e-9d, XMax - XMin)) * ((PlotRight - SafeInset) - (PlotLeft + SafeInset)));
+        return Math.Clamp(mapped, PlotLeft + SafeInset, PlotRight - SafeInset);
     }
 
     private double MapY(double y)
     {
-        var mapped = 334d - (((y - YMin) / Math.Max(1e-9d, YMax - YMin)) * 310d);
-        return Math.Clamp(mapped, 24d, 334d);
+        var mapped = (PlotBottom - SafeInset) - (((y - YMin) / Math.Max(1e-9d, YMax - YMin)) * ((PlotBottom - SafeInset) - (PlotTop + SafeInset)));
+        return Math.Clamp(mapped, PlotTop + SafeInset, PlotBottom - SafeInset);
     }
 
     private static double Min(IReadOnlyList<double> values)

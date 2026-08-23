@@ -1,7 +1,7 @@
 @using AlgorithmVisualizer.Core.MachineLearning.GraphMl.PageRank
 
-<div class="pagerank-stage" style="@StageStyle">
-    <svg class="edge-layer" width="@StageWidth" height="@StageHeight" viewBox="0 0 @StageWidth @StageHeight" aria-hidden="true">
+<div class="pagerank-stage">
+    <svg class="edge-layer" viewBox="0 0 @StageWidth @StageHeight" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
         <defs>
             <marker id="pagerank-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
                 <path d="M 0 0 L 10 5 L 0 10 z"></path>
@@ -31,12 +31,13 @@
 @code {
     [Parameter,EditorRequired] public PageRankSnapshot Snapshot{get;set;}=default!;
     private const int StageWidth=920; private const int StageHeight=560;
-    private string StageStyle=>$"width:{StageWidth}px;height:{StageHeight}px;";
+    private const double OrbitMarginX = 140d;
+    private const double OrbitMarginY = 125d;
     private bool HasEdge(int s,int d)=>Snapshot.AdjacencyValues[(s*Snapshot.NodeCount)+d]>0d;
-    private double X(int node){var angle=(-Math.PI/2d)+(2d*Math.PI*node/Snapshot.NodeCount);return StageWidth/2d+Math.Cos(angle)*220d;}
-    private double Y(int node){var angle=(-Math.PI/2d)+(2d*Math.PI*node/Snapshot.NodeCount);return StageHeight/2d+Math.Sin(angle)*190d;}
-    private double NodeSize(int node)=>70d+(Snapshot.Ranks[node]*90d);
-    private string NodeStyle(int node){var size=NodeSize(node);return $"left:{X(node)-size/2d:0.##}px;top:{Y(node)-size/2d:0.##}px;width:{size:0.##}px;height:{size:0.##}px;";}
+    private double X(int node){var angle=(-Math.PI/2d)+(2d*Math.PI*node/Math.Max(1, Snapshot.NodeCount));var radius=Math.Max(0d,(StageWidth/2d)-OrbitMarginX);return StageWidth/2d+Math.Cos(angle)*radius;}
+    private double Y(int node){var angle=(-Math.PI/2d)+(2d*Math.PI*node/Math.Max(1, Snapshot.NodeCount));var radius=Math.Max(0d,(StageHeight/2d)-OrbitMarginY);return StageHeight/2d+Math.Sin(angle)*radius;}
+    private double NodeSize(int node)=>Math.Clamp(64d+(Snapshot.Ranks[node]*72d),64d,112d);
+    private string NodeStyle(int node){var size=NodeSize(node);var left=(X(node)/StageWidth)*100d;var top=(Y(node)/StageHeight)*100d;return FormattableString.Invariant($"left:{left:0.###}%;top:{top:0.###}%;--rank-node-size:{size:0.##}px;");}
     private double EdgeEndX(int source,int destination){var dx=X(destination)-X(source);var dy=Y(destination)-Y(source);var length=Math.Sqrt((dx*dx)+(dy*dy));if(length<1e-9)return X(destination);return X(destination)-(dx/length*((NodeSize(destination)/2d)+5d));}
     private double EdgeEndY(int source,int destination){var dx=X(destination)-X(source);var dy=Y(destination)-Y(source);var length=Math.Sqrt((dx*dx)+(dy*dy));if(length<1e-9)return Y(destination);return Y(destination)-(dy/length*((NodeSize(destination)/2d)+5d));}
     private static string Label(int node)=>((char)('A'+node)).ToString();

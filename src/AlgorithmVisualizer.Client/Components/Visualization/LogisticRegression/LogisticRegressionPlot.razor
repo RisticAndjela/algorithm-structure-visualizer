@@ -76,20 +76,30 @@
                 <span class="final-class"><small>CLASS</small><strong>@FocusPredictedClass</strong></span>
             </div>
             <p>@FocusExplanation</p>
+            <div class="decision-rule">
+                <span>DECISION RULE</span>
+                <strong>p ≥ 0.5 → class 1</strong>
+                <small>p &lt; 0.5 → class 0. The vertical dashed line is where p = 0.5.</small>
+            </div>
+            <div class="plot-legend compact" aria-label="Logistic Regression visual legend">
+                <span><i class="class-zero-dot"></i>True class 0</span>
+                <span><i class="class-one-dot"></i>True class 1</span>
+                <span><i class="probability-dot"></i>Current probability</span>
+                <span><i class="curve-line"></i>Sigmoid model</span>
+                <span><i class="boundary-dash"></i>Decision boundary</span>
+            </div>
         </div>
-    </div>
-
-    <div class="plot-legend">
-        <span><i class="class-zero-dot"></i>True class 0</span>
-        <span><i class="class-one-dot"></i>True class 1</span>
-        <span><i class="probability-dot"></i>Current probability</span>
-        <span><i class="curve-line"></i>Sigmoid model</span>
-        <span><i class="boundary-dash"></i>Decision boundary</span>
     </div>
 </section>
 
 @code {
     [Parameter, EditorRequired] public LogisticRegressionSnapshot Snapshot { get; set; } = default!;
+
+    private const double PlotLeft = 62d;
+    private const double PlotRight = 772d;
+    private const double PlotTop = 30d;
+    private const double PlotBottom = 350d;
+    private const double SafeInset = 12d;
 
     private double XMin => Min(Snapshot.X) - XPadding;
     private double XMax => Max(Snapshot.X) + XPadding;
@@ -146,14 +156,14 @@
 
     private double MapX(double x)
     {
-        var mapped = 62d + (((x - XMin) / Math.Max(1e-9d, XMax - XMin)) * 710d);
-        return Math.Clamp(mapped, 62d, 772d);
+        var mapped = (PlotLeft + SafeInset) + (((x - XMin) / Math.Max(1e-9d, XMax - XMin)) * ((PlotRight - SafeInset) - (PlotLeft + SafeInset)));
+        return Math.Clamp(mapped, PlotLeft + SafeInset, PlotRight - SafeInset);
     }
 
     // Keep probability markers fully inside the plotted rectangle. Labels at y=0/1 used
     // to sit directly on the border, so their circles appeared outside the visual space.
-    private static double MapProbability(double probability) => 336d - (Math.Clamp(probability, 0d, 1d) * 292d);
-    private static double BoundaryBadgeX(double lineX) => Math.Clamp(lineX, 104d, 730d);
+    private static double MapProbability(double probability) => (PlotBottom - SafeInset) - (Math.Clamp(probability, 0d, 1d) * ((PlotBottom - SafeInset) - (PlotTop + SafeInset)));
+    private static double BoundaryBadgeX(double lineX) => Math.Clamp(lineX, PlotLeft + 54d, PlotRight - 54d);
 
     private static double Sigmoid(double score)
     {

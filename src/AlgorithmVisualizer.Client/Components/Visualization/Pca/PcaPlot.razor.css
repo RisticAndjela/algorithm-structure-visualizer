@@ -3,37 +3,42 @@
 .pca-plot-heading { display: flex; justify-content: space-between; gap: .8rem; align-items: flex-start; margin-bottom: .6rem; }
 .pca-plot-heading > div { display: grid; gap: .14rem; }
 .pca-plot-heading span, .pca-story > div > span { color: var(--color-text-muted); font-size: .68rem; font-weight: 900; letter-spacing: .06em; }
-.pca-plot-heading strong { font-size: 1rem; }
-.pca-plot-heading small { color: var(--color-text-muted); font-size: .82rem; font-weight: 750; }
-.pca-plot-shell { position: relative; max-width: 100%; border: 1px solid var(--color-border-strong); border-radius: .82rem; background: #f7f8fb; }
-.pca-plot-shell svg { display: block; width: min(100%, 68rem); min-width: 46rem; height: auto; margin: 0 auto; background: #fff; }
-.plot-bg { fill: var(--color-surface-subtle); stroke: var(--color-border-strong); stroke-width: 1.3; }
-.grid-line { stroke: var(--color-border); stroke-width: 1; opacity: .92; }
-.original-point { fill: #fff; stroke: #525969; stroke-width: 2.6; }
-.original-point.active { fill: var(--color-warning-soft); stroke: var(--color-warning); stroke-width: 4.5; }
-.mean-halo { fill: #fff; stroke: var(--color-secondary); stroke-width: 4; filter: drop-shadow(0 4px 7px rgba(35,39,52,.14)); }
-.mean-cross { stroke: var(--color-secondary); stroke-width: 4; stroke-linecap: round; }
-.principal-axis { stroke: var(--color-primary); stroke-width: 4; stroke-linecap: round; opacity: .9; }
-.projection-link { stroke: var(--color-primary); stroke-width: 1.7; stroke-dasharray: 6 5; opacity: .38; }
-.projection-link.active { stroke: var(--color-warning); stroke-width: 2.7; opacity: .9; }
-.projected-point { fill: var(--color-primary-soft); stroke: var(--color-primary); stroke-width: 2.5; }
-.projected-point.active { fill: var(--color-warning-soft); stroke: var(--color-warning); stroke-width: 4; }
-.axis-note { position: absolute; z-index: 2; padding: .24rem .4rem; border-radius: .42rem; color: var(--color-text-muted); background: rgba(255,255,255,.92); font-size: .78rem; font-weight: 850; pointer-events: none; }
-.y-note { top: .55rem; left: .65rem; }
-.x-note { right: .8rem; bottom: .48rem; }
-.pca-legend { display: flex; flex-wrap: wrap; gap: .48rem 1rem; align-items: center; padding-top: .65rem; color: var(--color-text-muted); font-size: .82rem; font-weight: 750; }
+.pca-plot-heading strong { font-size: .98rem; }
+.pca-plot-heading small { color: var(--color-text-muted); font-size: .78rem; font-weight: 750; }
+.pca-plot-shell { position: relative; width: 100%; overflow: hidden; padding: .3rem; border: 1px solid var(--color-border-strong); border-radius: .82rem; background: #f7f8fb; }
+.pca-plot-shell svg { display: block; width: 100%; min-width: 0; max-width: 48rem; height: auto; margin: 0 auto; background: #fff; }
+.plot-bg { fill: #fbfbfd; stroke: var(--color-border-strong); stroke-width: 1.4; }
+.grid-line { stroke: #e2e4eb; stroke-width: 1.2; }
+.original-point { fill: #ffffff; stroke: #414857; stroke-width: 3.2; filter: drop-shadow(0 2px 4px rgba(35,39,52,.1)); }
+.original-point.active { fill: #fff4d8; stroke: var(--color-warning); stroke-width: 5; }
+.current-point-halo { fill: none; stroke: var(--color-warning); stroke-width: 3; stroke-dasharray: 5 4; opacity: .75; }
+.point-label-object, .mean-label-object { pointer-events: none; overflow: visible; }
+.point-label { display: grid; place-items: center; height: 18px; border: 1px solid #d8dbe4; border-radius: 999px; background: rgba(255,255,255,.97); color: #505867; font-size: .58rem; font-weight: 900; box-shadow: 0 2px 5px rgba(30,34,50,.07); }
+.mean-halo { fill: #e9fff8; stroke: var(--color-secondary); stroke-width: 5; filter: drop-shadow(0 4px 7px rgba(35,39,52,.14)); }
+.mean-cross { stroke: var(--color-secondary); stroke-width: 4.5; stroke-linecap: round; }
+.mean-label { display: grid; place-items: center; height: 22px; border: 2px solid var(--color-secondary); border-radius: 999px; background: rgba(255,255,255,.98); color: #176d65; font-size: .6rem; font-weight: 950; box-shadow: 0 3px 7px rgba(30,34,50,.08); }
+.principal-axis { stroke: var(--color-primary); stroke-width: 5; stroke-linecap: round; opacity: .95; }
+.principal-arrow { fill: var(--color-primary); }
+.projection-link { stroke: var(--color-primary); stroke-width: 2; stroke-dasharray: 6 5; opacity: .42; }
+.projection-link.active { stroke: var(--color-warning); stroke-width: 3; opacity: .95; }
+.projected-point { fill: #ddd8ff; stroke: var(--color-primary); stroke-width: 3; }
+.projected-point.active { fill: #fff4d8; stroke: var(--color-warning); stroke-width: 4.5; }
+.axis-note { position: absolute; z-index: 2; padding: .22rem .38rem; border-radius: .42rem; color: var(--color-text-muted); background: rgba(255,255,255,.92); font-size: .72rem; font-weight: 850; pointer-events: none; }
+.y-note { top: .65rem; left: .75rem; }
+.x-note { right: .9rem; bottom: .55rem; }
+.pca-legend { display: flex; flex-wrap: wrap; gap: .42rem .9rem; align-items: center; padding-top: .58rem; color: var(--color-text-muted); font-size: .76rem; font-weight: 750; }
 .pca-legend span { display: inline-flex; align-items: center; gap: .32rem; }
 .legend-dot { width: .68rem; height: .68rem; border-radius: 50%; border: 2px solid; }
-.legend-dot.original { background: #fff; border-color: #525969; }
-.legend-dot.projected { background: var(--color-primary-soft); border-color: var(--color-primary); }
-.legend-cross { width: .75rem; height: .75rem; position: relative; border-radius: 50%; border: 2px solid var(--color-secondary); }
-.legend-axis { width: 1.35rem; border-top: 3px solid var(--color-primary); }
+.legend-dot.original { background: #fff; border-color: #414857; }
+.legend-dot.projected { background: #ddd8ff; border-color: var(--color-primary); }
+.legend-cross { width: .75rem; height: .75rem; border-radius: 50%; border: 3px solid var(--color-secondary); background: #e9fff8; }
+.legend-axis { width: 1.35rem; border-top: 4px solid var(--color-primary); }
 .pca-story { display: grid; grid-template-columns: minmax(17rem, .85fr) minmax(0, 1.5fr); gap: .8rem; align-items: center; }
 .pca-story > div:first-child { display: grid; gap: .22rem; }
-.pca-story strong { font-size: .98rem; }
-.pca-story p { margin: 0; color: var(--color-text-muted); font-size: .88rem; line-height: 1.5; }
+.pca-story strong { font-size: .95rem; }
+.pca-story p { margin: 0; color: var(--color-text-muted); font-size: .84rem; line-height: 1.45; }
 .pca-flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .45rem; }
-.pca-flow span { display: flex; gap: .38rem; align-items: center; padding: .58rem .62rem; border: 1px solid var(--color-border); border-radius: .68rem; color: var(--color-text-muted); background: var(--color-surface-subtle); font-size: .82rem; font-weight: 800; }
+.pca-flow span { display: flex; gap: .38rem; align-items: center; padding: .58rem .62rem; border: 1px solid var(--color-border); border-radius: .68rem; color: var(--color-text-muted); background: var(--color-surface-subtle); font-size: .8rem; font-weight: 800; }
 .pca-flow b { width: 1.35rem; height: 1.35rem; display: grid; place-items: center; flex: 0 0 auto; border-radius: .42rem; background: #fff; font-size: .7rem; }
 .pca-flow span.active { border-color: var(--color-primary); color: var(--color-primary-strong); background: var(--color-primary-soft); }
 .pca-flow span.done { color: var(--color-secondary); }

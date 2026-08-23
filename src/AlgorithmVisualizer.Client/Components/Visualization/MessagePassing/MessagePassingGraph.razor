@@ -1,40 +1,210 @@
+@using System.Globalization
 @using AlgorithmVisualizer.Core.MachineLearning.GraphMl.MessagePassing
+@using Microsoft.AspNetCore.Components.Web
 
 <div class="gnn-stage">
-    <section class="graph-zone">
-        <svg class="gnn-edges" width="680" height="500" viewBox="0 0 680 500" aria-hidden="true">
-            @for(var a=0;a<Snapshot.NodeCount;a++)
-            {
-                @for(var b=a+1;b<Snapshot.NodeCount;b++)
-                {
-                    if(HasEdge(a,b)){<line x1="@X(a)" y1="@Y(a)" x2="@X(b)" y2="@Y(b)" class="@(a==Snapshot.CurrentNode||b==Snapshot.CurrentNode?"active":"")" />}
-                }
-            }
-        </svg>
-        @for(var node=0;node<Snapshot.NodeCount;node++)
-        {
-            <div class="gnn-node @(node==Snapshot.CurrentNode?"active":"")" style="left:@(X(node)-42)px;top:@(Y(node)-42)px">
-                <span>@Label(node)</span><strong>@Vector(Snapshot.Features[node])</strong><small>@Snapshot.NeighborCounts[node] nbr</small>
+    <section class="graph-panel">
+        <header class="graph-panel-header">
+            <div>
+                <span>GRAPH STATE</span>
+                <strong>All nodes stay visible; drag nodes to inspect message passing.</strong>
             </div>
-        }
+            <button type="button" class="reset-layout-button" @onclick="ResetLayout">Reset layout</button>
+        </header>
+
+        <div class="graph-scroll-shell"
+             @onpointermove="HandlePointerMove"
+             @onpointerup="EndPointerDrag"
+             @onpointercancel="EndPointerDrag"
+             @onmousemove="HandleMouseMove"
+             @onmouseup="EndMouseDrag"
+             @onmouseleave="HandleMouseLeave">
+            <div class="graph-scroll-track">
+                <div class="graph-stage" style="@StageStyle">
+                    <svg class="gnn-edges" width="@SvgWidth" height="@SvgHeight" viewBox="@ViewBoxValue" aria-hidden="true">
+                        @for (var a = 0; a < Snapshot.NodeCount; a++)
+                        {
+                            @for (var b = a + 1; b < Snapshot.NodeCount; b++)
+                            {
+                                if (HasEdge(a, b))
+                                {
+                                    <line x1="@Svg(RenderX(a))" y1="@Svg(RenderY(a))" x2="@Svg(RenderX(b))" y2="@Svg(RenderY(b))" class="@(a == Snapshot.CurrentNode || b == Snapshot.CurrentNode ? "active" : string.Empty)" />
+                                }
+                            }
+                        }
+                    </svg>
+
+                    @for (var node = 0; node < Snapshot.NodeCount; node++)
+                    {
+                        <div class="gnn-node @(node == Snapshot.CurrentNode ? "active" : string.Empty) @(DraggingNodeIndex == node ? "dragging" : string.Empty)"
+                             style="@NodeStyle(node)"
+                             title="Node @Label(node) · drag to inspect the graph layout"
+                             @onpointerdown="(e => BeginPointerDrag(node, e))"
+                             @onmousedown="(e => BeginMouseDrag(node, e))"
+                             @onpointerdown:preventDefault="true"
+                             @onmousedown:preventDefault="true">
+                            <span>@Label(node)</span>
+                            <strong>@Vector(Snapshot.Features[node])</strong>
+                            <small>@Snapshot.NeighborCounts[node] nbr</small>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
     </section>
+
     <aside class="message-tray">
         <span class="tray-kicker">CURRENT MESSAGE</span>
-        <strong>@(Snapshot.CurrentNode>=0?$"Node {Label(Snapshot.CurrentNode)}":"Ready")</strong>
+        <strong>@(Snapshot.CurrentNode >= 0 ? $"Node {Label(Snapshot.CurrentNode)}" : "Ready")</strong>
         <div><span>aggregate</span><b>@Vector(Snapshot.Aggregate)</b></div>
         <div><span>self path</span><b>@Vector(Snapshot.SelfContribution)</b></div>
         <div><span>neighbor path</span><b>@Vector(Snapshot.NeighborContribution)</b></div>
         <div><span>before ReLU</span><b>@Vector(Snapshot.PreActivation)</b></div>
-        @if(Snapshot.CurrentNode>=0&&Snapshot.NextFeatures.Length>Snapshot.CurrentNode){<div class="next"><span>staged next h</span><b>@Vector(Snapshot.NextFeatures[Snapshot.CurrentNode])</b></div>}
+        @if (Snapshot.CurrentNode >= 0 && Snapshot.NextFeatures.Length > Snapshot.CurrentNode)
+        {
+            <div class="next"><span>staged next h</span><b>@Vector(Snapshot.NextFeatures[Snapshot.CurrentNode])</b></div>
+        }
         <small>All nodes read the previous committed layer. Staged results switch together only at layer commit.</small>
     </aside>
 </div>
 
-@code{
-    [Parameter,EditorRequired] public MessagePassingSnapshot Snapshot{get;set;}=default!;
-    private bool HasEdge(int a,int b)=>Snapshot.AdjacencyValues[(a*Snapshot.NodeCount)+b]>0d||Snapshot.AdjacencyValues[(b*Snapshot.NodeCount)+a]>0d;
-    private double X(int node){var angle=(-Math.PI/2)+(2*Math.PI*node/Snapshot.NodeCount);return 340+Math.Cos(angle)*205;}
-    private double Y(int node){var angle=(-Math.PI/2)+(2*Math.PI*node/Snapshot.NodeCount);return 260+Math.Sin(angle)*170;}
-    private static string Label(int node)=>((char)('A'+node)).ToString();
-    private static string Vector(IReadOnlyList<double> v)=>"["+string.Join(", ",v.Select(x=>Math.Abs(x)<1e-10?"0":x.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture)))+"]";
+@code {
+    [Parameter, EditorRequired] public MessagePassingSnapshot Snapshot { get; set; } = default!;
+
+    private const double NodeRadius = 42d;
+    private const double SafePadding = 78d;
+    private const double BaseStageWidth = 760d;
+    private const double BaseStageHeight = 520d;
+
+    private readonly List<NodePosition> _positions = new();
+    private int? DraggingNodeIndex;
+    private double _lastClientX;
+    private double _lastClientY;
+
+    private bool HasEdge(int a, int b) => Snapshot.AdjacencyValues[(a * Snapshot.NodeCount) + b] > 0d || Snapshot.AdjacencyValues[(b * Snapshot.NodeCount) + a] > 0d;
+
+    protected override void OnParametersSet()
+    {
+        EnsurePositions();
+    }
+
+    private void EnsurePositions()
+    {
+        if (_positions.Count == Snapshot.NodeCount)
+        {
+            return;
+        }
+
+        _positions.Clear();
+        if (Snapshot.NodeCount <= 0)
+        {
+            return;
+        }
+
+        var centerX = BaseStageWidth / 2d;
+        var centerY = BaseStageHeight / 2d;
+        var radiusX = Math.Max(120d, (BaseStageWidth / 2d) - 170d);
+        var radiusY = Math.Max(110d, (BaseStageHeight / 2d) - 165d);
+
+        for (var node = 0; node < Snapshot.NodeCount; node++)
+        {
+            var angle = (-Math.PI / 2d) + ((2d * Math.PI * node) / Snapshot.NodeCount);
+            _positions.Add(new NodePosition(
+                centerX + Math.Cos(angle) * radiusX,
+                centerY + Math.Sin(angle) * radiusY));
+        }
+    }
+
+    private double MinWorldX => _positions.Count == 0 ? 0d : _positions.Min(position => position.X - NodeRadius);
+    private double MaxWorldX => _positions.Count == 0 ? BaseStageWidth : _positions.Max(position => position.X + NodeRadius + 10d);
+    private double MinWorldY => _positions.Count == 0 ? 0d : _positions.Min(position => position.Y - NodeRadius);
+    private double MaxWorldY => _positions.Count == 0 ? BaseStageHeight : _positions.Max(position => position.Y + NodeRadius + 10d);
+
+    private double OffsetX => SafePadding - Math.Min(MinWorldX, SafePadding);
+    private double OffsetY => SafePadding - Math.Min(MinWorldY, SafePadding);
+    private double StageWidth => Math.Max(BaseStageWidth, MaxWorldX + OffsetX + SafePadding);
+    private double StageHeight => Math.Max(BaseStageHeight, MaxWorldY + OffsetY + SafePadding);
+    private string StageStyle => $"width:{Css(StageWidth)}px;height:{Css(StageHeight)}px;";
+    private string SvgWidth => Svg(StageWidth);
+    private string SvgHeight => Svg(StageHeight);
+    private string ViewBoxValue => $"0 0 {Svg(StageWidth)} {Svg(StageHeight)}";
+
+    private double RenderX(int node) => _positions[node].X + OffsetX;
+    private double RenderY(int node) => _positions[node].Y + OffsetY;
+    private string NodeStyle(int node) => $"left:{Css(RenderX(node) - NodeRadius)}px;top:{Css(RenderY(node) - NodeRadius)}px";
+
+    private void BeginPointerDrag(int node, PointerEventArgs eventArgs)
+    {
+        BeginDrag(node, eventArgs.ClientX, eventArgs.ClientY);
+    }
+
+    private void BeginMouseDrag(int node, MouseEventArgs eventArgs)
+    {
+        BeginDrag(node, eventArgs.ClientX, eventArgs.ClientY);
+    }
+
+    private void BeginDrag(int node, double clientX, double clientY)
+    {
+        DraggingNodeIndex = node;
+        _lastClientX = clientX;
+        _lastClientY = clientY;
+    }
+
+    private void HandlePointerMove(PointerEventArgs eventArgs)
+    {
+        MoveDrag(eventArgs.ClientX, eventArgs.ClientY);
+    }
+
+    private void HandleMouseMove(MouseEventArgs eventArgs)
+    {
+        MoveDrag(eventArgs.ClientX, eventArgs.ClientY);
+    }
+
+    private void MoveDrag(double clientX, double clientY)
+    {
+        if (DraggingNodeIndex is not int node || node < 0 || node >= _positions.Count)
+        {
+            return;
+        }
+
+        var deltaX = clientX - _lastClientX;
+        var deltaY = clientY - _lastClientY;
+        _lastClientX = clientX;
+        _lastClientY = clientY;
+
+        var current = _positions[node];
+        _positions[node] = current with { X = current.X + deltaX, Y = current.Y + deltaY };
+    }
+
+    private void EndPointerDrag(PointerEventArgs _)
+    {
+        DraggingNodeIndex = null;
+    }
+
+    private void EndMouseDrag(MouseEventArgs _)
+    {
+        DraggingNodeIndex = null;
+    }
+
+    private void HandleMouseLeave(MouseEventArgs eventArgs)
+    {
+        if (DraggingNodeIndex is not null && eventArgs.Buttons == 0)
+        {
+            DraggingNodeIndex = null;
+        }
+    }
+
+    private void ResetLayout()
+    {
+        _positions.Clear();
+        EnsurePositions();
+        DraggingNodeIndex = null;
+    }
+
+    private static string Label(int node) => ((char)('A' + node)).ToString();
+    private static string Vector(IReadOnlyList<double> values) => "[" + string.Join(", ", values.Select(value => Math.Abs(value) < 1e-10 ? "0" : value.ToString("0.##", CultureInfo.InvariantCulture))) + "]";
+    private static string Css(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
+    private static string Svg(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
+
+    private sealed record NodePosition(double X, double Y);
 }

@@ -8,7 +8,7 @@
 
 .plot-shell { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(15rem, .65fr); gap: .8rem; align-items: start; }
 .logistic-plot-board { border: 1px solid var(--color-border); border-radius: 1rem; background: #f7f8fb; }
-.logistic-plot-board svg { display: block; width: min(100%, 68rem); min-width: 48rem; height: auto; margin: 0 auto; background: #fff; }
+.logistic-plot-board svg { display: block; width:100%; min-width:0; max-width:46rem; height: auto; margin: 0 auto; background: #fff; }
 .plot-bg { fill: var(--color-surface-subtle); stroke: var(--color-border); }
 .grid-line { stroke: #e9eaf0; stroke-width: 1; }
 .axis-label { fill: var(--color-text-muted); font-size: 12px; font-weight: 700; }
@@ -59,7 +59,22 @@
     .model-strip > div:nth-child(n+3) { border-top: 1px solid var(--color-border); }
     .formula-cell { grid-column: 1 / -1; }
     .model-strip > div:nth-child(2) { border-left: 0; border-top: 1px solid var(--color-border); }
-    .logistic-plot-board svg { min-width: 42rem; }
+    .logistic-plot-board svg { min-width:0; }
     .story-flow { grid-template-columns: 1fr; }
     .story-flow > b { transform: rotate(90deg); justify-self: center; }
 }
+
+/* The right-hand story now uses the full plot height instead of leaving an empty column below it. */
+.plot-shell { align-items: stretch; }
+.decision-story { align-content: start; grid-template-rows: auto auto auto auto 1fr auto; }
+.decision-rule { display: grid; align-self: end; gap: .16rem; padding: .65rem .7rem; border: 1px solid var(--color-border); border-radius: .72rem; background: rgba(255,255,255,.88); }
+.decision-rule span { color: var(--color-text-muted); font-size: .62rem; font-weight: 900; letter-spacing: .06em; }
+.decision-rule strong { font-size: .88rem; }
+.decision-rule small { color: var(--color-text-soft); font-size: .76rem; line-height: 1.45; }
+.decision-story .plot-legend.compact { align-self: end; gap: .42rem .7rem; padding-top: .25rem; border-top: 1px solid var(--color-border); font-size: .72rem; }
+
+
+/* Safe fit-to-frame: no fixed minimum plot width; markers and boundary badges stay in-frame. */
+.logistic-plot-board { overflow: hidden; padding: .3rem; }
+.logistic-plot-board svg { width: 100%; min-width: 0 !important; max-width: 46rem; }
+@media (max-width: 760px) { .logistic-plot-board svg { min-width: 0 !important; } }

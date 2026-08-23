@@ -2,7 +2,9 @@
 @using AlgorithmVisualizer.Core.MachineLearning.Supervised.Knn
 
 <section class="knn-visual" aria-label="K-Nearest Neighbors visual state">
-    <div class="knn-plot-shell ml-visual-board" tabindex="0">
+    <div class="knn-workspace">
+    <div class="knn-plot-column">
+    <div class="knn-plot-shell ml-visual-board">
         <div class="axis-note y-note">feature 2 ↑</div>
         <svg class="coordinate-plot" viewBox="0 0 760 470" role="img" aria-label="Training examples, query point, current comparison, and selected nearest neighbors">
             <rect x="48" y="28" width="664" height="380" rx="18" class="plot-bg" />
@@ -59,8 +61,9 @@
         <span><i class="legend-line neighbor"></i>Current top-k neighbor</span>
         <span><i class="legend-line comparing"></i>Distance being measured</span>
     </div>
+    </div>
 
-    <div class="neighbor-story" aria-label="Current nearest neighbors">
+    <aside class="neighbor-story" aria-label="Current nearest neighbors">
         <div class="neighbor-story-copy">
             <span>CURRENT TOP-@Snapshot.K</span>
             <strong>@NeighborHeadline</strong>
@@ -80,11 +83,18 @@
                 }
             }
         </div>
+    </aside>
     </div>
 </section>
 
 @code {
     [Parameter, EditorRequired] public KnnSnapshot Snapshot { get; set; } = default!;
+
+    private const double PlotLeft = 48d;
+    private const double PlotRight = 712d;
+    private const double PlotTop = 28d;
+    private const double PlotBottom = 408d;
+    private const double SafeInset = 18d;
 
     private string NeighborHeadline => Snapshot.PredictedClass is int prediction
         ? $"The neighbors voted for class {prediction}."
@@ -112,14 +122,14 @@
 
     private double MapX(double value)
     {
-        var mapped = 48d + (((value - XMin) / Math.Max(1e-9d, XMax - XMin)) * 664d);
-        return Math.Clamp(mapped, 48d, 712d);
+        var mapped = (PlotLeft + SafeInset) + (((value - XMin) / Math.Max(1e-9d, XMax - XMin)) * ((PlotRight - SafeInset) - (PlotLeft + SafeInset)));
+        return Math.Clamp(mapped, PlotLeft + SafeInset, PlotRight - SafeInset);
     }
 
     private double MapY(double value)
     {
-        var mapped = 408d - (((value - YMin) / Math.Max(1e-9d, YMax - YMin)) * 380d);
-        return Math.Clamp(mapped, 28d, 408d);
+        var mapped = (PlotBottom - SafeInset) - (((value - YMin) / Math.Max(1e-9d, YMax - YMin)) * ((PlotBottom - SafeInset) - (PlotTop + SafeInset)));
+        return Math.Clamp(mapped, PlotTop + SafeInset, PlotBottom - SafeInset);
     }
 
     private double RawMinFeature(int component)
