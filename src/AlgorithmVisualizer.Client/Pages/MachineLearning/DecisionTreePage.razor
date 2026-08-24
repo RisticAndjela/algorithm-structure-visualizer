@@ -232,7 +232,7 @@
     protected override void OnInitialized()
     {
         SimulationState.Changed += HandleSimulationChanged;
-        try { _showRunPopups = !bool.TryParse(LearningStore.GetItem(PopupSettingStorageKey), out var saved) || saved; } catch { _showRunPopups = true; }
+        _showRunPopups = !bool.TryParse(LearningStore.GetItem(PopupSettingStorageKey), out var saved) || saved;
         _practiceProgress = PracticeProgress.Load(ModuleKey, null, PracticeTasks.Select(t => t.Id));
         _completedTaskIds = _practiceProgress.CompletedTaskIds;
         ApplyInputs();
@@ -295,7 +295,7 @@
     private static bool TaskSatisfied(PracticeTaskDefinition task,DecisionTreeRunResult r)=>task.Id switch{1=>r.RootFeature==0&&r.TrainingAccuracy>=.99,2=>r.RootFeature==1&&r.TrainingAccuracy>=.99,3=>r.TreeDepth==2&&r.LeafCount==3&&r.TrainingAccuracy>=.99,4=>r.RootFeature<0&&r.LeafCount==1,5=>r.LeafCount>=2&&r.TrainingAccuracy<1d&&r.TrainingAccuracy>=.5d,_=>false};
     private void CompletePracticeTask(PracticeTaskDefinition task,DecisionTreeRunResult r){var evidence=new PracticeCompletionEvidence(task.Id,task.Title,r.Summary,RunActionExplanation(r),"Training vectors stay fixed. Each custom node stores example indexes, class counts, impurity, split metadata, child IDs, and a leaf prediction.",RunWhyExplanation(r),[new("Root",RootRule(r)),new("Max depth",r.TreeDepth.ToString(CultureInfo.InvariantCulture)),new("Leaves",r.LeafCount.ToString(CultureInfo.InvariantCulture)),new("Training accuracy",Percent(r.TrainingAccuracy))],$"root={RootRule(r)} · depth={r.TreeDepth} · leaves={r.LeafCount}");_completedTaskIds.Add(task.Id);PracticeProgress.Complete(ModuleKey,_practiceProgress,task.Id,evidence);_activeTaskId=null;}
     private PracticeCompletionEvidence? GetTaskEvidence(int id)=>PracticeProgress.GetEvidence(_practiceProgress,id); private void OpenTaskEvidence(int id)=>_practiceEvidencePopup=GetTaskEvidence(id); private void CloseTaskEvidence()=>_practiceEvidencePopup=null;
-    private void ToggleRunPopups(ChangeEventArgs args){_showRunPopups=args.Value is bool b?b:bool.TryParse(args.Value?.ToString(),out var parsed)&&parsed;try{LearningStore.SetItem(PopupSettingStorageKey,_showRunPopups.ToString());}catch{}}
+    private void ToggleRunPopups(ChangeEventArgs args){_showRunPopups=args.Value is bool b?b:bool.TryParse(args.Value?.ToString(),out var parsed)&&parsed;LearningStore.SetItem(PopupSettingStorageKey,_showRunPopups.ToString());}
     private void OpenLastRunPopup(){if(_lastResult is not null)_lastRunPopupOpen=true;} private void CloseLastRunPopup()=>_lastRunPopupOpen=false;
 
     private static string PhaseText(DecisionTreePhase p)=>p switch{DecisionTreePhase.InspectingNode=>"inspect node",DecisionTreePhase.EvaluatingSplit=>"score candidate",DecisionTreePhase.Splitting=>"commit split",DecisionTreePhase.Complete=>"complete",_=>"ready"};

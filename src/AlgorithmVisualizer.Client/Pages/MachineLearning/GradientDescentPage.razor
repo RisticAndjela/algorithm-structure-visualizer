@@ -160,7 +160,12 @@
             {
                 <div class="gd-visual-state">
                     <GradientLandscape Snapshot="@DisplayedSnapshot" />
-                    <GradientUpdateInsight Snapshot="@DisplayedSnapshot" />
+                    <div class="gd-vector-grid">
+                        <GradientVectorStrip Name="CURRENT · θ" Values="@DisplayedSnapshot.Parameters" CurrentIndex="@DisplayedSnapshot.CurrentIndex" Subtitle="Where the optimizer is now" Hint="θ" Kind="current" />
+                        <GradientVectorStrip Name="SLOPE · ∇J" Values="@DisplayedSnapshot.Gradient" CurrentIndex="@DisplayedSnapshot.CurrentIndex" Subtitle="Gradient points uphill" Hint="∇J" Kind="gradient" />
+                        <GradientVectorStrip Name="STEP · η∇J" Values="@DisplayedSnapshot.ScaledGradient" CurrentIndex="@DisplayedSnapshot.CurrentIndex" Subtitle="Learning rate scales the slope" Hint="η × ∇J" Kind="step" />
+                        <GradientVectorStrip Name="NEXT · θ′" Values="@DisplayedSnapshot.NextParameters" CurrentIndex="@DisplayedSnapshot.CurrentIndex" Subtitle="Candidate after subtraction" Hint="θ − η∇J" Kind="candidate" />
+                    </div>
                 </div>
             }
             else
@@ -297,7 +302,7 @@
     protected override void OnInitialized()
     {
         SimulationState.Changed += HandleSimulationChanged;
-        try { _showRunPopups = !bool.TryParse(LearningStore.GetItem(PopupSettingStorageKey), out var saved) || saved; } catch { _showRunPopups = true; }
+        _showRunPopups = !bool.TryParse(LearningStore.GetItem(PopupSettingStorageKey), out var saved) || saved;
         _practiceProgress = PracticeProgress.Load(ModuleKey, null, PracticeTasks.Select(task => task.Id));
         _completedTaskIds = _practiceProgress.CompletedTaskIds;
         ApplyInputs();
@@ -309,7 +314,6 @@
     private void IterationsChanged(ChangeEventArgs args) { _iterationsText = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
     private void ToleranceChanged(ChangeEventArgs args) { _toleranceText = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
     private void DecayChanged(ChangeEventArgs args) { _decayText = args.Value?.ToString() ?? string.Empty; ClearPresetSelection(); ClearReview(); }
-    private void SelectObjective(ObjectivePreset kind) { if (IsBusy) return; _objective = kind; ClearPresetSelection(); ClearReview(); ApplyInputs(); }
     private void SelectVariant(GradientDescentVariant variant) { if (IsBusy) return; _variant = variant; ClearPresetSelection(); ClearReview(); ApplyInputs(); }
     private void SetPrediction(LossPrediction value) { if (IsBusy) return; _prediction = value; _predictionAnswered = false; }
     private string PredictionButtonClass(LossPrediction value) => _prediction == value ? "active" : string.Empty;
@@ -476,9 +480,8 @@
     private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
     private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
     private void CloseTaskEvidence() => _practiceEvidencePopup = null;
-    private string GetActiveTaskProgressText(int taskId) => _practiceResults.Count == 0 ? "Suggested settings are loaded. Completion is checked from the actual optimization behavior, not the preset button." : $"Last run: loss {Format(_practiceResults[^1].InitialLoss)} → {Format(_practiceResults[^1].FinalLoss)} · {_practiceResults[^1].StopReason}.";
 
-    private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed; try { LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); } catch { } }
+    private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed; LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); }
     private void OpenLastRunPopup() { if (_lastResult is null) return; _lastRunPopupOpen = true; }
     private void CloseLastRunPopup() => _lastRunPopupOpen = false;
 
@@ -486,7 +489,6 @@
     private static string RunMlExplanation(GradientDescentRunResult result) => result.Diverged ? "The direction was downhill, but the step was so large that it kept jumping past the useful region." : result.Converged ? "The slope is now small enough for this lesson to treat the current point as finished." : result.Variant == GradientDescentVariant.LearningRateDecay ? "The run kept making progress while the Advanced variant gradually reduced the step size." : "The run stopped because it used every allowed step. A smaller step can be correct but still need more time.";
     private static string VariantLabel(GradientDescentVariant variant) => variant == GradientDescentVariant.LearningRateDecay ? "Learning-rate decay" : "Fixed learning rate";
     private static (double[] Target, double[] Curvature) GetLandscape(ObjectivePreset preset) => preset switch { ObjectivePreset.NarrowValley => ([1.5d, -1.5d], [0.25d, 4d]), ObjectivePreset.Shifted => ([2d, -1d], [1d, 1.5d]), _ => ([0d, 0d], [1d, 2d]) };
-    private static bool IsNarrowLandscape(IReadOnlyList<double> target, IReadOnlyList<double> curvature) => target.Count == 2 && curvature.Count == 2 && Math.Abs(target[0] - 1.5d) < 1e-9 && Math.Abs(target[1] + 1.5d) < 1e-9 && Math.Abs(curvature[0] - 0.25d) < 1e-9 && Math.Abs(curvature[1] - 4d) < 1e-9;
     private static bool IsShiftedLandscape(IReadOnlyList<double> target, IReadOnlyList<double> curvature) => target.Count == 2 && curvature.Count == 2 && Math.Abs(target[0] - 2d) < 1e-9 && Math.Abs(target[1] + 1d) < 1e-9 && Math.Abs(curvature[0] - 1d) < 1e-9 && Math.Abs(curvature[1] - 1.5d) < 1e-9;
     private static bool TryParseDouble(string? text, out double value) => double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value) || double.TryParse(text, NumberStyles.Float, CultureInfo.CurrentCulture, out value);
     private static string Format(double value) => Math.Abs(value) < 1e-12 ? "0" : value.ToString("0.####", CultureInfo.InvariantCulture);

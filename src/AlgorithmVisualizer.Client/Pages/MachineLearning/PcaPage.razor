@@ -176,7 +176,7 @@
         </div>
     </section>
 
-    <NextLessonCard Eyebrow="NEXT TRACK · DEEP LEARNING" Level="09 · Interactive" Title="Neuron + Activation Functions" Description="Turn vectors into a trainable unit: compute a weighted sum, add bias, then compare nonlinear activation functions." Href="/deep-learning/neuron-activations" LinkLabel="Open Neuron + Activations" />
+    <NextLessonCard Eyebrow="NEXT TRACK · DEEP LEARNING" Level="09 · Interactive" Title="Neural Network / MLP" Description="Move from dimensionality reduction to a genuinely visual deep-learning structure: trace inputs through hidden activations and into an output neuron." Href="/deep-learning/mlp" LinkLabel="Open MLP" />
 </div>
 
 @if (_lastRunPopupOpen && _lastResult is not null)
@@ -240,7 +240,7 @@
     protected override void OnInitialized()
     {
         SimulationState.Changed += HandleSimulationChanged;
-        try { _showRunPopups = !bool.TryParse(LearningStore.GetItem(PopupSettingStorageKey), out var saved) || saved; } catch { _showRunPopups = true; }
+        _showRunPopups = !bool.TryParse(LearningStore.GetItem(PopupSettingStorageKey), out var saved) || saved;
         _practiceProgress = PracticeProgress.Load(ModuleKey, null, PracticeTasks.Select(task => task.Id));
         _completedTaskIds = _practiceProgress.CompletedTaskIds;
         ApplyInputs();
@@ -356,7 +356,7 @@
     private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
     private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
     private void CloseTaskEvidence() => _practiceEvidencePopup = null;
-    private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed; try { LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); } catch { } }
+    private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed; LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); }
     private void OpenLastRunPopup() { if (_lastResult is not null) _lastRunPopupOpen = true; }
     private void CloseLastRunPopup() => _lastRunPopupOpen = false;
     private string PresetClass(Preset preset) => _preset == preset ? "active" : string.Empty;

@@ -1,13 +1,23 @@
 @using AlgorithmVisualizer.Core.MachineLearning.Optimization.GradientDescent
 
-<section class="gd-vector-strip @KindClass">
-    <header><span>@Name</span><strong>@Subtitle</strong></header>
+<section class="gd-vector-strip @KindClass" aria-label="@($"{Name}: {Subtitle}")">
+    <header class="gd-vector-header">
+        <div class="gd-vector-heading">
+            <span class="gd-vector-name">@Name</span>
+            <small>@Subtitle</small>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(Hint))
+        {
+            <span class="gd-vector-hint">@Hint</span>
+        }
+    </header>
+
     <div class="gd-vector-components">
         @for (var index = 0; index < Values.Length; index++)
         {
             var active = index == CurrentIndex;
             <div class="gd-vector-component @(active ? "current" : string.Empty)">
-                <small>[@index]</small>
+                <small>θ@index</small>
                 <strong>@Format(Values[index])</strong>
             </div>
         }
@@ -19,8 +29,9 @@
     [Parameter, EditorRequired] public double[] Values { get; set; } = [];
     [Parameter] public int CurrentIndex { get; set; } = -1;
     [Parameter] public string Subtitle { get; set; } = string.Empty;
-    [Parameter] public string Kind { get; set; } = string.Empty;
+    [Parameter] public string Hint { get; set; } = string.Empty;
+    [Parameter] public string Kind { get; set; } = "current";
 
-    private string KindClass => string.IsNullOrWhiteSpace(Kind) ? string.Empty : $"kind-{Kind.ToLowerInvariant()}";
+    private string KindClass => string.IsNullOrWhiteSpace(Kind) ? "kind-current" : $"kind-{Kind.ToLowerInvariant()}";
     private static string Format(double value) => Math.Abs(value) < 1e-12 ? "0" : value.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture);
 }

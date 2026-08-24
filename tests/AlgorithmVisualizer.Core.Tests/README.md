@@ -179,7 +179,6 @@ The tests use a tiny immediate `ISimulationRuntime` fake so algorithm correctnes
 
 `MachineLearning/DeepLearning/ActivationMathTests.cs` verifies ReLU vs Leaky ReLU behavior, sigmoid midpoint/derivative, and stable finite sigmoid outputs for very large positive/negative scores.
 
-`MachineLearning/DeepLearning/NeuronSimulationTests.cs` verifies weighted contributions, bias/pre-activation separation, ReLU behavior, sigmoid-at-zero behavior, and shape validation.
 
 `MachineLearning/DeepLearning/MlpSimulationTests.cs` verifies a deterministic one-hidden-layer forward pass and hidden ReLU clamping.
 

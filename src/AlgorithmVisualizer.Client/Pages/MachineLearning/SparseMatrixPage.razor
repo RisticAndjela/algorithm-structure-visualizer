@@ -15,7 +15,7 @@
         <div class="learn-grid"><article class="learn-card purple"><span>1 · SCAN</span><strong>Read one dense row.</strong><small>Zeros are inspected during conversion but never stored in CSR.</small></article><article class="learn-card blue"><span>2 · APPEND</span><strong>Store value + column.</strong><small>Each non-zero receives one entry in two aligned arrays.</small></article><article class="learn-card mint"><span>3 · CLOSE ROW</span><strong>Write a row pointer.</strong><small>rowPointers tells where each row starts and ends.</small></article><article class="learn-card gold"><span>4 · MULTIPLY</span><strong>Visit only nnz entries.</strong><small>Sparse matrix-vector multiplication skips every implicit zero.</small></article></div>
     </section>
 
-    <header class="module-header"><div class="header-copy"><div class="module-eyebrow"><span>GRAPH ML · PHASE 3 STEP 13</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div><h1>Sparse Matrix</h1><p>Build compressed-sparse-row storage from scratch and see exactly what memory PageRank and GNN message passing will reuse.</p></div><div class="complexity-summary"><div><span>Convert</span><strong>O(r·c)</strong><small>inspect the dense source once</small></div><div><span>SpMV</span><strong>O(nnz)</strong><small>touch stored entries only</small></div><div><span>Storage</span><strong>O(nnz + r)</strong><small>values + columns + row pointers</small></div></div></header>
+    <header class="module-header"><div class="header-copy"><div class="module-eyebrow"><span>GRAPH ML · PHASE 3 STEP 12</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div><h1>Sparse Matrix</h1><p>Build compressed-sparse-row storage from scratch and see exactly what memory PageRank and GNN message passing will reuse.</p></div><div class="complexity-summary"><div><span>Convert</span><strong>O(r·c)</strong><small>inspect the dense source once</small></div><div><span>SpMV</span><strong>O(nnz)</strong><small>touch stored entries only</small></div><div><span>Storage</span><strong>O(nnz + r)</strong><small>values + columns + row pointers</small></div></div></header>
 
     <section class="smart-tip"><span class="tip-icon">✦</span><div><strong>“Sparse” is about storage shape, not a different mathematical matrix.</strong><p>The same A·x result must match dense multiplication. CSR changes which values occupy memory and which cells multiplication must visit.</p></div><ConceptLink Href="/structures/matrix">Review dense Matrix storage →</ConceptLink></section>
 
@@ -45,30 +45,275 @@
 
     <section class="practice-section"><div class="practice-heading"><div><span class="section-kicker">GUIDED PRACTICE</span><h2>Prove when CSR saves work — and when it does not.</h2></div><strong>@_completedTaskIds.Count / @PracticeTasks.Length complete</strong></div><div class="practice-grid">@foreach(var task in PracticeTasks){<PracticeTaskCard TaskId="@task.Id" Title="@task.Title" Description="@task.Goal" InputText="@task.Suggested" HelpHref="/learn/concepts/sparse-matrix" Completed="@_completedTaskIds.Contains(task.Id)" Active="@(_activeTaskId==task.Id)" Busy="@IsBusy" HasEvidence="@(GetTaskEvidence(task.Id)is not null)" Start="@(() => StartTask(task.Id))" OpenEvidence="@(() => OpenTaskEvidence(task.Id))" />}</div></section>
 
-    <NextLessonCard Eyebrow="NEXT · GRAPH ML" Level="14 · Interactive" Title="PageRank" Description="Reuse sparse adjacency to move probability mass through directed links until node importance stabilizes." Href="/graph-ml/pagerank" LinkLabel="Open PageRank" />
+    <NextLessonCard Eyebrow="NEXT · GRAPH ML" Level="13 · Interactive" Title="PageRank" Description="Reuse sparse adjacency to move probability mass through directed links until node importance stabilizes." Href="/graph-ml/pagerank" LinkLabel="Open PageRank" />
 </div>
 
 @if(_lastRunPopupOpen&&_lastResult is not null){<div class="run-popup-backdrop" @onclick="CloseLastRunPopup"><section class="run-popup" role="dialog" aria-modal="true" @onclick:stopPropagation="true"><header><div><span class="section-kicker">LAST RUN</span><h2>CSR kept @_lastResult.NonZeroCount of @_lastResult.DenseCellCount numeric cells.</h2></div><button class="popup-close" @onclick="CloseLastRunPopup">×</button></header><div class="popup-body"><p>@_lastResult.Summary</p><div class="popup-metrics"><div><span>VALUES</span><strong>@_lastResult.NonZeroCount</strong></div><div><span>DENSE CELLS</span><strong>@_lastResult.DenseCellCount</strong></div><div><span>CSR SLOTS</span><strong>@_lastResult.CsrStoredSlots</strong></div><div><span>DENSITY</span><strong>@Percent(_lastResult.Density)</strong></div></div><p class="popup-memory">Memory = values + columnIndexes + rowPointers. Arithmetic for A·x then visits exactly nnz stored values instead of every dense cell.</p></div></section></div>}
 <PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
 
-@code{
+@code {
     private IReadOnlyList<RunMetricItem> LiveRunMetrics => [new("PHASE", PhaseText(DisplayedSnapshot.Phase)), new("NNZ", DisplayedSnapshot.NonZeroCount.ToString()), new("ROW", DisplayedSnapshot.CurrentRow >= 0 ? DisplayedSnapshot.CurrentRow.ToString() : "—"), new("CSR SLOTS", CsrSlots(DisplayedSnapshot).ToString(CultureInfo.InvariantCulture))];
-    private const string ModuleKey="sparse-matrix"; private const string PopupKey="algorithm-visualizer.sparse-matrix.show-run-popup.v1";
-    private readonly List<RunFrame> _frames=[]; private PracticeModuleProgress _practiceProgress=new(); private HashSet<int> _completedTaskIds=[]; private PracticeCompletionEvidence? _practiceEvidencePopup; private SparseMatrixRunResult? _lastResult; private string? _lastCapturedStep,_inputError; private double[][] _dense=GraphDense(); private double[] _vector=[1,2,3,4,5]; private string _matrixText=FormatMatrix(GraphDense()),_vectorText="1, 2, 3, 4, 5"; private Preset? _preset=Preset.Graph; private bool _showAdvanced,_showRunPopups=true,_lastRunPopupOpen,_predictionAnswered,_predictionCorrect; private bool? _prediction; private int _frameIndex=-1; private int? _activeTaskId; private StateView _view=StateView.Visual;
+    private const string ModuleKey="sparse-matrix";
+    private const string PopupKey="algorithm-visualizer.sparse-matrix.show-run-popup.v1";
+    private readonly List<RunFrame> _frames=[];
+    private PracticeModuleProgress _practiceProgress=new();
+    private HashSet<int> _completedTaskIds=[];
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
+    private SparseMatrixRunResult? _lastResult;
+    private string? _lastCapturedStep,_inputError;
+    private double[][] _dense=GraphDense();
+    private double[] _vector=[1,2,3,4,5];
+    private string _matrixText=FormatMatrix(GraphDense()),_vectorText="1, 2, 3, 4, 5";
+    private Preset? _preset=Preset.Graph;
+    private bool _showAdvanced,_showRunPopups=true,_lastRunPopupOpen,_predictionAnswered,_predictionCorrect;
+    private bool? _prediction;
+    private int _frameIndex=-1;
+    private int? _activeTaskId;
+    private StateView _view=StateView.Visual;
     private static readonly PracticeTaskDefinition[] PracticeTasks=[new(1,"Compress graph adjacency","Store a sparse adjacency matrix with fewer CSR slots than dense cells.","Graph adjacency",Preset.Graph),new(2,"See metadata overhead","Run a mostly dense matrix where CSR total slots exceed dense numeric cells.","Dense-ish",Preset.Denseish),new(3,"Trace row pointers","Run a diagonal matrix and verify nnz equals the dimension.","Diagonal",Preset.Diagonal),new(4,"Store no values","Run an all-zero matrix and keep an empty values array with row pointers only.","Zero",Preset.Zero),new(5,"Multiply sparsely","Finish a graph-adjacency run and produce a non-zero A·x result.","Graph adjacency",Preset.Graph)];
-    private SparseMatrixSnapshot DisplayedSnapshot=>_frameIndex>=0&&_frameIndex<_frames.Count?_frames[_frameIndex].Snapshot:SparseLab.CreateSnapshot(); private string DisplayedStepText=>_frameIndex>=0&&_frameIndex<_frames.Count?_frames[_frameIndex].StepText:SimulationState.CurrentStepText; private bool IsBusy=>SimulationState.IsRunning; private int TimelineCount=>_frames.Count;private int TimelinePosition=>_frameIndex<0?0:_frameIndex+1;private bool CanStepBack=>_frameIndex>0;private bool CanStepForward=>(_frameIndex>=0&&_frameIndex<_frames.Count-1)||SimulationState.IsRunning; private string ViewExplanation=>_view==StateView.Visual?"Dense cells compress into aligned CSR arrays, then the same row slices drive A·x. The full storage visual stays in normal page flow.":"Inspect the exact arrays held in memory; implicit zero cells do not occupy values/column slots."; private string PredictionFeedback=>_lastResult is null?string.Empty:_predictionCorrect?"Correct — your storage prediction matched the actual values + columns + rowPointers count.":$"CSR used {_lastResult.CsrStoredSlots} total slots versus {_lastResult.DenseCellCount} dense numeric cells.";
-    protected override void OnInitialized(){SimulationState.Changed+=HandleSimulationChanged;try{_showRunPopups=!bool.TryParse(LearningStore.GetItem(PopupKey),out var saved)||saved;}catch{_showRunPopups=true;}_practiceProgress=PracticeProgress.Load(ModuleKey,null,PracticeTasks.Select(t=>t.Id));_completedTaskIds=_practiceProgress.CompletedTaskIds;ApplyInputs();}
-    private void ToggleAdvanced(){if(!IsBusy)_showAdvanced=!_showAdvanced;} private void MatrixChanged(ChangeEventArgs e){_matrixText=e.Value?.ToString()??"";_preset=null;ClearReview();} private void VectorChanged(ChangeEventArgs e){_vectorText=e.Value?.ToString()??"";_preset=null;ClearReview();} private void SetPrediction(bool value){_prediction=value;_predictionAnswered=false;_predictionCorrect=false;}
-    private void LoadPreset(Preset p){if(IsBusy)return;_preset=p;switch(p){case Preset.Graph:_dense=GraphDense();_vector=[1,2,3,4,5];break;case Preset.Diagonal:_dense=DiagonalDense();_vector=[1,1,1,1,1];break;case Preset.Denseish:_dense=Denseish();_vector=[1,1,1,1];break;default:_dense=ZeroDense();_vector=[1,2,3,4];break;}_matrixText=FormatMatrix(_dense);_vectorText=FormatVectorInput(_vector);ApplyInputs();}
-    private void ApplyInputs(){if(!TryMatrix(_matrixText,out var dense,out var error)){_inputError=error;return;}if(!TryVector(_vectorText,out var vector)||vector.Length!=dense[0].Length){_inputError="Vector must contain one finite value per matrix column.";return;}try{SparseLab.Configure(new SparseMatrixConfiguration(dense,vector));_dense=dense;_vector=vector;_inputError=null;ClearReview();}catch(ArgumentException ex){_inputError=ex.Message;}}
-    private async Task RunAsync(){ApplyInputs();if(_inputError is not null)return;_frames.Clear();_frameIndex=-1;_lastCapturedStep=null;_lastRunPopupOpen=false;var token=SimulationState.Start("Starting CSR conversion.");Capture();try{var r=await SparseLab.ExecuteAsync(token);if(!IsCurrent(token))return;_lastResult=r;SimulationState.Complete(r.Summary);Capture();if(_prediction is not null){_predictionAnswered=true;_predictionCorrect=_prediction==(r.CsrStoredSlots<r.DenseCellCount);}RecordPractice(r);if(_showRunPopups)OpenLastRunPopup();}catch(OperationCanceledException)when(!IsCurrent(token)){} }
-    private void Capture(){var step=SimulationState.CurrentStepText;if(step==_lastCapturedStep)return;var follow=_frameIndex<0||_frameIndex==_frames.Count-1;_frames.Add(new(step,SparseLab.CreateSnapshot()));_lastCapturedStep=step;if(follow)_frameIndex=_frames.Count-1;}private void HandleSimulationChanged(){if(SimulationState.IsRunning)Capture();_=InvokeAsync(StateHasChanged);}private bool IsCurrent(CancellationToken t)=>!t.IsCancellationRequested&&SimulationState.SimulationCancellationToken==t;private void ClearReview(){SimulationState.Reset();_frames.Clear();_frameIndex=-1;_lastCapturedStep=null;_lastResult=null;_lastRunPopupOpen=false;_predictionAnswered=false;}
-    private Task PlayTimelineAsync(){if(_frames.Count>0)_frameIndex=_frames.Count-1;SimulationState.Resume();return InvokeAsync(StateHasChanged);}private Task PauseTimelineAsync(){SimulationState.Pause();return Task.CompletedTask;}private Task StepBackAsync(){if(SimulationState.IsRunning&&!SimulationState.IsPaused)SimulationState.Pause();if(_frameIndex>0)_frameIndex--;return InvokeAsync(StateHasChanged);}private Task StepForwardAsync(){if(_frameIndex>=0&&_frameIndex<_frames.Count-1){_frameIndex++;return InvokeAsync(StateHasChanged);}if(SimulationState.IsRunning)SimulationState.Step();return Task.CompletedTask;}private Task ResetPlaybackAsync(){SimulationState.Reset();_frames.Clear();_frameIndex=-1;_lastCapturedStep=null;return InvokeAsync(StateHasChanged);}
-    private void ToggleRunPopups(ChangeEventArgs e){_showRunPopups=e.Value is bool b&&b;LearningStore.SetItem(PopupKey,_showRunPopups.ToString());}private void OpenLastRunPopup()=>_lastRunPopupOpen=_lastResult is not null;private void CloseLastRunPopup()=>_lastRunPopupOpen=false;
-    private void StartTask(int id){var t=PracticeTasks.First(x=>x.Id==id);_activeTaskId=id;LoadPreset(t.Preset);}private void RecordPractice(SparseMatrixRunResult r){if(_activeTaskId is null)return;var t=PracticeTasks.First(x=>x.Id==_activeTaskId);var ok=t.Preset switch{Preset.Graph when t.Id==1=>r.CsrStoredSlots<r.DenseCellCount,Preset.Denseish=>r.CsrStoredSlots>r.DenseCellCount,Preset.Diagonal=>r.NonZeroCount==r.Rows,Preset.Zero=>r.NonZeroCount==0,Preset.Graph when t.Id==5=>r.Product.Any(v=>Math.Abs(v)>1e-9),_=>false};if(!ok)return;var ev=new PracticeCompletionEvidence(t.Id,t.Title,r.Summary,$"CSR stored {r.NonZeroCount} numeric values and A·x produced {Vector(r.Product)}.",$"values={ArrayText(r.Values)}, columns={ArrayText(r.ColumnIndexes)}, rowPointers={ArrayText(r.RowPointers)}.","Sparse storage saves work only when zeros dominate enough to justify indexing metadata.",[new("nnz",r.NonZeroCount.ToString()),new("dense",r.DenseCellCount.ToString()),new("CSR slots",r.CsrStoredSlots.ToString())],$"nnz={r.NonZeroCount} · CSR slots={r.CsrStoredSlots}");_completedTaskIds.Add(t.Id);PracticeProgress.Complete(ModuleKey,_practiceProgress,t.Id,ev);_activeTaskId=null;}
-    private PracticeCompletionEvidence? GetTaskEvidence(int id)=>PracticeProgress.GetEvidence(_practiceProgress,id);private void OpenTaskEvidence(int id)=>_practiceEvidencePopup=GetTaskEvidence(id);private void CloseTaskEvidence()=>_practiceEvidencePopup=null;
-    private string PresetClass(Preset p)=>_preset==p?"active":"";private string PredictionClass(bool p)=>_prediction==p?"active":"";private static string PresetName(Preset p)=>p switch{Preset.Graph=>"Graph adjacency",Preset.Diagonal=>"Diagonal",Preset.Denseish=>"Dense-ish",_=>"All zero"};private static string PhaseText(SparseMatrixPhase p)=>p switch{SparseMatrixPhase.RowClosed=>"row closed",SparseMatrixPhase.Multiplying=>"multiply",_=>p.ToString().ToLowerInvariant()};private static int CsrSlots(SparseMatrixSnapshot s)=>s.Values.Length+s.ColumnIndexes.Length+s.RowPointers.Length;private static int CountNonZeros(double[][] a){var c=0;for(var r=0;r<a.Length;r++)for(var col=0;col<a[r].Length;col++)if(Math.Abs(a[r][col])>1e-12)c++;return c;}
-    private static bool TryMatrix(string text,out double[][] matrix,out string error){var rows=text.Split(';',StringSplitOptions.RemoveEmptyEntries|StringSplitOptions.TrimEntries);matrix=new double[rows.Length][];error="";if(rows.Length<1||rows.Length>10){error="Use 1–10 rows.";return false;}var columns=-1;for(var r=0;r<rows.Length;r++){if(!TryVector(rows[r],out var row)){error=$"Row {r+1} is not a finite comma-separated vector.";return false;}if(columns<0)columns=row.Length;if(row.Length!=columns){error="All rows must have the same number of columns.";return false;}if(columns>10){error="Use at most 10 columns.";return false;}matrix[r]=row;}return true;}private static bool TryVector(string text,out double[] v){var parts=text.Split(',',StringSplitOptions.RemoveEmptyEntries|StringSplitOptions.TrimEntries);v=new double[parts.Length];if(parts.Length<1||parts.Length>10)return false;for(var i=0;i<parts.Length;i++)if(!double.TryParse(parts[i],NumberStyles.Float,CultureInfo.InvariantCulture,out v[i])||!double.IsFinite(v[i]))return false;return true;}
-    private static double[][] GraphDense()=>[[0,1,0,0,2],[0,0,0,3,0],[4,0,0,0,0],[0,0,5,0,0],[0,6,0,0,0]];private static double[][] DiagonalDense()=>[[1,0,0,0,0],[0,2,0,0,0],[0,0,3,0,0],[0,0,0,4,0],[0,0,0,0,5]];private static double[][] Denseish()=>[[1,2,3,0],[4,5,6,7],[8,9,0,10],[11,12,13,14]];private static double[][] ZeroDense()=>[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];private static string FormatMatrix(double[][] a)=>string.Join("; ",a.Select(FormatVectorInput));private static string FormatVectorInput(IReadOnlyList<double> v)=>string.Join(", ",v.Select(F));private static string Vector(IReadOnlyList<double> v)=>"["+FormatVectorInput(v)+"]";private static string ArrayText(IReadOnlyList<double> v)=>Vector(v);private static string ArrayText(IReadOnlyList<int> v)=>"["+string.Join(", ",v)+"]";private static string F(double v)=>Math.Abs(v)<1e-12?"0":v.ToString("0.###",CultureInfo.InvariantCulture);private static string Percent(double v)=>(v*100).ToString("0.#",CultureInfo.InvariantCulture)+"%"; public void Dispose()=>SimulationState.Changed-=HandleSimulationChanged;
-    private sealed record RunFrame(string StepText,SparseMatrixSnapshot Snapshot);private sealed record PracticeTaskDefinition(int Id,string Title,string Goal,string Suggested,Preset Preset);private enum Preset{Graph,Diagonal,Denseish,Zero}private enum StateView{Visual,Memory}
+    private SparseMatrixSnapshot DisplayedSnapshot=>_frameIndex>=0&&_frameIndex<_frames.Count?_frames[_frameIndex].Snapshot:SparseLab.CreateSnapshot();
+    private string DisplayedStepText=>_frameIndex>=0&&_frameIndex<_frames.Count?_frames[_frameIndex].StepText:SimulationState.CurrentStepText;
+    private bool IsBusy=>SimulationState.IsRunning;
+    private int TimelineCount=>_frames.Count;
+    private int TimelinePosition=>_frameIndex<0?0:_frameIndex+1;
+    private bool CanStepBack=>_frameIndex>0;
+    private bool CanStepForward=>(_frameIndex>=0&&_frameIndex<_frames.Count-1)||SimulationState.IsRunning;
+    private string ViewExplanation=>_view==StateView.Visual?"Dense cells compress into aligned CSR arrays, then the same row slices drive A·x. The full storage visual stays in normal page flow.":"Inspect the exact arrays held in memory; implicit zero cells do not occupy values/column slots.";
+    private string PredictionFeedback=>_lastResult is null?string.Empty:_predictionCorrect?"Correct — your storage prediction matched the actual values + columns + rowPointers count.":$"CSR used {_lastResult.CsrStoredSlots} total slots versus {_lastResult.DenseCellCount} dense numeric cells.";
+    protected override void OnInitialized(){
+        SimulationState.Changed+=HandleSimulationChanged;
+        _showRunPopups=!bool.TryParse(LearningStore.GetItem(PopupKey),out var saved)||saved;
+        _practiceProgress=PracticeProgress.Load(ModuleKey,null,PracticeTasks.Select(t=>t.Id));
+        _completedTaskIds=_practiceProgress.CompletedTaskIds;
+        ApplyInputs();
+    }
+    private void ToggleAdvanced(){
+        if(!IsBusy)_showAdvanced=!_showAdvanced;
+    }
+    private void MatrixChanged(ChangeEventArgs e){
+        _matrixText=e.Value?.ToString()??"";
+        _preset=null;
+        ClearReview();
+    }
+    private void VectorChanged(ChangeEventArgs e){
+        _vectorText=e.Value?.ToString()??"";
+        _preset=null;
+        ClearReview();
+    }
+    private void SetPrediction(bool value){
+        _prediction=value;
+        _predictionAnswered=false;
+        _predictionCorrect=false;
+    }
+    private void LoadPreset(Preset p){
+        if(IsBusy)return;
+        _preset=p;
+        switch(p){
+            case Preset.Graph:_dense=GraphDense();
+            _vector=[1,2,3,4,5];
+            break;
+            case Preset.Diagonal:_dense=DiagonalDense();
+            _vector=[1,1,1,1,1];
+            break;
+            case Preset.Denseish:_dense=Denseish();
+            _vector=[1,1,1,1];
+            break;
+            default:_dense=ZeroDense();
+            _vector=[1,2,3,4];
+            break;
+        }
+        _matrixText=FormatMatrix(_dense);
+        _vectorText=FormatVectorInput(_vector);
+        ApplyInputs();
+    }
+    private void ApplyInputs(){
+        if(!TryMatrix(_matrixText,out var dense,out var error)){
+            _inputError=error;
+            return;
+        }
+        if(!TryVector(_vectorText,out var vector)||vector.Length!=dense[0].Length){
+            _inputError="Vector must contain one finite value per matrix column.";
+            return;
+        }
+        try{
+            SparseLab.Configure(new SparseMatrixConfiguration(dense,vector));
+            _dense=dense;
+            _vector=vector;
+            _inputError=null;
+            ClearReview();
+        }
+        catch(ArgumentException ex){
+            _inputError=ex.Message;
+        }
+    }
+    private async Task RunAsync(){
+        ApplyInputs();
+        if(_inputError is not null)return;
+        _frames.Clear();
+        _frameIndex=-1;
+        _lastCapturedStep=null;
+        _lastRunPopupOpen=false;
+        var token=SimulationState.Start("Starting CSR conversion.");
+        Capture();
+        try{
+            var r=await SparseLab.ExecuteAsync(token);
+            if(!IsCurrent(token))return;
+            _lastResult=r;
+            SimulationState.Complete(r.Summary);
+            Capture();
+            if(_prediction is not null){
+                _predictionAnswered=true;
+                _predictionCorrect=_prediction==(r.CsrStoredSlots<r.DenseCellCount);
+            }
+            RecordPractice(r);
+            if(_showRunPopups)OpenLastRunPopup();
+        }
+        catch(OperationCanceledException)when(!IsCurrent(token)){
+        }
+    }
+    private void Capture(){
+        var step=SimulationState.CurrentStepText;
+        if(step==_lastCapturedStep)return;
+        var follow=_frameIndex<0||_frameIndex==_frames.Count-1;
+        _frames.Add(new(step,SparseLab.CreateSnapshot()));
+        _lastCapturedStep=step;
+        if(follow)_frameIndex=_frames.Count-1;
+    }
+    private void HandleSimulationChanged(){
+        if(SimulationState.IsRunning)Capture();
+        _=InvokeAsync(StateHasChanged);
+    }
+    private bool IsCurrent(CancellationToken t)=>!t.IsCancellationRequested&&SimulationState.SimulationCancellationToken==t;
+    private void ClearReview(){
+        SimulationState.Reset();
+        _frames.Clear();
+        _frameIndex=-1;
+        _lastCapturedStep=null;
+        _lastResult=null;
+        _lastRunPopupOpen=false;
+        _predictionAnswered=false;
+    }
+    private Task PlayTimelineAsync(){
+        if(_frames.Count>0)_frameIndex=_frames.Count-1;
+        SimulationState.Resume();
+        return InvokeAsync(StateHasChanged);
+    }
+    private Task PauseTimelineAsync(){
+        SimulationState.Pause();
+        return Task.CompletedTask;
+    }
+    private Task StepBackAsync(){
+        if(SimulationState.IsRunning&&!SimulationState.IsPaused)SimulationState.Pause();
+        if(_frameIndex>0)_frameIndex--;
+        return InvokeAsync(StateHasChanged);
+    }
+    private Task StepForwardAsync(){
+        if(_frameIndex>=0&&_frameIndex<_frames.Count-1){
+            _frameIndex++;
+            return InvokeAsync(StateHasChanged);
+        }
+        if(SimulationState.IsRunning)SimulationState.Step();
+        return Task.CompletedTask;
+    }
+    private Task ResetPlaybackAsync(){
+        SimulationState.Reset();
+        _frames.Clear();
+        _frameIndex=-1;
+        _lastCapturedStep=null;
+        return InvokeAsync(StateHasChanged);
+    }
+    private void ToggleRunPopups(ChangeEventArgs e){
+        _showRunPopups=e.Value is bool b&&b;
+        LearningStore.SetItem(PopupKey,_showRunPopups.ToString());
+    }
+    private void OpenLastRunPopup()=>_lastRunPopupOpen=_lastResult is not null;
+    private void CloseLastRunPopup()=>_lastRunPopupOpen=false;
+    private void StartTask(int id){
+        var t=PracticeTasks.First(x=>x.Id==id);
+        _activeTaskId=id;
+        LoadPreset(t.Preset);
+    }
+    private void RecordPractice(SparseMatrixRunResult r){
+        if(_activeTaskId is null)return;
+        var t=PracticeTasks.First(x=>x.Id==_activeTaskId);
+        var ok=t.Preset switch{
+            Preset.Graph when t.Id==1=>r.CsrStoredSlots<r.DenseCellCount,Preset.Denseish=>r.CsrStoredSlots>r.DenseCellCount,Preset.Diagonal=>r.NonZeroCount==r.Rows,Preset.Zero=>r.NonZeroCount==0,Preset.Graph when t.Id==5=>r.Product.Any(v=>Math.Abs(v)>1e-9),_=>false
+        };
+        if(!ok)return;
+        var ev=new PracticeCompletionEvidence(t.Id,t.Title,r.Summary,$"CSR stored {r.NonZeroCount} numeric values and A·x produced {Vector(r.Product)}.",$"values={ArrayText(r.Values)}, columns={ArrayText(r.ColumnIndexes)}, rowPointers={ArrayText(r.RowPointers)}.","Sparse storage saves work only when zeros dominate enough to justify indexing metadata.",[new("nnz",r.NonZeroCount.ToString()),new("dense",r.DenseCellCount.ToString()),new("CSR slots",r.CsrStoredSlots.ToString())],$"nnz={r.NonZeroCount} · CSR slots={r.CsrStoredSlots}");
+        _completedTaskIds.Add(t.Id);
+        PracticeProgress.Complete(ModuleKey,_practiceProgress,t.Id,ev);
+        _activeTaskId=null;
+    }
+    private PracticeCompletionEvidence? GetTaskEvidence(int id)=>PracticeProgress.GetEvidence(_practiceProgress,id);
+    private void OpenTaskEvidence(int id)=>_practiceEvidencePopup=GetTaskEvidence(id);
+    private void CloseTaskEvidence()=>_practiceEvidencePopup=null;
+    private string PresetClass(Preset p)=>_preset==p?"active":"";
+    private string PredictionClass(bool p)=>_prediction==p?"active":"";
+    private static string PresetName(Preset p)=>p switch{
+        Preset.Graph=>"Graph adjacency",Preset.Diagonal=>"Diagonal",Preset.Denseish=>"Dense-ish",_=>"All zero"
+    };
+    private static string PhaseText(SparseMatrixPhase p)=>p switch{
+        SparseMatrixPhase.RowClosed=>"row closed",SparseMatrixPhase.Multiplying=>"multiply",_=>p.ToString().ToLowerInvariant()
+    };
+    private static int CsrSlots(SparseMatrixSnapshot s)=>s.Values.Length+s.ColumnIndexes.Length+s.RowPointers.Length;
+    private static int CountNonZeros(double[][] a){
+        var c=0;
+        for(var r=0;r<a.Length;r++)for(var col=0;col<a[r].Length;col++)if(Math.Abs(a[r][col])>1e-12)c++;
+        return c;
+    }
+    private static bool TryMatrix(string text,out double[][] matrix,out string error){
+        var rows=text.Split(';',StringSplitOptions.RemoveEmptyEntries|StringSplitOptions.TrimEntries);
+        matrix=new double[rows.Length][];
+        error="";
+        if(rows.Length<1||rows.Length>10){
+            error="Use 1–10 rows.";
+            return false;
+        }
+        var columns=-1;
+        for(var r=0;r<rows.Length;r++){
+            if(!TryVector(rows[r],out var row)){
+                error=$"Row {r+1} is not a finite comma-separated vector.";
+                return false;
+            }
+            if(columns<0)columns=row.Length;
+            if(row.Length!=columns){
+                error="All rows must have the same number of columns.";
+                return false;
+            }
+            if(columns>10){
+                error="Use at most 10 columns.";
+                return false;
+            }
+            matrix[r]=row;
+        }
+        return true;
+    }
+    private static bool TryVector(string text,out double[] v){
+        var parts=text.Split(',',StringSplitOptions.RemoveEmptyEntries|StringSplitOptions.TrimEntries);
+        v=new double[parts.Length];
+        if(parts.Length<1||parts.Length>10)return false;
+        for(var i=0;i<parts.Length;i++)if(!double.TryParse(parts[i],NumberStyles.Float,CultureInfo.InvariantCulture,out v[i])||!double.IsFinite(v[i]))return false;
+        return true;
+    }
+    private static double[][] GraphDense()=>[[0,1,0,0,2],[0,0,0,3,0],[4,0,0,0,0],[0,0,5,0,0],[0,6,0,0,0]];
+    private static double[][] DiagonalDense()=>[[1,0,0,0,0],[0,2,0,0,0],[0,0,3,0,0],[0,0,0,4,0],[0,0,0,0,5]];
+    private static double[][] Denseish()=>[[1,2,3,0],[4,5,6,7],[8,9,0,10],[11,12,13,14]];
+    private static double[][] ZeroDense()=>[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+    private static string FormatMatrix(double[][] a)=>string.Join("; ",a.Select(FormatVectorInput));
+    private static string FormatVectorInput(IReadOnlyList<double> v)=>string.Join(", ",v.Select(F));
+    private static string Vector(IReadOnlyList<double> v)=>"["+FormatVectorInput(v)+"]";
+    private static string ArrayText(IReadOnlyList<double> v)=>Vector(v);
+    private static string ArrayText(IReadOnlyList<int> v)=>"["+string.Join(", ",v)+"]";
+    private static string F(double v)=>Math.Abs(v)<1e-12?"0":v.ToString("0.###",CultureInfo.InvariantCulture);
+    private static string Percent(double v)=>(v*100).ToString("0.#",CultureInfo.InvariantCulture)+"%";
+    public void Dispose()=>SimulationState.Changed-=HandleSimulationChanged;
+    private sealed record RunFrame(string StepText,SparseMatrixSnapshot Snapshot);
+    private sealed record PracticeTaskDefinition(int Id,string Title,string Goal,string Suggested,Preset Preset);
+    private enum Preset{
+        Graph,Diagonal,Denseish,Zero
+    }
+    private enum StateView{
+        Visual,Memory
+    }
 }

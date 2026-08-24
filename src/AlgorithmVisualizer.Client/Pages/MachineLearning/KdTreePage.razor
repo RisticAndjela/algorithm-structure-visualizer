@@ -82,6 +82,7 @@
                     <label><span>QUERY Y</span><input value="@_queryYText" @oninput="QueryYChanged" disabled="@IsBusy" inputmode="decimal" /></label>
                 </div>
                 <div class="query-summary"><span>Search rule</span><strong>x split → y split → repeat</strong><span>Run behavior</span><strong>near side first → backtrack only if needed</strong></div>
+                <div class="query-note"><strong>What is the query?</strong><p>It is one new point you want to look up — it is <em>not</em> inserted into the tree. KD-Tree compares its x/y coordinates with stored split points, finds the nearest stored example, and only then reports that example's class. The class label does not decide where the search travels.</p></div>
                 <div class="builder-actions">
                     <button class="secondary-action" type="button" @onclick="ToggleAdvancedSettings" disabled="@IsBusy">@(_showAdvancedSettings ? "Hide custom points" : "Customize stored points")</button>
                 </div>
@@ -250,7 +251,7 @@
     protected override void OnInitialized()
     {
         SimulationState.Changed += HandleSimulationChanged;
-        try { _showRunPopups = !bool.TryParse(LearningStore.GetItem(PopupSettingStorageKey), out var saved) || saved; } catch { _showRunPopups = true; }
+        _showRunPopups = !bool.TryParse(LearningStore.GetItem(PopupSettingStorageKey), out var saved) || saved;
         _practiceProgress = PracticeProgress.Load(ModuleKey, null, PracticeTasks.Select(task => task.Id));
         _completedTaskIds = _practiceProgress.CompletedTaskIds;
         ApplyInputs();
@@ -354,7 +355,7 @@
     private PracticeCompletionEvidence? GetTaskEvidence(int taskId) => PracticeProgress.GetEvidence(_practiceProgress, taskId);
     private void OpenTaskEvidence(int taskId) => _practiceEvidencePopup = GetTaskEvidence(taskId);
     private void CloseTaskEvidence() => _practiceEvidencePopup = null;
-    private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed; try { LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); } catch { } }
+    private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed; LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); }
     private void OpenLastRunPopup() { if (_lastResult is not null) _lastRunPopupOpen = true; }
     private void CloseLastRunPopup() => _lastRunPopupOpen = false;
     private string PresetClass(Preset preset) => _preset == preset ? "active" : string.Empty;

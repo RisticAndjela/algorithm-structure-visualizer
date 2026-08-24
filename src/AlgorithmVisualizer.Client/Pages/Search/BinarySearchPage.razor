@@ -276,7 +276,11 @@
     {
         if (!firstRender || _storageLoaded) return;
         _storageLoaded = true;
-        try { _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id)); _completedTaskIds.Clear(); foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id); var popupSetting = LearningStore.GetItem(PopupSettingStorageKey); if (bool.TryParse(popupSetting, out var show)) _showRunPopups = show; } catch { }
+        _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
+        _completedTaskIds.Clear();
+        foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id);
+        var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
+        if (bool.TryParse(popupSetting, out var show)) _showRunPopups = show;
         await InvokeAsync(StateHasChanged);
     }
 
@@ -451,7 +455,7 @@
     private string GetActiveTaskProgressText(int taskId) { if (_practiceResults.Count==0) return "Suggested setup is loaded. You may change values freely as long as the behavior still proves the task concept."; var result=_practiceResults[^1]; return $"Last run: {ResultSummary(result)}. Auto-complete keeps watching every run."; }
     private static string ResultSummary(BinarySearchResult result) => result.Found ? $"{VariantName(result.Variant)} found index {result.FoundIndex} in {result.Comparisons} comparison(s)" : $"not found in {result.Comparisons} comparison(s)";
 
-    private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups=args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(),out var parsed)&&parsed; try { LearningStore.SetItem(PopupSettingStorageKey,_showRunPopups.ToString()); } catch { } }
+    private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups=args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(),out var parsed)&&parsed; LearningStore.SetItem(PopupSettingStorageKey,_showRunPopups.ToString()); }
     private void OpenLastRunPopup() { if (_lastResult is null) return; _popupTab=ResultPopupTab.Action; _lastRunPopupOpen=true; }
     private void CloseLastRunPopup() => _lastRunPopupOpen=false;
     private static void IgnorePopupClick() { }

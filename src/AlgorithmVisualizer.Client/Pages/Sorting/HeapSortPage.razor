@@ -326,16 +326,12 @@
     {
         if (!firstRender || _storageLoaded) return;
         _storageLoaded = true;
-        try
-        {
-            var popupValue = LearningStore.GetItem(PopupSettingStorageKey);
-            if (bool.TryParse(popupValue, out var parsedPopup)) _showRunPopups = parsedPopup;
-            _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
-            _completedTaskIds.Clear();
-            foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id);
-            StateHasChanged();
-        }
-        catch { }
+        var popupValue = LearningStore.GetItem(PopupSettingStorageKey);
+        if (bool.TryParse(popupValue, out var parsedPopup)) _showRunPopups = parsedPopup;
+        _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
+        _completedTaskIds.Clear();
+        foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id);
+        await InvokeAsync(StateHasChanged);
     }
 
     private void SetVariant(HeapSortVariant variant)
@@ -556,15 +552,10 @@
         };
     }
 
-    private void PersistCompletedTasks()
-    {
-        try { var json = System.Text.Json.JsonSerializer.Serialize(_completedTaskIds.OrderBy(id => id).ToArray()); LearningStore.SetItem(CompletedTasksStorageKey, json); } catch { }
-    }
-
     private void ToggleRunPopups(ChangeEventArgs args)
     {
         _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed;
-        try { LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); } catch { }
+        LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString());
     }
 
     private void OpenLastRunPopup() { if (_lastResult is null) return; _popupTab = ResultPopupTab.Action; _lastRunPopupOpen = true; }
@@ -572,8 +563,6 @@
     private static void IgnorePopupClick() { }
     private static string VariantLabelFor(HeapSortVariant variant) => variant == HeapSortVariant.IncrementalBuild ? "Basic · Incremental build" : "Advanced · Floyd build";
     private static int[] CloneValues(int[] source) { var copy = new int[source.Length]; for (var index = 0; index < source.Length; index++) copy[index] = source[index]; return copy; }
-    private static bool SameValues(int[] left, int[] right) { if (left.Length != right.Length) return false; for (var index = 0; index < left.Length; index++) if (left[index] != right[index]) return false; return true; }
-    private static bool IsSorted(int[] values) { for (var index = 1; index < values.Length; index++) if (values[index - 1] > values[index]) return false; return true; }
     private static string FormatValues(int[] values) => string.Join(", ", values);
 
     public void Dispose() => SimulationState.Changed -= HandleSimulationChanged;

@@ -18,42 +18,17 @@ public sealed class PracticeProgressStore
 
     public PracticeModuleProgress Load(string moduleKey, string? legacyCompletedKey, IEnumerable<int> validTaskIds)
     {
-        var valid = validTaskIds.ToHashSet();
-        var storageKey = GetStorageKey(moduleKey);
-        var raw = _learningStore.GetItem(storageKey);
-        PracticeModuleProgress progress;
+        ValidateModuleKey(moduleKey);
+        ArgumentNullException.ThrowIfNull(validTaskIds);
 
-        if (!string.IsNullOrWhiteSpace(raw))
+        var validTaskIdSet = validTaskIds.ToHashSet();
+        var storageKey = GetStorageKey(moduleKey);
+        var progress = DeserializeProgress(_learningStore.GetItem(storageKey));
+
+        if (progress is null)
         {
-            try
-            {
-                progress = JsonSerializer.Deserialize<PracticeModuleProgress>(raw, _jsonOptions) ?? new();
-            }
-            catch
-            {
-                progress = new();
-            }
-        }
-        else
-        {
-            progress = new();
-            if (!string.IsNullOrWhiteSpace(legacyCompletedKey))
-            {
-                try
-                {
-                    var legacyRaw = _learningStore.GetItem(legacyCompletedKey);
-                    var legacy = string.IsNullOrWhiteSpace(legacyRaw)
-                        ? []
-                        : JsonSerializer.Deserialize<int[]>(legacyRaw, _jsonOptions) ?? [];
-                    foreach (var id in legacy.Where(valid.Contains))
-                    {
-                        progress.CompletedTaskIds.Add(id);
-                    }
-                }
-                catch
-                {
-                }
-            }
+            progress = new PracticeModuleProgress();
+            ImportLegacyProgress(progress, legacyCompletedKey, validTaskIdSet);
 
             if (progress.CompletedTaskIds.Count > 0)
             {
@@ -61,32 +36,115 @@ public sealed class PracticeProgressStore
             }
         }
 
-        progress.CompletedTaskIds.RemoveWhere(id => !valid.Contains(id));
-        foreach (var stale in progress.EvidenceByTask.Keys.Where(id => !valid.Contains(id)).ToArray())
-        {
-            progress.EvidenceByTask.Remove(stale);
-        }
-
+        RemoveStaleEntries(progress, validTaskIdSet);
         return progress;
     }
 
-    public void Complete(string moduleKey, PracticeModuleProgress progress, int taskId, PracticeCompletionEvidence evidence)
+    public void Complete(
+        string moduleKey,
+        PracticeModuleProgress progress,
+        int taskId,
+        PracticeCompletionEvidence evidence)
     {
+        ArgumentNullException.ThrowIfNull(progress);
+        ArgumentNullException.ThrowIfNull(evidence);
+
         progress.CompletedTaskIds.Add(taskId);
-        progress.EvidenceByTask[taskId] = evidence with { TaskId = taskId, CompletedAtUtc = DateTimeOffset.UtcNow };
+        progress.EvidenceByTask[taskId] = evidence with
+        {
+            TaskId = taskId,
+            CompletedAtUtc = DateTimeOffset.UtcNow
+        };
+
         Persist(moduleKey, progress);
     }
 
-    public PracticeCompletionEvidence? GetEvidence(PracticeModuleProgress progress, int taskId) =>
-        progress.EvidenceByTask.TryGetValue(taskId, out var evidence) ? evidence : null;
+    public PracticeCompletionEvidence? GetEvidence(PracticeModuleProgress progress, int taskId)
+    {
+        ArgumentNullException.ThrowIfNull(progress);
+        return progress.EvidenceByTask.TryGetValue(taskId, out var evidence) ? evidence : null;
+    }
 
     public void Persist(string moduleKey, PracticeModuleProgress progress)
     {
+        ArgumentNullException.ThrowIfNull(progress);
         _learningStore.SetItem(GetStorageKey(moduleKey), JsonSerializer.Serialize(progress, _jsonOptions));
     }
 
-    private static string GetStorageKey(string moduleKey) =>
-        $"algorithm-visualizer.practice.{moduleKey}.v2";
+    private PracticeModuleProgress? DeserializeProgress(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<PracticeModuleProgress>(raw, _jsonOptions);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private void ImportLegacyProgress(
+        PracticeModuleProgress progress,
+        string? legacyCompletedKey,
+        IReadOnlySet<int> validTaskIds)
+    {
+        if (string.IsNullOrWhiteSpace(legacyCompletedKey))
+        {
+            return;
+        }
+
+        var legacyTaskIds = DeserializeLegacyTaskIds(_learningStore.GetItem(legacyCompletedKey));
+        foreach (var taskId in legacyTaskIds.Where(validTaskIds.Contains))
+        {
+            progress.CompletedTaskIds.Add(taskId);
+        }
+    }
+
+    private int[] DeserializeLegacyTaskIds(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return [];
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<int[]>(raw, _jsonOptions) ?? [];
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
+    }
+
+    private static void RemoveStaleEntries(PracticeModuleProgress progress, IReadOnlySet<int> validTaskIds)
+    {
+        progress.CompletedTaskIds.RemoveWhere(taskId => !validTaskIds.Contains(taskId));
+
+        foreach (var staleTaskId in progress.EvidenceByTask.Keys.Where(taskId => !validTaskIds.Contains(taskId)).ToArray())
+        {
+            progress.EvidenceByTask.Remove(staleTaskId);
+        }
+    }
+
+    private static string GetStorageKey(string moduleKey)
+    {
+        ValidateModuleKey(moduleKey);
+        return $"algorithm-visualizer.practice.{moduleKey}.v2";
+    }
+
+    private static void ValidateModuleKey(string moduleKey)
+    {
+        if (string.IsNullOrWhiteSpace(moduleKey))
+        {
+            throw new ArgumentException("A practice module key is required.", nameof(moduleKey));
+        }
+    }
 }
 
 public sealed class PracticeModuleProgress

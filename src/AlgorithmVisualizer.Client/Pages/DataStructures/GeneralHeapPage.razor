@@ -319,15 +319,11 @@
     {
         if (!firstRender || _storageLoaded) return;
         _storageLoaded = true;
-        try
-        {
-            _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
-            foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id);
+        _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
+        foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id);
 
-            var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
-            if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
-        }
-        catch { }
+        var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
+        if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
         await InvokeAsync(StateHasChanged);
     }
 
@@ -595,8 +591,7 @@
         _ => string.Empty
     };
 
-    private void PersistCompletedTasks() { try { LearningStore.SetItem(CompletedTasksStorageKey, JsonSerializer.Serialize(_completedTaskIds.OrderBy(id => id).ToArray())); } catch { } }
-    private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups = args.Value is bool b ? b : bool.TryParse(args.Value?.ToString(), out var p) && p; try { LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); } catch { } }
+    private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups = args.Value is bool b ? b : bool.TryParse(args.Value?.ToString(), out var p) && p; LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); }
 
     private void OpenLastRunPopup() { if (_lastResult is null) return; _popupTab = _lastResult.Operation is HeapOperationKind.ExtractRoot or HeapOperationKind.Delete ? ResultPopupTab.Memory : ResultPopupTab.Run; _lastRunPopupOpen = true; }
     private void CloseLastRunPopup() => _lastRunPopupOpen = false;

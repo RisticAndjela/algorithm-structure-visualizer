@@ -12,13 +12,12 @@ Live modules currently include:
 6. `Unsupervised/KMeans` — explicit nearest-centroid assignment, mean updates, empty-cluster handling, inertia, and convergence.
 7. `Supervised/DecisionTree` — explicit threshold generation, Gini/entropy, recursive split construction, stopping rules, and prediction.
 8. `Unsupervised/Pca` — explicit mean centering, covariance, power iteration, explained variance, and PC1 projection.
-9. `DeepLearning/Neuron` — weighted contributions, bias, pre-activation, and project-owned activation functions.
-10. `DeepLearning/Mlp` — one-hidden-layer dense forward pass built from `ManualVector` and `ManualMatrix`.
-11. `DeepLearning/Backpropagation` — explicit forward cache, chain-rule deltas, parameter gradients, and one learning update.
-12. `DeepLearning/Optimizers` — deterministic stochastic-gradient comparison of SGD, Momentum, and Adam including optimizer memory.
-13. `GraphMl/SparseMatrix` — explicit dense-to-CSR conversion and sparse matrix-vector multiplication over project-owned arrays.
-14. `GraphMl/PageRank` — directed PageRank over CSR adjacency with teleportation, dangling-mass redistribution, normalization, and convergence.
-15. `GraphMl/SpectralClustering` — normalized Laplacian, project-owned Jacobi eigensolver, spectral embedding, and reuse of manual K-Means.
-16. `GraphMl/MessagePassing` — basic GNN-style gather/aggregate/transform/ReLU layers with synchronous double-buffered node embeddings.
+9. `DeepLearning/Mlp` — one-hidden-layer dense forward pass built from `ManualVector` and `ManualMatrix`.
+10. `DeepLearning/Backpropagation` — explicit forward cache, chain-rule deltas, parameter gradients, and one learning update.
+11. `DeepLearning/Optimizers` — deterministic stochastic-gradient comparison of SGD, Momentum, and Adam including optimizer memory.
+12. `GraphMl/SparseMatrix` — explicit dense-to-CSR conversion and sparse matrix-vector multiplication over project-owned arrays.
+13. `GraphMl/PageRank` — directed PageRank over CSR adjacency with teleportation, dangling-mass redistribution, normalization, and convergence.
+14. `GraphMl/SpectralClustering` — normalized Laplacian, project-owned Jacobi eigensolver, spectral embedding, and reuse of manual K-Means.
+15. `GraphMl/MessagePassing` — basic GNN-style gather/aggregate/transform/ReLU layers with synchronous double-buffered node embeddings.
 
-`DataStructures/Vector` is intentionally taught in the Data Structures track, not duplicated here. It remains the reusable numerical foundation for ML modules. Phase 1 is complete through PCA (Machine Learning step 8). Phase 2 is complete through SGD / Momentum / Adam (step 12). `Computational Graph` is intentionally not a standalone lesson; dependency and value-flow concepts are taught inside the concrete neuron, MLP, and Backpropagation modules instead. Phase 3 is complete with Sparse Matrix (step 13), PageRank (14), Spectral Clustering (15), and Message Passing / basic GNN (16).
+`DataStructures/Vector` is intentionally taught in the Data Structures track, not duplicated here. It remains the reusable numerical foundation for ML modules. Phase 1 is complete through PCA (Machine Learning step 8). Phase 2 is complete through SGD / Momentum / Adam (step 11). `Computational Graph` is intentionally not a standalone lesson; dependency and value-flow concepts are taught inside the concrete MLP and Backpropagation modules instead. Phase 3 is complete with Sparse Matrix (step 12), PageRank (13), Spectral Clustering (14), and Message Passing / basic GNN (15).

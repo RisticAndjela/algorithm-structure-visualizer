@@ -347,15 +347,11 @@
     {
         if (!firstRender || _storageLoaded) return;
         _storageLoaded = true;
-        try
-        {
-            _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
-            _completedTaskIds.Clear();
-            foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id);
-            var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
-            if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
-        }
-        catch { }
+        _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
+        _completedTaskIds.Clear();
+        foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id);
+        var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
+        if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
         await InvokeAsync(StateHasChanged);
     }
 
@@ -579,7 +575,7 @@
     private void ToggleRunPopups(ChangeEventArgs args)
     {
         _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed;
-        try { LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); } catch { }
+        LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString());
     }
 
     private void OpenLastRunPopup() { if (_lastResult is null) return; _popupTab = ResultPopupTab.Action; _lastRunPopupOpen = true; }

@@ -12,7 +12,7 @@
 <div class="learning-module-page learning-module-shell ml-module-page">
     <section class="learn-launchpad"><div class="learn-copy"><span class="section-kicker">LEARN FIRST</span><h2>PageRank keeps redistributing one unit of probability until link-based importance stops changing.</h2><p>Teleportation prevents rank from getting trapped, dangling mass is returned to the graph, and every source splits its current rank across outgoing edges.</p><ConceptLink class="learn-launchpad-link" Href="/learn/concepts/pagerank">Open PageRank concepts &amp; memory →</ConceptLink></div><div class="learn-grid"><article class="learn-card purple"><span>1 · TELEPORT</span><strong>Give every node a small base share.</strong><small>This makes the process robust to graph structure.</small></article><article class="learn-card blue"><span>2 · DANGLING</span><strong>Return rank from dead ends.</strong><small>Probability mass cannot disappear at nodes with no outgoing links.</small></article><article class="learn-card mint"><span>3 · DISTRIBUTE</span><strong>Split rank along outgoing edges.</strong><small>A source with k links sends d·rank/k to each destination.</small></article><article class="learn-card gold"><span>4 · COMMIT</span><strong>Normalize and repeat.</strong><small>Stop when the L1 change becomes small.</small></article></div></section>
 
-    <header class="module-header"><div class="header-copy"><div class="module-eyebrow"><span>GRAPH ML · PHASE 3 STEP 14</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div><h1>PageRank</h1><p>Rank nodes by repeated sparse probability flow over directed edges, with teleport and dangling-node handling exposed instead of hidden.</p></div><div class="complexity-summary"><div><span>One iteration</span><strong>O(V + E)</strong><small>nodes + stored edges</small></div><div><span>Storage</span><strong>O(V + E)</strong><small>CSR adjacency + two rank vectors</small></div><div><span>Graph edits</span><strong>Restart</strong><small>edge structure defines every contribution</small></div></div></header>
+    <header class="module-header"><div class="header-copy"><div class="module-eyebrow"><span>GRAPH ML · PHASE 3 STEP 13</span><span class="separator">/</span><span class="live-status"><i></i> Interactive</span></div><h1>PageRank</h1><p>Rank nodes by repeated sparse probability flow over directed edges, with teleport and dangling-node handling exposed instead of hidden.</p></div><div class="complexity-summary"><div><span>One iteration</span><strong>O(V + E)</strong><small>nodes + stored edges</small></div><div><span>Storage</span><strong>O(V + E)</strong><small>CSR adjacency + two rank vectors</small></div><div><span>Graph edits</span><strong>Restart</strong><small>edge structure defines every contribution</small></div></div></header>
     <section class="smart-tip"><span class="tip-icon">✦</span><div><strong>Incoming endorsements raise rank; outgoing degree controls how strongly each endorsement is split.</strong><p>A node does not become important merely by having many outgoing links. It becomes important when important sources send probability into it.</p></div><ConceptLink Href="/graph-ml/sparse-matrix">Why adjacency is sparse →</ConceptLink></section>
 
     <section class="builder-section"><div class="section-heading-row"><div class="heading-with-step"><span class="step-number">1</span><div><span class="section-kicker">BUILD THE DIRECTED GRAPH</span><h2>Choose a link pattern, then keep the ranking conditions controlled.</h2><p>Presets make authority, uniform cycles, and dangling nodes easy to compare.</p></div></div></div><div class="preset-row"><span>START WITH</span>@foreach(var p in Enum.GetValues<Preset>()){<button class="@PresetClass(p)" @onclick="() => LoadPreset(p)" disabled="@IsBusy">@PresetName(p)</button>}</div><div class="dl-builder-card"><div class="dl-control-grid two"><label><span>DAMPING d</span><input value="@_dampingText" @oninput="DampingChanged" inputmode="decimal" disabled="@IsBusy" /></label><label><span>ITERATION BUDGET</span><input value="@_iterations" @oninput="IterationsChanged" inputmode="numeric" disabled="@IsBusy" /></label></div><div class="graphml-summary-row"><div><span>NODES</span><strong>@_adjacency.Length</strong></div><div><span>EDGES</span><strong>@EdgeCount(_adjacency)</strong></div><div><span>DANGLING</span><strong>@DanglingCount(_adjacency)</strong></div></div><div class="dl-inline-actions"><button class="secondary-action" @onclick="ToggleAdvanced" disabled="@IsBusy">@(_showAdvanced?"Hide edge editor":"Edit directed edges")</button></div>@if(_showAdvanced){<div class="dl-advanced"><label class="dl-field"><span>DIRECTED EDGES · A>B, B>C, ...</span><textarea value="@_edgesText" @oninput="EdgesChanged" rows="3" disabled="@IsBusy"></textarea><small>Node labels must be A..J. Nodes mentioned anywhere are included; self-links are allowed but not needed.</small></label></div>}@if(!string.IsNullOrWhiteSpace(_inputError)){<div class="input-error"><strong>Check PageRank input.</strong><span>@_inputError</span></div>}</div></section>
@@ -34,27 +34,284 @@
     <section class="fit-section"><div class="section-heading-row"><div><span class="section-kicker">WHEN SHOULD I USE IT?</span><h2>Use PageRank when directed links carry an endorsement or flow-of-attention meaning.</h2></div></div><div class="fit-grid"><article class="fit-card good"><span>GOOD FIT</span><strong>Web links, citations, directed recommendation or influence networks</strong><p>PageRank captures recursive importance: endorsements from high-rank sources count more.</p></article><article class="fit-card avoid"><span>AVOID FOR</span><strong>Graphs where links do not mean endorsement or direction is irrelevant</strong><p>A high PageRank is not a universal “best node” score. The link semantics must justify probability flow.</p></article><article class="fit-card better"><span>BETTER ALTERNATIVE</span><strong>Use graph search when the question is reachability or shortest path</strong><p>BFS/Dijkstra answer path questions directly instead of iterating a global importance distribution.</p><div class="fit-links"><a href="/search/bfs">BFS →</a><a href="/graph-algorithms/dijkstra">Dijkstra →</a></div></article></div></section>
 
     <section class="practice-section"><div class="practice-heading"><div><span class="section-kicker">GUIDED PRACTICE</span><h2>Recognize authority, symmetry, and dangling-mass conservation.</h2></div><strong>@_completedTaskIds.Count / @PracticeTasks.Length complete</strong></div><div class="practice-grid">@foreach(var t in PracticeTasks){<PracticeTaskCard TaskId="@t.Id" Title="@t.Title" Description="@t.Goal" InputText="@t.Suggested" HelpHref="/learn/concepts/pagerank" Completed="@_completedTaskIds.Contains(t.Id)" Active="@(_activeTaskId==t.Id)" Busy="@IsBusy" HasEvidence="@(GetTaskEvidence(t.Id)is not null)" Start="@(() => StartTask(t.Id))" OpenEvidence="@(() => OpenTaskEvidence(t.Id))" />}</div></section>
-    <NextLessonCard Eyebrow="NEXT · GRAPH ML" Level="15 · Interactive" Title="Spectral Clustering" Description="Turn graph connectivity into a Laplacian eigenvector embedding, then cluster that new geometry." Href="/graph-ml/spectral-clustering" LinkLabel="Open Spectral Clustering" />
+    <NextLessonCard Eyebrow="NEXT · GRAPH ML" Level="14 · Interactive" Title="Spectral Clustering" Description="Turn graph connectivity into a Laplacian eigenvector embedding, then cluster that new geometry." Href="/graph-ml/spectral-clustering" LinkLabel="Open Spectral Clustering" />
 </div>
 
 @if(_lastRunPopupOpen&&_lastResult is not null){<div class="run-popup-backdrop" @onclick="CloseLastRunPopup"><section class="run-popup" role="dialog" aria-modal="true" @onclick:stopPropagation="true"><header><div><span class="section-kicker">LAST RUN</span><h2>Node @Label(_lastResult.TopNode) finished highest.</h2></div><button class="popup-close" @onclick="CloseLastRunPopup">×</button></header><div class="popup-body"><p>@_lastResult.Summary</p><div class="popup-metrics"><div><span>TOP RANK</span><strong>@Percent(_lastResult.TopRank)</strong></div><div><span>ITERATIONS</span><strong>@_lastResult.Iterations</strong></div><div><span>DELTA</span><strong>@F(_lastResult.Delta)</strong></div><div><span>RANK SUM</span><strong>@F(_lastResult.RankSum)</strong></div></div><p class="popup-memory">The graph stays in CSR; only two O(V) rank vectors change per iteration. Dangling redistribution and normalization keep total probability mass at 1.</p></div></section></div>}
 <PracticeEvidencePopup Evidence="@_practiceEvidencePopup" OnClose="CloseTaskEvidence" />
 
-@code{
+@code {
     private IReadOnlyList<RunMetricItem> LiveRunMetrics => [new("PHASE", PhaseText(DisplayedSnapshot.Phase)), new("ITERATION", DisplayedSnapshot.Iteration.ToString()), new("DELTA", F(DisplayedSnapshot.Delta)), new("SOURCE", DisplayedSnapshot.CurrentSource >= 0 ? Label(DisplayedSnapshot.CurrentSource) : "—")];
-    private const string ModuleKey="pagerank";private const string PopupKey="algorithm-visualizer.pagerank.show-run-popup.v1";private readonly List<RunFrame> _frames=[];private PracticeModuleProgress _practiceProgress=new();private HashSet<int> _completedTaskIds=[];private PracticeCompletionEvidence? _practiceEvidencePopup;private PageRankRunResult? _lastResult;private string? _lastCapturedStep,_inputError;private double[][] _adjacency=Authority();private string _edgesText=FormatEdges(Authority()),_dampingText="0.85";private int _iterations=16;private Preset? _preset=Preset.Authority;private bool _showAdvanced,_showRunPopups=true,_lastRunPopupOpen,_predictionAnswered,_predictionCorrect;private int? _prediction,_activeTaskId;private int _frameIndex=-1;private StateView _view=StateView.Visual;
+    private const string ModuleKey="pagerank";
+    private const string PopupKey="algorithm-visualizer.pagerank.show-run-popup.v1";
+    private readonly List<RunFrame> _frames=[];
+    private PracticeModuleProgress _practiceProgress=new();
+    private HashSet<int> _completedTaskIds=[];
+    private PracticeCompletionEvidence? _practiceEvidencePopup;
+    private PageRankRunResult? _lastResult;
+    private string? _lastCapturedStep,_inputError;
+    private double[][] _adjacency=Authority();
+    private string _edgesText=FormatEdges(Authority()),_dampingText="0.85";
+    private int _iterations=16;
+    private Preset? _preset=Preset.Authority;
+    private bool _showAdvanced,_showRunPopups=true,_lastRunPopupOpen,_predictionAnswered,_predictionCorrect;
+    private int? _prediction,_activeTaskId;
+    private int _frameIndex=-1;
+    private StateView _view=StateView.Visual;
     private static readonly PracticeTaskDefinition[] PracticeTasks=[new(1,"Find the authority","Run the inbound-star graph and make node A finish with the highest rank.","Authority",Preset.Authority),new(2,"Keep a cycle uniform","Run a directed cycle and verify all node ranks stay approximately equal.","Cycle",Preset.Cycle),new(3,"Preserve dangling mass","Run a chain with a dangling end and keep total rank approximately 1.","Dangling chain",Preset.Dangling),new(4,"Compare two hubs","Run the two-hub graph and identify the stronger hub from incoming endorsements.","Two hubs",Preset.TwoHubs)];
-    private PageRankSnapshot DisplayedSnapshot=>_frameIndex>=0&&_frameIndex<_frames.Count?_frames[_frameIndex].Snapshot:PageRankLab.CreateSnapshot();private string DisplayedStepText=>_frameIndex>=0&&_frameIndex<_frames.Count?_frames[_frameIndex].StepText:SimulationState.CurrentStepText;private bool IsBusy=>SimulationState.IsRunning;private int TimelineCount=>_frames.Count;private int TimelinePosition=>_frameIndex<0?0:_frameIndex+1;private bool CanStepBack=>_frameIndex>0;private bool CanStepForward=>(_frameIndex>=0&&_frameIndex<_frames.Count-1)||SimulationState.IsRunning;private string ViewExplanation=>_view==StateView.Visual?"Node size tracks committed rank; the highlighted source shows which outgoing edges are distributing now. The full visual stays in normal page flow.":"Inspect CSR outgoing edges beside current and next rank vectors; no dense transition matrix is required.";private string PredictionFeedback=>_lastResult is null?string.Empty:_predictionCorrect?"Correct — the predicted node finished with the largest rank.":$"Node {Label(_lastResult.TopNode)} finished highest at {Percent(_lastResult.TopRank)}.";
-    protected override void OnInitialized(){SimulationState.Changed+=HandleSimulationChanged;try{_showRunPopups=!bool.TryParse(LearningStore.GetItem(PopupKey),out var saved)||saved;}catch{_showRunPopups=true;}_practiceProgress=PracticeProgress.Load(ModuleKey,null,PracticeTasks.Select(t=>t.Id));_completedTaskIds=_practiceProgress.CompletedTaskIds;ApplyInputs();}
-    private void LoadPreset(Preset p){if(IsBusy)return;_preset=p;_adjacency=p switch{Preset.Cycle=>Cycle(),Preset.Dangling=>Dangling(),Preset.TwoHubs=>TwoHubs(),_=>Authority()};_edgesText=FormatEdges(_adjacency);ApplyInputs();}private void ToggleAdvanced(){if(!IsBusy)_showAdvanced=!_showAdvanced;}private void EdgesChanged(ChangeEventArgs e){_edgesText=e.Value?.ToString()??"";_preset=null;ClearReview();}private void DampingChanged(ChangeEventArgs e){_dampingText=e.Value?.ToString()??"";ClearReview();}private void IterationsChanged(ChangeEventArgs e){if(int.TryParse(e.Value?.ToString(),out var v))_iterations=Math.Clamp(v,1,40);ClearReview();}private void SetPrediction(int node){_prediction=node;_predictionAnswered=false;_predictionCorrect=false;}
-    private void ApplyInputs(){if(!double.TryParse(_dampingText,NumberStyles.Float,CultureInfo.InvariantCulture,out var d)||d<=0||d>=1){_inputError="Damping must be between 0 and 1.";return;}if(!TryEdges(_edgesText,out var a,out var error)){_inputError=error;return;}try{PageRankLab.Configure(new PageRankConfiguration(a,d,_iterations));_adjacency=a;_inputError=null;ClearReview();}catch(ArgumentException ex){_inputError=ex.Message;}}
-    private async Task RunAsync(){ApplyInputs();if(_inputError is not null)return;_frames.Clear();_frameIndex=-1;_lastCapturedStep=null;_lastRunPopupOpen=false;var token=SimulationState.Start("Starting PageRank.");Capture();try{var r=await PageRankLab.ExecuteAsync(token);if(!IsCurrent(token))return;_lastResult=r;SimulationState.Complete(r.Summary);Capture();if(_prediction is not null){_predictionAnswered=true;_predictionCorrect=_prediction==r.TopNode;}RecordPractice(r);if(_showRunPopups)OpenLastRunPopup();}catch(OperationCanceledException)when(!IsCurrent(token)){} }
-    private void Capture(){var step=SimulationState.CurrentStepText;if(step==_lastCapturedStep)return;var follow=_frameIndex<0||_frameIndex==_frames.Count-1;_frames.Add(new(step,PageRankLab.CreateSnapshot()));_lastCapturedStep=step;if(follow)_frameIndex=_frames.Count-1;}private void HandleSimulationChanged(){if(SimulationState.IsRunning)Capture();_=InvokeAsync(StateHasChanged);}private bool IsCurrent(CancellationToken t)=>!t.IsCancellationRequested&&SimulationState.SimulationCancellationToken==t;private void ClearReview(){SimulationState.Reset();_frames.Clear();_frameIndex=-1;_lastCapturedStep=null;_lastResult=null;_lastRunPopupOpen=false;_predictionAnswered=false;}
-    private Task PlayTimelineAsync(){if(_frames.Count>0)_frameIndex=_frames.Count-1;SimulationState.Resume();return InvokeAsync(StateHasChanged);}private Task PauseTimelineAsync(){SimulationState.Pause();return Task.CompletedTask;}private Task StepBackAsync(){if(SimulationState.IsRunning&&!SimulationState.IsPaused)SimulationState.Pause();if(_frameIndex>0)_frameIndex--;return InvokeAsync(StateHasChanged);}private Task StepForwardAsync(){if(_frameIndex>=0&&_frameIndex<_frames.Count-1){_frameIndex++;return InvokeAsync(StateHasChanged);}if(SimulationState.IsRunning)SimulationState.Step();return Task.CompletedTask;}private Task ResetPlaybackAsync(){SimulationState.Reset();_frames.Clear();_frameIndex=-1;_lastCapturedStep=null;return InvokeAsync(StateHasChanged);}private void ToggleRunPopups(ChangeEventArgs e){_showRunPopups=e.Value is bool b&&b;LearningStore.SetItem(PopupKey,_showRunPopups.ToString());}private void OpenLastRunPopup()=>_lastRunPopupOpen=_lastResult is not null;private void CloseLastRunPopup()=>_lastRunPopupOpen=false;
-    private void StartTask(int id){var t=PracticeTasks.First(x=>x.Id==id);_activeTaskId=id;LoadPreset(t.Preset);}private void RecordPractice(PageRankRunResult r){if(_activeTaskId is null)return;var t=PracticeTasks.First(x=>x.Id==_activeTaskId);var ok=t.Preset switch{Preset.Authority=>r.TopNode==0,Preset.Cycle=>Spread(r.Ranks)<1e-4,Preset.Dangling=>Math.Abs(r.RankSum-1d)<1e-9,Preset.TwoHubs=>r.TopNode==0,_=>false};if(!ok)return;var ev=new PracticeCompletionEvidence(t.Id,t.Title,r.Summary,$"Final rank vector = {RankVector(r.Ranks)}.","CSR stores outgoing destinations; rank and next-rank are two aligned O(V) vectors.","Recursive importance comes from repeated incoming probability, with teleport/dangling rules preserving reachability and mass.",[new("Top",Label(r.TopNode)),new("Top rank",Percent(r.TopRank)),new("Iterations",r.Iterations.ToString())],$"top={Label(r.TopNode)} · sum={F(r.RankSum)}");_completedTaskIds.Add(t.Id);PracticeProgress.Complete(ModuleKey,_practiceProgress,t.Id,ev);_activeTaskId=null;}
-    private PracticeCompletionEvidence? GetTaskEvidence(int id)=>PracticeProgress.GetEvidence(_practiceProgress,id);private void OpenTaskEvidence(int id)=>_practiceEvidencePopup=GetTaskEvidence(id);private void CloseTaskEvidence()=>_practiceEvidencePopup=null;private string PresetClass(Preset p)=>_preset==p?"active":"";private string PredictionClass(int node)=>_prediction==node?"active":"";private static string PresetName(Preset p)=>p switch{Preset.Authority=>"Inbound authority",Preset.Cycle=>"Uniform cycle",Preset.Dangling=>"Dangling chain",_=>"Two hubs"};private static string PhaseText(PageRankPhase p)=>p switch{PageRankPhase.DanglingMass=>"dangling",PageRankPhase.Distributing=>"distribute",_=>p.ToString().ToLowerInvariant()};private static string Label(int n)=>((char)('A'+n)).ToString();private static string F(double v)=>Math.Abs(v)<1e-12?"0":v.ToString("0.####",CultureInfo.InvariantCulture);private static string Percent(double v)=>(v*100).ToString("0.0",CultureInfo.InvariantCulture)+"%";private static string RankVector(IReadOnlyList<double> v)=>"["+string.Join(", ",v.Select(Percent))+"]";private static string ArrayText(IReadOnlyList<int> v)=>"["+string.Join(", ",v)+"]";private static double Spread(double[] v){var min=v[0];var max=v[0];for(var i=1;i<v.Length;i++){if(v[i]<min)min=v[i];if(v[i]>max)max=v[i];}return max-min;}
-    private static int EdgeCount(double[][] a){var c=0;for(var r=0;r<a.Length;r++)for(var col=0;col<a.Length;col++)if(a[r][col]>0)c++;return c;}private static int DanglingCount(double[][] a){var c=0;for(var r=0;r<a.Length;r++){var d=0;for(var col=0;col<a.Length;col++)if(a[r][col]>0)d++;if(d==0)c++;}return c;}
-    private static bool TryEdges(string text,out double[][] adjacency,out string error){error="";var parts=text.Split(',',StringSplitOptions.RemoveEmptyEntries|StringSplitOptions.TrimEntries);var max=-1;var edges=new List<(int,int)>();foreach(var part in parts){var pair=part.Split('>',StringSplitOptions.TrimEntries);if(pair.Length!=2||!TryNode(pair[0],out var s)||!TryNode(pair[1],out var d)){adjacency=[];error="Use directed edges like A>B, B>C with labels A..J.";return false;}edges.Add((s,d));max=Math.Max(max,Math.Max(s,d));}if(max<1){adjacency=[];error="Use at least two nodes and one edge.";return false;}var n=max+1;adjacency=new double[n][];for(var i=0;i<n;i++)adjacency[i]=new double[n];foreach(var e in edges)adjacency[e.Item1][e.Item2]=1d;return true;}private static bool TryNode(string s,out int n){n=-1;if(s.Length!=1)return false;var c=char.ToUpperInvariant(s[0]);if(c<'A'||c>'J')return false;n=c-'A';return true;}private static string FormatEdges(double[][] a){var list=new List<string>();for(var r=0;r<a.Length;r++)for(var c=0;c<a.Length;c++)if(a[r][c]>0)list.Add($"{Label(r)}>{Label(c)}");return string.Join(", ",list);}
-    private static double[][] Authority()=>[[0,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0]];private static double[][] Cycle()=>[[0,1,0,0],[0,0,1,0],[0,0,0,1],[1,0,0,0]];private static double[][] Dangling()=>[[0,1,0,0],[0,0,1,0],[0,0,0,1],[0,0,0,0]];private static double[][] TwoHubs()=>[[0,1,0,0,0,0],[1,0,0,0,0,0],[1,0,0,0,0,0],[1,0,0,0,0,0],[0,1,0,0,0,0],[1,0,0,0,0,0]];public void Dispose()=>SimulationState.Changed-=HandleSimulationChanged;
-    private sealed record RunFrame(string StepText,PageRankSnapshot Snapshot);private sealed record PracticeTaskDefinition(int Id,string Title,string Goal,string Suggested,Preset Preset);private enum Preset{Authority,Cycle,Dangling,TwoHubs}private enum StateView{Visual,Memory}
+    private PageRankSnapshot DisplayedSnapshot=>_frameIndex>=0&&_frameIndex<_frames.Count?_frames[_frameIndex].Snapshot:PageRankLab.CreateSnapshot();
+    private string DisplayedStepText=>_frameIndex>=0&&_frameIndex<_frames.Count?_frames[_frameIndex].StepText:SimulationState.CurrentStepText;
+    private bool IsBusy=>SimulationState.IsRunning;
+    private int TimelineCount=>_frames.Count;
+    private int TimelinePosition=>_frameIndex<0?0:_frameIndex+1;
+    private bool CanStepBack=>_frameIndex>0;
+    private bool CanStepForward=>(_frameIndex>=0&&_frameIndex<_frames.Count-1)||SimulationState.IsRunning;
+    private string ViewExplanation=>_view==StateView.Visual?"Node size tracks committed rank; the highlighted source shows which outgoing edges are distributing now. The full visual stays in normal page flow.":"Inspect CSR outgoing edges beside current and next rank vectors; no dense transition matrix is required.";
+    private string PredictionFeedback=>_lastResult is null?string.Empty:_predictionCorrect?"Correct — the predicted node finished with the largest rank.":$"Node {Label(_lastResult.TopNode)} finished highest at {Percent(_lastResult.TopRank)}.";
+    protected override void OnInitialized(){
+        SimulationState.Changed+=HandleSimulationChanged;
+        _showRunPopups=!bool.TryParse(LearningStore.GetItem(PopupKey),out var saved)||saved;
+        _practiceProgress=PracticeProgress.Load(ModuleKey,null,PracticeTasks.Select(t=>t.Id));
+        _completedTaskIds=_practiceProgress.CompletedTaskIds;
+        ApplyInputs();
+    }
+    private void LoadPreset(Preset p){
+        if(IsBusy)return;
+        _preset=p;
+        _adjacency=p switch{
+            Preset.Cycle=>Cycle(),Preset.Dangling=>Dangling(),Preset.TwoHubs=>TwoHubs(),_=>Authority()
+        };
+        _edgesText=FormatEdges(_adjacency);
+        ApplyInputs();
+    }
+    private void ToggleAdvanced(){
+        if(!IsBusy)_showAdvanced=!_showAdvanced;
+    }
+    private void EdgesChanged(ChangeEventArgs e){
+        _edgesText=e.Value?.ToString()??"";
+        _preset=null;
+        ClearReview();
+    }
+    private void DampingChanged(ChangeEventArgs e){
+        _dampingText=e.Value?.ToString()??"";
+        ClearReview();
+    }
+    private void IterationsChanged(ChangeEventArgs e){
+        if(int.TryParse(e.Value?.ToString(),out var v))_iterations=Math.Clamp(v,1,40);
+        ClearReview();
+    }
+    private void SetPrediction(int node){
+        _prediction=node;
+        _predictionAnswered=false;
+        _predictionCorrect=false;
+    }
+    private void ApplyInputs(){
+        if(!double.TryParse(_dampingText,NumberStyles.Float,CultureInfo.InvariantCulture,out var d)||d<=0||d>=1){
+            _inputError="Damping must be between 0 and 1.";
+            return;
+        }
+        if(!TryEdges(_edgesText,out var a,out var error)){
+            _inputError=error;
+            return;
+        }
+        try{
+            PageRankLab.Configure(new PageRankConfiguration(a,d,_iterations));
+            _adjacency=a;
+            _inputError=null;
+            ClearReview();
+        }
+        catch(ArgumentException ex){
+            _inputError=ex.Message;
+        }
+    }
+    private async Task RunAsync(){
+        ApplyInputs();
+        if(_inputError is not null)return;
+        _frames.Clear();
+        _frameIndex=-1;
+        _lastCapturedStep=null;
+        _lastRunPopupOpen=false;
+        var token=SimulationState.Start("Starting PageRank.");
+        Capture();
+        try{
+            var r=await PageRankLab.ExecuteAsync(token);
+            if(!IsCurrent(token))return;
+            _lastResult=r;
+            SimulationState.Complete(r.Summary);
+            Capture();
+            if(_prediction is not null){
+                _predictionAnswered=true;
+                _predictionCorrect=_prediction==r.TopNode;
+            }
+            RecordPractice(r);
+            if(_showRunPopups)OpenLastRunPopup();
+        }
+        catch(OperationCanceledException)when(!IsCurrent(token)){
+        }
+    }
+    private void Capture(){
+        var step=SimulationState.CurrentStepText;
+        if(step==_lastCapturedStep)return;
+        var follow=_frameIndex<0||_frameIndex==_frames.Count-1;
+        _frames.Add(new(step,PageRankLab.CreateSnapshot()));
+        _lastCapturedStep=step;
+        if(follow)_frameIndex=_frames.Count-1;
+    }
+    private void HandleSimulationChanged(){
+        if(SimulationState.IsRunning)Capture();
+        _=InvokeAsync(StateHasChanged);
+    }
+    private bool IsCurrent(CancellationToken t)=>!t.IsCancellationRequested&&SimulationState.SimulationCancellationToken==t;
+    private void ClearReview(){
+        SimulationState.Reset();
+        _frames.Clear();
+        _frameIndex=-1;
+        _lastCapturedStep=null;
+        _lastResult=null;
+        _lastRunPopupOpen=false;
+        _predictionAnswered=false;
+    }
+    private Task PlayTimelineAsync(){
+        if(_frames.Count>0)_frameIndex=_frames.Count-1;
+        SimulationState.Resume();
+        return InvokeAsync(StateHasChanged);
+    }
+    private Task PauseTimelineAsync(){
+        SimulationState.Pause();
+        return Task.CompletedTask;
+    }
+    private Task StepBackAsync(){
+        if(SimulationState.IsRunning&&!SimulationState.IsPaused)SimulationState.Pause();
+        if(_frameIndex>0)_frameIndex--;
+        return InvokeAsync(StateHasChanged);
+    }
+    private Task StepForwardAsync(){
+        if(_frameIndex>=0&&_frameIndex<_frames.Count-1){
+            _frameIndex++;
+            return InvokeAsync(StateHasChanged);
+        }
+        if(SimulationState.IsRunning)SimulationState.Step();
+        return Task.CompletedTask;
+    }
+    private Task ResetPlaybackAsync(){
+        SimulationState.Reset();
+        _frames.Clear();
+        _frameIndex=-1;
+        _lastCapturedStep=null;
+        return InvokeAsync(StateHasChanged);
+    }
+    private void ToggleRunPopups(ChangeEventArgs e){
+        _showRunPopups=e.Value is bool b&&b;
+        LearningStore.SetItem(PopupKey,_showRunPopups.ToString());
+    }
+    private void OpenLastRunPopup()=>_lastRunPopupOpen=_lastResult is not null;
+    private void CloseLastRunPopup()=>_lastRunPopupOpen=false;
+    private void StartTask(int id){
+        var t=PracticeTasks.First(x=>x.Id==id);
+        _activeTaskId=id;
+        LoadPreset(t.Preset);
+    }
+    private void RecordPractice(PageRankRunResult r){
+        if(_activeTaskId is null)return;
+        var t=PracticeTasks.First(x=>x.Id==_activeTaskId);
+        var ok=t.Preset switch{
+            Preset.Authority=>r.TopNode==0,Preset.Cycle=>Spread(r.Ranks)<1e-4,Preset.Dangling=>Math.Abs(r.RankSum-1d)<1e-9,Preset.TwoHubs=>r.TopNode==0,_=>false
+        };
+        if(!ok)return;
+        var ev=new PracticeCompletionEvidence(t.Id,t.Title,r.Summary,$"Final rank vector = {RankVector(r.Ranks)}.","CSR stores outgoing destinations; rank and next-rank are two aligned O(V) vectors.","Recursive importance comes from repeated incoming probability, with teleport/dangling rules preserving reachability and mass.",[new("Top",Label(r.TopNode)),new("Top rank",Percent(r.TopRank)),new("Iterations",r.Iterations.ToString())],$"top={Label(r.TopNode)} · sum={F(r.RankSum)}");
+        _completedTaskIds.Add(t.Id);
+        PracticeProgress.Complete(ModuleKey,_practiceProgress,t.Id,ev);
+        _activeTaskId=null;
+    }
+    private PracticeCompletionEvidence? GetTaskEvidence(int id)=>PracticeProgress.GetEvidence(_practiceProgress,id);
+    private void OpenTaskEvidence(int id)=>_practiceEvidencePopup=GetTaskEvidence(id);
+    private void CloseTaskEvidence()=>_practiceEvidencePopup=null;
+    private string PresetClass(Preset p)=>_preset==p?"active":"";
+    private string PredictionClass(int node)=>_prediction==node?"active":"";
+    private static string PresetName(Preset p)=>p switch{
+        Preset.Authority=>"Inbound authority",Preset.Cycle=>"Uniform cycle",Preset.Dangling=>"Dangling chain",_=>"Two hubs"
+    };
+    private static string PhaseText(PageRankPhase p)=>p switch{
+        PageRankPhase.DanglingMass=>"dangling",PageRankPhase.Distributing=>"distribute",_=>p.ToString().ToLowerInvariant()
+    };
+    private static string Label(int n)=>((char)('A'+n)).ToString();
+    private static string F(double v)=>Math.Abs(v)<1e-12?"0":v.ToString("0.####",CultureInfo.InvariantCulture);
+    private static string Percent(double v)=>(v*100).ToString("0.0",CultureInfo.InvariantCulture)+"%";
+    private static string RankVector(IReadOnlyList<double> v)=>"["+string.Join(", ",v.Select(Percent))+"]";
+    private static string ArrayText(IReadOnlyList<int> v)=>"["+string.Join(", ",v)+"]";
+    private static double Spread(double[] v){
+        var min=v[0];
+        var max=v[0];
+        for(var i=1;i<v.Length;i++){
+            if(v[i]<min)min=v[i];
+            if(v[i]>max)max=v[i];
+        }
+        return max-min;
+    }
+    private static int EdgeCount(double[][] a){
+        var c=0;
+        for(var r=0;r<a.Length;r++)for(var col=0;col<a.Length;col++)if(a[r][col]>0)c++;
+        return c;
+    }
+    private static int DanglingCount(double[][] a){
+        var c=0;
+        for(var r=0;r<a.Length;r++){
+            var d=0;
+            for(var col=0;col<a.Length;col++)if(a[r][col]>0)d++;
+            if(d==0)c++;
+        }
+        return c;
+    }
+    private static bool TryEdges(string text,out double[][] adjacency,out string error){
+        error="";
+        var parts=text.Split(',',StringSplitOptions.RemoveEmptyEntries|StringSplitOptions.TrimEntries);
+        var max=-1;
+        var edges=new List<(int,int)>();
+        foreach(var part in parts){
+            var pair=part.Split('>',StringSplitOptions.TrimEntries);
+            if(pair.Length!=2||!TryNode(pair[0],out var s)||!TryNode(pair[1],out var d)){
+                adjacency=[];
+                error="Use directed edges like A>B, B>C with labels A..J.";
+                return false;
+            }
+            edges.Add((s,d));
+            max=Math.Max(max,Math.Max(s,d));
+        }
+        if(max<1){
+            adjacency=[];
+            error="Use at least two nodes and one edge.";
+            return false;
+        }
+        var n=max+1;
+        adjacency=new double[n][];
+        for(var i=0;i<n;i++)adjacency[i]=new double[n];
+        foreach(var e in edges)adjacency[e.Item1][e.Item2]=1d;
+        return true;
+    }
+    private static bool TryNode(string s,out int n){
+        n=-1;
+        if(s.Length!=1)return false;
+        var c=char.ToUpperInvariant(s[0]);
+        if(c<'A'||c>'J')return false;
+        n=c-'A';
+        return true;
+    }
+    private static string FormatEdges(double[][] a){
+        var list=new List<string>();
+        for(var r=0;r<a.Length;r++)for(var c=0;c<a.Length;c++)if(a[r][c]>0)list.Add($"{Label(r)}>{Label(c)}");
+        return string.Join(", ",list);
+    }
+    private static double[][] Authority()=>[[0,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0]];
+    private static double[][] Cycle()=>[[0,1,0,0],[0,0,1,0],[0,0,0,1],[1,0,0,0]];
+    private static double[][] Dangling()=>[[0,1,0,0],[0,0,1,0],[0,0,0,1],[0,0,0,0]];
+    private static double[][] TwoHubs()=>[[0,1,0,0,0,0],[1,0,0,0,0,0],[1,0,0,0,0,0],[1,0,0,0,0,0],[0,1,0,0,0,0],[1,0,0,0,0,0]];
+    public void Dispose()=>SimulationState.Changed-=HandleSimulationChanged;
+    private sealed record RunFrame(string StepText,PageRankSnapshot Snapshot);
+    private sealed record PracticeTaskDefinition(int Id,string Title,string Goal,string Suggested,Preset Preset);
+    private enum Preset{
+        Authority,Cycle,Dangling,TwoHubs
+    }
+    private enum StateView{
+        Visual,Memory
+    }
 }

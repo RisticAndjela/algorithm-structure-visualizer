@@ -376,15 +376,11 @@
     {
         if (!firstRender || _storageLoaded) return;
         _storageLoaded = true;
-        try
-        {
-            _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
-            _completedTaskIds.Clear();
-            foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id);
-            var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
-            if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
-        }
-        catch { }
+        _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
+        _completedTaskIds.Clear();
+        foreach (var id in _practiceProgress.CompletedTaskIds) _completedTaskIds.Add(id);
+        var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
+        if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
         await InvokeAsync(StateHasChanged);
     }
 
@@ -588,8 +584,7 @@
         };
     }
 
-    private void PersistCompletedTasks() { try { var json = System.Text.Json.JsonSerializer.Serialize(_completedTaskIds.OrderBy(id => id).ToArray()); LearningStore.SetItem(CompletedTasksStorageKey, json); } catch { } }
-    private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed; try { LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); } catch { } }
+    private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed; LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); }
     private void OpenLastRunPopup() { if (_lastResult is null) return; _popupTab = ResultPopupTab.Action; _lastRunPopupOpen = true; }
     private void CloseLastRunPopup() => _lastRunPopupOpen = false;
     private static void IgnorePopupClick() { }
@@ -597,7 +592,6 @@
     private string RoleElementText(int index) => index >= 0 && index < DisplayedSnapshot.Elements.Length ? $"{DisplayedSnapshot.Elements[index].Value} @ {index}" : "—";
     private static string VariantLabelFor(MergeSortVariant variant) => variant == MergeSortVariant.NaturalRuns ? "Natural Merge" : "Top-down Merge";
     private static int[] CloneValues(int[] source) { var copy = new int[source.Length]; for (var index = 0; index < source.Length; index++) copy[index] = source[index]; return copy; }
-    private static bool SameValues(int[] left, int[] right) { if (left.Length != right.Length) return false; for (var index = 0; index < left.Length; index++) if (left[index] != right[index]) return false; return true; }
     private static string FormatValues(int[] values) => string.Join(", ", values);
     public void Dispose() => SimulationState.Changed -= HandleSimulationChanged;
 

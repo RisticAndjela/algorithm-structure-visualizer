@@ -1,4 +1,4 @@
-# PageRank — Phase 3 step 15
+# PageRank — Phase 3 step 13
 
 PageRank runs directly over `ManualCsrMatrix`. Each iteration exposes teleport mass, dangling-node redistribution, explicit outgoing-edge contributions, normalization, and convergence delta.
 

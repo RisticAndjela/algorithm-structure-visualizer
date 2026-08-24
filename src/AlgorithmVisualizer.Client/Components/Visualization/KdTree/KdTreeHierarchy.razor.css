@@ -1,0 +1,30 @@
+.kd-hierarchy { min-width: 0; display: grid; gap: .65rem; }
+.kd-hierarchy > header { display: flex; align-items: flex-start; justify-content: space-between; gap: .65rem; padding-bottom: .55rem; border-bottom: 1px solid var(--color-border); }
+.kd-hierarchy > header > div { display: grid; gap: .12rem; }
+.kd-hierarchy > header span { color: var(--color-primary-strong); font-size: .64rem; font-weight: 900; letter-spacing: .07em; }
+.kd-hierarchy > header strong { font-size: .95rem; }
+.kd-hierarchy > header small { color: var(--color-text-muted); font-size: .72rem; font-weight: 760; }
+.tree-empty { display: grid; gap: .2rem; padding: .75rem; border: 1px dashed var(--color-border-strong); border-radius: .72rem; background: var(--color-surface-subtle); }
+.tree-empty strong { font-size: .88rem; }
+.tree-empty span { color: var(--color-text-muted); font-size: .8rem; }
+.hierarchy-levels { display: grid; gap: .55rem; }
+.hierarchy-level { display: grid; grid-template-columns: 2.1rem minmax(0, 1fr); gap: .45rem; align-items: stretch; }
+.level-rail { position: relative; display: grid; grid-template-rows: auto 1fr; justify-items: center; gap: .22rem; }
+.level-rail span { display: grid; place-items: center; width: 2rem; height: 1.55rem; border: 1px solid #ddd8ff; border-radius: .5rem; color: var(--color-primary-strong); background: var(--color-primary-soft); font-size: .62rem; font-weight: 900; }
+.level-rail i { width: 1px; height: 100%; min-height: 1.2rem; background: var(--color-border-strong); }
+.hierarchy-level:last-child .level-rail i { opacity: 0; }
+.level-nodes { min-width: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: .4rem; }
+.hierarchy-node { min-width: 0; display: grid; gap: .32rem; padding: .58rem .62rem; border: 1px solid var(--color-border); border-radius: .68rem; background: #fff; box-shadow: 0 2px 7px rgba(30,35,55,.04); }
+.node-topline { display: flex; align-items: center; justify-content: space-between; gap: .35rem; }
+.node-topline > span { overflow: hidden; color: var(--color-text-muted); font-size: .64rem; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.node-topline em { flex: 0 0 auto; padding: .15rem .32rem; border-radius: 999px; font-size: .58rem; font-style: normal; font-weight: 900; }
+.node-topline em.x-axis { color: var(--color-secondary); background: var(--color-secondary-soft); }
+.node-topline em.y-axis { color: #986b24; background: var(--color-warning-soft); }
+.hierarchy-node > strong { overflow: hidden; font-size: .82rem; text-overflow: ellipsis; white-space: nowrap; }
+.child-refs { display: grid; grid-template-columns: 1fr 1fr; gap: .3rem; }
+.child-refs span { display: flex; align-items: center; gap: .25rem; padding: .28rem .35rem; border-radius: .45rem; color: var(--color-text-soft); background: var(--color-surface-subtle); font-size: .68rem; font-weight: 780; }
+.child-refs small { color: var(--color-text-muted); font-size: .56rem; font-weight: 900; }
+.hierarchy-node.building, .hierarchy-node.active { border-color: var(--color-warning); box-shadow: inset 0 0 0 1px var(--color-warning); }
+.hierarchy-node.best { border-color: var(--color-primary); background: var(--color-primary-soft); box-shadow: inset 0 0 0 1px var(--color-primary); }
+.hierarchy-node.visited { background: var(--color-surface-subtle); }
+.hierarchy-node.pruned { opacity: .42; border-style: dashed; }

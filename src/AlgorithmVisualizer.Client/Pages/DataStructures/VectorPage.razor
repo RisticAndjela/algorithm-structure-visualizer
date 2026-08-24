@@ -315,7 +315,7 @@
     protected override void OnInitialized()
     {
         SimulationState.Changed += HandleSimulationChanged;
-        try { _showRunPopups = !bool.TryParse(LearningStore.GetItem(PopupSettingStorageKey), out var saved) || saved; } catch { _showRunPopups = true; }
+        _showRunPopups = !bool.TryParse(LearningStore.GetItem(PopupSettingStorageKey), out var saved) || saved;
         _practiceProgress = PracticeProgress.Load(ModuleKey, null, PracticeTasks.Select(task => task.Id));
         _completedTaskIds = _practiceProgress.CompletedTaskIds;
         ApplyInputs();
@@ -463,7 +463,7 @@
     private void CloseTaskEvidence() => _practiceEvidencePopup = null;
     private string GetActiveTaskProgressText(int taskId) => _practiceResults.Count == 0 ? "Suggested setup is loaded. You may change the numbers; completion follows the mathematical behavior, not the fixture." : $"Last run: {OperationName(_practiceResults[^1].Operation)} · {ResultText(_practiceResults[^1])}.";
 
-    private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed; try { LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); } catch { } }
+    private void ToggleRunPopups(ChangeEventArgs args) { _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed; LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); }
     private void OpenLastRunPopup() { if (_lastResult is null) return; _popupTab = PopupTab.Action; _lastRunPopupOpen = true; }
     private void CloseLastRunPopup() => _lastRunPopupOpen = false;
 

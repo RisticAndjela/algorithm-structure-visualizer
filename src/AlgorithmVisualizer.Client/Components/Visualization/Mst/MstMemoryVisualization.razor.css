@@ -1,1 +1,105 @@
-.mst-memory{display:grid;gap:.8rem}.memory-intro,.frontier-card,.memory-note{display:grid;gap:.28rem;padding:.75rem;border:1px solid var(--color-border);border-radius:.75rem;background:#fbfbfd}.memory-intro>span,.card-heading span{font-size:.58rem;font-weight:850;letter-spacing:.08em;color:var(--color-text-muted)}.memory-intro strong,.card-heading strong{font-size:.82rem}.memory-intro p,.memory-note{font-size:.68rem;color:var(--color-text-soft);line-height:1.55}.card-heading{display:flex;justify-content:space-between;gap:.6rem;align-items:center}.frontier-list{display:flex;flex-wrap:wrap;gap:.35rem}.frontier-slot,.empty-slot{display:grid;gap:.05rem;padding:.38rem .5rem;border:1px solid #d7d3ee;border-radius:.55rem;background:#f5f3ff;font-size:.64rem}.frontier-slot small{font-size:.5rem;color:var(--color-text-muted)}.frontier-slot em{font-size:.56rem;color:var(--color-text-soft);font-style:normal}.frontier-slot.stale{opacity:.5;text-decoration:line-through}.empty-slot{display:block;background:#fff;border-color:var(--color-border);color:var(--color-text-soft)}.table-scroll{overflow:auto;border:1px solid var(--color-border);border-radius:.75rem}.table-scroll table{width:100%;border-collapse:collapse;font-size:.67rem}.table-scroll th,.table-scroll td{padding:.52rem .6rem;text-align:left;border-bottom:1px solid var(--color-border)}.table-scroll th{font-size:.56rem;letter-spacing:.06em;color:var(--color-text-muted);background:#fafafd}.table-scroll tr:last-child td{border-bottom:0}.table-scroll tr.current td{background:#fff4e8}.table-scroll tr.candidate td{background:#edf6fc}.table-scroll tr.selected td{background:#edf9f4}.memory-note{display:flex;gap:.35rem}.memory-note strong{color:var(--color-text)}
+.mst-memory{
+display:grid;
+gap:.8rem
+}
+.memory-intro,.frontier-card,.memory-note{
+display:grid;
+gap:.28rem;
+padding:.75rem;
+border:1px solid var(--color-border);
+border-radius:.75rem;
+background:#fbfbfd
+}
+.memory-intro>span,.card-heading span{
+font-size:.58rem;
+font-weight:850;
+letter-spacing:.08em;
+color:var(--color-text-muted)
+}
+.memory-intro strong,.card-heading strong{
+font-size:.82rem
+}
+.memory-intro p,.memory-note{
+font-size:.68rem;
+color:var(--color-text-soft);
+line-height:1.55
+}
+.card-heading{
+display:flex;
+justify-content:space-between;
+gap:.6rem;
+align-items:center
+}
+.frontier-list{
+display:flex;
+flex-wrap:wrap;
+gap:.35rem
+}
+.frontier-slot,.empty-slot{
+display:grid;
+gap:.05rem;
+padding:.38rem .5rem;
+border:1px solid #d7d3ee;
+border-radius:.55rem;
+background:#f5f3ff;
+font-size:.64rem
+}
+.frontier-slot small{
+font-size:.5rem;
+color:var(--color-text-muted)
+}
+.frontier-slot em{
+font-size:.56rem;
+color:var(--color-text-soft);
+font-style:normal
+}
+.frontier-slot.stale{
+opacity:.5;
+text-decoration:line-through
+}
+.empty-slot{
+display:block;
+background:#fff;
+border-color:var(--color-border);
+color:var(--color-text-soft)
+}
+.table-scroll{
+overflow:auto;
+border:1px solid var(--color-border);
+border-radius:.75rem
+}
+.table-scroll table{
+width:100%;
+border-collapse:collapse;
+font-size:.67rem
+}
+.table-scroll th,.table-scroll td{
+padding:.52rem .6rem;
+text-align:left;
+border-bottom:1px solid var(--color-border)
+}
+.table-scroll th{
+font-size:.56rem;
+letter-spacing:.06em;
+color:var(--color-text-muted);
+background:#fafafd
+}
+.table-scroll tr:last-child td{
+border-bottom:0
+}
+.table-scroll tr.current td{
+background:#fff4e8
+}
+.table-scroll tr.candidate td{
+background:#edf6fc
+}
+.table-scroll tr.selected td{
+background:#edf9f4
+}
+.memory-note{
+display:flex;
+gap:.35rem
+}
+.memory-note strong{
+color:var(--color-text)
+}

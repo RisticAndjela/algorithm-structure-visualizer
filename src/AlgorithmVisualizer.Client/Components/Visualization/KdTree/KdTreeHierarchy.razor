@@ -1,0 +1,72 @@
+@using System.Globalization
+@using AlgorithmVisualizer.Core.MachineLearning.Supervised.KdTree
+
+<section class="kd-hierarchy" aria-label="KD-Tree hierarchy">
+    <header>
+        <div><span>TREE VIEW</span><strong>Median split hierarchy</strong></div>
+        <small>@Snapshot.Nodes.Length nodes · root #@Snapshot.RootNodeId</small>
+    </header>
+
+    @if (Snapshot.Nodes.Length == 0 || Snapshot.RootNodeId < 0)
+    {
+        <div class="tree-empty"><strong>Tree not built yet.</strong><span>Run the lesson to see median nodes appear by depth.</span></div>
+    }
+    else
+    {
+        <div class="hierarchy-levels">
+            @for (var depth = 0; depth <= MaxDepth; depth++)
+            {
+                <div class="hierarchy-level">
+                    <div class="level-rail"><span>D@depth</span><i></i></div>
+                    <div class="level-nodes">
+                        @foreach (var node in NodesAtDepth(depth))
+                        {
+                            <article class="hierarchy-node @StateClass(node.State)">
+                                <div class="node-topline">
+                                    <span>#@node.NodeId · ex @node.PointIndex</span>
+                                    <em class="@(node.Axis == 0 ? "x-axis" : "y-axis")">@(node.Axis == 0 ? "x split" : "y split")</em>
+                                </div>
+                                <strong>[@Format(node.Point[0]), @Format(node.Point[1])]</strong>
+                                <div class="child-refs">
+                                    <span><small>L</small>@ChildRef(node.LeftNodeId)</span>
+                                    <span><small>R</small>@ChildRef(node.RightNodeId)</span>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public KdTreeSnapshot Snapshot { get; set; } = default!;
+
+    private int MaxDepth
+    {
+        get
+        {
+            var max = 0;
+            for (var index = 0; index < Snapshot.Nodes.Length; index++)
+            {
+                if (Snapshot.Nodes[index].Depth > max) max = Snapshot.Nodes[index].Depth;
+            }
+            return max;
+        }
+    }
+
+    private IEnumerable<KdTreeNodeSnapshot> NodesAtDepth(int depth)
+    {
+        for (var index = 0; index < Snapshot.Nodes.Length; index++)
+        {
+            if (Snapshot.Nodes[index].Depth == depth) yield return Snapshot.Nodes[index];
+        }
+    }
+
+    private static string ChildRef(int nodeId) => nodeId < 0 ? "∅" : $"#{nodeId}";
+    private static string StateClass(KdTreeNodeState state) => state.ToString().ToLowerInvariant();
+    private static string Format(double value) => double.IsFinite(value)
+        ? (Math.Abs(value) < 1e-12d ? "0" : value.ToString("0.###", CultureInfo.InvariantCulture))
+        : "—";
+}

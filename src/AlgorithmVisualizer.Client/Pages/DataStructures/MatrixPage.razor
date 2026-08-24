@@ -481,15 +481,11 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
-        try
-        {
-            _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
-            foreach (var id in _practiceProgress.CompletedTaskIds) _completedTasks.Add(id);
+        _practiceProgress = PracticeProgress.Load(ModuleKey, CompletedTasksStorageKey, PracticeTasks.Select(task => task.Id));
+        foreach (var id in _practiceProgress.CompletedTaskIds) _completedTasks.Add(id);
 
-            var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
-            if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
-        }
-        catch { }
+        var popupSetting = LearningStore.GetItem(PopupSettingStorageKey);
+        if (bool.TryParse(popupSetting, out var showPopups)) _showRunPopups = showPopups;
         await InvokeAsync(StateHasChanged);
     }
 
@@ -900,11 +896,7 @@
             ? boolValue
             : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed;
 
-        try
-        {
-            LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString());
-        }
-        catch { }
+        LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString());
     }
 
     private void OpenLastRunPopup()
@@ -973,11 +965,6 @@
     };
 
     private static string FormatPopupNumber(double value) => Math.Round(value, 6).ToString("0.######", CultureInfo.InvariantCulture);
-
-    private async Task PersistTasksAsync()
-    {
-        try { LearningStore.SetItem(CompletedTasksStorageKey, JsonSerializer.Serialize(_completedTasks.OrderBy(x => x).ToArray())); } catch { }
-    }
 
     private void HandleStateChanged() { if (SimulationState.IsRunning) CaptureFrame(); RequestRender(); }
     private void HandleMatrixChanged() => RequestRender();

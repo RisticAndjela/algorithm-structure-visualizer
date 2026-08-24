@@ -182,7 +182,6 @@
             }
         </section>
 
-
     </section>
 
     <section class="practice-section" aria-labelledby="graph-practice-title">
@@ -612,8 +611,6 @@
         return false;
     }
 
-    private static bool HasVertices(GraphSnapshot snapshot, params string[] labels) => labels.All(label => snapshot.Vertices.Any(vertex => LabelsEqual(vertex.Label, label)));
-
     private static bool HasEdge(GraphSnapshot snapshot, string from, string to)
     {
         foreach (var edge in snapshot.Edges)
@@ -624,41 +621,12 @@
         return false;
     }
 
-    private static bool HasEdgeWithWeight(GraphSnapshot snapshot, string from, string to, double weight)
-    {
-        foreach (var edge in snapshot.Edges)
-        {
-            var endpointsMatch = LabelsEqual(edge.FromLabel, from) && LabelsEqual(edge.ToLabel, to)
-                || (!snapshot.Directed && LabelsEqual(edge.FromLabel, to) && LabelsEqual(edge.ToLabel, from));
-            if (endpointsMatch && Math.Abs(edge.Weight - weight) <= 1e-9) return true;
-        }
-        return false;
-    }
-
     private static bool LabelsEqual(string? left, string? right) => string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
-
-    private void PersistCompletedTasks()
-    {
-        try
-        {
-            var json = System.Text.Json.JsonSerializer.Serialize(_completedTaskIds.OrderBy(id => id).ToArray());
-            LearningStore.SetItem(CompletedTasksStorageKey, json);
-        }
-        catch
-        {
-        }
-    }
 
     private void ToggleRunPopups(ChangeEventArgs args)
     {
         _showRunPopups = args.Value is bool value ? value : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed;
-        try
-        {
-            LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString());
-        }
-        catch
-        {
-        }
+        LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString());
     }
 
     private void OpenLastRunPopup()

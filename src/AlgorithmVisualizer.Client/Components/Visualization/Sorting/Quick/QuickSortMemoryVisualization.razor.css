@@ -1,1 +1,132 @@
-.quick-memory{display:grid;gap:1rem;padding:1rem;background:#fafbfe}.memory-note{display:grid;grid-template-columns:minmax(12rem,.7fr) minmax(18rem,1.3fr);gap:1rem;padding:.9rem;border:1px solid var(--color-border);border-radius:.9rem;background:#fff}.memory-note>div{display:grid;gap:.2rem}.memory-note span,.memory-facts span{color:var(--color-text-muted);font-size:.68rem;font-weight:850;letter-spacing:.07em}.memory-note p{margin:0;color:var(--color-text-soft);font-size:.8rem;line-height:1.5}.slot-strip{display:flex;gap:.55rem;overflow-x:auto;padding:.25rem 0}.memory-slot{min-width:6.7rem;display:grid;gap:.3rem;padding:.65rem;border:1px solid var(--color-border-strong);border-radius:.78rem;background:#fff}.memory-slot header{display:flex;justify-content:space-between;color:var(--color-text-muted);font-size:.72rem}.reference-arrow{text-align:center;color:#a0a5b3}.element-object{display:grid;gap:.15rem;padding:.48rem;border:1px solid var(--color-border);border-radius:.58rem;text-align:center;background:#f8f9fc}.element-object span{font-size:.68rem;color:var(--color-text-muted)}.element-object strong{font-size:1.05rem}.memory-slot.is-pivot{border-color:#d9a13e;background:#fff8e8}.memory-slot.is-scan{border-color:#796ce5;background:#f4f2ff}.memory-slot.is-swapping{border-color:#d99a30;background:#fff5df}.memory-slot.is-region{border-color:#9acdbf;background:#f3faf8}.memory-slot.is-sorted{border-color:#6fbda9;background:#edf9f5}.memory-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.55rem}.memory-facts article{display:grid;gap:.15rem;padding:.75rem;border:1px solid var(--color-border);border-radius:.75rem;background:#fff}.memory-facts strong{font-size:.9rem}.memory-facts small{color:var(--color-text-soft);font-size:.72rem;line-height:1.35}.empty-memory{min-height:10rem;display:grid;place-items:center;color:var(--color-text-soft)}@media(max-width:760px){.memory-note{grid-template-columns:1fr}.memory-facts{grid-template-columns:1fr 1fr}}@media(max-width:480px){.memory-facts{grid-template-columns:1fr}}
+.quick-memory{
+display:grid;
+gap:1rem;
+padding:1rem;
+background:#fafbfe
+}
+.memory-note{
+display:grid;
+grid-template-columns:minmax(12rem,.7fr) minmax(18rem,1.3fr);
+gap:1rem;
+padding:.9rem;
+border:1px solid var(--color-border);
+border-radius:.9rem;
+background:#fff
+}
+.memory-note>div{
+display:grid;
+gap:.2rem
+}
+.memory-note span,.memory-facts span{
+color:var(--color-text-muted);
+font-size:.68rem;
+font-weight:850;
+letter-spacing:.07em
+}
+.memory-note p{
+margin:0;
+color:var(--color-text-soft);
+font-size:.8rem;
+line-height:1.5
+}
+.slot-strip{
+display:flex;
+gap:.55rem;
+overflow-x:auto;
+padding:.25rem 0
+}
+.memory-slot{
+min-width:6.7rem;
+display:grid;
+gap:.3rem;
+padding:.65rem;
+border:1px solid var(--color-border-strong);
+border-radius:.78rem;
+background:#fff
+}
+.memory-slot header{
+display:flex;
+justify-content:space-between;
+color:var(--color-text-muted);
+font-size:.72rem
+}
+.reference-arrow{
+text-align:center;
+color:#a0a5b3
+}
+.element-object{
+display:grid;
+gap:.15rem;
+padding:.48rem;
+border:1px solid var(--color-border);
+border-radius:.58rem;
+text-align:center;
+background:#f8f9fc
+}
+.element-object span{
+font-size:.68rem;
+color:var(--color-text-muted)
+}
+.element-object strong{
+font-size:1.05rem
+}
+.memory-slot.is-pivot{
+border-color:#d9a13e;
+background:#fff8e8
+}
+.memory-slot.is-scan{
+border-color:#796ce5;
+background:#f4f2ff
+}
+.memory-slot.is-swapping{
+border-color:#d99a30;
+background:#fff5df
+}
+.memory-slot.is-region{
+border-color:#9acdbf;
+background:#f3faf8
+}
+.memory-slot.is-sorted{
+border-color:#6fbda9;
+background:#edf9f5
+}
+.memory-facts{
+display:grid;
+grid-template-columns:repeat(4,minmax(0,1fr));
+gap:.55rem
+}
+.memory-facts article{
+display:grid;
+gap:.15rem;
+padding:.75rem;
+border:1px solid var(--color-border);
+border-radius:.75rem;
+background:#fff
+}
+.memory-facts strong{
+font-size:.9rem
+}
+.memory-facts small{
+color:var(--color-text-soft);
+font-size:.72rem;
+line-height:1.35
+}
+.empty-memory{
+min-height:10rem;
+display:grid;
+place-items:center;
+color:var(--color-text-soft)
+}
+@media(max-width:760px){
+.memory-note{
+grid-template-columns:1fr
+}
+.memory-facts{
+grid-template-columns:1fr 1fr
+}
+}
+@media(max-width:480px){
+.memory-facts{
+grid-template-columns:1fr
+}
+}

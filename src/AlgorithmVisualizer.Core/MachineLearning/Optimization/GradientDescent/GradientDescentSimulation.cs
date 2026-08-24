@@ -102,7 +102,22 @@ public sealed class GradientDescentSimulation : SimulationAlgorithmBase
         _loss = EvaluateLoss(_parameters);
         _previousLoss = _loss;
         _effectiveLearningRate = EffectiveLearningRate(0);
+
+        if (!double.IsFinite(_loss) || _loss > 1e12d)
+        {
+            return await FinishDivergedAsync(
+                "The starting loss is non-finite or outside the safe teaching range. Use finite parameters closer to the objective scale.",
+                cancellationToken);
+        }
+
         _gradientNorm = await ComputeGradientAndNormAsync(cancellationToken, publishComponents: false);
+        if (!double.IsFinite(_gradientNorm))
+        {
+            return await FinishDivergedAsync(
+                "The starting gradient norm is non-finite. Use parameters and curvature on a smaller numeric scale.",
+                cancellationToken);
+        }
+
         AddHistoryPoint(0);
 
         await PublishAsync(
@@ -135,6 +150,13 @@ public sealed class GradientDescentSimulation : SimulationAlgorithmBase
             _phase = GradientDescentPhase.UpdatingParameters;
             await SubtractWithVectorCoreAsync(cancellationToken);
 
+            if (!AllFinite(_nextParameters))
+            {
+                return await FinishDivergedAsync(
+                    "The proposed parameter update became non-finite. The learning rate is unstable for this objective.",
+                    cancellationToken);
+            }
+
             for (var index = 0; index < _parameters.Dimension; index++)
             {
                 _currentIndex = index;
@@ -147,12 +169,6 @@ public sealed class GradientDescentSimulation : SimulationAlgorithmBase
             _currentIndex = -1;
             _phase = GradientDescentPhase.EvaluatingLoss;
             _loss = EvaluateLoss(_parameters);
-            _gradientNorm = await ComputeGradientAndNormAsync(cancellationToken, publishComponents: false);
-            AddHistoryPoint(_iteration);
-
-            await PublishAsync(
-                $"Iteration {_iteration}: J(θ) {Format(_previousLoss)} → {Format(_loss)}; ||∇J||₂ = {Format(_gradientNorm)}.",
-                cancellationToken);
 
             if (!double.IsFinite(_loss) || _loss > 1e12d)
             {
@@ -160,6 +176,20 @@ public sealed class GradientDescentSimulation : SimulationAlgorithmBase
                     "Loss became non-finite or exceeded the safe teaching range. The learning rate is unstable for this objective.",
                     cancellationToken);
             }
+
+            _gradientNorm = await ComputeGradientAndNormAsync(cancellationToken, publishComponents: false);
+            if (!double.IsFinite(_gradientNorm))
+            {
+                return await FinishDivergedAsync(
+                    "The gradient norm became non-finite. The learning rate is unstable for this objective.",
+                    cancellationToken);
+            }
+
+            AddHistoryPoint(_iteration);
+
+            await PublishAsync(
+                $"Iteration {_iteration}: J(θ) {Format(_previousLoss)} → {Format(_loss)}; ||∇J||₂ = {Format(_gradientNorm)}.",
+                cancellationToken);
 
             if (_loss > _previousLoss * (1d + 1e-10d))
             {
@@ -228,6 +258,16 @@ public sealed class GradientDescentSimulation : SimulationAlgorithmBase
         _vectorMath.LoadVectors(_parameters.CopyValues(), _scaledGradient.CopyValues());
         var result = await _vectorMath.ExecuteAsync(VectorOperationKind.Subtract, 1d, cancellationToken);
         _nextParameters.CopyFrom(result.ResultVector);
+    }
+
+    private static bool AllFinite(ManualVector values)
+    {
+        for (var index = 0; index < values.Dimension; index++)
+        {
+            if (!double.IsFinite(values[index])) return false;
+        }
+
+        return true;
     }
 
     private double EvaluateLoss(ManualVector parameters)

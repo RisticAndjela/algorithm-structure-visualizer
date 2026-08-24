@@ -1,4 +1,4 @@
-# Spectral Clustering — Phase 3 step 16
+# Spectral Clustering — Phase 3 step 14
 
 The teaching implementation constructs the normalized Laplacian manually, diagonalizes the symmetric matrix with project-owned Jacobi rotations, keeps the smallest eigenvectors, row-normalizes the spectral embedding, and reuses the existing from-scratch K-Means implementation.
 

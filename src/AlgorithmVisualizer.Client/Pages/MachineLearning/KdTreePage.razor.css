@@ -454,3 +454,7 @@
 .kd-page .fit-section .section-heading-row {
     margin-bottom: .85rem;
 }
+
+.query-note { display: grid; gap: .18rem; padding: .62rem .68rem; border-left: 3px solid var(--color-primary); border-radius: .55rem; background: #f7f6ff; }
+.query-note strong { font-size: .82rem; }
+.query-note p { margin: 0; color: var(--color-text-soft); font-size: .82rem; line-height: 1.48; }

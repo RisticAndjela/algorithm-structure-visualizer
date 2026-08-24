@@ -648,7 +648,6 @@
 
     private string GetCriterionButtonClass(LinearLookupCriterion criterion) => _lookupCriterion == criterion ? "active" : string.Empty;
 
-
     private void SetStateView(StateView view)
     {
         _activeStateView = view;
@@ -836,19 +835,10 @@
         _ => string.Empty
     };
 
-    private void PersistCompletedTasks()
-    {
-        try
-        {
-            LearningStore.SetItem(CompletedTasksStorageKey, JsonSerializer.Serialize(_completedTaskIds.OrderBy(id => id).ToArray()));
-        }
-        catch { }
-    }
-
     private void ToggleRunPopups(ChangeEventArgs args)
     {
         _showRunPopups = args.Value is bool boolValue ? boolValue : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed;
-        try { LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString()); } catch { }
+        LearningStore.SetItem(PopupSettingStorageKey, _showRunPopups.ToString());
     }
 
     private void OpenLastRunPopup()
